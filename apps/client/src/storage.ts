@@ -36,3 +36,10 @@ export const completionStorage: import("@praxis/application").CompletionStorage 
       return invoke<DailyTask>("change_completion", { command });
     },
   };
+
+export const editStorage: import("@praxis/application").EditStorage = {
+  async editTask(command) {
+    if (!desktopAvailable) throw new Error("当前设备暂不支持任务编辑");
+    return invoke<DailyTask>("edit_task", { command });
+  },
+};

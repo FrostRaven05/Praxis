@@ -123,6 +123,29 @@ async fn change_completion(
         })
 }
 
+#[tauri::command]
+async fn edit_task(
+    command: store::EditTaskCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<DailyTask, String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .edit_task(&command)
+        .await
+        .map_err(|error| {
+            database.record_error("edit", Some(&command.operation_id), &error);
+            if error == "STATE_CONFLICT" {
+                "任务已有更新，请重新打开详情后再修改。".to_owned()
+            } else if error == "COMPLETED_PLAN" {
+                "已完成任务不能改期，请先撤销完成。".to_owned()
+            } else if error == "PLAN_CONFLICT" {
+                "目标日期已有这项任务的安排，请选择其他日期。".to_owned()
+            } else {
+                "未能确认修改结果，请重试；相同操作不会重复保存。".to_owned()
+            }
+        })
+}
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
@@ -151,7 +174,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             capture_task,
             list_day,
-            change_completion
+            change_completion,
+            edit_task
         ])
         .run(tauri::generate_context!())
         .expect("Praxis could not start");

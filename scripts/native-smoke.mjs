@@ -170,6 +170,77 @@ try {
   results.push(
     "After abrupt restart completed task survives; undo restores pending task",
   );
+
+  const originalDay = await app.page
+    .getByLabel("查看日期", { exact: true })
+    .inputValue();
+  await app.page.getByRole("button", { name: /为明天留下一步/ }).click();
+  await app.page.getByLabel("编辑任务标题", { exact: true }).fill("");
+  await app.page.getByRole("button", { name: "保存修改", exact: true }).click();
+  await expect(
+    app.page.getByLabel("编辑任务", { exact: true }).getByRole("alert"),
+  ).toContainText("请填写任务标题");
+  await app.page
+    .getByLabel("编辑任务标题", { exact: true })
+    .fill("编辑后的下一步");
+  await app.page.getByLabel("安排日期", { exact: true }).fill("2030-01-15");
+  await app.page.getByRole("button", { name: "保存修改", exact: true }).click();
+  await expect(app.page.getByLabel("查看日期", { exact: true })).toHaveValue(
+    "2030-01-15",
+  );
+  await expect(app.page.locator(".task-row")).toHaveCount(1);
+  await expect(
+    app.page.getByLabel("编辑任务标题", { exact: true }),
+  ).toHaveValue("编辑后的下一步");
+  await app.page.screenshot({ path: join(evidence, "desktop-edited.png") });
+  await app.page.getByRole("button", { name: "关闭任务详情" }).click();
+  await app.page.getByLabel("查看日期", { exact: true }).fill(originalDay);
+  await expect(app.page.locator(".task-row")).toHaveCount(1);
+  await app.page.getByLabel("查看日期", { exact: true }).fill("2030-01-15");
+  await expect(app.page.locator(".task-row")).toContainText("编辑后的下一步");
+  await app.page.getByRole("button", { name: "撤销修改", exact: true }).click();
+  await expect(app.page.getByLabel("查看日期", { exact: true })).toHaveValue(
+    originalDay,
+  );
+  await expect(app.page.locator(".task-row")).toHaveCount(2);
+  results.push(
+    "Edit title and reschedule preserve a single task; date navigation and undo restore original title/date",
+  );
+  await app.page.getByRole("button", { name: /为明天留下一步/ }).click();
+  await app.page
+    .getByLabel("编辑任务标题", { exact: true })
+    .fill("重启后保留编辑");
+  await app.page.getByLabel("安排日期", { exact: true }).fill("2030-01-15");
+  await app.page.getByRole("button", { name: "保存修改", exact: true }).click();
+  await expect(app.page.getByLabel("查看日期", { exact: true })).toHaveValue(
+    "2030-01-15",
+  );
+  await expect(app.page.locator(".task-row")).toContainText("重启后保留编辑");
+
+  await expect(
+    app.page.getByLabel("编辑任务标题", { exact: true }),
+  ).toHaveValue("重启后保留编辑");
+  await app.page
+    .getByLabel("编辑任务标题", { exact: true })
+    .fill("重启后保留编辑（二次）");
+  await app.page.getByRole("button", { name: "保存修改", exact: true }).click();
+  await expect(
+    app.page.getByLabel("编辑任务标题", { exact: true }),
+  ).toHaveValue("重启后保留编辑（二次）");
+  await expect(app.page.locator(".task-row")).toContainText(
+    "重启后保留编辑（二次）",
+  );
+  results.push(
+    "Consecutive saves in the same detail use the committed version",
+  );
+  stop(app.child);
+  app = await launch();
+  await app.page.getByLabel("查看日期", { exact: true }).fill("2030-01-15");
+  await expect(app.page.locator(".task-row")).toHaveCount(1);
+  await expect(app.page.locator(".task-row")).toContainText("重启后保留编辑");
+  results.push(
+    "Edited title and rescheduled date survive abrupt native restart",
+  );
   stop(app.child);
   app = undefined;
   const invalidDirectory = join(data, "not-a-directory");

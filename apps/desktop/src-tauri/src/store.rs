@@ -1,3 +1,5 @@
+mod edit;
+pub use edit::EditTaskCommand;
 use std::{path::Path, time::Duration};
 
 use chrono::{DateTime, NaiveDate};

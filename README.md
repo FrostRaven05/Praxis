@@ -4,14 +4,14 @@ Turn intent into action.
 
 Ticket 01：桌面离线录入。只输入标题即可加入今天，任务、每日安排、历史事件与待同步操作在一个 SQLite 事务中保存。关闭应用后重新打开仍可读取。
 
-桌面已支持录入、详情、完成与撤销；已完成默认折叠，按实际完成日期显示。当前优先完善桌面，改期、项目及云同步继续按 Tickets 实现；outbox 仅保存在本机。
+桌面已支持录入、详情编辑、日期查看、改期、完成与撤销；已完成默认折叠，按实际完成日期显示。当前优先完善桌面，重点、估时、收件箱、项目及云同步继续按 Tickets 实现；outbox 仅保存在本机。
 
 ## 文档与任务
 
 - [产品需求](Spec.md)
 - [技术路线](TECHNOLOGY.md)
 - [本地 Tickets](.scratch/praxis-mvp/README.md)
-- [当前桌面切片](.scratch/praxis-mvp/issues/D01-desktop-complete-undo.md)
+- [当前桌面切片](.scratch/praxis-mvp/issues/D02-desktop-edit-reschedule.md)
 - [桌面优先实施顺序](docs/desktop-first.md)
 - [完成与撤销验证记录](docs/implementation-desktop-completion.md)
 - [实施与验证记录](docs/implementation-01.md)
@@ -63,3 +63,5 @@ test:desktop 要先构建上述调试程序。它启动真实 Tauri/WebView2，�
 ## Android 开发进度
 
 Ticket 02 已加入 Capacitor 工程与原生 SQLite 适配，尚未完成 APK 构建和真机验收。构建依赖、命令、测试结果及 iOS 范围见 [移动端实施记录](docs/implementation-02.md)。
+
+[桌面编辑、改期与日期查看验收](docs/implementation-desktop-edit.md)

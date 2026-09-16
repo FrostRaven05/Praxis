@@ -630,3 +630,61 @@ button:disabled {
   cursor: wait;
   opacity: 0.6;
 }
+
+.date-navigation {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: -16px 0 28px;
+  color: #66765b;
+  font-size: 13px;
+}
+.date-navigation input,
+.task-editor input {
+  border: 1px solid #cdd7c4;
+  background: #fffefa;
+  color: #35462d;
+  border-radius: 6px;
+  padding: 9px;
+  min-width: 0;
+}
+.date-navigation button,
+.task-editor button,
+.edit-notice button {
+  border: 1px solid #c5d0bc;
+  background: #e9efe3;
+  color: #3e563b;
+  border-radius: 6px;
+  padding: 9px 13px;
+  cursor: pointer;
+}
+.task-editor {
+  display: grid;
+  gap: 10px;
+  margin: 22px 0;
+  font-size: 13px;
+}
+.task-editor label {
+  color: #718264;
+}
+.task-editor p {
+  font-size: 12px;
+  line-height: 1.6;
+}
+.edit-notice {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  background: #e9ede2;
+  padding: 12px;
+  border-radius: 6px;
+  margin-top: 20px;
+  font-size: 12px;
+}
+.edit-notice span {
+  overflow-wrap: anywhere;
+}
+.task-detail {
+  z-index: 4;
+}

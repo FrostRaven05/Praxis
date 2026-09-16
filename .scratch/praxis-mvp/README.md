@@ -183,6 +183,8 @@
 
 2026-09-16 用户要求优先完善桌面。按 [桌面实施顺序](../../docs/desktop-first.md) 推进，移动和同步原有验收保留。已完成 [D01 桌面完成与撤销](issues/D01-desktop-complete-undo.md)；不将此视作 Ticket 07 双端完成。
 
+已完成 [D02 桌面编辑与改期](issues/D02-desktop-edit-reschedule.md)，原 06/11 的跨端和完整日历验收仍保留。
+
 ## 实施状态
 
 Ticket 01 已完成：Windows 桌面离线录入、原子持久化、失败重试与重启恢复均通过验证。Ticket 02 已实现移动适配与 Android 工程，宿主测试通过，等待构建环境和真机验收；其余状态以 issues 中的记录为准。

@@ -1,3 +1,4 @@
+import { RetriableCommands } from "./retriable-commands";
 import { calendarDate } from "./calendar-date";
 import type { DailyTask } from "./capture-today";
 export interface CompletionCommand {
@@ -15,16 +16,13 @@ export interface CompletionStorage {
   changeCompletion(command: CompletionCommand): Promise<DailyTask>;
 }
 export class ChangeCompletion {
-  private pending = new Map<string, CompletionCommand>();
-  private saving = new Set<string>();
+  private commands = new RetriableCommands<CompletionCommand>();
   constructor(private readonly storage: CompletionStorage) {}
   async change(
     task: DailyTask,
     action: CompletionCommand["action"],
     timeZone: string,
   ): Promise<DailyTask> {
-    if (this.saving.has(task.taskId)) throw new Error("正在保存，请稍候");
-
     if (
       action === "complete" &&
       (task.status !== "todo" || task.activeCompletionId)
@@ -35,34 +33,30 @@ export class ChangeCompletion {
       (task.status !== "completed" || !task.activeCompletionId)
     )
       throw new Error("没有可撤销的完成记录");
-    let command = this.pending.get(task.taskId);
-    if (
-      !command ||
-      command.action !== action ||
-      command.expectedVersion !== (task.version ?? 0) ||
-      command.completionId !== (task.activeCompletionId ?? null)
-    ) {
-      const now = new Date();
-      command = {
-        operationId: crypto.randomUUID(),
-        taskId: task.taskId,
-        planId: task.planId,
-        action,
-        expectedVersion: task.version ?? 0,
-        completionId: task.activeCompletionId ?? null,
-        executionDate: calendarDate(now, timeZone),
-        timeZone,
-        occurredAt: now.toISOString(),
-      };
-      this.pending.set(task.taskId, command);
-    }
-    this.saving.add(task.taskId);
-    try {
-      const result = await this.storage.changeCompletion(command);
-      this.pending.delete(task.taskId);
-      return result;
-    } finally {
-      this.saving.delete(task.taskId);
-    }
+
+    const { result } = await this.commands.execute(
+      task.taskId,
+      (command) =>
+        command.action === action &&
+        command.expectedVersion === (task.version ?? 0) &&
+        command.completionId === (task.activeCompletionId ?? null) &&
+        command.planId === task.planId,
+      () => {
+        const now = new Date();
+        return {
+          operationId: crypto.randomUUID(),
+          taskId: task.taskId,
+          planId: task.planId,
+          action,
+          expectedVersion: task.version ?? 0,
+          completionId: task.activeCompletionId ?? null,
+          executionDate: calendarDate(now, timeZone),
+          timeZone,
+          occurredAt: now.toISOString(),
+        };
+      },
+      (command) => this.storage.changeCompletion(command),
+    );
+    return result;
   }
 }

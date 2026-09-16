@@ -1,3 +1,4 @@
+import { TaskEditor, undoEdit } from "./TaskEditor";
 import { App as NativeApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import {
@@ -12,6 +13,8 @@ import {
   CaptureToday,
   ChangeCompletion,
   type DailyTask,
+  type EditReceipt,
+  validCalendarDate,
 } from "@praxis/application";
 import {
   nativeAvailable,
@@ -39,6 +42,10 @@ export function App() {
   const [day, setDay] = useState(localDay);
   const [recoveryDate, setRecoveryDate] = useState<string | null>(null);
   const displayedDate = recoveryDate ?? day.date;
+  const [lastEdit, setLastEdit] = useState<EditReceipt | null>(null);
+  const [undoing, setUndoing] = useState(false);
+  const [editorRevision, setEditorRevision] = useState(0);
+  const [editBaseline, setEditBaseline] = useState<DailyTask | null>(null);
   const [items, setItems] = useState<DailyTask[]>([]);
   const [title, setTitle] = useState("");
   const pendingDate = todayTasks.pendingDateFor(title, day.timeZone);
@@ -159,6 +166,40 @@ export function App() {
       setChangingId(null);
     }
   }
+
+  async function showEdited(receipt: EditReceipt) {
+    setLastEdit(receipt);
+    const date =
+      receipt.after.status === "completed"
+        ? (receipt.after.completionDate ?? displayedDate)
+        : receipt.after.executionDate;
+    setRecoveryDate(date === localDay().date ? null : date);
+    setNotice("修改已保存到本机");
+    setEditBaseline(receipt.after);
+    setEditorRevision((value) => value + 1);
+    await refresh(date);
+  }
+  async function undoLastEdit() {
+    if (!lastEdit || undoing) return;
+    setUndoing(true);
+    setChangeError("");
+    try {
+      const undone = await undoEdit(lastEdit);
+      await showEdited(undone);
+      setLastEdit(null);
+      setNotice("已撤销修改");
+    } catch (error) {
+      setChangeError(message(error));
+    } finally {
+      setUndoing(false);
+    }
+  }
+  function selectDate(date: string) {
+    if (!validCalendarDate(date)) return;
+    setSelectedId(null);
+    setRecoveryDate(date === localDay().date ? null : date);
+  }
+
   function taskRow(item: DailyTask) {
     return (
       <li
@@ -188,9 +229,10 @@ export function App() {
           className={
             selectedId === item.taskId ? "task-row selected" : "task-row"
           }
-          onClick={() =>
-            setSelectedId(selectedId === item.taskId ? null : item.taskId)
-          }
+          onClick={() => {
+            setEditBaseline(item);
+            setSelectedId(selectedId === item.taskId ? null : item.taskId);
+          }}
           aria-expanded={selectedId === item.taskId}
         >
           {!desktopAvailable && (
@@ -217,7 +259,12 @@ export function App() {
         </a>
         <p className="tagline">Turn intent into action.</p>
         <nav aria-label="主导航">
-          <a className="nav-item active" href="#today" aria-current="page">
+          <a
+            className="nav-item active"
+            href="#today"
+            aria-current="page"
+            onClick={() => selectDate(localDay().date)}
+          >
             <span aria-hidden="true">☀</span>今日
             <span className="nav-shortcut">
               {items.length.toString().padStart(2, "0")}
@@ -247,17 +294,31 @@ export function App() {
           <div className="date-row">
             <span>
               {new Intl.DateTimeFormat("zh-CN", {
-                timeZone: day.timeZone,
+                timeZone: "UTC",
                 month: "long",
                 day: "numeric",
                 weekday: "long",
-              }).format(day.instant)}
+              }).format(new Date(displayedDate + "T12:00:00Z"))}
             </span>
-            <span>{day.instant.getFullYear()}</span>
+            <span>{displayedDate.slice(0, 4)}</span>
           </div>
+
+          {desktopAvailable && (
+            <div className="date-navigation">
+              <label htmlFor="view-date">查看日期</label>
+              <input
+                id="view-date"
+                type="date"
+                value={displayedDate}
+                onChange={(e) => selectDate(e.target.value)}
+              />
+              <button onClick={() => selectDate(localDay().date)}>今天</button>
+            </div>
+          )}
           <p className="eyebrow">A LITTLE PROGRESS, EVERY DAY</p>
           <h1 id="today-title">
-            今天，从一件小事开始<span>。</span>
+            {recoveryDate ? "为这一天，安排下一步" : "今天，从一件小事开始"}
+            <span>。</span>
           </h1>
           <p className="intro">把脑海里的下一步，变成清晰的行动。</p>
           <form
@@ -319,7 +380,7 @@ export function App() {
           )}
           <div className="list-heading">
             <h2>
-              {recoveryDate ? recoveryDate + " · 已保存" : "今日待办"}{" "}
+              {recoveryDate ? recoveryDate + " · 待办" : "今日待办"}{" "}
               <span>{pendingItems.length}</span>
             </h2>
             <span>为今天留一点专注</span>
@@ -353,6 +414,19 @@ export function App() {
             <ul className="task-list">{pendingItems.map(taskRow)}</ul>
           )}
 
+          {lastEdit && (
+            <div className="edit-notice">
+              <span>已修改：{lastEdit.after.title}</span>
+              <button
+                disabled={undoing}
+                onClick={() => {
+                  void undoLastEdit();
+                }}
+              >
+                {undoing ? "撤销中…" : "撤销修改"}
+              </button>
+            </div>
+          )}
           {changeError && (
             <div className="error" role="alert">
               {changeError}
@@ -399,6 +473,17 @@ export function App() {
           </div>
           <span className="detail-tag">临时事项</span>
           <h2>{selected.title}</h2>
+          {desktopAvailable && (
+            <TaskEditor
+              key={selected.taskId + ":" + editorRevision}
+              task={
+                editBaseline?.taskId === selected.taskId
+                  ? editBaseline
+                  : selected
+              }
+              onSaved={showEdited}
+            />
+          )}
           <dl>
             <dt>安排日期</dt>
             <dd>{selected.executionDate}</dd>
