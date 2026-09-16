@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately。
 
-**Status:** ready-for-agent
+**Status:** in-progress — 工程准备通过编译，待确认测试边界后实现离线录入
 
 **Milestone:** M0
 

@@ -1,0 +1,23 @@
+{
+  "name": "praxis",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": ">=22.15.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @praxis/client dev",
+    "build": "pnpm typecheck && pnpm --filter @praxis/client build",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "desktop": "pnpm --filter @praxis/desktop tauri dev",
+    "desktop:build": "pnpm --filter @praxis/desktop tauri build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.2",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.7"
+  }
+}

@@ -1,0 +1,17 @@
+node_modules/
+dist/
+target/
+.tools/
+.pnpm-store/
+.env
+.env.*
+!.env.example
+*.db
+*.db-shm
+*.db-wal
+test-results/
+playwright-report/
+coverage/
+apps/desktop/src-tauri/gen/
+apps/desktop/src-tauri/icons/android/
+apps/desktop/src-tauri/icons/ios/
