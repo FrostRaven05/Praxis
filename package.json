@@ -15,7 +15,8 @@
     "desktop": "pnpm --filter @praxis/desktop tauri dev",
     "desktop:build": "pnpm --filter @praxis/desktop tauri build",
     "test:native": "powershell -NoProfile -File scripts/test-native.ps1",
-    "test:desktop": "node scripts/native-smoke.mjs"
+    "test:desktop": "node scripts/native-smoke.mjs",
+    "desktop:preview": "powershell -NoProfile -File scripts/preview-desktop.ps1"
   },
   "devDependencies": {
     "@capacitor/android": "8.5.2",

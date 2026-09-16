@@ -65,3 +65,7 @@ test:desktop 要先构建上述调试程序。它启动真实 Tauri/WebView2，�
 Ticket 02 已加入 Capacitor 工程与原生 SQLite 适配，尚未完成 APK 构建和真机验收。构建依赖、命令、测试结果及 iOS 范围见 [移动端实施记录](docs/implementation-02.md)。
 
 [桌面编辑、改期与日期查看验收](docs/implementation-desktop-edit.md)
+
+## 直接查看桌面界面
+
+运行 `pnpm desktop:preview`。该命令通过 Tauri 构建内置页面，并将程序复制到独立预览目录后打开，无须启动 Vite。不要直接打开经过 `cargo test` 覆盖的 target/debug 程序；它可能访问未启动的开发服务器。
