@@ -57,3 +57,7 @@ test:desktop 要先构建上述调试程序。它启动真实 Tauri/WebView2，�
 - React 客户端：今日清单、录入与错误反馈。
 - Tauri Rust：窄 IPC 命令、参数校验、SQLite 迁移与原子事务。
 - 本地任务系统：逐条依赖与验收，未实现的功能不提前标记完成。
+
+## Android 开发进度
+
+Ticket 02 已加入 Capacitor 工程与原生 SQLite 适配，尚未完成 APK 构建和真机验收。构建依赖、命令、测试结果及 iOS 范围见 [移动端实施记录](docs/implementation-02.md)。

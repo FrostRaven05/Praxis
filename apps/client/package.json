@@ -8,7 +8,11 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@capacitor-community/sqlite": "8.1.1",
+    "@capacitor/app": "^8.1.1",
+    "@capacitor/core": "8.5.2",
     "@praxis/application": "workspace:*",
+    "@praxis/storage-mobile": "workspace:*",
     "@tauri-apps/api": "^2.11.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"

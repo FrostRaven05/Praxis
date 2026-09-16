@@ -18,6 +18,9 @@
     "test:desktop": "node scripts/native-smoke.mjs"
   },
   "devDependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/cli": "8.5.2",
+    "@capacitor/ios": "8.5.2",
     "@playwright/test": "1.58.2",
     "@types/node": "^22.20.2",
     "prettier": "^3.9.6",

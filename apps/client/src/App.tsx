@@ -1,3 +1,5 @@
+import { App as NativeApp } from "@capacitor/app";
+import { Capacitor } from "@capacitor/core";
 import {
   useCallback,
   useEffect,
@@ -10,9 +12,9 @@ import {
   CaptureToday,
   type DailyTask,
 } from "@praxis/application";
-import { desktopAvailable, desktopStorage } from "./storage";
+import { nativeAvailable, taskStorage } from "./storage";
 
-const todayTasks = new CaptureToday(desktopStorage);
+const todayTasks = new CaptureToday(taskStorage);
 function localDay() {
   const instant = new Date();
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -81,7 +83,13 @@ export function App() {
     };
     const timer = window.setInterval(update, 15_000);
     window.addEventListener("focus", onFocus);
+    const listener = Capacitor.isNativePlatform()
+      ? NativeApp.addListener("appStateChange", ({ isActive }) => {
+          if (isActive) onFocus();
+        })
+      : undefined;
     return () => {
+      void listener?.then((handle) => handle.remove());
       window.clearInterval(timer);
       window.removeEventListener("focus", onFocus);
     };
@@ -144,7 +152,7 @@ export function App() {
             我的工作台 <span className="breadcrumb-separator">/</span> 今日
           </span>
           <span className="local-badge">
-            {desktopAvailable ? "保存在本机" : "浏览器预览"}
+            {nativeAvailable ? "保存在本机" : "浏览器预览"}
           </span>
         </header>
         <div className="today-content">
@@ -187,14 +195,14 @@ export function App() {
               }}
               placeholder="今天，想推进哪件事？"
               autoComplete="off"
-              disabled={saving || !desktopAvailable}
+              disabled={saving || !nativeAvailable}
               aria-invalid={Boolean(saveError)}
               aria-describedby={saveError ? "save-error" : "capture-hint"}
             />
             <button
               className="add-button"
               type="submit"
-              disabled={saving || !desktopAvailable}
+              disabled={saving || !nativeAvailable}
             >
               {saving ? "保存中…" : pendingDate ? "重试保存" : "添加"}
               <span aria-hidden="true">↵</span>
@@ -231,7 +239,7 @@ export function App() {
           {loadError ? (
             <div className="load-error" role="alert">
               <p>{loadError}</p>
-              {desktopAvailable && (
+              {nativeAvailable && (
                 <button
                   onClick={() => {
                     void refresh(displayedDate);

@@ -112,3 +112,32 @@ async fn an_operation_id_cannot_be_reused_to_change_a_committed_capture() {
     assert_eq!(store.pending_operations().await.unwrap().len(), 1);
     store.close().await;
 }
+
+#[tokio::test]
+async fn shared_cross_adapter_capture_contract() {
+    #[derive(serde::Deserialize)]
+    struct Scenario {
+        command: CaptureCommand,
+        success: bool,
+        count: usize,
+    }
+    let cases: Vec<Scenario> = serde_json::from_str(include_str!(
+        "../../../../packages/application/fixtures/capture-storage.json"
+    ))
+    .unwrap();
+    let dir = tempfile::tempdir().unwrap();
+    let store = Store::open(&dir.path().join("contract.db")).await.unwrap();
+    for case in cases {
+        assert_eq!(store.capture(&case.command).await.is_ok(), case.success);
+        assert_eq!(
+            store
+                .list_day(&case.command.execution_date)
+                .await
+                .unwrap()
+                .len(),
+            case.count
+        );
+        assert_eq!(store.pending_operations().await.unwrap().len(), case.count);
+    }
+    store.close().await;
+}

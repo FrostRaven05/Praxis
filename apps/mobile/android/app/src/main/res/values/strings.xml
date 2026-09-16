@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Praxis</string>
+    <string name="title_activity_main">Praxis</string>
+    <string name="package_name">com.praxis.mobile</string>
+    <string name="custom_url_scheme">com.praxis.mobile</string>
+</resources>

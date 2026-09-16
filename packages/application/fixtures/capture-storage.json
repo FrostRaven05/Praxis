@@ -1,0 +1,67 @@
+[
+  {
+    "command": {
+      "operationId": "10000000-0000-4000-8000-000000000001",
+      "taskId": "20000000-0000-4000-8000-000000000001",
+      "planId": "30000000-0000-4000-8000-000000000001",
+      "title": "跨端共享验收",
+      "executionDate": "2026-09-16",
+      "timeZone": "Asia/Hong_Kong",
+      "occurredAt": "2026-09-15T16:01:00.000Z"
+    },
+    "success": true,
+    "count": 1
+  },
+  {
+    "command": {
+      "operationId": "10000000-0000-4000-8000-000000000001",
+      "taskId": "20000000-0000-4000-8000-000000000001",
+      "planId": "30000000-0000-4000-8000-000000000001",
+      "title": "跨端共享验收",
+      "executionDate": "2026-09-16",
+      "timeZone": "Asia/Hong_Kong",
+      "occurredAt": "2026-09-15T16:01:00.000Z"
+    },
+    "success": true,
+    "count": 1
+  },
+  {
+    "command": {
+      "operationId": "10000000-0000-4000-8000-000000000001",
+      "taskId": "20000000-0000-4000-8000-000000000001",
+      "planId": "30000000-0000-4000-8000-000000000001",
+      "title": "不同内容",
+      "executionDate": "2026-09-16",
+      "timeZone": "Asia/Hong_Kong",
+      "occurredAt": "2026-09-15T16:01:00.000Z"
+    },
+    "success": false,
+    "count": 1
+  },
+  {
+    "command": {
+      "operationId": "10000000-0000-4000-8000-000000000002",
+      "taskId": "20000000-0000-4000-8000-000000000002",
+      "planId": "30000000-0000-4000-8000-000000000001",
+      "title": "跨端共享验收",
+      "executionDate": "2026-09-16",
+      "timeZone": "Asia/Hong_Kong",
+      "occurredAt": "2026-09-15T16:01:00.000Z"
+    },
+    "success": false,
+    "count": 1
+  },
+  {
+    "command": {
+      "operationId": "10000000-0000-4000-8000-000000000002",
+      "taskId": "20000000-0000-4000-8000-000000000002",
+      "planId": "30000000-0000-4000-8000-000000000002",
+      "title": "跨端共享验收",
+      "executionDate": "2026-09-16",
+      "timeZone": "Asia/Hong_Kong",
+      "occurredAt": "2026-09-15T16:01:00.000Z"
+    },
+    "success": true,
+    "count": 2
+  }
+]

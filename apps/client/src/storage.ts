@@ -1,3 +1,5 @@
+import { Capacitor } from "@capacitor/core";
+import { mobileStorage } from "../../../packages/storage-mobile/src/native";
 import { invoke, isTauri } from "@tauri-apps/api/core";
 import type {
   CaptureCommand,
@@ -6,6 +8,7 @@ import type {
 } from "@praxis/application";
 
 export const desktopAvailable = isTauri();
+export const nativeAvailable = desktopAvailable || Capacitor.isNativePlatform();
 
 export const desktopStorage: TaskStorage = {
   async capture(command: CaptureCommand): Promise<DailyTask> {
@@ -21,3 +24,7 @@ export const desktopStorage: TaskStorage = {
     return invoke<DailyTask[]>("list_day", { date });
   },
 };
+
+export const taskStorage = Capacitor.isNativePlatform()
+  ? mobileStorage
+  : desktopStorage;

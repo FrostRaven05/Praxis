@@ -539,3 +539,47 @@ a:focus-visible {
   color: #3e563b;
   text-decoration: underline;
 }
+
+@media (max-width: 700px) {
+  .sidebar {
+    display: none;
+  }
+  .today {
+    margin-left: 0;
+    width: 100%;
+  }
+  .workspace {
+    min-height: 100dvh;
+    padding-top: env(safe-area-inset-top);
+  }
+  .topbar {
+    padding: 0 20px;
+    height: 56px;
+  }
+  .today-content {
+    padding: 24px 20px calc(32px + env(safe-area-inset-bottom));
+  }
+  h1 {
+    font-size: 26px;
+  }
+  .capture-form {
+    position: sticky;
+    top: env(safe-area-inset-top);
+    z-index: 2;
+    background: #fcfcf7;
+  }
+  .capture-form input {
+    font-size: 16px;
+    min-width: 0;
+  }
+  button,
+  .task-row {
+    min-height: 44px;
+  }
+  .task-detail {
+    width: 100%;
+    z-index: 3;
+    padding-top: calc(24px + env(safe-area-inset-top));
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+}

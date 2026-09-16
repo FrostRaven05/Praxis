@@ -1,9 +1,9 @@
 {
-  "checkedAt": "2026-09-16T14:10:02.982Z",
+  "checkedAt": "2026-09-16T14:30:39.872Z",
   "platform": "win32",
   "runtime": "Actual Tauri debug executable + WebView2 CDP, not browser mock",
   "network": "External HTTP(S) aborted; system adapter unchanged; native IPC retained",
-  "dataDirectory": "C:\\Project\\01Project\\Praxis\\.tools\\capture-qa-PgmF9Q",
+  "dataDirectory": "C:\\Project\\01Project\\Praxis\\.tools\\capture-qa-u1LCW7",
   "results": [
     "Blank title: rejected with visible message",
     "Native UI → TypeScript use case → Tauri IPC → SQLite: two tasks saved",
