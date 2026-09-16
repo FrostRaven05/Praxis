@@ -524,3 +524,18 @@ a:focus-visible {
     margin-top: 50px;
   }
 }
+.recovery-note {
+  padding: 12px;
+  background: #e9ede2;
+  color: #5b704d;
+  font-size: 12px;
+  border-radius: 6px;
+  line-height: 1.8;
+}
+.recovery-note button {
+  margin-left: 10px;
+  border: 0;
+  background: transparent;
+  color: #3e563b;
+  text-decoration: underline;
+}

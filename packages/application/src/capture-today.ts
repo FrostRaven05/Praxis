@@ -63,6 +63,13 @@ export class CaptureToday {
     }
   }
 
+  pendingDateFor(title: string, timeZone: string): string | undefined {
+    return this.pending?.title === title.trim() &&
+      this.pending.timeZone === timeZone
+      ? this.pending.executionDate
+      : undefined;
+  }
+
   list(date: string): Promise<DailyTask[]> {
     return this.storage.listDay(date);
   }

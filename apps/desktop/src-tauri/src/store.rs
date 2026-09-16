@@ -127,51 +127,41 @@ impl Store {
                     "An operation identifier cannot be reused for different content".to_owned(),
                 );
             }
-            let item = sqlx::query_as::<_, DailyTask>(&format!(
-                "{TASK_PROJECTION} WHERE p.id = ? AND p.owner_id = ?"
-            ))
-            .bind(&command.plan_id)
+        } else {
+            sqlx::query(
+                "INSERT INTO tasks(id, owner_id, title, status, source, created_at)
+            VALUES (?, ?, ?, 'todo', 'temporary', ?)",
+            )
+            .bind(&command.task_id)
             .bind(&self.owner_id)
-            .fetch_one(&mut *tx)
+            .bind(command.title.trim())
+            .bind(&command.occurred_at)
+            .execute(&mut *tx)
             .await
             .map_err(|error| error.to_string())?;
-            tx.commit().await.map_err(|error| error.to_string())?;
-            return Ok(item);
-        }
-
-        sqlx::query(
-            "INSERT INTO tasks(id, owner_id, title, status, source, created_at)
-            VALUES (?, ?, ?, 'todo', 'temporary', ?)",
-        )
-        .bind(&command.task_id)
-        .bind(&self.owner_id)
-        .bind(command.title.trim())
-        .bind(&command.occurred_at)
-        .execute(&mut *tx)
-        .await
-        .map_err(|error| error.to_string())?;
-        sqlx::query("INSERT INTO daily_plan_items(id, owner_id, task_id, execution_date, time_zone, created_at)
+            sqlx::query("INSERT INTO daily_plan_items(id, owner_id, task_id, execution_date, time_zone, created_at)
             VALUES (?, ?, ?, ?, ?, ?)")
             .bind(&command.plan_id).bind(&self.owner_id).bind(&command.task_id)
             .bind(&command.execution_date).bind(&command.time_zone).bind(&command.occurred_at)
             .execute(&mut *tx).await.map_err(|error| error.to_string())?;
-        sqlx::query(
-            "INSERT INTO domain_events(id, owner_id, task_id, kind, occurred_at, payload)
+            sqlx::query(
+                "INSERT INTO domain_events(id, owner_id, task_id, kind, occurred_at, payload)
             VALUES (?, ?, ?, 'task_captured', ?, ?)",
-        )
-        .bind(&command.operation_id)
-        .bind(&self.owner_id)
-        .bind(&command.task_id)
-        .bind(&command.occurred_at)
-        .bind(&payload)
-        .execute(&mut *tx)
-        .await
-        .map_err(|error| error.to_string())?;
-        sqlx::query("INSERT INTO sync_outbox(operation_id, owner_id, device_id, protocol_version, kind, payload, created_at)
+            )
+            .bind(&command.operation_id)
+            .bind(&self.owner_id)
+            .bind(&command.task_id)
+            .bind(&command.occurred_at)
+            .bind(&payload)
+            .execute(&mut *tx)
+            .await
+            .map_err(|error| error.to_string())?;
+            sqlx::query("INSERT INTO sync_outbox(operation_id, owner_id, device_id, protocol_version, kind, payload, created_at)
             VALUES (?, ?, ?, 1, 'capture_task', ?, ?)")
             .bind(&command.operation_id).bind(&self.owner_id).bind(&self.device_id)
             .bind(&payload).bind(&command.occurred_at)
             .execute(&mut *tx).await.map_err(|error| error.to_string())?;
+        }
         let item = sqlx::query_as::<_, DailyTask>(&format!(
             "{TASK_PROJECTION} WHERE p.id = ? AND p.owner_id = ?"
         ))

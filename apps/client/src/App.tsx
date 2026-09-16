@@ -28,8 +28,11 @@ function message(error: unknown): string {
 
 export function App() {
   const [day, setDay] = useState(localDay);
+  const [recoveryDate, setRecoveryDate] = useState<string | null>(null);
+  const displayedDate = recoveryDate ?? day.date;
   const [items, setItems] = useState<DailyTask[]>([]);
   const [title, setTitle] = useState("");
+  const pendingDate = todayTasks.pendingDateFor(title, day.timeZone);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -57,11 +60,11 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    void refresh(day.date);
+    void refresh(displayedDate);
     return () => {
       queryVersion.current += 1;
     };
-  }, [day.date, refresh]);
+  }, [displayedDate, refresh]);
 
   useEffect(() => {
     const update = () => {
@@ -74,7 +77,7 @@ export function App() {
     };
     const onFocus = () => {
       update();
-      void refresh(localDay().date);
+      void refresh(recoveryDate ?? localDay().date);
     };
     const timer = window.setInterval(update, 15_000);
     window.addEventListener("focus", onFocus);
@@ -82,7 +85,7 @@ export function App() {
       window.clearInterval(timer);
       window.removeEventListener("focus", onFocus);
     };
-  }, [refresh]);
+  }, [refresh, recoveryDate]);
 
   async function capture(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -97,7 +100,10 @@ export function App() {
       setTitle("");
       setNotice(`已保存到本机 · ${task.executionDate}`);
       // A refresh failure must not imply that the successful save failed.
-      await refresh(current.date);
+      setRecoveryDate(
+        task.executionDate !== current.date ? task.executionDate : null,
+      );
+      await refresh(task.executionDate);
       inputRef.current?.focus();
     } catch (error) {
       setSaveError(message(error));
@@ -190,12 +196,15 @@ export function App() {
               type="submit"
               disabled={saving || !desktopAvailable}
             >
-              {saving ? "保存中…" : "添加"}
+              {saving ? "保存中…" : pendingDate ? "重试保存" : "添加"}
               <span aria-hidden="true">↵</span>
             </button>
           </form>
           <div className="capture-hint" id="capture-hint">
-            <span>添加至今日 · {day.date}</span>
+            <span>
+              {pendingDate ? "重试原任务" : "添加至今日"} ·{" "}
+              {pendingDate ?? day.date}
+            </span>
             <span>只写标题，就可以开始</span>
           </div>
           {saveError && (
@@ -206,9 +215,16 @@ export function App() {
           <p className="save-notice" role="status">
             {notice || "\u00a0"}
           </p>
+          {recoveryDate && (
+            <div className="recovery-note">
+              刚刚保存至 {recoveryDate}，以下展示该日记录。
+              <button onClick={() => setRecoveryDate(null)}>回到今日</button>
+            </div>
+          )}
           <div className="list-heading">
             <h2>
-              今日待办 <span>{items.length}</span>
+              {recoveryDate ? recoveryDate + " · 已保存" : "今日待办"}{" "}
+              <span>{items.length}</span>
             </h2>
             <span>为今天留一点专注</span>
           </div>
@@ -218,7 +234,7 @@ export function App() {
               {desktopAvailable && (
                 <button
                   onClick={() => {
-                    void refresh(day.date);
+                    void refresh(displayedDate);
                   }}
                 >
                   重新读取
@@ -257,7 +273,9 @@ export function App() {
                     <span className="task-circle" aria-hidden="true" />
                     <span className="task-text">
                       {item.title}
-                      <span className="task-meta">临时事项 · 今天</span>
+                      <span className="task-meta">
+                        临时事项 · {recoveryDate ?? "今天"}
+                      </span>
                     </span>
                     <span className="task-arrow" aria-hidden="true">
                       ↗

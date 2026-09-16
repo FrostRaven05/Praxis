@@ -97,3 +97,22 @@ test("retry after an ambiguous storage error reuses the operation instead of dup
   const saved = await today.add("整理提纲", "Asia/Hong_Kong");
   expect(await today.list(saved.executionDate)).toHaveLength(1);
 });
+
+test("an unresolved capture exposes its original day across midnight instead of silently relabelling it", async () => {
+  const { vi } = await import("vitest");
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date("2026-09-16T15:59:59Z"));
+  try {
+    const today = new CaptureToday(unavailable);
+    await expect(today.add("跨午夜重试", "Asia/Hong_Kong")).rejects.toThrow(
+      "Disk unavailable",
+    );
+    vi.setSystemTime(new Date("2026-09-16T16:00:01Z"));
+    expect(today.pendingDateFor("跨午夜重试", "Asia/Hong_Kong")).toBe(
+      "2026-09-16",
+    );
+    expect(today.pendingDateFor("新的任务", "Asia/Hong_Kong")).toBeUndefined();
+  } finally {
+    vi.useRealTimers();
+  }
+});

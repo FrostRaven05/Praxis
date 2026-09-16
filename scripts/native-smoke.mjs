@@ -1,6 +1,6 @@
 import { chromium, expect } from "@playwright/test";
 import { spawn, execFileSync } from "node:child_process";
-import { mkdir, mkdtemp, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, writeFile, readFile, unlink } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import net from "node:net";
@@ -22,6 +22,7 @@ async function freePort() {
   await new Promise((resolve) => server.close(resolve));
   return port;
 }
+const errors = [];
 async function launch(dataDirectory = data) {
   const port = await freePort();
   const child = spawn(exe, [], {
@@ -65,6 +66,7 @@ async function launch(dataDirectory = data) {
       await delay(250);
     }
     if (!page) throw new Error("Praxis WebView2 page was not found");
+    page.on("pageerror", (error) => errors.push(error.message));
     await page.getByRole("heading", { level: 1 }).waitFor();
     // Block external HTTP(S), leaving Tauri's native localhost IPC available.
     await context.route(/https?:\/\//, (route) => {
@@ -97,8 +99,7 @@ let app;
 const results = [];
 try {
   app = await launch();
-  const errors = [];
-  app.page.on("pageerror", (error) => errors.push(error.message));
+
   await expect(app.page.getByText("留一点空间，给重要的事")).toBeVisible();
   await app.page.getByRole("button", { name: "添加", exact: false }).click();
   await expect(app.page.getByRole("alert")).toHaveText("请填写任务标题");
@@ -148,6 +149,11 @@ try {
   const invalidDirectory = join(data, "not-a-directory");
   await writeFile(invalidDirectory, "fixture");
   app = await launch(invalidDirectory);
+  const beforeMidnight = await app.page.evaluate(() =>
+    new Date(2026, 8, 16, 23, 59, 59).getTime(),
+  );
+  await app.page.clock.install({ time: new Date(beforeMidnight) });
+  await app.page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(
     app.page.getByText("无法打开本机数据库，请检查目录权限和磁盘空间后重试。"),
   ).toBeVisible();
@@ -166,7 +172,44 @@ try {
     "Unavailable database: readable error, draft retained, no false success",
   );
 
+  await app.page.clock.setFixedTime(new Date(beforeMidnight + 2000));
+  await app.page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(app.page.locator(".capture-hint")).toContainText("2026-09-16");
+  await unlink(invalidDirectory);
+  await mkdir(invalidDirectory);
+  await app.page
+    .getByRole("button", { name: "重试保存", exact: false })
+    .click();
+  await expect(app.page.locator(".task-row")).toHaveCount(1);
+  await expect(app.page.locator(".recovery-note")).toContainText("2026-09-16");
+  await app.page.screenshot({
+    path: join(evidence, "desktop-midnight-retry.png"),
+  });
+  await app.page.getByRole("button", { name: "回到今日" }).click();
+  await expect(app.page.locator(".task-row")).toHaveCount(0);
+  results.push(
+    "Across-midnight retry: original day shown with saved task; return to today works",
+  );
+  const diagnosticText = await readFile(
+    join(data, "praxis-qa-logs/storage-errors.jsonl"),
+    "utf8",
+  );
+  const diagnostics = diagnosticText
+    .trim()
+    .split("\n")
+    .map((line) => JSON.parse(line));
+  expect(
+    diagnostics.some((record) => record.operationId && record.stage === "open"),
+  ).toBe(true);
+  expect(diagnosticText).not.toContain("保存失败时保留输入");
+  expect(diagnostics.some((record) => record.category === "filesystem")).toBe(
+    true,
+  );
+  results.push(
+    "Storage diagnostics retain operation ID and error category without task text",
+  );
   expect(errors).toEqual([]);
+
   const report = {
     checkedAt: new Date().toISOString(),
     platform: process.platform,
