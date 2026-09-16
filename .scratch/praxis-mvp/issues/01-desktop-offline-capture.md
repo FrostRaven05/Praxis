@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately。
 
-**Status:** in-progress — 工程准备通过编译，待确认测试边界后实现离线录入
+**Status:** in-progress — 离线录入已实现，正在最终验证与代码审查
 
 **Milestone:** M0
 

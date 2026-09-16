@@ -13,10 +13,14 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "desktop": "pnpm --filter @praxis/desktop tauri dev",
-    "desktop:build": "pnpm --filter @praxis/desktop tauri build"
+    "desktop:build": "pnpm --filter @praxis/desktop tauri build",
+    "test:native": "powershell -NoProfile -File scripts/test-native.ps1",
+    "test:desktop": "node scripts/native-smoke.mjs"
   },
   "devDependencies": {
+    "@playwright/test": "1.58.2",
     "@types/node": "^22.20.2",
+    "prettier": "^3.9.6",
     "typescript": "^5.9.3",
     "vitest": "^3.2.7"
   }

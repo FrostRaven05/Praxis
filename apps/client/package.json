@@ -8,6 +8,7 @@
     "build": "vite build"
   },
   "dependencies": {
+    "@praxis/application": "workspace:*",
     "@tauri-apps/api": "^2.11.1",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"

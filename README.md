@@ -2,7 +2,9 @@
 
 Turn intent into action.
 
-当前实现阶段：Ticket 01 的工程准备。已有 React 今日页面、Tauri 桌面启动入口和项目构建配置；尚未实现任务录入、SQLite 持久化或同步。不可当作可用任务管理版本。
+Ticket 01：桌面离线录入。只输入标题即可加入今天，任务、每日安排、历史事件与待同步操作在一个 SQLite 事务中保存。关闭应用后重新打开仍可读取。
+
+当前只实现录入和查看详情。完成任务、改期、项目、移动端和云同步由后续 Tickets 实现；本轮 outbox 仅保存在本机。
 
 ## 文档与任务
 
@@ -10,41 +12,48 @@ Turn intent into action.
 - [技术路线](TECHNOLOGY.md)
 - [本地 Tickets](.scratch/praxis-mvp/README.md)
 - [当前 Ticket](.scratch/praxis-mvp/issues/01-desktop-offline-capture.md)
-- [实施记录](docs/implementation-01.md)
+- [实施与验证记录](docs/implementation-01.md)
 
-## 前端
+## Windows 桌面开发
 
-使用 Node.js 22.15 或兼容版本，以及 packageManager 声明的 pnpm。
+需要 Node.js 22.15 或兼容版本、packageManager 指定的 pnpm、Rust MSVC 工具链、Visual C++ 构建工具、Windows SDK 和 WebView2。
 
 ```powershell
 pnpm install --frozen-lockfile
-pnpm dev
-pnpm typecheck
-pnpm build
-```
-
-浏览器入口目前仅用于查看页面；没有模拟保存或冒充 SQLite 的浏览器存储。
-
-## Windows 桌面
-
-需要 Rust MSVC 工具链、Visual C++ 构建工具、Windows SDK 和 WebView2。若本机没有 Rust，可依据 Rust 官方说明安装；不要将项目内的本机工具缓存提交到仓库。
-
-本工作区已安装项目内隔离 Rust，可在同一个 PowerShell 会话中初始化构建环境：
-
-```powershell
 . .\scripts\native-env.ps1
 pnpm desktop
 ```
 
-仅检查 Rust 编译：
+本工作区已有隔离 Rust 安装，native-env.ps1 会优先载入；不修改系统 PATH。新设备需先安装自己的 Rust/MSVC 环境。
+
+构建自带前端资源的调试程序：
 
 ```powershell
 . .\scripts\native-env.ps1
-cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml --locked
+pnpm --filter @praxis/desktop exec tauri build --debug --no-bundle
 ```
 
-本轮运行过前端类型检查、生产构建和 Rust 编译检查。尚未运行桌面应用交互验收或业务测试。详见实施记录。
+产物为桌面工程 target/debug/praxis-desktop.exe。当前不生成签名安装包。
 
-## 范围
+正常运行的数据存放在 Tauri 应用数据目录 com.praxis.desktop 下的 praxis.db。只有调试构建允许 PRAXIS_DATA_DIR 覆盖目录，自动验证使用此机制隔离样本。
 
-首个切片将使用户只输入标题就能保存今日临时任务，并通过同一个 SQLite 事务保留 Task、DailyPlanItem、历史与 outbox。后续任务按依赖逐项实现；没有提前接通云端或将 UI 空壳当作完成首版。
+## 验证
+
+```powershell
+pnpm typecheck
+pnpm build
+pnpm test
+pnpm test:native
+pnpm test:desktop
+```
+
+test:desktop 要先构建上述调试程序。它启动真实 Tauri/WebView2，验证录入及进程强制结束后的恢复，只终止自己创建的测试进程；测试记录和截图写入 docs/evidence/ticket-01。外部 HTTP(S) 被测试拦截，系统网络设置不变。
+
+`pnpm dev` 可以查看浏览器预览；预览明确禁用保存，不用浏览器存储冒充 SQLite。
+
+## 结构
+
+- 共享应用包：录入用例、日期规则和存储接口。
+- React 客户端：今日清单、录入与错误反馈。
+- Tauri Rust：窄 IPC 命令、参数校验、SQLite 迁移与原子事务。
+- 本地任务系统：逐条依赖与验收，未实现的功能不提前标记完成。
