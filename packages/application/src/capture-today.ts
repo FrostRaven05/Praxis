@@ -17,7 +17,10 @@ export interface DailyTask {
   executionDate: string;
   createdAt: string;
   projectId: string | null;
-  status: "todo";
+  status: "todo" | "completed";
+  version?: number;
+  activeCompletionId?: string | null;
+  completionDate?: string | null;
   source: "temporary";
 }
 

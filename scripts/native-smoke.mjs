@@ -12,7 +12,10 @@ const exe = join(
 );
 await mkdir(join(root, ".tools"), { recursive: true });
 const data = await mkdtemp(join(root, ".tools", "capture-qa-"));
-const evidence = join(root, "docs/evidence/ticket-01");
+const evidence = join(
+  root,
+  process.env.PRAXIS_EVIDENCE_DIR ?? "docs/evidence/ticket-01",
+);
 await mkdir(evidence, { recursive: true });
 
 async function freePort() {
@@ -127,11 +130,26 @@ try {
     "Native UI → TypeScript use case → Tauri IPC → SQLite: two tasks saved",
   );
   results.push("Detail shows execution date, temporary source and no project");
+
+  await app.page.getByRole("button", { name: "关闭任务详情" }).click();
+  await app.page
+    .getByRole("button", { name: "标为完成", exact: true })
+    .first()
+    .click();
+  await expect(app.page.locator(".completed-section .task-row")).toHaveCount(0);
+  await expect(app.page.locator(".task-row")).toHaveCount(1);
+  await app.page.getByRole("button", { name: /已完成 · 1/ }).click();
+  await expect(app.page.locator(".task-row")).toHaveCount(2);
+  await app.page.screenshot({ path: join(evidence, "desktop-completed.png") });
+  results.push(
+    "Completion persists and completed group can collapse and expand",
+  );
   stop(app.child);
   app = undefined;
   await delay(600);
 
   app = await launch();
+  await app.page.getByRole("button", { name: /已完成 · 1/ }).click();
   await expect(app.page.locator(".task-row")).toHaveCount(2);
   await expect(
     app.page.getByRole("button", { name: /整理文章提纲 · 离线验证/ }),
@@ -144,6 +162,14 @@ try {
     "Abrupt process shutdown and native restart: both tasks recovered",
   );
 
+  await expect(app.page.locator(".completed-section .task-row")).toHaveCount(1);
+  await app.page.getByRole("button", { name: "撤销完成", exact: true }).click();
+  await expect(app.page.locator(".completed-section")).toHaveCount(0);
+  await expect(app.page.locator(".task-row")).toHaveCount(2);
+  await expect(app.page.getByRole("status")).toContainText("已撤销完成");
+  results.push(
+    "After abrupt restart completed task survives; undo restores pending task",
+  );
   stop(app.child);
   app = undefined;
   const invalidDirectory = join(data, "not-a-directory");
@@ -176,7 +202,7 @@ try {
   await app.page.evaluate(() => window.dispatchEvent(new Event("focus")));
   await expect(app.page.locator(".capture-hint")).toContainText("2026-09-16");
   await unlink(invalidDirectory);
-  await mkdir(invalidDirectory);
+  await mkdir(invalidDirectory, { recursive: true });
   await app.page
     .getByRole("button", { name: "重试保存", exact: false })
     .click();
@@ -185,6 +211,25 @@ try {
   await app.page.screenshot({
     path: join(evidence, "desktop-midnight-retry.png"),
   });
+
+  await app.page.getByRole("button", { name: "标为完成", exact: true }).click();
+  await expect(app.page.locator(".recovery-note")).toHaveCount(0);
+  await app.page.getByRole("button", { name: /已完成 · 1/ }).click();
+  await expect(app.page.locator(".completed-section .task-row")).toHaveCount(1);
+  await app.page.locator(".completed-section .task-row").click();
+  await expect(app.page.getByLabel("任务详情", { exact: true })).toContainText(
+    "完成日期",
+  );
+  await expect(app.page.getByLabel("任务详情", { exact: true })).toContainText(
+    "2026-09-17",
+  );
+  await app.page.getByRole("button", { name: "关闭任务详情" }).click();
+  await app.page.getByRole("button", { name: "撤销完成", exact: true }).click();
+  await expect(app.page.locator(".recovery-note")).toContainText("2026-09-16");
+  await expect(app.page.locator(".task-row")).toHaveCount(1);
+  results.push(
+    "Prior-day task completed today appears under actual completion day; undo returns to original plan",
+  );
   await app.page.getByRole("button", { name: "回到今日" }).click();
   await expect(app.page.locator(".task-row")).toHaveCount(0);
   results.push(

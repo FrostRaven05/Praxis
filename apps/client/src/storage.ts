@@ -28,3 +28,11 @@ export const desktopStorage: TaskStorage = {
 export const taskStorage = Capacitor.isNativePlatform()
   ? mobileStorage
   : desktopStorage;
+
+export const completionStorage: import("@praxis/application").CompletionStorage =
+  {
+    async changeCompletion(command) {
+      if (!desktopAvailable) throw new Error("当前设备暂不支持完成操作");
+      return invoke<DailyTask>("change_completion", { command });
+    },
+  };

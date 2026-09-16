@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — 桌面离线录入并保留临时任务。
 
-**Status:** in-progress — 移动实现与宿主测试完成，待 Android 构建和真机验收
+**Status:** paused — 用户要求桌面优先；移动实现与宿主测试保留，Android 构建与真机验收待恢复
 
 **Milestone:** M0
 

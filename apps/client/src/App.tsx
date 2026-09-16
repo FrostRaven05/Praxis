@@ -10,11 +10,18 @@ import {
 import {
   calendarDate,
   CaptureToday,
+  ChangeCompletion,
   type DailyTask,
 } from "@praxis/application";
-import { nativeAvailable, taskStorage } from "./storage";
+import {
+  nativeAvailable,
+  taskStorage,
+  desktopAvailable,
+  completionStorage,
+} from "./storage";
 
 const todayTasks = new CaptureToday(taskStorage);
+const completion = new ChangeCompletion(completionStorage);
 function localDay() {
   const instant = new Date();
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -35,6 +42,11 @@ export function App() {
   const [items, setItems] = useState<DailyTask[]>([]);
   const [title, setTitle] = useState("");
   const pendingDate = todayTasks.pendingDateFor(title, day.timeZone);
+  const [changingId, setChangingId] = useState<string | null>(null);
+  const [changeError, setChangeError] = useState("");
+  const [showCompleted, setShowCompleted] = useState(false);
+  const pendingItems = items.filter((item) => item.status !== "completed");
+  const completedItems = items.filter((item) => item.status === "completed");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState("");
@@ -118,6 +130,82 @@ export function App() {
     } finally {
       setSaving(false);
     }
+  }
+
+  async function changeStatus(item: DailyTask) {
+    if (changingId) return;
+    setChangingId(item.taskId);
+    setChangeError("");
+    try {
+      const updated = await completion.change(
+        item,
+        item.status === "completed" ? "undo" : "complete",
+        localDay().timeZone,
+      );
+      setNotice(
+        item.status === "completed"
+          ? "已撤销完成，任务回到待办"
+          : "已完成，执行记录已保存在本机",
+      );
+      const resultDate =
+        updated.status === "completed"
+          ? (updated.completionDate ?? localDay().date)
+          : updated.executionDate;
+      setRecoveryDate(resultDate !== localDay().date ? resultDate : null);
+      await refresh(resultDate);
+    } catch (error) {
+      setChangeError(message(error));
+    } finally {
+      setChangingId(null);
+    }
+  }
+  function taskRow(item: DailyTask) {
+    return (
+      <li
+        key={item.planId}
+        className={
+          item.status === "completed" ? "task-item completed" : "task-item"
+        }
+      >
+        {desktopAvailable && (
+          <button
+            className="completion-toggle"
+            aria-label={item.status === "completed" ? "撤销完成" : "标为完成"}
+            title={item.title}
+            disabled={changingId !== null}
+            onClick={() => {
+              void changeStatus(item);
+            }}
+          >
+            {changingId === item.taskId
+              ? "…"
+              : item.status === "completed"
+                ? "✓"
+                : "○"}
+          </button>
+        )}
+        <button
+          className={
+            selectedId === item.taskId ? "task-row selected" : "task-row"
+          }
+          onClick={() =>
+            setSelectedId(selectedId === item.taskId ? null : item.taskId)
+          }
+          aria-expanded={selectedId === item.taskId}
+        >
+          {!desktopAvailable && (
+            <span className="task-circle" aria-hidden="true" />
+          )}
+          <span className="task-text">
+            <span className="task-title">{item.title}</span>
+            <span className="task-meta">临时事项 · {item.executionDate}</span>
+          </span>
+          <span className="task-arrow" aria-hidden="true">
+            ↗
+          </span>
+        </button>
+      </li>
+    );
   }
 
   return (
@@ -225,14 +313,14 @@ export function App() {
           </p>
           {recoveryDate && (
             <div className="recovery-note">
-              刚刚保存至 {recoveryDate}，以下展示该日记录。
+              当前查看 {recoveryDate} 的任务记录。
               <button onClick={() => setRecoveryDate(null)}>回到今日</button>
             </div>
           )}
           <div className="list-heading">
             <h2>
               {recoveryDate ? recoveryDate + " · 已保存" : "今日待办"}{" "}
-              <span>{items.length}</span>
+              <span>{pendingItems.length}</span>
             </h2>
             <span>为今天留一点专注</span>
           </div>
@@ -262,36 +350,35 @@ export function App() {
               <p>从一件小事开始，今天就有了方向。</p>
             </div>
           ) : (
-            <ul className="task-list">
-              {items.map((item) => (
-                <li key={item.planId}>
-                  <button
-                    className={
-                      selectedId === item.taskId
-                        ? "task-row selected"
-                        : "task-row"
-                    }
-                    onClick={() =>
-                      setSelectedId(
-                        selectedId === item.taskId ? null : item.taskId,
-                      )
-                    }
-                    aria-expanded={selectedId === item.taskId}
-                  >
-                    <span className="task-circle" aria-hidden="true" />
-                    <span className="task-text">
-                      {item.title}
-                      <span className="task-meta">
-                        临时事项 · {recoveryDate ?? "今天"}
-                      </span>
-                    </span>
-                    <span className="task-arrow" aria-hidden="true">
-                      ↗
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <ul className="task-list">{pendingItems.map(taskRow)}</ul>
+          )}
+
+          {changeError && (
+            <div className="error" role="alert">
+              {changeError}
+              <button
+                onClick={() => {
+                  void refresh(displayedDate);
+                  setChangeError("");
+                }}
+              >
+                重新读取
+              </button>
+            </div>
+          )}
+          {!loading && !loadError && completedItems.length > 0 && (
+            <section className="completed-section" aria-label="已完成任务">
+              <button
+                className="completed-heading"
+                aria-expanded={showCompleted}
+                onClick={() => setShowCompleted(!showCompleted)}
+              >
+                {showCompleted ? "⌄" : "›"} 已完成 · {completedItems.length}
+              </button>
+              {showCompleted && (
+                <ul className="task-list">{completedItems.map(taskRow)}</ul>
+              )}
+            </section>
           )}
           <footer className="content-foot">
             <span>PRAXIS / TODAY</span>
@@ -313,12 +400,18 @@ export function App() {
           <span className="detail-tag">临时事项</span>
           <h2>{selected.title}</h2>
           <dl>
-            <dt>执行日期</dt>
+            <dt>安排日期</dt>
             <dd>{selected.executionDate}</dd>
+            {selected.completionDate && (
+              <>
+                <dt>完成日期</dt>
+                <dd>{selected.completionDate}</dd>
+              </>
+            )}
             <dt>项目</dt>
             <dd>未归属项目</dd>
             <dt>状态</dt>
-            <dd>待办</dd>
+            <dd>{selected.status === "completed" ? "已完成" : "待办"}</dd>
             <dt>保存位置</dt>
             <dd>此设备</dd>
           </dl>

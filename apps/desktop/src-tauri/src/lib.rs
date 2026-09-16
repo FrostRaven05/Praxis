@@ -103,6 +103,26 @@ async fn list_day(
         })
 }
 
+#[tauri::command]
+async fn change_completion(
+    command: store::CompletionCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<DailyTask, String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .change_completion(&command)
+        .await
+        .map_err(|error| {
+            database.record_error("completion", Some(&command.operation_id), &error);
+            if error == "STATE_CONFLICT" {
+                "任务状态已变化，请重新读取列表后再操作。".to_owned()
+            } else {
+                "未能确认状态更新，请重试；重复操作不会重复记录。".to_owned()
+            }
+        })
+}
+
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
@@ -128,7 +148,11 @@ pub fn run() {
             });
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![capture_task, list_day])
+        .invoke_handler(tauri::generate_handler![
+            capture_task,
+            list_day,
+            change_completion
+        ])
         .run(tauri::generate_context!())
         .expect("Praxis could not start");
 }

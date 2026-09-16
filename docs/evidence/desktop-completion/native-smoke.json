@@ -1,0 +1,20 @@
+{
+  "checkedAt": "2026-09-16T14:46:00.806Z",
+  "platform": "win32",
+  "runtime": "Actual Tauri debug executable + WebView2 CDP, not browser mock",
+  "network": "External HTTP(S) aborted; system adapter unchanged; native IPC retained",
+  "dataDirectory": "C:\\Project\\01Project\\Praxis\\.tools\\capture-qa-6ANDft",
+  "results": [
+    "Blank title: rejected with visible message",
+    "Native UI → TypeScript use case → Tauri IPC → SQLite: two tasks saved",
+    "Detail shows execution date, temporary source and no project",
+    "Completion persists and completed group can collapse and expand",
+    "Abrupt process shutdown and native restart: both tasks recovered",
+    "After abrupt restart completed task survives; undo restores pending task",
+    "Unavailable database: readable error, draft retained, no false success",
+    "Prior-day task completed today appears under actual completion day; undo returns to original plan",
+    "Across-midnight retry: original day shown with saved task; return to today works",
+    "Storage diagnostics retain operation ID and error category without task text"
+  ],
+  "pageErrors": []
+}
