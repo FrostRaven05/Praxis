@@ -115,7 +115,7 @@ try {
   await expect(
     app.page.getByRole("button", { name: /整理文章提纲 · 离线验证/ }),
   ).toBeVisible();
-  await expect(app.page.getByRole("status")).toContainText("已保存到本机");
+  await expect(app.page.locator(".save-notice")).toContainText("已保存到本机");
   await app.page.getByLabel("任务标题", { exact: true }).fill("为明天留下一步");
   await app.page.getByLabel("任务标题", { exact: true }).press("Enter");
   await expect(app.page.locator(".task-row")).toHaveCount(2);
@@ -166,7 +166,7 @@ try {
   await app.page.getByRole("button", { name: "撤销完成", exact: true }).click();
   await expect(app.page.locator(".completed-section")).toHaveCount(0);
   await expect(app.page.locator(".task-row")).toHaveCount(2);
-  await expect(app.page.getByRole("status")).toContainText("已撤销完成");
+  await expect(app.page.locator(".save-notice")).toContainText("已撤销完成");
   results.push(
     "After abrupt restart completed task survives; undo restores pending task",
   );
@@ -241,6 +241,79 @@ try {
   results.push(
     "Edited title and rescheduled date survive abrupt native restart",
   );
+
+  const planned = app.page
+    .locator(".task-item")
+    .filter({ hasText: "重启后保留编辑" });
+  await planned.getByRole("button", { name: "设为重点", exact: true }).click();
+  await expect(app.page.locator(".focus-section .task-row")).toHaveCount(1);
+  await planned.getByLabel("预计投入分钟", { exact: true }).fill("45");
+  await planned.getByRole("button", { name: "保存估时", exact: true }).click();
+  await expect(app.page.getByLabel("每日负载", { exact: true })).toContainText(
+    "已安排预计 45 分钟",
+  );
+  await app.page.getByLabel("可用时长（分钟）", { exact: true }).fill("30");
+  await app.page.getByRole("button", { name: "保存容量", exact: true }).click();
+  await expect(app.page.getByLabel("每日负载", { exact: true })).toContainText(
+    "已超出可用时长 15 分钟",
+  );
+  await expect(app.page.locator(".task-row")).toHaveCount(1);
+  results.push(
+    "Focus grouping, estimate and capacity persist; overload warns without removing tasks",
+  );
+  await app.page.keyboard.press("Control+Shift+N");
+  await expect(
+    app.page.getByRole("heading", { name: "先记下来，稍后安排。" }),
+  ).toBeVisible();
+  await app.page
+    .getByLabel("收件箱任务标题", { exact: true })
+    .fill("从收件箱安排的任务");
+  await app.page
+    .getByRole("button", { name: "存入收件箱", exact: true })
+    .click();
+  await expect(app.page.locator(".inbox-row")).toHaveCount(1);
+  await app.page.getByLabel("安排到", { exact: true }).fill("2030-01-15");
+  await app.page.getByRole("button", { name: "安排任务", exact: true }).click();
+  await expect(app.page.locator(".task-row")).toHaveCount(2);
+  const scheduled = app.page
+    .locator(".task-item")
+    .filter({ hasText: "从收件箱安排的任务" });
+  await scheduled
+    .getByRole("button", { name: "设为重点", exact: true })
+    .click();
+  await expect(app.page.locator(".focus-section .task-row")).toHaveCount(2);
+  await scheduled
+    .getByRole("button", { name: "重点上移", exact: true })
+    .click();
+  await expect(
+    app.page.locator(".focus-section .task-row").first(),
+  ).toContainText("从收件箱安排的任务");
+  await scheduled
+    .getByRole("button", { name: "取消重点", exact: true })
+    .click();
+  await expect(app.page.locator(".focus-section .task-row")).toHaveCount(1);
+  await expect(app.page.locator(".task-row")).toHaveCount(2);
+  await expect(app.page.getByLabel("每日负载", { exact: true })).toContainText(
+    "1 项待估时",
+  );
+  await app.page.screenshot({ path: join(evidence, "desktop-planning.png") });
+  results.push(
+    "Global shortcut captures unscheduled inbox task; explicit scheduling, focus reorder and cancellation avoid duplicates",
+  );
+  stop(app.child);
+  app = await launch();
+  await app.page.getByLabel("查看日期", { exact: true }).fill("2030-01-15");
+  await expect(app.page.locator(".focus-section .task-row")).toHaveCount(1);
+  await expect(app.page.locator(".task-row")).toHaveCount(2);
+  await expect(app.page.getByLabel("每日负载", { exact: true })).toContainText(
+    "已超出可用时长 15 分钟",
+  );
+  await expect(app.page.getByLabel("每日负载", { exact: true })).toContainText(
+    "1 项待估时",
+  );
+  results.push(
+    "Focus, estimates, capacity and assigned inbox task survive native restart",
+  );
   stop(app.child);
   app = undefined;
   const invalidDirectory = join(data, "not-a-directory");
@@ -251,9 +324,7 @@ try {
   );
   await app.page.clock.install({ time: new Date(beforeMidnight) });
   await app.page.evaluate(() => window.dispatchEvent(new Event("focus")));
-  await expect(
-    app.page.getByText("无法打开本机数据库，请检查目录权限和磁盘空间后重试。"),
-  ).toBeVisible();
+  await expect(app.page.locator(".load-error")).toBeVisible();
   await app.page
     .getByLabel("任务标题", { exact: true })
     .fill("保存失败时保留输入");
@@ -264,7 +335,9 @@ try {
   await expect(app.page.getByLabel("任务标题", { exact: true })).toHaveValue(
     "保存失败时保留输入",
   );
-  await expect(app.page.getByRole("status")).not.toContainText("已保存到本机");
+  await expect(app.page.locator(".save-notice")).not.toContainText(
+    "已保存到本机",
+  );
   results.push(
     "Unavailable database: readable error, draft retained, no false success",
   );

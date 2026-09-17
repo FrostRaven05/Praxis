@@ -1,3 +1,7 @@
+mod inbox;
+pub use inbox::{InboxCommand, InboxTask, ScheduleCommand};
+mod planning;
+pub use planning::{CapacityCommand, DayLoad, PlanChange, PlanCommand};
 mod edit;
 pub use edit::EditTaskCommand;
 use std::{path::Path, time::Duration};
@@ -39,6 +43,9 @@ pub struct DailyTask {
     pub active_completion_id: Option<String>,
     pub completion_date: Option<String>,
     pub source: String,
+    pub is_focus: bool,
+    pub focus_rank: i64,
+    pub estimated_minutes: Option<i64>,
 }
 
 #[derive(Debug, Serialize, FromRow)]
@@ -94,7 +101,7 @@ pub struct Store {
 }
 
 const TASK_PROJECTION: &str = "SELECT t.id AS task_id, p.id AS plan_id, t.title,
-    p.execution_date, t.created_at, t.project_id, t.status, t.source, t.version, t.active_completion_id,
+    p.execution_date, p.is_focus,p.focus_rank,p.estimated_minutes, t.created_at, t.project_id, t.status, t.source, t.version, t.active_completion_id,
     (SELECT execution_date FROM execution_records e WHERE e.id=t.active_completion_id AND e.revoked_at IS NULL) AS completion_date
     FROM tasks t JOIN daily_plan_items p ON p.task_id = t.id AND p.owner_id = t.owner_id";
 

@@ -146,6 +146,85 @@ async fn edit_task(
             }
         })
 }
+
+fn planning_error(db: &LocalDatabase, stage: &str, id: Option<&str>, error: String) -> String {
+    db.record_error(stage, id, &error);
+    if error == "STATE_CONFLICT" {
+        "安排已发生变化，请刷新后重试。".into()
+    } else {
+        "未能确认操作结果，请重试；相同操作不会重复保存。".into()
+    }
+}
+#[tauri::command]
+async fn update_plan(
+    command: store::PlanCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .update_plan(&command)
+        .await
+        .map_err(|e| planning_error(&database, "plan", Some(&command.operation_id), e))
+}
+#[tauri::command]
+async fn set_capacity(
+    command: store::CapacityCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .set_capacity(&command)
+        .await
+        .map_err(|e| planning_error(&database, "capacity", Some(&command.operation_id), e))
+}
+#[tauri::command]
+async fn day_load(
+    date: String,
+    database: State<'_, LocalDatabase>,
+) -> Result<store::DayLoad, String> {
+    database
+        .get(None)
+        .await?
+        .day_load(&date)
+        .await
+        .map_err(|e| planning_error(&database, "load", None, e))
+}
+#[tauri::command]
+async fn capture_inbox(
+    command: store::InboxCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .capture_inbox(&command)
+        .await
+        .map_err(|e| planning_error(&database, "inbox", Some(&command.operation_id), e))
+}
+#[tauri::command]
+async fn list_inbox(database: State<'_, LocalDatabase>) -> Result<Vec<store::InboxTask>, String> {
+    database
+        .get(None)
+        .await?
+        .list_inbox()
+        .await
+        .map_err(|e| planning_error(&database, "inbox-list", None, e))
+}
+#[tauri::command]
+async fn schedule_task(
+    command: store::ScheduleCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .schedule_task(&command)
+        .await
+        .map_err(|e| planning_error(&database, "schedule", Some(&command.operation_id), e))
+}
+
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
@@ -175,7 +254,13 @@ pub fn run() {
             capture_task,
             list_day,
             change_completion,
-            edit_task
+            edit_task,
+            update_plan,
+            set_capacity,
+            day_load,
+            capture_inbox,
+            list_inbox,
+            schedule_task
         ])
         .run(tauri::generate_context!())
         .expect("Praxis could not start");

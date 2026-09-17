@@ -1,3 +1,6 @@
+import { InboxView } from "./InboxView";
+import { PlanningPanel, planning } from "./PlanningPanel";
+import { PlanControls } from "./PlanControls";
 import { TaskEditor, undoEdit } from "./TaskEditor";
 import { App as NativeApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
@@ -15,6 +18,10 @@ import {
   type DailyTask,
   type EditReceipt,
   validCalendarDate,
+  orderedFocus,
+  preparePlanChange,
+  moveFocusChanges,
+  type PlanChange,
 } from "@praxis/application";
 import {
   nativeAvailable,
@@ -39,6 +46,9 @@ function message(error: unknown): string {
 }
 
 export function App() {
+  const [view, setView] = useState<"day" | "inbox">("day");
+  const [planRevision, setPlanRevision] = useState(0);
+  const [planningBusy, setPlanningBusy] = useState(false);
   const [day, setDay] = useState(localDay);
   const [recoveryDate, setRecoveryDate] = useState<string | null>(null);
   const displayedDate = recoveryDate ?? day.date;
@@ -52,7 +62,10 @@ export function App() {
   const [changingId, setChangingId] = useState<string | null>(null);
   const [changeError, setChangeError] = useState("");
   const [showCompleted, setShowCompleted] = useState(false);
-  const pendingItems = items.filter((item) => item.status !== "completed");
+  const pendingItems = items.filter(
+    (item) => item.status !== "completed" && !item.isFocus,
+  );
+  const focusItems = orderedFocus(items);
   const completedItems = items.filter((item) => item.status === "completed");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -71,6 +84,7 @@ export function App() {
       const tasks = await todayTasks.list(date);
       if (version === queryVersion.current) {
         setItems(tasks);
+        setPlanRevision((value) => value + 1);
         setLoadError("");
       }
     } catch (error) {
@@ -114,6 +128,46 @@ export function App() {
     };
   }, [refresh, recoveryDate]);
 
+  function openInbox() {
+    setSelectedId(null);
+    setView("inbox");
+  }
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (
+        desktopAvailable &&
+        event.ctrlKey &&
+        event.shiftKey &&
+        event.key.toLowerCase() === "n"
+      ) {
+        event.preventDefault();
+        setSelectedId(null);
+        setView("inbox");
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+  async function updatePlanning(changes: PlanChange[]) {
+    if (planningBusy) return;
+    setPlanningBusy(true);
+    setChangeError("");
+    try {
+      await planning.update(displayedDate, changes);
+      await refresh(displayedDate);
+    } catch (error) {
+      setChangeError(message(error));
+    } finally {
+      setPlanningBusy(false);
+    }
+  }
+  async function savePlan(change: PlanChange) {
+    await updatePlanning([preparePlanChange(items, change)]);
+  }
+  function moveFocus(task: DailyTask, direction: number) {
+    const changes = moveFocusChanges(items, task.planId, direction);
+    if (changes.length) void updatePlanning(changes);
+  }
   async function capture(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (saving) return;
@@ -197,6 +251,7 @@ export function App() {
   function selectDate(date: string) {
     if (!validCalendarDate(date)) return;
     setSelectedId(null);
+    setView("day");
     setRecoveryDate(date === localDay().date ? null : date);
   }
 
@@ -213,7 +268,7 @@ export function App() {
             className="completion-toggle"
             aria-label={item.status === "completed" ? "撤销完成" : "标为完成"}
             title={item.title}
-            disabled={changingId !== null}
+            disabled={changingId !== null || planningBusy}
             onClick={() => {
               void changeStatus(item);
             }}
@@ -246,6 +301,20 @@ export function App() {
             ↗
           </span>
         </button>
+        {desktopAvailable && item.status !== "completed" && (
+          <PlanControls
+            key={item.planId + ":" + item.version}
+            task={item}
+            busy={planningBusy || changingId !== null}
+            onChange={savePlan}
+            onMove={(direction) => moveFocus(item, direction)}
+            canUp={focusItems.findIndex((t) => t.planId === item.planId) > 0}
+            canDown={
+              focusItems.findIndex((t) => t.planId === item.planId) <
+              focusItems.length - 1
+            }
+          />
+        )}
       </li>
     );
   }
@@ -260,7 +329,7 @@ export function App() {
         <p className="tagline">Turn intent into action.</p>
         <nav aria-label="主导航">
           <a
-            className="nav-item active"
+            className={view === "day" ? "nav-item active" : "nav-item"}
             href="#today"
             aria-current="page"
             onClick={() => selectDate(localDay().date)}
@@ -270,6 +339,14 @@ export function App() {
               {items.length.toString().padStart(2, "0")}
             </span>
           </a>
+          {desktopAvailable && (
+            <button
+              className={view === "inbox" ? "nav-item active" : "nav-item"}
+              onClick={openInbox}
+            >
+              收件箱 <span className="nav-shortcut">Ctrl ⇧ N</span>
+            </button>
+          )}
         </nav>
         <div className="sidebar-note">
           <span>一步一步，</span>
@@ -281,186 +358,218 @@ export function App() {
           本地工作空间
         </div>
       </aside>
-      <section className="today" id="today" aria-labelledby="today-title">
-        <header className="topbar">
-          <span>
-            我的工作台 <span className="breadcrumb-separator">/</span> 今日
-          </span>
-          <span className="local-badge">
-            {nativeAvailable ? "保存在本机" : "浏览器预览"}
-          </span>
-        </header>
-        <div className="today-content">
-          <div className="date-row">
+      {view === "inbox" ? (
+        <InboxView
+          onScheduled={(date) => {
+            setView("day");
+            selectDate(date);
+            void refresh(date);
+          }}
+        />
+      ) : (
+        <section className="today" id="today" aria-labelledby="today-title">
+          <header className="topbar">
             <span>
-              {new Intl.DateTimeFormat("zh-CN", {
-                timeZone: "UTC",
-                month: "long",
-                day: "numeric",
-                weekday: "long",
-              }).format(new Date(displayedDate + "T12:00:00Z"))}
+              我的工作台 <span className="breadcrumb-separator">/</span> 今日
             </span>
-            <span>{displayedDate.slice(0, 4)}</span>
-          </div>
+            <span className="local-badge">
+              {nativeAvailable ? "保存在本机" : "浏览器预览"}
+            </span>
+          </header>
+          <div className="today-content">
+            <div className="date-row">
+              <span>
+                {new Intl.DateTimeFormat("zh-CN", {
+                  timeZone: "UTC",
+                  month: "long",
+                  day: "numeric",
+                  weekday: "long",
+                }).format(new Date(displayedDate + "T12:00:00Z"))}
+              </span>
+              <span>{displayedDate.slice(0, 4)}</span>
+            </div>
 
-          {desktopAvailable && (
-            <div className="date-navigation">
-              <label htmlFor="view-date">查看日期</label>
-              <input
-                id="view-date"
-                type="date"
-                value={displayedDate}
-                onChange={(e) => selectDate(e.target.value)}
-              />
-              <button onClick={() => selectDate(localDay().date)}>今天</button>
-            </div>
-          )}
-          <p className="eyebrow">A LITTLE PROGRESS, EVERY DAY</p>
-          <h1 id="today-title">
-            {recoveryDate ? "为这一天，安排下一步" : "今天，从一件小事开始"}
-            <span>。</span>
-          </h1>
-          <p className="intro">把脑海里的下一步，变成清晰的行动。</p>
-          <form
-            className="capture-form"
-            onSubmit={(event) => {
-              void capture(event);
-            }}
-            aria-label="添加今日任务"
-          >
-            <span className="add-symbol" aria-hidden="true">
-              ＋
-            </span>
-            <label className="sr-only" htmlFor="task-title">
-              任务标题
-            </label>
-            <input
-              ref={inputRef}
-              id="task-title"
-              value={title}
-              onChange={(event) => {
-                setTitle(event.target.value);
-                setSaveError("");
+            {desktopAvailable && (
+              <div className="date-navigation">
+                <label htmlFor="view-date">查看日期</label>
+                <input
+                  id="view-date"
+                  type="date"
+                  value={displayedDate}
+                  onChange={(e) => selectDate(e.target.value)}
+                />
+                <button onClick={() => selectDate(localDay().date)}>
+                  今天
+                </button>
+              </div>
+            )}
+            <p className="eyebrow">A LITTLE PROGRESS, EVERY DAY</p>
+            <h1 id="today-title">
+              {recoveryDate ? "为这一天，安排下一步" : "今天，从一件小事开始"}
+              <span>。</span>
+            </h1>
+            <p className="intro">把脑海里的下一步，变成清晰的行动。</p>
+            <form
+              className="capture-form"
+              onSubmit={(event) => {
+                void capture(event);
               }}
-              placeholder="今天，想推进哪件事？"
-              autoComplete="off"
-              disabled={saving || !nativeAvailable}
-              aria-invalid={Boolean(saveError)}
-              aria-describedby={saveError ? "save-error" : "capture-hint"}
-            />
-            <button
-              className="add-button"
-              type="submit"
-              disabled={saving || !nativeAvailable}
+              aria-label="添加今日任务"
             >
-              {saving ? "保存中…" : pendingDate ? "重试保存" : "添加"}
-              <span aria-hidden="true">↵</span>
-            </button>
-          </form>
-          <div className="capture-hint" id="capture-hint">
-            <span>
-              {pendingDate ? "重试原任务" : "添加至今日"} ·{" "}
-              {pendingDate ?? day.date}
-            </span>
-            <span>只写标题，就可以开始</span>
-          </div>
-          {saveError && (
-            <p className="error" id="save-error" role="alert">
-              {saveError}
-            </p>
-          )}
-          <p className="save-notice" role="status">
-            {notice || "\u00a0"}
-          </p>
-          {recoveryDate && (
-            <div className="recovery-note">
-              当前查看 {recoveryDate} 的任务记录。
-              <button onClick={() => setRecoveryDate(null)}>回到今日</button>
+              <span className="add-symbol" aria-hidden="true">
+                ＋
+              </span>
+              <label className="sr-only" htmlFor="task-title">
+                任务标题
+              </label>
+              <input
+                ref={inputRef}
+                id="task-title"
+                value={title}
+                onChange={(event) => {
+                  setTitle(event.target.value);
+                  setSaveError("");
+                }}
+                placeholder="今天，想推进哪件事？"
+                autoComplete="off"
+                disabled={saving || !nativeAvailable}
+                aria-invalid={Boolean(saveError)}
+                aria-describedby={saveError ? "save-error" : "capture-hint"}
+              />
+              <button
+                className="add-button"
+                type="submit"
+                disabled={saving || !nativeAvailable}
+              >
+                {saving ? "保存中…" : pendingDate ? "重试保存" : "添加"}
+                <span aria-hidden="true">↵</span>
+              </button>
+            </form>
+            <div className="capture-hint" id="capture-hint">
+              <span>
+                {pendingDate ? "重试原任务" : "添加至今日"} ·{" "}
+                {pendingDate ?? day.date}
+              </span>
+              <span>只写标题，就可以开始</span>
             </div>
-          )}
-          <div className="list-heading">
-            <h2>
-              {recoveryDate ? recoveryDate + " · 待办" : "今日待办"}{" "}
-              <span>{pendingItems.length}</span>
-            </h2>
-            <span>为今天留一点专注</span>
-          </div>
-          {loadError ? (
-            <div className="load-error" role="alert">
-              <p>{loadError}</p>
-              {nativeAvailable && (
+            {saveError && (
+              <p className="error" id="save-error" role="alert">
+                {saveError}
+              </p>
+            )}
+            <p className="save-notice" role="status">
+              {notice || "\u00a0"}
+            </p>
+            {recoveryDate && (
+              <div className="recovery-note">
+                当前查看 {recoveryDate} 的任务记录。
+                <button onClick={() => setRecoveryDate(null)}>回到今日</button>
+              </div>
+            )}
+
+            {desktopAvailable && (
+              <PlanningPanel
+                key={displayedDate}
+                date={displayedDate}
+                revision={planRevision}
+              />
+            )}
+            {!loading && !loadError && focusItems.length > 0 && (
+              <section className="focus-section" aria-label="今日重点">
+                <div className="list-heading">
+                  <h2>
+                    {recoveryDate ? "当日重点" : "今日重点"}{" "}
+                    <span>{focusItems.length}</span>
+                  </h2>
+                  <span>建议聚焦 1–3 项</span>
+                </div>
+                <ul className="task-list">{focusItems.map(taskRow)}</ul>
+              </section>
+            )}
+            <div className="list-heading">
+              <h2>
+                {recoveryDate ? recoveryDate + " · 待办" : "今日待办"}{" "}
+                <span>{pendingItems.length}</span>
+              </h2>
+              <span>为今天留一点专注</span>
+            </div>
+            {loadError ? (
+              <div className="load-error" role="alert">
+                <p>{loadError}</p>
+                {nativeAvailable && (
+                  <button
+                    onClick={() => {
+                      void refresh(displayedDate);
+                    }}
+                  >
+                    重新读取
+                  </button>
+                )}
+              </div>
+            ) : loading ? (
+              <p className="loading" role="status">
+                正在读取本机任务…
+              </p>
+            ) : items.length === 0 ? (
+              <div className="empty-state">
+                <span className="empty-icon" aria-hidden="true">
+                  ↗
+                </span>
+                <h2>留一点空间，给重要的事</h2>
+                <p>从一件小事开始，今天就有了方向。</p>
+              </div>
+            ) : (
+              <ul className="task-list">{pendingItems.map(taskRow)}</ul>
+            )}
+
+            {lastEdit && (
+              <div className="edit-notice">
+                <span>已修改：{lastEdit.after.title}</span>
+                <button
+                  disabled={undoing}
+                  onClick={() => {
+                    void undoLastEdit();
+                  }}
+                >
+                  {undoing ? "撤销中…" : "撤销修改"}
+                </button>
+              </div>
+            )}
+            {changeError && (
+              <div className="error" role="alert">
+                {changeError}
                 <button
                   onClick={() => {
                     void refresh(displayedDate);
+                    setChangeError("");
                   }}
                 >
                   重新读取
                 </button>
-              )}
-            </div>
-          ) : loading ? (
-            <p className="loading" role="status">
-              正在读取本机任务…
-            </p>
-          ) : items.length === 0 ? (
-            <div className="empty-state">
-              <span className="empty-icon" aria-hidden="true">
-                ↗
-              </span>
-              <h2>留一点空间，给重要的事</h2>
-              <p>从一件小事开始，今天就有了方向。</p>
-            </div>
-          ) : (
-            <ul className="task-list">{pendingItems.map(taskRow)}</ul>
-          )}
-
-          {lastEdit && (
-            <div className="edit-notice">
-              <span>已修改：{lastEdit.after.title}</span>
-              <button
-                disabled={undoing}
-                onClick={() => {
-                  void undoLastEdit();
-                }}
-              >
-                {undoing ? "撤销中…" : "撤销修改"}
-              </button>
-            </div>
-          )}
-          {changeError && (
-            <div className="error" role="alert">
-              {changeError}
-              <button
-                onClick={() => {
-                  void refresh(displayedDate);
-                  setChangeError("");
-                }}
-              >
-                重新读取
-              </button>
-            </div>
-          )}
-          {!loading && !loadError && completedItems.length > 0 && (
-            <section className="completed-section" aria-label="已完成任务">
-              <button
-                className="completed-heading"
-                aria-expanded={showCompleted}
-                onClick={() => setShowCompleted(!showCompleted)}
-              >
-                {showCompleted ? "⌄" : "›"} 已完成 · {completedItems.length}
-              </button>
-              {showCompleted && (
-                <ul className="task-list">{completedItems.map(taskRow)}</ul>
-              )}
-            </section>
-          )}
-          <footer className="content-foot">
-            <span>PRAXIS / TODAY</span>
-            <span>想法，正在成为行动。</span>
-          </footer>
-        </div>
-      </section>
-      {selected && (
+              </div>
+            )}
+            {!loading && !loadError && completedItems.length > 0 && (
+              <section className="completed-section" aria-label="已完成任务">
+                <button
+                  className="completed-heading"
+                  aria-expanded={showCompleted}
+                  onClick={() => setShowCompleted(!showCompleted)}
+                >
+                  {showCompleted ? "⌄" : "›"} 已完成 · {completedItems.length}
+                </button>
+                {showCompleted && (
+                  <ul className="task-list">{completedItems.map(taskRow)}</ul>
+                )}
+              </section>
+            )}
+            <footer className="content-foot">
+              <span>PRAXIS / TODAY</span>
+              <span>想法，正在成为行动。</span>
+            </footer>
+          </div>
+        </section>
+      )}
+      {selected && view === "day" && (
         <aside className="task-detail" aria-label="任务详情">
           <div className="detail-heading">
             <span>任务详情</span>

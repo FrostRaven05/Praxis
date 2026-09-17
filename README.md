@@ -4,14 +4,14 @@ Turn intent into action.
 
 Ticket 01：桌面离线录入。只输入标题即可加入今天，任务、每日安排、历史事件与待同步操作在一个 SQLite 事务中保存。关闭应用后重新打开仍可读取。
 
-桌面已支持录入、详情编辑、日期查看、改期、完成与撤销；已完成默认折叠，按实际完成日期显示。当前优先完善桌面，重点、估时、收件箱、项目及云同步继续按 Tickets 实现；outbox 仅保存在本机。
+桌面已支持录入、详情编辑、日期查看、改期、完成与撤销；已完成默认折叠，按实际完成日期显示。已支持每日重点排序、估时、容量提醒及收件箱；项目及云同步继续按 Tickets 实现；outbox 仅保存在本机。
 
 ## 文档与任务
 
 - [产品需求](Spec.md)
 - [技术路线](TECHNOLOGY.md)
 - [本地 Tickets](.scratch/praxis-mvp/README.md)
-- [当前桌面切片](.scratch/praxis-mvp/issues/D02-desktop-edit-reschedule.md)
+- [当前桌面切片](.scratch/praxis-mvp/issues/D03-desktop-focus-inbox.md)
 - [桌面优先实施顺序](docs/desktop-first.md)
 - [完成与撤销验证记录](docs/implementation-desktop-completion.md)
 - [实施与验证记录](docs/implementation-01.md)

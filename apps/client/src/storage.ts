@@ -43,3 +43,12 @@ export const editStorage: import("@praxis/application").EditStorage = {
     return invoke<DailyTask>("edit_task", { command });
   },
 };
+
+export const planningStorage: import("@praxis/application").PlanningStorage = {
+  updatePlan: (command) => invoke("update_plan", { command }),
+  dayLoad: (date) => invoke("day_load", { date }),
+  setCapacity: (command) => invoke("set_capacity", { command }),
+  captureInbox: (command) => invoke("capture_inbox", { command }),
+  listInbox: () => invoke("list_inbox"),
+  scheduleTask: (command) => invoke("schedule_task", { command }),
+};

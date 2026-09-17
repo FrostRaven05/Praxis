@@ -19,6 +19,9 @@ export interface DailyTask {
   projectId: string | null;
   status: "todo" | "completed";
   version?: number;
+  isFocus?: boolean;
+  focusRank?: number;
+  estimatedMinutes?: number | null;
   activeCompletionId?: string | null;
   completionDate?: string | null;
   source: "temporary";
