@@ -932,3 +932,96 @@ button:disabled {
 .project-layout {
   align-items: start;
 }
+
+.desktop-shell {
+  height: 100dvh;
+  overflow: hidden;
+  padding-top: 32px;
+}
+.desktop-shell .workspace {
+  height: calc(100dvh - 32px);
+  overflow: auto;
+  min-height: calc(100vh - 32px);
+}
+.desktop-shell .sidebar,
+.desktop-shell .task-detail {
+  top: 32px;
+}
+.window-titlebar {
+  position: fixed;
+  inset: 0 0 auto;
+  height: 32px;
+  z-index: 1000;
+  display: flex;
+  background: #f6f5f1;
+  user-select: none;
+}
+.window-drag-region {
+  flex: 1;
+  min-width: 0;
+  background: linear-gradient(
+    to right,
+    #eeeee7 0,
+    #eeeee7 238px,
+    #f6f5f1 238px
+  );
+}
+.window-controls {
+  display: flex;
+  height: 32px;
+}
+.window-controls button {
+  min-height: 32px;
+  width: 46px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: #383838;
+}
+.window-controls svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1;
+  pointer-events: none;
+}
+.window-controls button:hover {
+  background: #deded9;
+}
+.window-controls button:active {
+  background: #cecec9;
+}
+.window-controls .window-close:hover {
+  color: white;
+  background: #c42b1c;
+}
+.window-controls .window-close:active {
+  background: #a52317;
+}
+.window-controls button:focus-visible {
+  outline: 2px solid #6b8059;
+  outline-offset: -3px;
+}
+.window-error {
+  position: absolute;
+  right: 8px;
+  top: 32px;
+  padding: 8px 12px;
+  background: #fff1ec;
+  border: 1px solid #bd7767;
+  font-size: 12px;
+}
+
+@media (max-width: 700px) {
+  .window-drag-region {
+    background: #f6f5f1;
+  }
+  .desktop-shell .capture-form {
+    top: 32px;
+  }
+}

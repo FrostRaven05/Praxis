@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-09-17T13:55:34.780Z",
+  "runtime": "Actual Tauri/WebView2",
+  "results": [
+    "Native decorations disabled; custom titlebar visible",
+    "Maximize and restore update actual window state",
+    "Drag-region double-click invokes native maximize",
+    "Minimize changes actual window state",
+    "Close exits the QA process"
+  ],
+  "pageErrors": []
+}

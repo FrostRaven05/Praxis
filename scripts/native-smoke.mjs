@@ -111,6 +111,40 @@ let app;
 const results = [];
 try {
   app = await launch();
+  const windowState = (cmd) =>
+    app.page.evaluate(
+      (cmd) => window.__TAURI_INTERNALS__.invoke("plugin:window|" + cmd),
+      cmd,
+    );
+  await expect(
+    app.page.getByLabel("窗口标题栏", { exact: true }),
+  ).toBeVisible();
+  await expect.poll(() => windowState("is_decorated")).toBe(false);
+  results.push("Custom titlebar replaces native decorations");
+  await app.page.setViewportSize({ width: 680, height: 600 });
+  for (const button of await app.page
+    .locator(".window-controls button")
+    .all()) {
+    expect((await button.boundingBox()).height).toBe(32);
+  }
+  await app.page.setViewportSize({ width: 1160, height: 800 });
+  results.push("Titlebar buttons stay within 32px at minimum desktop width");
+
+  await app.page
+    .getByRole("button", { name: "最大化窗口", exact: true })
+    .click();
+  await expect.poll(() => windowState("is_maximized")).toBe(true);
+  await app.page.getByRole("button", { name: "还原窗口", exact: true }).click();
+  await expect.poll(() => windowState("is_maximized")).toBe(false);
+  results.push("Titlebar maximize and restore update native window state");
+  await app.page
+    .locator(".window-drag-region")
+    .dispatchEvent("mousedown", { button: 0, detail: 2 });
+  await expect.poll(() => windowState("is_maximized")).toBe(true);
+  await app.page.getByRole("button", { name: "还原窗口", exact: true }).click();
+  await expect.poll(() => windowState("is_maximized")).toBe(false);
+  results.push("Titlebar double-click invokes native maximize");
+  await app.page.screenshot({ path: join(evidence, "desktop-titlebar.png") });
 
   await expect(app.page.getByText("留一点空间，给重要的事")).toBeVisible();
   await app.page.getByRole("button", { name: "添加", exact: false }).click();
@@ -553,6 +587,19 @@ try {
   results.push(
     "Storage diagnostics retain operation ID and error category without task text",
   );
+
+  await app.page
+    .getByRole("button", { name: "最小化窗口", exact: true })
+    .click();
+  await expect.poll(() => windowState("is_minimized")).toBe(true);
+  results.push("Titlebar minimize updates native window state");
+  await app.page
+    .getByRole("button", { name: "关闭窗口", exact: true })
+    .evaluate((button) => button.click());
+  await expect
+    .poll(() => app.child.exitCode, { timeout: 10000 })
+    .not.toBeNull();
+  results.push("Titlebar close exits only the QA application");
   expect(errors).toEqual([]);
 
   const report = {
