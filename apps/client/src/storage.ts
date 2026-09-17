@@ -52,3 +52,11 @@ export const planningStorage: import("@praxis/application").PlanningStorage = {
   listInbox: () => invoke("list_inbox"),
   scheduleTask: (command) => invoke("schedule_task", { command }),
 };
+
+export const projectStorage: import("@praxis/application").ProjectStorage = {
+  listProjects: () => invoke("list_projects"),
+  projectTasks: (projectId) => invoke("project_tasks", { projectId }),
+  saveProject: (command) => invoke("save_project", { command }),
+  addProjectTasks: (command) => invoke("add_project_tasks", { command }),
+  assignProject: (command) => invoke("assign_project", { command }),
+};

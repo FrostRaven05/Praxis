@@ -4,14 +4,14 @@ Turn intent into action.
 
 Ticket 01：桌面离线录入。只输入标题即可加入今天，任务、每日安排、历史事件与待同步操作在一个 SQLite 事务中保存。关闭应用后重新打开仍可读取。
 
-桌面已支持录入、详情编辑、日期查看、改期、完成与撤销；已完成默认折叠，按实际完成日期显示。已支持每日重点排序、估时、容量提醒及收件箱；项目及云同步继续按 Tickets 实现；outbox 仅保存在本机。
+桌面已支持录入、详情编辑、日期查看、改期、完成与撤销；已完成默认折叠，按实际完成日期显示。已支持每日重点排序、估时、容量提醒及收件箱；已支持项目基本信息、批量任务、临时任务归属和项目任务加入今日；完整项目功能及云同步继续按 Tickets 实现；outbox 仅保存在本机。
 
 ## 文档与任务
 
 - [产品需求](Spec.md)
 - [技术路线](TECHNOLOGY.md)
 - [本地 Tickets](.scratch/praxis-mvp/README.md)
-- [当前桌面切片](.scratch/praxis-mvp/issues/D03-desktop-focus-inbox.md)
+- [当前桌面切片](.scratch/praxis-mvp/issues/D04-desktop-projects.md)
 - [桌面优先实施顺序](docs/desktop-first.md)
 - [完成与撤销验证记录](docs/implementation-desktop-completion.md)
 - [实施与验证记录](docs/implementation-01.md)
@@ -69,3 +69,5 @@ Ticket 02 已加入 Capacitor 工程与原生 SQLite 适配，尚未完成 APK �
 ## 直接查看桌面界面
 
 运行 `pnpm desktop:preview`。该命令通过 Tauri 构建内置页面，并将程序复制到独立预览目录后打开，无须启动 Vite。不要直接打开经过 `cargo test` 覆盖的 target/debug 程序；它可能访问未启动的开发服务器。
+
+[桌面项目管理验收](docs/implementation-desktop-projects.md)

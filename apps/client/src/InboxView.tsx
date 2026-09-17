@@ -1,3 +1,4 @@
+import { ProjectAssignment } from "./ProjectAssignment";
 import { useEffect, useState } from "react";
 import { calendarDate, type InboxTask } from "@praxis/application";
 import { planningStorage } from "./storage";
@@ -99,7 +100,10 @@ export function InboxView({
         <ul className="task-list">
           {tasks.map((task) => (
             <li className="inbox-row" key={task.taskId}>
-              <span>{task.title}</span>
+              <div>
+                <span>{task.title}</span>
+                <ProjectAssignment task={task} onAssigned={refresh} />
+              </div>
               <button
                 disabled={busy}
                 onClick={() => {

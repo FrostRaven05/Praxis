@@ -1,3 +1,8 @@
+mod projects;
+pub use projects::{
+    AddProjectTasksCommand, AssignProjectCommand, NewProjectTask, Project, ProjectTask,
+    SaveProjectCommand,
+};
 mod inbox;
 pub use inbox::{InboxCommand, InboxTask, ScheduleCommand};
 mod planning;

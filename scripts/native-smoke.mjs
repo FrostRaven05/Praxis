@@ -92,10 +92,19 @@ async function launch(dataDirectory = data) {
 function stop(child) {
   // Kill only the process tree created by this test, simulating an abrupt shutdown.
   if (child.pid && child.exitCode === null) {
-    execFileSync("taskkill", ["/PID", String(child.pid), "/T", "/F"], {
-      windowsHide: true,
-      stdio: "ignore",
-    });
+    try {
+      execFileSync("taskkill", ["/PID", String(child.pid), "/T", "/F"], {
+        windowsHide: true,
+        stdio: "ignore",
+      });
+    } catch (error) {
+      try {
+        process.kill(child.pid, 0);
+      } catch (probe) {
+        if (probe.code === "ESRCH") return;
+      }
+      throw error;
+    }
   }
 }
 let app;
@@ -314,6 +323,153 @@ try {
   results.push(
     "Focus, estimates, capacity and assigned inbox task survive native restart",
   );
+
+  await app.page.getByRole("button", { name: "项目", exact: true }).click();
+  await app.page.getByRole("button", { name: "新建项目", exact: true }).click();
+  await app.page.getByRole("button", { name: "保存项目", exact: true }).click();
+  await expect(app.page.getByRole("alert")).toContainText("请填写项目名称");
+  await app.page.getByLabel("项目名称", { exact: true }).fill("上线报名网站");
+  await app.page
+    .getByLabel("预期结果", { exact: true })
+    .fill("访客可以完成报名");
+  await app.page
+    .getByLabel("目标日期（可选）", { exact: true })
+    .fill("2030-02-01");
+  await app.page.getByLabel("项目优先级", { exact: true }).selectOption("2");
+  await app.page.getByRole("button", { name: "保存项目", exact: true }).click();
+  await expect(app.page.locator(".project-heading")).toContainText(
+    "上线报名网站",
+  );
+  await app.page
+    .getByLabel("拆成可以行动的任务")
+    .fill("设计报名页面\n实现报名接口");
+  await app.page
+    .getByRole("button", { name: "添加项目任务", exact: true })
+    .click();
+  await expect(app.page.locator(".project-tasks .inbox-row")).toHaveCount(2);
+  const projectRow = app.page
+    .locator(".project-tasks .inbox-row")
+    .filter({ hasText: "设计报名页面" });
+  await projectRow
+    .getByRole("button", { name: "加入今日", exact: true })
+    .click();
+  await projectRow
+    .getByRole("button", { name: "查看安排", exact: true })
+    .click();
+  await app.page.getByRole("button", { name: /设计报名页面/ }).click();
+  await app.page
+    .getByLabel("编辑任务标题", { exact: true })
+    .fill("报名页面已设计");
+  await app.page.getByRole("button", { name: "保存修改", exact: true }).click();
+  await expect(
+    app.page.getByLabel("编辑任务标题", { exact: true }),
+  ).toHaveValue("报名页面已设计");
+  await app.page.getByRole("button", { name: "关闭任务详情" }).click();
+  await app.page
+    .locator(".task-item")
+    .filter({ hasText: "报名页面已设计" })
+    .getByRole("button", { name: "标为完成", exact: true })
+    .click();
+  await app.page.getByRole("button", { name: "项目", exact: true }).click();
+  await app.page
+    .locator(".project-card")
+    .filter({ hasText: "上线报名网站" })
+    .click();
+  await expect(
+    app.page
+      .locator(".project-tasks .inbox-row")
+      .filter({ hasText: "报名页面已设计" }),
+  ).toContainText("已完成");
+  await app.page.getByRole("button", { name: "编辑项目", exact: true }).click();
+  await app.page
+    .getByLabel("预期结果", { exact: true })
+    .fill("访客可以完成报名并收到确认");
+  await app.page.getByRole("button", { name: "保存项目", exact: true }).click();
+  await expect(app.page.locator(".project-outcome")).toContainText("收到确认");
+  results.push(
+    "Project creation, batch tasks and daily scheduling preserve shared edits and completion across views",
+  );
+
+  await app.page.getByRole("link", { name: /今日/ }).click();
+  await app.page.getByLabel("查看日期", { exact: true }).fill("2030-01-15");
+  await app.page.getByRole("button", { name: /重启后保留编辑/ }).click();
+  await app.page
+    .getByLabel("归入项目", { exact: true })
+    .selectOption({ label: "上线报名网站" });
+  await app.page.getByRole("button", { name: "归入项目", exact: true }).click();
+  await expect(app.page.getByLabel("任务详情", { exact: true })).toContainText(
+    "所属项目：上线报名网站",
+  );
+  await app.page
+    .getByLabel("编辑任务标题", { exact: true })
+    .fill("归属后立即编辑");
+  await app.page.getByRole("button", { name: "保存修改", exact: true }).click();
+  await expect(
+    app.page.locator(".task-row").filter({ hasText: "归属后立即编辑" }),
+  ).toHaveCount(1);
+  await app.page.getByRole("button", { name: "关闭任务详情" }).click();
+  await app.page
+    .locator(".task-item")
+    .filter({ hasText: "归属后立即编辑" })
+    .getByRole("button", { name: "标为完成", exact: true })
+    .click();
+  await expect(
+    app.page.locator(".task-row").filter({ hasText: "归属后立即编辑" }),
+  ).toHaveCount(0);
+  await app.page.getByRole("button", { name: "项目", exact: true }).click();
+  await app.page
+    .locator(".project-card")
+    .filter({ hasText: "上线报名网站" })
+    .click();
+  await app.page
+    .locator(".project-tasks .inbox-row")
+    .filter({ hasText: "归属后立即编辑" })
+    .getByRole("button", { name: "查看完成记录", exact: true })
+    .click();
+  await app.page.getByRole("button", { name: /已完成/ }).click();
+  await expect(app.page.locator(".completed-section")).toContainText(
+    "归属后立即编辑",
+  );
+  results.push(
+    "Assigning a daily task refreshes the editor version; cross-day completion opens the actual completion day",
+  );
+
+  await app.page.keyboard.press("Control+Shift+N");
+  await app.page
+    .getByLabel("收件箱任务标题", { exact: true })
+    .fill("补充报名说明");
+  await app.page
+    .getByRole("button", { name: "存入收件箱", exact: true })
+    .click();
+  const inboxProject = app.page
+    .locator(".inbox-row")
+    .filter({ hasText: "补充报名说明" });
+  await inboxProject
+    .getByLabel("归入项目", { exact: true })
+    .selectOption({ label: "上线报名网站" });
+  await inboxProject
+    .getByRole("button", { name: "归入项目", exact: true })
+    .click();
+  await expect(inboxProject).toHaveCount(0);
+  stop(app.child);
+  app = await launch();
+  await app.page.getByRole("button", { name: "项目", exact: true }).click();
+  await app.page
+    .locator(".project-card")
+    .filter({ hasText: "上线报名网站" })
+    .click();
+  await expect(app.page.locator(".project-tasks .inbox-row")).toHaveCount(4);
+  await expect(app.page.locator(".project-outcome")).toContainText("收到确认");
+  await expect(
+    app.page
+      .locator(".project-tasks .inbox-row")
+      .filter({ hasText: "补充报名说明" }),
+  ).toContainText("尚未安排");
+  await app.page.screenshot({ path: join(evidence, "desktop-projects.png") });
+  results.push(
+    "Inbox assignment retains the original task; project fields, batch tasks and membership survive abrupt restart",
+  );
+
   stop(app.child);
   app = undefined;
   const invalidDirectory = join(data, "not-a-directory");
@@ -414,6 +570,10 @@ try {
     JSON.stringify(report, null, 2) + "\n",
   );
   console.log(JSON.stringify(report, null, 2));
+} catch (error) {
+  console.error("Native checks completed before failure:", results);
+  console.error(error);
+  throw error;
 } finally {
   if (app) stop(app.child);
 }

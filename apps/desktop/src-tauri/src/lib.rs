@@ -225,6 +225,74 @@ async fn schedule_task(
         .map_err(|e| planning_error(&database, "schedule", Some(&command.operation_id), e))
 }
 
+#[tauri::command]
+async fn save_project(
+    command: store::SaveProjectCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .save_project(&command)
+        .await
+        .map_err(|e| planning_error(&database, "save_project", Some(&command.operation_id), e))
+}
+
+#[tauri::command]
+async fn add_project_tasks(
+    command: store::AddProjectTasksCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .add_project_tasks(&command)
+        .await
+        .map_err(|e| {
+            planning_error(
+                &database,
+                "add_project_tasks",
+                Some(&command.operation_id),
+                e,
+            )
+        })
+}
+
+#[tauri::command]
+async fn assign_project(
+    command: store::AssignProjectCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .assign_project(&command)
+        .await
+        .map_err(|e| planning_error(&database, "assign_project", Some(&command.operation_id), e))
+}
+
+#[tauri::command]
+async fn list_projects(database: State<'_, LocalDatabase>) -> Result<Vec<store::Project>, String> {
+    database
+        .get(None)
+        .await?
+        .list_projects()
+        .await
+        .map_err(|e| planning_error(&database, "projects", None, e))
+}
+#[tauri::command]
+async fn project_tasks(
+    project_id: String,
+    database: State<'_, LocalDatabase>,
+) -> Result<Vec<store::ProjectTask>, String> {
+    database
+        .get(None)
+        .await?
+        .project_tasks(&project_id)
+        .await
+        .map_err(|e| planning_error(&database, "project-tasks", None, e))
+}
+
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
@@ -260,7 +328,12 @@ pub fn run() {
             day_load,
             capture_inbox,
             list_inbox,
-            schedule_task
+            schedule_task,
+            save_project,
+            add_project_tasks,
+            assign_project,
+            list_projects,
+            project_tasks
         ])
         .run(tauri::generate_context!())
         .expect("Praxis could not start");

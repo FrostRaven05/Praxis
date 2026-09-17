@@ -188,3 +188,5 @@
 ## 实施状态
 
 Ticket 01 已完成：Windows 桌面离线录入、原子持久化、失败重试与重启恢复均通过验证。Ticket 02 已实现移动适配与 Android 工程，宿主测试通过，等待构建环境和真机验收；其余状态以 issues 中的记录为准。
+
+已完成 [D03 重点、估时与收件箱](issues/D03-desktop-focus-inbox.md)、[D04 项目基本管理](issues/D04-desktop-projects.md)。原 10/12 的完整业务字段、移动与同步验收仍以各 Ticket 为准。

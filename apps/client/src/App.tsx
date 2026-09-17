@@ -1,3 +1,5 @@
+import { ProjectsView } from "./ProjectsView";
+import { ProjectAssignment } from "./ProjectAssignment";
 import { InboxView } from "./InboxView";
 import { PlanningPanel, planning } from "./PlanningPanel";
 import { PlanControls } from "./PlanControls";
@@ -46,7 +48,7 @@ function message(error: unknown): string {
 }
 
 export function App() {
-  const [view, setView] = useState<"day" | "inbox">("day");
+  const [view, setView] = useState<"day" | "inbox" | "projects">("day");
   const [planRevision, setPlanRevision] = useState(0);
   const [planningBusy, setPlanningBusy] = useState(false);
   const [day, setDay] = useState(localDay);
@@ -86,6 +88,7 @@ export function App() {
         setItems(tasks);
         setPlanRevision((value) => value + 1);
         setLoadError("");
+        return tasks;
       }
     } catch (error) {
       if (version === queryVersion.current) setLoadError(message(error));
@@ -295,7 +298,9 @@ export function App() {
           )}
           <span className="task-text">
             <span className="task-title">{item.title}</span>
-            <span className="task-meta">临时事项 · {item.executionDate}</span>
+            <span className="task-meta">
+              {item.projectId ? "项目任务" : "临时事项"} · {item.executionDate}
+            </span>
           </span>
           <span className="task-arrow" aria-hidden="true">
             ↗
@@ -347,6 +352,17 @@ export function App() {
               收件箱 <span className="nav-shortcut">Ctrl ⇧ N</span>
             </button>
           )}
+          {desktopAvailable && (
+            <button
+              className={view === "projects" ? "nav-item active" : "nav-item"}
+              onClick={() => {
+                setSelectedId(null);
+                setView("projects");
+              }}
+            >
+              项目
+            </button>
+          )}
         </nav>
         <div className="sidebar-note">
           <span>一步一步，</span>
@@ -358,7 +374,14 @@ export function App() {
           本地工作空间
         </div>
       </aside>
-      {view === "inbox" ? (
+      {view === "projects" ? (
+        <ProjectsView
+          onDay={(date) => {
+            selectDate(date);
+            void refresh(date);
+          }}
+        />
+      ) : view === "inbox" ? (
         <InboxView
           onScheduled={(date) => {
             setView("day");
@@ -580,7 +603,9 @@ export function App() {
               ×
             </button>
           </div>
-          <span className="detail-tag">临时事项</span>
+          <span className="detail-tag">
+            {selected.projectId ? "项目任务" : "临时事项"}
+          </span>
           <h2>{selected.title}</h2>
           {desktopAvailable && (
             <TaskEditor
@@ -593,6 +618,20 @@ export function App() {
               onSaved={showEdited}
             />
           )}
+          {desktopAvailable && (
+            <ProjectAssignment
+              key={"project:" + selected.taskId + ":" + selected.version}
+              task={selected}
+              onAssigned={async () => {
+                const rows = await refresh(displayedDate);
+                const current = rows?.find((t) => t.taskId === selected.taskId);
+                if (current) {
+                  setEditBaseline(current);
+                  setEditorRevision((n) => n + 1);
+                }
+              }}
+            />
+          )}
           <dl>
             <dt>安排日期</dt>
             <dd>{selected.executionDate}</dd>
@@ -603,7 +642,7 @@ export function App() {
               </>
             )}
             <dt>项目</dt>
-            <dd>未归属项目</dd>
+            <dd>{selected.projectId ? "已归属项目" : "未归属项目"}</dd>
             <dt>状态</dt>
             <dd>{selected.status === "completed" ? "已完成" : "待办"}</dd>
             <dt>保存位置</dt>

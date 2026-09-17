@@ -68,7 +68,7 @@ impl Store {
         Ok(())
     }
     pub async fn list_inbox(&self) -> StoreResult<Vec<InboxTask>> {
-        sqlx::query_as("SELECT t.id AS task_id,t.title,t.version,t.created_at FROM tasks t WHERE t.owner_id=? AND t.status='todo' AND NOT EXISTS(SELECT 1 FROM daily_plan_items p WHERE p.owner_id=t.owner_id AND p.task_id=t.id) ORDER BY t.created_at,t.id")
+        sqlx::query_as("SELECT t.id AS task_id,t.title,t.version,t.created_at FROM tasks t WHERE t.owner_id=? AND t.status='todo' AND t.project_id IS NULL AND NOT EXISTS(SELECT 1 FROM daily_plan_items p WHERE p.owner_id=t.owner_id AND p.task_id=t.id) ORDER BY t.created_at,t.id")
  .bind(&self.owner_id).fetch_all(&self.pool).await.map_err(|e|e.to_string())
     }
     pub async fn schedule_task(&self, c: &ScheduleCommand) -> StoreResult<()> {
