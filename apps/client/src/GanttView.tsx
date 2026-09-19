@@ -325,7 +325,7 @@ export function GanttView({
               markerHeight="6"
               orient="auto-start-reverse"
             >
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="#98a08d" />
+              <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--text-secondary)" />
             </marker>
           </defs>
           {Array.from({ length: days }, (_, i) => {
@@ -337,13 +337,13 @@ export function GanttView({
                   x2={label + i * unit}
                   y1={30}
                   y2={tree.length * rowHeight + 50}
-                  stroke="#e6e7df"
+                  stroke="var(--line)"
                 />
                 <text
                   x={label + i * unit + 4}
                   y={20}
                   fontSize={11}
-                  fill="#78816f"
+                  fill="var(--text-secondary)"
                 >
                   {d.slice(5)}
                 </text>
@@ -358,7 +358,7 @@ export function GanttView({
                   x2={label + daysBetween(anchor, today) * unit}
                   y1={27}
                   y2={tree.length * rowHeight + 50}
-                  stroke="#b86c49"
+                  stroke="var(--primary)"
                   strokeWidth={2}
                 />
                 <title>今日 {today}</title>
@@ -376,13 +376,13 @@ export function GanttView({
                   x2={label + days * unit}
                   y1={i * rowHeight + 76}
                   y2={i * rowHeight + 76}
-                  stroke="#ecece4"
+                  stroke="var(--line)"
                 />
                 <text
                   x={8 + Math.min(t.depth, 5) * 10}
                   y={i * rowHeight + 56}
                   fontSize={12}
-                  fill="#374d3e"
+                  fill="var(--text-primary)"
                   onClick={() => !t.hasChildren && edit(t.taskId)}
                   style={{ cursor: t.hasChildren ? "default" : "pointer" }}
                 >
@@ -406,10 +406,10 @@ export function GanttView({
                     rx={4}
                     fill={
                       t.hasChildren
-                        ? "#a9b19e"
+                        ? "var(--text-secondary)"
                         : t.status === "completed"
-                          ? "#a4b68c"
-                          : "#496750"
+                          ? "var(--success-text)"
+                          : "var(--primary)"
                     }
                     style={{
                       cursor: t.hasChildren ? "default" : "grab",
@@ -475,7 +475,7 @@ export function GanttView({
                   key={e.taskId + id}
                   d={`M ${x1} ${y1} H ${x1 + 8} V ${y2} H ${x2}`}
                   fill="none"
-                  stroke="#98a08d"
+                  stroke="var(--text-secondary)"
                   markerEnd="url(#dependency-arrow)"
                   pointerEvents="none"
                 />

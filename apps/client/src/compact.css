@@ -1,12 +1,4 @@
 /* Compact workspace: keep content readable and controls at least 32px high. */
-:root {
-  --surface: #fff;
-  --surface-secondary: #f9f9f9;
-  --text-primary: #242b27;
-  --text-secondary: #667069;
-  --line: #e5e8e5;
-  --accent: #365342;
-}
 .workspace {
   background: var(--surface);
   color: var(--text-primary);
@@ -222,7 +214,7 @@
   background: var(--surface-secondary);
 }
 summary:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 .empty-state {

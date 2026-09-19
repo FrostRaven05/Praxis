@@ -1,0 +1,55 @@
+/* DESIGN.md is the source of truth. Theme values live only here. */
+:root {
+  color-scheme: light;
+  --font-ui: "HarmonyOS Sans SC", "Segoe UI", "Microsoft YaHei", sans-serif;
+  --font-data: ui-monospace, "Cascadia Code", Consolas, monospace;
+  --primary: #8b7355;
+  --primary-hover: #7a6548;
+  --primary-dark: #c9a86c;
+  --primary-dark-hover: #d9b87c;
+  --on-primary: #ffffff;
+  --on-primary-inverse: #111111;
+  --surface: #ffffff;
+  --surface-secondary: #f9f9f9;
+  --surface-tertiary: #f0f0f0;
+  --surface-hover: #ececec;
+  --surface-card: #f7f7f8;
+  --text-primary: #0d0d0d;
+  --text-secondary: #6e6e80;
+  --text-tertiary: #8e8ea0;
+  --success: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+  --sidebar-surface: var(--surface-secondary);
+  --line: color-mix(in srgb, var(--text-secondary) 24%, var(--surface));
+  --selected: color-mix(in srgb, var(--primary) 12%, var(--surface));
+  --focus-ring: color-mix(in srgb, var(--primary) 25%, transparent);
+  --warning-surface: color-mix(in srgb, var(--warning) 12%, var(--surface));
+  --danger-surface: color-mix(in srgb, var(--danger) 10%, var(--surface));
+  --success-text: color-mix(in srgb, var(--success) 52%, var(--text-primary));
+  --warning-text: color-mix(in srgb, var(--warning) 45%, var(--text-primary));
+  --danger-text: color-mix(in srgb, var(--danger) 70%, var(--text-primary));
+  --shadow-color: color-mix(in srgb, var(--text-primary) 12%, transparent);
+  --backdrop: color-mix(in srgb, var(--text-primary) 35%, transparent);
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-dialog: 16px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --primary: var(--primary-dark);
+    --primary-hover: var(--primary-dark-hover);
+    --on-primary: var(--on-primary-inverse);
+    --surface: #212121;
+    --surface-secondary: #2f2f2f;
+    --surface-tertiary: #383838;
+    --surface-hover: #383838;
+    --surface-card: #2f2f2f;
+    --sidebar-surface: #171717;
+    --text-primary: #ececec;
+    --text-secondary: #b4b4b4;
+    --text-tertiary: #676767;
+  }
+}

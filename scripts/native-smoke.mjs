@@ -147,6 +147,50 @@ try {
   await app.page.getByRole("button", { name: "还原窗口", exact: true }).click();
   await expect.poll(() => windowState("is_maximized")).toBe(false);
   results.push("Titlebar double-click invokes native maximize");
+  await app.page.emulateMedia({ colorScheme: "light" });
+  await expect(app.page.locator(".add-button")).toHaveCSS(
+    "background-color",
+    "rgb(139, 115, 85)",
+  );
+  await expect(app.page.locator(".workspace")).toHaveCSS(
+    "background-color",
+    "rgb(255, 255, 255)",
+  );
+  await expect(app.page.locator("#task-title")).toHaveCSS(
+    "font-family",
+    /HarmonyOS Sans SC/,
+  );
+  await app.page.locator("#task-title").focus();
+  await expect(app.page.locator(".capture-form")).toHaveCSS(
+    "border-top-color",
+    "rgb(139, 115, 85)",
+  );
+  await expect(app.page.locator(".nav-shortcut").first()).toHaveCSS(
+    "color",
+    "rgb(110, 110, 128)",
+  );
+  await expect(app.page.locator(".window-controls button").first()).toHaveCSS(
+    "color",
+    "rgb(13, 13, 13)",
+  );
+  await app.page.emulateMedia({ colorScheme: "dark" });
+  await expect(app.page.locator(".workspace")).toHaveCSS(
+    "background-color",
+    "rgb(33, 33, 33)",
+  );
+  await expect(app.page.locator(".add-button")).toHaveCSS(
+    "background-color",
+    "rgb(201, 168, 108)",
+  );
+  await expect(app.page.locator(".nav-shortcut").first()).toHaveCSS(
+    "color",
+    "rgb(180, 180, 180)",
+  );
+  await app.page.screenshot({ path: join(evidence, "desktop-dark.png") });
+  await app.page.emulateMedia({ colorScheme: "light" });
+  results.push(
+    "DESIGN palette, preferred font, focus treatment and system dark theme match native computed styles",
+  );
   await app.page.screenshot({ path: join(evidence, "desktop-titlebar.png") });
 
   await expect(app.page.getByText("暂无任务")).toBeVisible();
@@ -303,6 +347,16 @@ try {
     .filter({ hasText: "重启后保留编辑" });
   await planned.getByRole("button", { name: "设为重点", exact: true }).click();
   await expect(app.page.locator(".focus-section .task-row")).toHaveCount(1);
+  await expect(
+    planned.getByRole("button", { name: "取消重点", exact: true }),
+  ).toHaveCSS("padding-left", "0px");
+  await expect(
+    planned.getByRole("button", { name: "取消重点", exact: true }),
+  ).toHaveCSS("color", "rgb(139, 115, 85)");
+  await planned.getByRole("button", { name: "取消重点", exact: true }).hover();
+  await expect(
+    planned.getByRole("button", { name: "取消重点", exact: true }),
+  ).toHaveCSS("background-color", "rgb(236, 236, 236)");
   await planned.getByLabel("更多任务操作").click();
   await planned.getByLabel("预计投入分钟", { exact: true }).fill("45");
   await planned.getByRole("button", { name: "保存估时", exact: true }).click();
