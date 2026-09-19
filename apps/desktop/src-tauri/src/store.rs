@@ -1,3 +1,5 @@
+mod subtasks;
+pub use subtasks::AddSubtasksCommand;
 mod task_details;
 pub use task_details::{TaskDetails, TaskDetailsCommand};
 mod projects;
@@ -224,7 +226,7 @@ impl Store {
     pub async fn list_day(&self, date: &str) -> StoreResult<Vec<DailyTask>> {
         validate_date(date)?;
         sqlx::query_as::<_, DailyTask>(&format!(
-            "{TASK_PROJECTION} WHERE p.owner_id = ? AND (
+            "{TASK_PROJECTION} WHERE p.owner_id = ? AND p.is_summary=0 AND (
                 (t.status <> 'completed' AND p.execution_date = ?) OR
                 (t.status = 'completed' AND EXISTS (
                   SELECT 1 FROM execution_records e WHERE e.id=t.active_completion_id
@@ -302,6 +304,17 @@ impl Store {
             .fetch_one(&mut *tx)
             .await
             .map_err(|e| e.to_string())?;
+            let summary: bool = sqlx::query_scalar(
+                "SELECT EXISTS(SELECT 1 FROM tasks WHERE owner_id=? AND parent_task_id=?)",
+            )
+            .bind(&self.owner_id)
+            .bind(&command.task_id)
+            .fetch_one(&mut *tx)
+            .await
+            .map_err(|e| e.to_string())?;
+            if summary {
+                return Err("SUMMARY_TASK".into());
+            }
             if current.version != command.expected_version {
                 return Err("STATE_CONFLICT".into());
             }

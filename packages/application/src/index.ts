@@ -26,3 +26,5 @@ export type {
 export * from "./projects";
 
 export * from "./task-details";
+
+export * from "./subtasks";

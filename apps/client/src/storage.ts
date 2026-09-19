@@ -66,3 +66,7 @@ export const taskDetailsStorage: import("@praxis/application").TaskDetailsStorag
     read: (taskId) => invoke("task_details", { taskId }),
     save: (command) => invoke("save_task_details", { command }),
   };
+
+export const subtaskStorage: import("@praxis/application").SubtaskStorage = {
+  add: (command) => invoke("add_subtasks", { command }),
+};

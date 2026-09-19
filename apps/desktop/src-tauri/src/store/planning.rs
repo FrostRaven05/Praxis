@@ -102,7 +102,7 @@ impl Store {
         {
             for c in &command.changes {
                 let before = sqlx::query_as::<_, DailyTask>(&format!(
-                    "{TASK_PROJECTION} WHERE p.id=? AND t.id=? AND p.owner_id=?"
+                    "{TASK_PROJECTION} WHERE p.is_summary=0 AND p.id=? AND t.id=? AND p.owner_id=?"
                 ))
                 .bind(&c.plan_id)
                 .bind(&c.task_id)
@@ -157,7 +157,7 @@ impl Store {
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| e.to_string())?;
-        let (estimated,unknown):(i64,i64)=sqlx::query_as("SELECT COALESCE(SUM(p.estimated_minutes),0),COALESCE(SUM(CASE WHEN p.estimated_minutes IS NULL THEN 1 ELSE 0 END),0) FROM daily_plan_items p JOIN tasks t ON t.id=p.task_id AND t.owner_id=p.owner_id WHERE p.owner_id=? AND p.execution_date=? AND t.status<>'cancelled'")
+        let (estimated,unknown):(i64,i64)=sqlx::query_as("SELECT COALESCE(SUM(p.estimated_minutes),0),COALESCE(SUM(CASE WHEN p.estimated_minutes IS NULL THEN 1 ELSE 0 END),0) FROM daily_plan_items p JOIN tasks t ON t.id=p.task_id AND t.owner_id=p.owner_id WHERE p.owner_id=? AND p.is_summary=0 AND p.execution_date=? AND t.status<>'cancelled'")
  .bind(&self.owner_id).bind(date).fetch_one(&self.pool).await.map_err(|e|e.to_string())?;
         let (minutes, version) = capacity.unwrap_or((None, 0));
         Ok(DayLoad {

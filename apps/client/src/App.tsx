@@ -99,11 +99,11 @@ export function App() {
   }, []);
 
   useEffect(() => {
-    void refresh(displayedDate);
+    if (view === "day") void refresh(displayedDate);
     return () => {
       queryVersion.current += 1;
     };
-  }, [displayedDate, refresh]);
+  }, [displayedDate, refresh, view]);
 
   useEffect(() => {
     const update = () => {

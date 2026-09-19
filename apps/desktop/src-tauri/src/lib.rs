@@ -324,6 +324,25 @@ async fn save_task_details(
             )
         })
 }
+
+#[tauri::command]
+async fn add_subtasks(
+    command: store::AddSubtasksCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .add_subtasks(&command)
+        .await
+        .map_err(|e| {
+            if e == "SUMMARY_CONFIRMATION_REQUIRED" {
+                "父任务已有安排，请确认转换为汇总项后重试。".into()
+            } else {
+                planning_error(&database, "subtasks", Some(&command.operation_id), e)
+            }
+        })
+}
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
@@ -350,6 +369,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            add_subtasks,
             task_details,
             save_task_details,
             capture_task,

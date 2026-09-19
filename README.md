@@ -73,3 +73,5 @@ Ticket 02 已加入 Capacitor 工程与原生 SQLite 适配，尚未完成 APK �
 [桌面项目管理验收](docs/implementation-desktop-projects.md)
 
 桌面已支持收件箱、项目及今日的统一任务详情编辑，包括备注、完成标准、独立重要度、带时区的截止时间和预估工作量。见 [D05 验收记录](docs/implementation-desktop-task-details.md)。
+
+D06 桌面多级子任务与叶子进度已完成；验收见 [实施记录](docs/implementation-desktop-subtasks.md)。原 13 的排序、父节点移动及跨端验收保留未完成。

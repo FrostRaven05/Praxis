@@ -11,6 +11,9 @@ export interface Project extends ProjectFields {
   version: number;
 }
 export interface ProjectTask {
+  parentTaskId?: string | null;
+  taskRank?: number;
+  hasSummaryPlan?: boolean;
   important?: boolean;
   deadline?: string | null;
   taskId: string;

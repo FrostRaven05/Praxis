@@ -1136,3 +1136,41 @@ button:disabled {
   margin: 0;
   min-width: 0;
 }
+
+.tree-task {
+  flex-wrap: wrap;
+  border-left: 2px solid #e2e7da;
+  padding-left: 12px;
+}
+.tree-task > div:first-child {
+  flex: 1;
+  min-width: 180px;
+}
+.subtask-composer.open {
+  width: 100%;
+}
+.subtask-composer form {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0;
+}
+.subtask-composer textarea {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid #cbd5c1;
+  border-radius: 8px;
+  font: inherit;
+}
+.summary-confirm {
+  font-size: 13px;
+  line-height: 1.7;
+  background: #faf0dd;
+  padding: 12px;
+  border-radius: 8px;
+}
+.project-progress {
+  font-size: 14px;
+  color: #536844;
+}

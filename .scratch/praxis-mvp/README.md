@@ -192,3 +192,5 @@ Ticket 01 已完成：Windows 桌面离线录入、原子持久化、失败重�
 已完成 [D03 重点、估时与收件箱](issues/D03-desktop-focus-inbox.md)、[D04 项目基本管理](issues/D04-desktop-projects.md)。原 10/12 的完整业务字段、移动与同步验收仍以各 Ticket 为准。
 
 已完成 [D05 任务详情与无日期编辑](issues/D05-desktop-task-details.md)，补齐桌面任务字段；子任务和父子统计为下一批。
+
+D06 桌面多级子任务与叶子进度已完成；验收见 docs/implementation-desktop-subtasks.md。原 13 的排序、父节点移动及跨端验收保留未完成。

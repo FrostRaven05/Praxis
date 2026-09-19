@@ -690,6 +690,100 @@ try {
     "Unscheduled inbox edits remain unscheduled; importance, deadline, criteria and estimates persist across native restart",
   );
 
+  await app.page.getByLabel("拆成可以行动的任务").fill("多级拆分父任务");
+  await app.page
+    .getByRole("button", { name: "添加项目任务", exact: true })
+    .click();
+  const treeRow = (title) =>
+    app.page
+      .locator(".project-tasks .inbox-row")
+      .filter({ has: app.page.locator("strong", { hasText: title }) });
+  await treeRow("多级拆分父任务")
+    .getByRole("button", { name: "拆分子任务", exact: true })
+    .click();
+  await treeRow("多级拆分父任务")
+    .getByLabel("子任务（每行一条）")
+    .fill("中间汇总项\n直接叶子项");
+  await treeRow("多级拆分父任务")
+    .getByRole("button", { name: "保存子任务", exact: true })
+    .click();
+  await expect(treeRow("多级拆分父任务")).toContainText("汇总 · 0 / 2 已完成");
+  await expect(
+    treeRow("多级拆分父任务").getByRole("button", {
+      name: "加入今日",
+      exact: true,
+    }),
+  ).toHaveCount(0);
+  await treeRow("中间汇总项")
+    .getByRole("button", { name: "拆分子任务", exact: true })
+    .click();
+  await treeRow("中间汇总项")
+    .getByLabel("子任务（每行一条）")
+    .fill("最深执行叶子\n另一深层叶子");
+  await treeRow("中间汇总项")
+    .getByRole("button", { name: "保存子任务", exact: true })
+    .click();
+  await expect(treeRow("多级拆分父任务")).toContainText("汇总 · 0 / 3 已完成");
+  await treeRow("最深执行叶子")
+    .getByRole("button", { name: "加入今日", exact: true })
+    .click();
+  await treeRow("最深执行叶子")
+    .getByRole("button", { name: "查看安排", exact: true })
+    .click();
+  await app.page
+    .locator(".task-item")
+    .filter({ hasText: "最深执行叶子" })
+    .getByRole("button", { name: "标为完成", exact: true })
+    .click();
+  await app.page.getByRole("button", { name: "项目", exact: true }).click();
+  await app.page
+    .locator(".project-card")
+    .filter({ hasText: "上线报名网站" })
+    .click();
+  await expect(treeRow("多级拆分父任务")).toContainText("汇总 · 1 / 3 已完成");
+  await expect(treeRow("中间汇总项")).toContainText("汇总 · 1 / 2 已完成");
+  await treeRow("详情保存后继续改标题")
+    .getByRole("button", { name: "拆分子任务", exact: true })
+    .click();
+  await treeRow("详情保存后继续改标题")
+    .getByLabel("子任务（每行一条）")
+    .fill("已确认的执行叶子");
+  await treeRow("详情保存后继续改标题")
+    .getByRole("button", { name: "保存子任务", exact: true })
+    .click();
+  await expect(
+    treeRow("详情保存后继续改标题").getByRole("alert"),
+  ).toContainText("请确认");
+  await treeRow("详情保存后继续改标题").getByRole("checkbox").check();
+  await treeRow("详情保存后继续改标题")
+    .getByRole("button", { name: "保存子任务", exact: true })
+    .click();
+  await expect(treeRow("详情保存后继续改标题")).toContainText(
+    "原安排已转为汇总记录",
+  );
+  await app.page.getByRole("link", { name: /今日/ }).click();
+  await expect(
+    app.page.locator(".task-row").filter({ hasText: "详情保存后继续改标题" }),
+  ).toHaveCount(0);
+  stop(app.child);
+  app = await launch();
+  await app.page.getByRole("button", { name: "项目", exact: true }).click();
+  await app.page
+    .locator(".project-card")
+    .filter({ hasText: "上线报名网站" })
+    .click();
+  await expect(treeRow("多级拆分父任务")).toContainText("汇总 · 1 / 3 已完成");
+  await expect(treeRow("详情保存后继续改标题")).toContainText(
+    "原安排已转为汇总记录",
+  );
+  await app.page.screenshot({ path: join(evidence, "desktop-subtasks.png") });
+  results.push(
+    "Multi-level subtasks count leaves once; completion updates ancestors and survives restart",
+  );
+  results.push(
+    "Splitting a scheduled parent requires confirmation and retains its plan as a non-executable summary",
+  );
+
   stop(app.child);
   app = undefined;
   const invalidDirectory = join(data, "not-a-directory");

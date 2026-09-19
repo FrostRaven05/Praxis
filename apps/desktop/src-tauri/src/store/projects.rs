@@ -39,6 +39,9 @@ pub struct Project {
 #[derive(Debug, Serialize, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectTask {
+    pub parent_task_id: Option<String>,
+    pub task_rank: i64,
+    pub has_summary_plan: bool,
     pub important: bool,
     pub task_id: String,
     pub title: String,
@@ -53,7 +56,7 @@ impl Store {
         sqlx::query_as("SELECT id,name,outcome,target_date,priority,version FROM projects WHERE owner_id=? ORDER BY created_at,id").bind(&self.owner_id).fetch_all(&self.pool).await.map_err(|e|e.to_string())
     }
     pub async fn project_tasks(&self, project_id: &str) -> StoreResult<Vec<ProjectTask>> {
-        sqlx::query_as("SELECT t.id AS task_id,t.title,t.important,t.version,t.created_at,t.status,(SELECT p.execution_date FROM daily_plan_items p WHERE p.task_id=t.id AND p.owner_id=t.owner_id ORDER BY p.created_at DESC LIMIT 1) AS execution_date,(SELECT e.execution_date FROM execution_records e WHERE e.id=t.active_completion_id AND e.owner_id=t.owner_id AND e.revoked_at IS NULL) AS completion_date FROM tasks t WHERE t.owner_id=? AND t.project_id=? ORDER BY t.created_at,t.rowid").bind(&self.owner_id).bind(project_id).fetch_all(&self.pool).await.map_err(|e|e.to_string())
+        sqlx::query_as("SELECT t.parent_task_id,t.task_rank,EXISTS(SELECT 1 FROM daily_plan_items sp WHERE sp.task_id=t.id AND sp.owner_id=t.owner_id AND sp.is_summary=1) AS has_summary_plan,t.id AS task_id,t.title,t.important,t.version,t.created_at,t.status,(SELECT p.execution_date FROM daily_plan_items p WHERE p.task_id=t.id AND p.owner_id=t.owner_id AND p.is_summary=0 ORDER BY p.created_at DESC LIMIT 1) AS execution_date,(SELECT e.execution_date FROM execution_records e WHERE e.id=t.active_completion_id AND e.owner_id=t.owner_id AND e.revoked_at IS NULL) AS completion_date FROM tasks t WHERE t.owner_id=? AND t.project_id=? ORDER BY t.created_at,t.rowid").bind(&self.owner_id).bind(project_id).fetch_all(&self.pool).await.map_err(|e|e.to_string())
     }
     pub async fn save_project(&self, c: &SaveProjectCommand) -> StoreResult<()> {
         validate_operation(&c.operation_id, &c.occurred_at)?;

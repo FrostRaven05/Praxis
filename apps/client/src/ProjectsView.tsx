@@ -1,3 +1,5 @@
+import { SubtaskComposer } from "./SubtaskComposer";
+import { projectTree } from "@praxis/application";
 import { TaskDetailsButton } from "./TaskDetailsButton";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -23,6 +25,10 @@ export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
     [notice, setNotice] = useState("");
   const query = useRef(0);
   const selected = items.find((p) => p.id === selectedId);
+  const tree = projectTree(tasks);
+  const roots = tree.filter((t) => t.depth === 0);
+  const total = roots.reduce((n, t) => n + t.leafTotal, 0);
+  const done = roots.reduce((n, t) => n + t.leafDone, 0);
   const refresh = useCallback(async (id: string | null) => {
     const token = ++query.current;
     setLoading(true);
@@ -154,6 +160,9 @@ export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
                   目标日期：{selected.targetDate ?? "未设置"} ·{" "}
                   {["低", "普通", "高"][selected.priority]}优先级
                 </p>
+                <p className="project-progress">
+                  叶子任务进度：{done} / {total} 已完成
+                </p>
                 <form
                   className="project-task-form"
                   onSubmit={(e) => {
@@ -180,8 +189,12 @@ export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
                 {loading && <p>正在读取任务…</p>}
                 <>
                   <ul className="task-list project-tasks">
-                    {tasks.map((task) => (
-                      <li className="inbox-row" key={task.taskId}>
+                    {tree.map((task) => (
+                      <li
+                        className="inbox-row tree-task"
+                        key={task.taskId}
+                        style={{ marginLeft: Math.min(task.depth, 8) * 18 }}
+                      >
                         <div>
                           <strong>
                             {task.important && (
@@ -190,7 +203,12 @@ export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
                             {task.title}
                           </strong>
                           <p className="task-meta">
-                            {task.status === "completed" ? "已完成" : "待办"} ·{" "}
+                            {task.hasChildren
+                              ? `汇总 · ${task.leafDone} / ${task.leafTotal} 已完成`
+                              : task.status === "completed"
+                                ? "已完成"
+                                : "待办"}{" "}
+                            ·{" "}
                             {task.completionDate ??
                               task.executionDate ??
                               "尚未安排"}
@@ -201,7 +219,13 @@ export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
                           onSaved={() => refresh(selected.id)}
                           disabled={busy}
                         />
-                        {task.executionDate ? (
+                        {task.hasChildren ? (
+                          <span className="task-meta">
+                            {task.hasSummaryPlan
+                              ? "原安排已转为汇总记录"
+                              : "仅执行叶子任务"}
+                          </span>
+                        ) : task.executionDate ? (
                           <button
                             disabled={busy}
                             onClick={() =>
@@ -230,6 +254,10 @@ export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
                             加入今日
                           </button>
                         ) : null}
+                        <SubtaskComposer
+                          task={task}
+                          onSaved={() => refresh(selected.id)}
+                        />
                       </li>
                     ))}
                   </ul>
