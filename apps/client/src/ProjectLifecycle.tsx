@@ -19,7 +19,7 @@ export function ProjectLifecycle({
     <section className="lifecycle">
       <span className="state-badge">
         {projectStates[project.status ?? "active"]}
-        {project.focused ? " · 重点项目" : ""}
+        {project.focused ? " · 追踪项目" : ""}
       </span>
       <button
         onClick={() => {
@@ -83,7 +83,7 @@ export function ProjectLifecycle({
                 checked={focused}
                 onChange={(e) => setFocused(e.target.checked)}
               />
-              重点项目
+              追踪项目
             </label>
             {["paused", "archived"].includes(status) && (
               <label>

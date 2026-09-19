@@ -77,3 +77,5 @@ Ticket 02 已加入 Capacitor 工程与原生 SQLite 适配，尚未完成 APK �
 D06 桌面多级子任务与叶子进度已完成；验收见 [实施记录](docs/implementation-desktop-subtasks.md)。原 13 的排序、父节点移动及跨端验收保留未完成。
 
 桌面项目现已支持生命周期与重点筛选、同级排序和子树移动、四列看板、甘特日期与依赖编辑，以及排期影响预览和撤销。见 [D07 验收记录](docs/implementation-desktop-project-workspace.md)。
+
+项目页已采用紧凑布局，“重点项目”现为“追踪项目”，追踪入口固定在左侧导航下。见 [D08 验收记录](docs/implementation-desktop-tracked-projects.md)。

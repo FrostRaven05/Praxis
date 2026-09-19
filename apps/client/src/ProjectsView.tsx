@@ -18,45 +18,72 @@ import { planning } from "./PlanningPanel";
 export const projects = new Projects(projectStorage);
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
+export function ProjectsView({
+  onDay,
+  selectedId,
+  onSelect: setSelectedId,
+  onProjectsChanged,
+  navigationRevision,
+  onBusyChange,
+}: {
+  onDay: (date: string) => void;
+  selectedId: string | null;
+  onSelect: (id: string | null) => void;
+  onProjectsChanged: () => void;
+  navigationRevision: number;
+  onBusyChange: (busy: boolean) => void;
+}) {
   const [mode, setMode] = useState<"tasks" | "gantt" | "board">("tasks");
   const [filter, setFilter] = useState("all"),
     [showCancelled, setShowCancelled] = useState(false);
   const [items, setItems] = useState<Project[]>([]),
     [tasks, setTasks] = useState<ProjectTask[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [form, setForm] = useState<"new" | "edit" | null>(null);
   const [titles, setTitles] = useState(""),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true);
   const [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  useEffect(() => {
+    setForm(null);
+    setTitles("");
+    setNotice("");
+  }, [navigationRevision]);
+  useEffect(() => {
+    onBusyChange(busy);
+    return () => onBusyChange(false);
+  }, [busy, onBusyChange]);
   const query = useRef(0);
   const selected = items.find((p) => p.id === selectedId);
   const tree = projectTree(tasks);
   const roots = tree.filter((t) => t.depth === 0);
   const total = roots.reduce((n, t) => n + t.leafTotal, 0);
   const done = roots.reduce((n, t) => n + t.leafDone, 0);
-  const refresh = useCallback(async (id: string | null) => {
-    const token = ++query.current;
-    setLoading(true);
-    try {
-      const [next, rows] = await Promise.all([
-        projectStorage.listProjects(),
-        id ? projectStorage.projectTasks(id) : Promise.resolve([]),
-      ]);
-      if (token === query.current) {
-        setItems(next);
-        setTasks(rows);
-        setError("");
+  const refresh = useCallback(
+    async (id: string | null) => {
+      const token = ++query.current;
+      setLoading(true);
+      try {
+        const [next, rows] = await Promise.all([
+          projectStorage.listProjects(),
+          id ? projectStorage.projectTasks(id) : Promise.resolve([]),
+        ]);
+        if (token === query.current) {
+          setItems(next);
+          onProjectsChanged();
+          setTasks(rows);
+          setError("");
+        }
+      } catch (e) {
+        if (token === query.current) setError(errorText(e));
+      } finally {
+        if (token === query.current) setLoading(false);
       }
-    } catch (e) {
-      if (token === query.current) setError(errorText(e));
-    } finally {
-      if (token === query.current) setLoading(false);
-    }
-  }, []);
+    },
+    [onProjectsChanged],
+  );
   useEffect(() => {
+    setTasks([]);
     void refresh(selectedId);
     const focus = () => void refresh(selectedId);
     window.addEventListener("focus", focus);
@@ -79,22 +106,39 @@ export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
   }
   return (
     <section className="today projects-view" aria-labelledby="projects-heading">
-      <header className="topbar">
-        我的工作台 / 项目<span className="local-badge">保存在本机</span>
-      </header>
       <div className="today-content">
-        <p className="eyebrow">MAKE ROOM FOR MEANINGFUL WORK</p>
-        <h1 id="projects-heading">让想法有一个去处。</h1>
-        <p className="intro">写下期待的结果，再拆成可以行动的小步。</p>
-        <button
-          disabled={busy}
-          onClick={() => {
-            setForm("new");
-            setNotice("");
-          }}
-        >
-          新建项目
-        </button>
+        <header className="project-toolbar">
+          <h1 id="projects-heading" className="sr-only">
+            项目
+          </h1>
+          <div className="project-filters" aria-label="项目筛选">
+            {(
+              [
+                ["all", "全部项目"],
+                ["focused", "追踪项目"],
+                ["archived", "归档项目"],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                aria-pressed={filter === key}
+                onClick={() => setFilter(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <button
+            className="new-project-button"
+            disabled={busy}
+            onClick={() => {
+              setForm("new");
+              setNotice("");
+            }}
+          >
+            新建项目
+          </button>
+        </header>
         {error && (
           <p role="alert" className="error">
             {error}{" "}
@@ -106,23 +150,6 @@ export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
         <p className="save-notice" role="status">
           {notice}
         </p>
-        <div className="project-filters" aria-label="项目筛选">
-          {(
-            [
-              ["all", "全部项目"],
-              ["focused", "重点项目"],
-              ["archived", "归档项目"],
-            ] as const
-          ).map(([key, label]) => (
-            <button
-              key={key}
-              aria-pressed={filter === key}
-              onClick={() => setFilter(key)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
         <div className="project-layout">
           <nav className="project-list" aria-label="项目列表">
             {items
@@ -130,7 +157,7 @@ export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
                 filter === "archived"
                   ? p.status === "archived"
                   : filter === "focused"
-                    ? p.focused && p.status !== "archived"
+                    ? p.focused
                     : p.status !== "archived",
               )
               .map((p) => (
@@ -153,7 +180,7 @@ export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
                   <strong>{p.name}</strong>
                   <small>
                     {projectStates[p.status ?? "active"]}
-                    {p.focused ? " · 重点" : ""}
+                    {p.focused ? " · 追踪" : ""}
                   </small>
                   <span>{p.outcome || "尚未填写预期结果"}</span>
                   <small>

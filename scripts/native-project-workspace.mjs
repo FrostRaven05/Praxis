@@ -127,7 +127,7 @@ export async function checkProjectWorkspace({
       .getByRole("button", { name: "管理项目状态", exact: true })
       .click();
     await app.page.getByLabel("项目状态", { exact: true }).selectOption(state);
-    await app.page.getByLabel("重点项目", { exact: true }).check();
+    await app.page.getByLabel("追踪项目", { exact: true }).check();
     if (["paused", "archived"].includes(state))
       await app.page.getByLabel("已有每日安排").selectOption(choice);
     await app.page
@@ -155,7 +155,7 @@ export async function checkProjectWorkspace({
   await app.page.getByRole("button", { name: "归档项目", exact: true }).click();
   await project().click();
   await manage("active");
-  await app.page.getByRole("button", { name: "重点项目", exact: true }).click();
+  await app.page.getByRole("button", { name: "追踪项目", exact: true }).click();
   await expect(project()).toBeVisible();
   await tab("任务视图").click();
   await row("设计验证")
@@ -234,22 +234,7 @@ export async function checkProjectWorkspace({
     .click();
   await expect(bar.locator("title")).toContainText(dates[3]);
   // Delay real native replies through Tauri's documented-in-source debug callback map.
-  await app.page.evaluate(() => {
-    const callbacks = window.__TAURI_INTERNALS__.callbacks;
-    const original = callbacks.set;
-    const pending = [];
-    window.__heldWorkspaceReply = false;
-    callbacks.set = function (id, callback) {
-      return original.call(this, id, (data) => {
-        window.__heldWorkspaceReply = true;
-        pending.push(() => callback(data));
-      });
-    };
-    window.__releaseWorkspaceReply = () => {
-      callbacks.set = original;
-      for (const reply of pending) reply();
-    };
-  });
+  await holdNativeReplies(app.page);
   await app.page
     .getByRole("button", { name: "撤销上次排期", exact: true })
     .click();
@@ -294,7 +279,7 @@ export async function checkProjectWorkspace({
   app = await launch();
   await app.page.getByRole("button", { name: "项目", exact: true }).click();
   await project().click();
-  await expect(app.page.locator(".state-badge")).toContainText("重点项目");
+  await expect(app.page.locator(".state-badge")).toContainText("追踪项目");
   await tab("甘特图").click();
   await expect(
     app.page
@@ -308,5 +293,79 @@ export async function checkProjectWorkspace({
   results.push(
     "Lifecycle, ordering, task state, schedule and dependencies survive abrupt native restart",
   );
+
+  const shortcut = () =>
+    app.page
+      .getByRole("region", { name: "追踪项目快捷入口" })
+      .getByRole("button", { name: /三视图验收项目/ });
+  await expect(shortcut()).toBeVisible();
+  await app.page.getByRole("link", { name: /今日/ }).click();
+  await shortcut().click();
+  await expect(app.page.locator(".project-heading h2")).toHaveText(
+    "三视图验收项目",
+  );
+  await expect(
+    app.page.locator(
+      ".projects-view .topbar,.projects-view .eyebrow,.projects-view .intro",
+    ),
+  ).toHaveCount(0);
+  await app.page.getByRole("button", { name: "新建项目", exact: true }).click();
+  await app.page.getByLabel("项目名称", { exact: true }).fill("未保存的草稿");
+  await shortcut().click();
+  await expect(
+    app.page.getByRole("form", { name: "项目基本信息" }),
+  ).toHaveCount(0);
+  await app.page.getByRole("button", { name: "编辑项目", exact: true }).click();
+  await holdNativeReplies(app.page);
+  await app.page.getByRole("button", { name: "保存项目", exact: true }).click();
+  await expect
+    .poll(() => app.page.evaluate(() => window.__heldWorkspaceReply))
+    .toBe(true);
+  await expect(shortcut()).toBeDisabled();
+  await app.page.evaluate(() => window.__releaseWorkspaceReply());
+  await expect(shortcut()).toBeEnabled();
+  await expect(
+    app.page.getByRole("form", { name: "项目基本信息" }),
+  ).toHaveCount(0);
+  await app.page
+    .getByRole("button", { name: "管理项目状态", exact: true })
+    .click();
+  await app.page.getByLabel("追踪项目", { exact: true }).uncheck();
+  await app.page
+    .getByRole("button", { name: "保存项目状态", exact: true })
+    .click();
+  await expect(shortcut()).toHaveCount(0);
+  await manage("active");
+  await expect(shortcut()).toBeVisible();
+  const toolbar = await app.page.locator(".project-toolbar").boundingBox();
+  const layout = await app.page.locator(".project-layout").boundingBox();
+  expect(toolbar.height).toBeLessThan(80);
+  expect(layout.y).toBeLessThan(150);
+  await app.page.screenshot({
+    path: join(evidence, "desktop-tracked-projects.png"),
+  });
+  results.push(
+    "Tracked projects persist in sidebar, open the selected workspace, clear new-project drafts and prevent navigation during save; compact toolbar frees primary space",
+  );
+
   return app;
+}
+
+async function holdNativeReplies(page) {
+  await page.evaluate(() => {
+    const callbacks = window.__TAURI_INTERNALS__.callbacks;
+    const original = callbacks.set;
+    const pending = [];
+    window.__heldWorkspaceReply = false;
+    callbacks.set = function (id, callback) {
+      return original.call(this, id, (data) => {
+        window.__heldWorkspaceReply = true;
+        pending.push(() => callback(data));
+      });
+    };
+    window.__releaseWorkspaceReply = () => {
+      callbacks.set = original;
+      for (const reply of pending) reply();
+    };
+  });
 }

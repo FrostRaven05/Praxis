@@ -1,3 +1,4 @@
+import { TrackedProjects } from "./TrackedProjects";
 import { projectStates, taskStates } from "@praxis/application";
 import { TaskDetailsButton } from "./TaskDetailsButton";
 import { ProjectsView } from "./ProjectsView";
@@ -50,7 +51,19 @@ function message(error: unknown): string {
 }
 
 export function App() {
+  const [projectNavigation, setProjectNavigation] = useState(0);
+  const [projectBusy, setProjectBusy] = useState(false);
+  const workspaceRef = useRef<HTMLElement>(null);
+  const [projectId, setProjectId] = useState<string | null>(null);
+  const [projectRevision, setProjectRevision] = useState(0);
+  const projectsChanged = useCallback(
+    () => setProjectRevision((n) => n + 1),
+    [],
+  );
   const [view, setView] = useState<"day" | "inbox" | "projects">("day");
+  useEffect(() => {
+    workspaceRef.current?.scrollTo({ top: 0 });
+  }, [view, projectId, projectNavigation]);
   const [planRevision, setPlanRevision] = useState(0);
   const [planningBusy, setPlanningBusy] = useState(false);
   const [day, setDay] = useState(localDay);
@@ -344,7 +357,7 @@ export function App() {
   }
 
   return (
-    <main className="workspace">
+    <main className="workspace" ref={workspaceRef}>
       <aside className="sidebar">
         <a className="brand" href="#today" aria-label="Praxis 首页">
           <span className="brand-mark">P</span>Praxis
@@ -383,11 +396,20 @@ export function App() {
             </button>
           )}
         </nav>
-        <div className="sidebar-note">
-          <span>一步一步，</span>
-          <br />
-          把重要的事向前推进。
-        </div>
+        {desktopAvailable && (
+          <TrackedProjects
+            revision={projectRevision}
+            disabled={projectBusy}
+            selectedId={view === "projects" ? projectId : null}
+            onSelect={(id) => {
+              if (projectBusy) return;
+              setProjectNavigation((n) => n + 1);
+              setSelectedId(null);
+              setProjectId(id);
+              setView("projects");
+            }}
+          />
+        )}
         <div className="sidebar-foot">
           <span className="status-dot" />
           本地工作空间
@@ -395,6 +417,11 @@ export function App() {
       </aside>
       {view === "projects" ? (
         <ProjectsView
+          navigationRevision={projectNavigation}
+          onBusyChange={setProjectBusy}
+          selectedId={projectId}
+          onSelect={setProjectId}
+          onProjectsChanged={projectsChanged}
           onDay={(date) => {
             selectDate(date);
             void refresh(date);

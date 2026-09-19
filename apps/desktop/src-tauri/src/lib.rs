@@ -9,6 +9,7 @@ use uuid::Uuid;
 struct LocalDatabase {
     path: PathBuf,
     diagnostics_path: PathBuf,
+    diagnostics_lock: std::sync::Mutex<()>,
     store: OnceCell<Store>,
 }
 
@@ -58,6 +59,9 @@ impl LocalDatabase {
         }).to_string();
         eprintln!("{record}");
         // Logging must not turn a recoverable storage error into a second failure.
+        let Ok(_guard) = self.diagnostics_lock.lock() else {
+            return;
+        };
         if let Some(parent) = self.diagnostics_path.parent() {
             let _ = std::fs::create_dir_all(parent);
         }
@@ -66,7 +70,7 @@ impl LocalDatabase {
             .append(true)
             .open(&self.diagnostics_path)
         {
-            let _ = writeln!(file, "{record}");
+            let _ = file.write_all(format!("{record}\n").as_bytes());
         }
     }
 }
@@ -393,6 +397,7 @@ pub fn run() {
             app.manage(LocalDatabase {
                 path: data_dir.join("praxis.db"),
                 diagnostics_path: log_dir.join("storage-errors.jsonl"),
+                diagnostics_lock: std::sync::Mutex::new(()),
                 store: OnceCell::new(),
             });
             Ok(())
