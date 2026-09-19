@@ -1,3 +1,4 @@
+import { projectStates, taskStates } from "@praxis/application";
 import { TaskDetailsButton } from "./TaskDetailsButton";
 import { ProjectsView } from "./ProjectsView";
 import { ProjectAssignment } from "./ProjectAssignment";
@@ -308,6 +309,15 @@ export function App() {
               {item.title}
             </span>
             <span className="task-meta">
+              {item.status !== "todo" && item.status !== "completed" && (
+                <>
+                  {taskStates[item.status]}
+                  {item.statusReason ? "：" + item.statusReason : ""} ·{" "}
+                </>
+              )}
+              {item.projectStatus && item.projectStatus !== "active" && (
+                <>项目{projectStates[item.projectStatus]} · </>
+              )}
               {item.projectId ? "项目任务" : "临时事项"} · {item.executionDate}
             </span>
           </span>
@@ -666,7 +676,7 @@ export function App() {
             <dt>项目</dt>
             <dd>{selected.projectId ? "已归属项目" : "未归属项目"}</dd>
             <dt>状态</dt>
-            <dd>{selected.status === "completed" ? "已完成" : "待办"}</dd>
+            <dd>{taskStates[selected.status]}</dd>
             <dt>保存位置</dt>
             <dd>此设备</dd>
           </dl>

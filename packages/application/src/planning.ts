@@ -60,7 +60,8 @@ export interface PlanningStorage {
   scheduleTask(c: ScheduleCommand): Promise<void>;
 }
 export function planChange(task: DailyTask): PlanChange {
-  if (task.status !== "todo") throw new Error("只能调整待办任务的每日安排");
+  if (!["todo", "in_progress", "blocked"].includes(task.status))
+    throw new Error("只能调整待办任务的每日安排");
   return {
     taskId: task.taskId,
     planId: task.planId,
@@ -163,7 +164,7 @@ export class Planning {
 
 export function orderedFocus(items: DailyTask[]): DailyTask[] {
   return items
-    .filter((t) => t.status === "todo" && t.isFocus)
+    .filter((t) => !["completed", "cancelled"].includes(t.status) && t.isFocus)
     .sort(
       (a, b) =>
         (a.focusRank ?? 0) - (b.focusRank ?? 0) ||

@@ -1,3 +1,4 @@
+import { checkProjectWorkspace } from "./native-project-workspace.mjs";
 import { chromium, expect } from "@playwright/test";
 import { spawn, execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, writeFile, readFile, unlink } from "node:fs/promises";
@@ -783,6 +784,8 @@ try {
   results.push(
     "Splitting a scheduled parent requires confirmation and retains its plan as a non-executable summary",
   );
+
+  app = await checkProjectWorkspace({app,launch,stop,evidence,results});
 
   stop(app.child);
   app = undefined;

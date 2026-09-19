@@ -93,7 +93,7 @@ impl Store {
         )
         .await?
         {
-            let allowed:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM tasks t WHERE t.id=? AND t.owner_id=? AND t.version=? AND t.status='todo' AND NOT EXISTS(SELECT 1 FROM tasks child WHERE child.parent_task_id=t.id AND child.owner_id=t.owner_id) AND NOT EXISTS(SELECT 1 FROM daily_plan_items p WHERE p.task_id=t.id AND p.owner_id=t.owner_id))")
+            let allowed:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM tasks t WHERE t.id=? AND t.owner_id=? AND t.version=? AND t.status IN('todo','in_progress','blocked') AND NOT EXISTS(SELECT 1 FROM tasks child WHERE child.parent_task_id=t.id AND child.owner_id=t.owner_id) AND NOT EXISTS(SELECT 1 FROM daily_plan_items p WHERE p.task_id=t.id AND p.owner_id=t.owner_id AND p.is_summary=0 AND p.removed=0))")
  .bind(&c.task_id).bind(&self.owner_id).bind(c.expected_version).fetch_one(&mut *tx).await.map_err(|e|e.to_string())?;
             if !allowed {
                 return Err("STATE_CONFLICT".into());
@@ -106,7 +106,7 @@ impl Store {
             .fetch_one(&mut *tx)
             .await
             .map_err(|e| e.to_string())?;
-            sqlx::query("INSERT INTO daily_plan_items(id,owner_id,task_id,execution_date,time_zone,created_at,estimated_minutes) VALUES(?,?,?,?,?,?,?)").bind(&c.plan_id).bind(&self.owner_id).bind(&c.task_id).bind(&c.execution_date).bind(&c.time_zone).bind(&c.occurred_at).bind(estimate).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+            sqlx::query("INSERT INTO daily_plan_items(id,owner_id,task_id,execution_date,time_zone,created_at,estimated_minutes) VALUES(?,?,?,?,?,?,?) ON CONFLICT(owner_id,task_id,execution_date) DO UPDATE SET removed=0,is_summary=0,time_zone=excluded.time_zone").bind(&c.plan_id).bind(&self.owner_id).bind(&c.task_id).bind(&c.execution_date).bind(&c.time_zone).bind(&c.occurred_at).bind(estimate).execute(&mut *tx).await.map_err(|e|e.to_string())?;
             sqlx::query("UPDATE tasks SET version=version+1 WHERE id=? AND owner_id=?")
                 .bind(&c.task_id)
                 .bind(&self.owner_id)

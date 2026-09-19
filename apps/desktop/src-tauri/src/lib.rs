@@ -115,7 +115,9 @@ async fn change_completion(
         .await
         .map_err(|error| {
             database.record_error("completion", Some(&command.operation_id), &error);
-            if error == "STATE_CONFLICT" {
+            if let Some(message) = error.strip_prefix("USER:") {
+                message.to_string()
+            } else if error == "STATE_CONFLICT" {
                 "任务状态已变化，请重新读取列表后再操作。".to_owned()
             } else {
                 "未能确认状态更新，请重试；重复操作不会重复记录。".to_owned()
@@ -135,7 +137,9 @@ async fn edit_task(
         .await
         .map_err(|error| {
             database.record_error("edit", Some(&command.operation_id), &error);
-            if error == "STATE_CONFLICT" {
+            if let Some(message) = error.strip_prefix("USER:") {
+                message.to_string()
+            } else if error == "STATE_CONFLICT" {
                 "任务已有更新，请重新打开详情后再修改。".to_owned()
             } else if error == "COMPLETED_PLAN" {
                 "已完成任务不能改期，请先撤销完成。".to_owned()
@@ -343,6 +347,31 @@ async fn add_subtasks(
             }
         })
 }
+#[tauri::command]
+async fn project_workspace(
+    command: store::WorkspaceCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .project_workspace(&command)
+        .await
+        .map_err(|e| {
+            if let Some(message) = e.strip_prefix("USER:") {
+                message.to_string()
+            } else if e == "SUMMARY_TASK" {
+                "父任务只汇总进度，请操作叶子任务。".into()
+            } else {
+                planning_error(
+                    &database,
+                    "project-workspace",
+                    Some(&command.operation_id),
+                    e,
+                )
+            }
+        })
+}
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
@@ -369,6 +398,7 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            project_workspace,
             add_subtasks,
             task_details,
             save_task_details,

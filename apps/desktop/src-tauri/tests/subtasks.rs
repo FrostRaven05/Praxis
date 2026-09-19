@@ -209,10 +209,16 @@ async fn last_write_failure_rolls_back_split_and_parent_plan_conversion() {
     .await
     .unwrap();
     s.schedule_task(&ScheduleCommand {
-        operation_id: id(), task_id: parent.clone(), plan_id: id(),
-        expected_version: 0, execution_date: "2026-09-19".into(),
-        time_zone: "Asia/Hong_Kong".into(), occurred_at: at.clone(),
-    }).await.unwrap();
+        operation_id: id(),
+        task_id: parent.clone(),
+        plan_id: id(),
+        expected_version: 0,
+        execution_date: "2026-09-19".into(),
+        time_zone: "Asia/Hong_Kong".into(),
+        occurred_at: at.clone(),
+    })
+    .await
+    .unwrap();
     let mut db = sqlx::SqliteConnection::connect_with(
         &sqlx::sqlite::SqliteConnectOptions::new().filename(&path),
     )

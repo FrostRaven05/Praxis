@@ -62,6 +62,6 @@ it("rejects completion or undo when the shared task state does not permit it", a
       "complete",
       "Asia/Hong_Kong",
     ),
-  ).rejects.toThrow("只有待办");
+  ).rejects.toThrow("当前任务不能完成");
   expect(writes).toBe(0);
 });

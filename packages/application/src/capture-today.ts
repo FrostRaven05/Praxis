@@ -19,7 +19,9 @@ export interface DailyTask {
   executionDate: string;
   createdAt: string;
   projectId: string | null;
-  status: "todo" | "completed";
+  status: "todo" | "in_progress" | "blocked" | "completed" | "cancelled";
+  statusReason?: string;
+  projectStatus?: string | null;
   version?: number;
   isFocus?: boolean;
   focusRank?: number;

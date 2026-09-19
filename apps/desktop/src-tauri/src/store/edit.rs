@@ -43,7 +43,7 @@ impl Store {
             }
         } else {
             let current = sqlx::query_as::<_, DailyTask>(&format!(
-                "{TASK_PROJECTION} WHERE p.is_summary=0 AND p.id=? AND t.id=? AND p.owner_id=?"
+                "{TASK_PROJECTION} WHERE p.is_summary=0 AND p.removed=0 AND p.id=? AND t.id=? AND p.owner_id=?"
             ))
             .bind(&command.plan_id)
             .bind(&command.task_id)

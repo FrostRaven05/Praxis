@@ -1,3 +1,8 @@
+import { ProjectLifecycle } from "./ProjectLifecycle";
+import { TaskMoveControls } from "./TaskMoveControls";
+import { KanbanView } from "./KanbanView";
+import { GanttView } from "./GanttView";
+import { taskStates, projectStates } from "@praxis/application";
 import { SubtaskComposer } from "./SubtaskComposer";
 import { projectTree } from "@praxis/application";
 import { TaskDetailsButton } from "./TaskDetailsButton";
@@ -14,6 +19,9 @@ export const projects = new Projects(projectStorage);
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
+  const [mode, setMode] = useState<"tasks" | "gantt" | "board">("tasks");
+  const [filter, setFilter] = useState("all"),
+    [showCancelled, setShowCancelled] = useState(false);
   const [items, setItems] = useState<Project[]>([]),
     [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -98,31 +106,62 @@ export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
         <p className="save-notice" role="status">
           {notice}
         </p>
+        <div className="project-filters" aria-label="项目筛选">
+          {(
+            [
+              ["all", "全部项目"],
+              ["focused", "重点项目"],
+              ["archived", "归档项目"],
+            ] as const
+          ).map(([key, label]) => (
+            <button
+              key={key}
+              aria-pressed={filter === key}
+              onClick={() => setFilter(key)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <div className="project-layout">
           <nav className="project-list" aria-label="项目列表">
-            {items.map((p) => (
-              <button
-                key={p.id}
-                disabled={busy}
-                className={
-                  p.id === selectedId ? "project-card selected" : "project-card"
-                }
-                onClick={() => {
-                  if (p.id !== selectedId) setTasks([]);
-                  setSelectedId(p.id);
-                  setForm(null);
-                  setTitles("");
-                  setNotice("");
-                }}
-              >
-                <strong>{p.name}</strong>
-                <span>{p.outcome || "尚未填写预期结果"}</span>
-                <small>
-                  {["低", "普通", "高"][p.priority]}优先级 ·{" "}
-                  {p.targetDate ?? "未设目标日期"}
-                </small>
-              </button>
-            ))}
+            {items
+              .filter((p) =>
+                filter === "archived"
+                  ? p.status === "archived"
+                  : filter === "focused"
+                    ? p.focused && p.status !== "archived"
+                    : p.status !== "archived",
+              )
+              .map((p) => (
+                <button
+                  key={p.id}
+                  disabled={busy}
+                  className={
+                    p.id === selectedId
+                      ? "project-card selected"
+                      : "project-card"
+                  }
+                  onClick={() => {
+                    if (p.id !== selectedId) setTasks([]);
+                    setSelectedId(p.id);
+                    setForm(null);
+                    setTitles("");
+                    setNotice("");
+                  }}
+                >
+                  <strong>{p.name}</strong>
+                  <small>
+                    {projectStates[p.status ?? "active"]}
+                    {p.focused ? " · 重点" : ""}
+                  </small>
+                  <span>{p.outcome || "尚未填写预期结果"}</span>
+                  <small>
+                    {["低", "普通", "高"][p.priority]}优先级 ·{" "}
+                    {p.targetDate ?? "未设目标日期"}
+                  </small>
+                </button>
+              ))}
             {!items.length && !loading && (
               <p className="empty-state">从第一个项目开始。</p>
             )}
@@ -163,105 +202,181 @@ export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
                 <p className="project-progress">
                   叶子任务进度：{done} / {total} 已完成
                 </p>
-                <form
-                  className="project-task-form"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    void run(async () => {
-                      await projects.add(selected.id, titles);
-                      setTitles("");
-                      setNotice("项目任务已保存");
-                      await refresh(selected.id);
-                    });
-                  }}
+                <ProjectLifecycle
+                  key={selected.id}
+                  project={selected}
+                  onSaved={() => refresh(selected.id)}
+                />
+                <div
+                  className="project-view-tabs"
+                  role="tablist"
+                  aria-label="项目视图"
                 >
-                  <label htmlFor="project-tasks">拆成可以行动的任务</label>
-                  <textarea
-                    id="project-tasks"
-                    value={titles}
-                    disabled={busy}
-                    onChange={(e) => setTitles(e.target.value)}
-                    placeholder="每行一条任务，暂时不必安排日期"
-                    rows={3}
+                  {(
+                    [
+                      ["tasks", "任务视图"],
+                      ["gantt", "甘特图"],
+                      ["board", "看板"],
+                    ] as const
+                  ).map(([key, label]) => (
+                    <button
+                      role="tab"
+                      key={key}
+                      aria-selected={mode === key}
+                      onClick={() => setMode(key)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                {mode === "gantt" && (
+                  <GanttView
+                    key={selected.id}
+                    project={selected}
+                    tasks={tasks}
+                    onSaved={() => refresh(selected.id)}
+                    onDay={onDay}
                   />
-                  <button disabled={busy}>添加项目任务</button>
-                </form>
-                {loading && <p>正在读取任务…</p>}
-                <>
-                  <ul className="task-list project-tasks">
-                    {tree.map((task) => (
-                      <li
-                        className="inbox-row tree-task"
-                        key={task.taskId}
-                        style={{ marginLeft: Math.min(task.depth, 8) * 18 }}
-                      >
-                        <div>
-                          <strong>
-                            {task.important && (
-                              <span className="task-important">重要</span>
-                            )}
-                            {task.title}
-                          </strong>
-                          <p className="task-meta">
-                            {task.hasChildren
-                              ? `汇总 · ${task.leafDone} / ${task.leafTotal} 已完成`
-                              : task.status === "completed"
-                                ? "已完成"
-                                : "待办"}{" "}
-                            ·{" "}
-                            {task.completionDate ??
-                              task.executionDate ??
-                              "尚未安排"}
-                          </p>
-                        </div>
-                        <TaskDetailsButton
-                          taskId={task.taskId}
-                          onSaved={() => refresh(selected.id)}
-                          disabled={busy}
+                )}
+                {mode === "board" && (
+                  <KanbanView
+                    key={selected.id}
+                    tasks={tasks}
+                    onSaved={() => refresh(selected.id)}
+                  />
+                )}
+                {mode === "tasks" && (
+                  <>
+                    <form
+                      className="project-task-form"
+                      onSubmit={(e) => {
+                        e.preventDefault();
+                        void run(async () => {
+                          await projects.add(selected.id, titles);
+                          setTitles("");
+                          setNotice("项目任务已保存");
+                          await refresh(selected.id);
+                        });
+                      }}
+                    >
+                      <label htmlFor="project-tasks">拆成可以行动的任务</label>
+                      <textarea
+                        id="project-tasks"
+                        value={titles}
+                        disabled={busy}
+                        onChange={(e) => setTitles(e.target.value)}
+                        placeholder="每行一条任务，暂时不必安排日期"
+                        rows={3}
+                      />
+                      <button disabled={busy}>添加项目任务</button>
+                    </form>
+                    {loading && <p>正在读取任务…</p>}
+                    <>
+                      <label>
+                        <input
+                          type="checkbox"
+                          checked={showCancelled}
+                          onChange={(e) => setShowCancelled(e.target.checked)}
                         />
-                        {task.hasChildren ? (
-                          <span className="task-meta">
-                            {task.hasSummaryPlan
-                              ? "原安排已转为汇总记录"
-                              : "仅执行叶子任务"}
-                          </span>
-                        ) : task.executionDate ? (
-                          <button
-                            disabled={busy}
-                            onClick={() =>
-                              onDay(task.completionDate ?? task.executionDate!)
-                            }
-                          >
-                            {task.status === "completed"
-                              ? "查看完成记录"
-                              : "查看安排"}
-                          </button>
-                        ) : task.status === "todo" ? (
-                          <button
-                            disabled={busy}
-                            onClick={() =>
-                              void run(async () => {
-                                const zone =
-                                  Intl.DateTimeFormat().resolvedOptions()
-                                    .timeZone;
-                                const date = calendarDate(new Date(), zone);
-                                await planning.schedule(task, date, zone);
-                                setNotice("已加入今日，仍是同一条任务");
-                                await refresh(selected.id);
-                              })
-                            }
-                          >
-                            加入今日
-                          </button>
-                        ) : null}
-                        <SubtaskComposer
-                          task={task}
-                          onSaved={() => refresh(selected.id)}
-                        />
-                      </li>
-                    ))}
-                  </ul>
-                </>
+                        显示已取消任务
+                      </label>
+                      <ul className="task-list project-tasks">
+                        {tree
+                          .filter(
+                            (t) => showCancelled || t.status !== "cancelled",
+                          )
+                          .map((task) => (
+                            <li
+                              className="inbox-row tree-task"
+                              key={task.taskId}
+                              style={{
+                                marginLeft: Math.min(task.depth, 8) * 18,
+                              }}
+                            >
+                              <div>
+                                <strong>
+                                  {task.important && (
+                                    <span className="task-important">重要</span>
+                                  )}
+                                  {task.title}
+                                </strong>
+                                <p className="task-meta">
+                                  {task.hasChildren
+                                    ? `汇总 · ${task.leafDone} / ${task.leafTotal} 已完成`
+                                    : (taskStates[task.status] ??
+                                      task.status)}{" "}
+                                  ·{" "}
+                                  {task.completionDate ??
+                                    task.executionDate ??
+                                    "尚未安排"}
+                                  {task.statusReason &&
+                                    " · " + task.statusReason}
+                                </p>
+                              </div>
+                              <TaskDetailsButton
+                                taskId={task.taskId}
+                                onSaved={() => refresh(selected.id)}
+                                disabled={busy}
+                              />
+                              {task.hasChildren ? (
+                                <span className="task-meta">
+                                  {task.hasSummaryPlan
+                                    ? "原安排已转为汇总记录"
+                                    : "仅执行叶子任务"}
+                                </span>
+                              ) : task.executionDate ? (
+                                <button
+                                  disabled={busy}
+                                  onClick={() =>
+                                    onDay(
+                                      task.completionDate ??
+                                        task.executionDate!,
+                                    )
+                                  }
+                                >
+                                  {task.status === "completed"
+                                    ? "查看完成记录"
+                                    : "查看安排"}
+                                </button>
+                              ) : ["todo", "in_progress", "blocked"].includes(
+                                  task.status,
+                                ) ? (
+                                <button
+                                  disabled={busy}
+                                  onClick={() =>
+                                    void run(async () => {
+                                      const zone =
+                                        Intl.DateTimeFormat().resolvedOptions()
+                                          .timeZone;
+                                      const date = calendarDate(
+                                        new Date(),
+                                        zone,
+                                      );
+                                      await planning.schedule(task, date, zone);
+                                      setNotice("已加入今日，仍是同一条任务");
+                                      await refresh(selected.id);
+                                    })
+                                  }
+                                >
+                                  加入今日
+                                </button>
+                              ) : null}
+                              <TaskMoveControls
+                                task={task}
+                                tasks={tasks}
+                                project={selected}
+                                onSaved={() => refresh(selected.id)}
+                              />
+                              <SubtaskComposer
+                                task={task}
+                                onSaved={() => refresh(selected.id)}
+                              />
+                            </li>
+                          ))}
+                      </ul>
+                    </>
+                  </>
+                )}
                 {!loading && !tasks.length && (
                   <p className="empty-state">项目还没有任务，先写下下一步。</p>
                 )}

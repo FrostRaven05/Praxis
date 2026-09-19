@@ -28,3 +28,5 @@ export * from "./projects";
 export * from "./task-details";
 
 export * from "./subtasks";
+
+export * from "./project-workspace";

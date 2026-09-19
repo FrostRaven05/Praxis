@@ -49,7 +49,7 @@ impl Store {
                 return Err("Only pending tasks can be split".into());
             }
             let plans: Vec<String> = sqlx::query_scalar(
-                "SELECT id FROM daily_plan_items WHERE task_id=? AND owner_id=? AND is_summary=0",
+                "SELECT id FROM daily_plan_items WHERE task_id=? AND owner_id=? AND is_summary=0 AND removed=0",
             )
             .bind(&c.parent_task_id)
             .bind(&self.owner_id)
@@ -60,6 +60,12 @@ impl Store {
                 return Err("SUMMARY_CONFIRMATION_REQUIRED".into());
             }
             sqlx::query("UPDATE daily_plan_items SET is_summary=1 WHERE task_id=? AND owner_id=?")
+                .bind(&c.parent_task_id)
+                .bind(&self.owner_id)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
+            sqlx::query("DELETE FROM project_schedules WHERE task_id=? AND owner_id=?")
                 .bind(&c.parent_task_id)
                 .bind(&self.owner_id)
                 .execute(&mut *tx)

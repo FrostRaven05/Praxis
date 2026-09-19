@@ -29,6 +29,9 @@ pub struct AddProjectTasksCommand {
 #[derive(Debug, Serialize, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct Project {
+    pub status: String,
+    pub focused: bool,
+    pub plan_version: i64,
     pub id: String,
     pub name: String,
     pub outcome: String,
@@ -39,6 +42,10 @@ pub struct Project {
 #[derive(Debug, Serialize, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectTask {
+    pub status_reason: String,
+    pub planned_start: Option<String>,
+    pub planned_end: Option<String>,
+    pub dependencies: sqlx::types::Json<Vec<String>>,
     pub parent_task_id: Option<String>,
     pub task_rank: i64,
     pub has_summary_plan: bool,
@@ -53,10 +60,10 @@ pub struct ProjectTask {
 }
 impl Store {
     pub async fn list_projects(&self) -> StoreResult<Vec<Project>> {
-        sqlx::query_as("SELECT id,name,outcome,target_date,priority,version FROM projects WHERE owner_id=? ORDER BY created_at,id").bind(&self.owner_id).fetch_all(&self.pool).await.map_err(|e|e.to_string())
+        sqlx::query_as("SELECT id,name,outcome,target_date,priority,version,status,focused,plan_version FROM projects WHERE owner_id=? ORDER BY created_at,id").bind(&self.owner_id).fetch_all(&self.pool).await.map_err(|e|e.to_string())
     }
     pub async fn project_tasks(&self, project_id: &str) -> StoreResult<Vec<ProjectTask>> {
-        sqlx::query_as("SELECT t.parent_task_id,t.task_rank,EXISTS(SELECT 1 FROM daily_plan_items sp WHERE sp.task_id=t.id AND sp.owner_id=t.owner_id AND sp.is_summary=1) AS has_summary_plan,t.id AS task_id,t.title,t.important,t.version,t.created_at,t.status,(SELECT p.execution_date FROM daily_plan_items p WHERE p.task_id=t.id AND p.owner_id=t.owner_id AND p.is_summary=0 ORDER BY p.created_at DESC LIMIT 1) AS execution_date,(SELECT e.execution_date FROM execution_records e WHERE e.id=t.active_completion_id AND e.owner_id=t.owner_id AND e.revoked_at IS NULL) AS completion_date FROM tasks t WHERE t.owner_id=? AND t.project_id=? ORDER BY t.created_at,t.rowid").bind(&self.owner_id).bind(project_id).fetch_all(&self.pool).await.map_err(|e|e.to_string())
+        sqlx::query_as("SELECT t.status_reason,(SELECT start_date FROM project_schedules WHERE task_id=t.id AND owner_id=t.owner_id) AS planned_start,(SELECT end_date FROM project_schedules WHERE task_id=t.id AND owner_id=t.owner_id) AS planned_end,(SELECT json_group_array(predecessor_id) FROM task_dependencies WHERE task_id=t.id AND owner_id=t.owner_id) AS dependencies,t.parent_task_id,t.task_rank,EXISTS(SELECT 1 FROM daily_plan_items sp WHERE sp.task_id=t.id AND sp.owner_id=t.owner_id AND sp.is_summary=1) AS has_summary_plan,t.id AS task_id,t.title,t.important,t.version,t.created_at,t.status,(SELECT p.execution_date FROM daily_plan_items p WHERE p.task_id=t.id AND p.owner_id=t.owner_id AND p.is_summary=0 AND p.removed=0 ORDER BY p.created_at DESC LIMIT 1) AS execution_date,(SELECT e.execution_date FROM execution_records e WHERE e.id=t.active_completion_id AND e.owner_id=t.owner_id AND e.revoked_at IS NULL) AS completion_date FROM tasks t WHERE t.owner_id=? AND t.project_id=? ORDER BY t.created_at,t.rowid").bind(&self.owner_id).bind(project_id).fetch_all(&self.pool).await.map_err(|e|e.to_string())
     }
     pub async fn save_project(&self, c: &SaveProjectCommand) -> StoreResult<()> {
         validate_operation(&c.operation_id, &c.occurred_at)?;
@@ -81,7 +88,7 @@ impl Store {
         )
         .await?
         {
-            let before:Option<Project>=sqlx::query_as("SELECT id,name,outcome,target_date,priority,version FROM projects WHERE id=? AND owner_id=?").bind(&c.project_id).bind(&self.owner_id).fetch_optional(&mut *tx).await.map_err(|e|e.to_string())?;
+            let before:Option<Project>=sqlx::query_as("SELECT id,name,outcome,target_date,priority,version,status,focused,plan_version FROM projects WHERE id=? AND owner_id=?").bind(&c.project_id).bind(&self.owner_id).fetch_optional(&mut *tx).await.map_err(|e|e.to_string())?;
             if before.as_ref().map(|p| p.version) != c.expected_version {
                 return Err("STATE_CONFLICT".into());
             }
@@ -135,8 +142,9 @@ impl Store {
             if !exists {
                 return Err("Project not found".into());
             }
-            for t in &c.tasks {
-                sqlx::query("INSERT INTO tasks(id,owner_id,title,project_id,status,source,created_at) VALUES(?,?,?,?,'todo','temporary',?)").bind(&t.task_id).bind(&self.owner_id).bind(t.title.trim()).bind(&c.project_id).bind(&c.occurred_at).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+            let rank:i64=sqlx::query_scalar("SELECT COALESCE(MAX(task_rank),-1)+1 FROM tasks WHERE owner_id=? AND project_id=? AND parent_task_id IS NULL").bind(&self.owner_id).bind(&c.project_id).fetch_one(&mut *tx).await.map_err(|e|e.to_string())?;
+            for (index, t) in c.tasks.iter().enumerate() {
+                sqlx::query("INSERT INTO tasks(id,owner_id,title,project_id,status,source,created_at,task_rank) VALUES(?,?,?,?,'todo','temporary',?,?)").bind(&t.task_id).bind(&self.owner_id).bind(t.title.trim()).bind(&c.project_id).bind(&c.occurred_at).bind(rank+index as i64).execute(&mut *tx).await.map_err(|e|e.to_string())?;
                 sqlx::query("INSERT INTO domain_events(id,owner_id,task_id,kind,occurred_at,payload) VALUES(?,?,?,'project_task_created',?,?)").bind(Uuid::new_v4().to_string()).bind(&self.owner_id).bind(&t.task_id).bind(&c.occurred_at).bind(&payload).execute(&mut *tx).await.map_err(|e|e.to_string())?;
             }
             self.queue_operation(

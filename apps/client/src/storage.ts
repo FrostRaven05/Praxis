@@ -1,3 +1,4 @@
+import { ProjectWorkspace } from "@praxis/application";
 import { Capacitor } from "@capacitor/core";
 import { mobileStorage } from "../../../packages/storage-mobile/src/native";
 import { invoke, isTauri } from "@tauri-apps/api/core";
@@ -70,3 +71,7 @@ export const taskDetailsStorage: import("@praxis/application").TaskDetailsStorag
 export const subtaskStorage: import("@praxis/application").SubtaskStorage = {
   add: (command) => invoke("add_subtasks", { command }),
 };
+
+export const workspace = new ProjectWorkspace((command) =>
+  invoke("project_workspace", { command }),
+);

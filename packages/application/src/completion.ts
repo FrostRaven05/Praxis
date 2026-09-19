@@ -25,9 +25,9 @@ export class ChangeCompletion {
   ): Promise<DailyTask> {
     if (
       action === "complete" &&
-      (task.status !== "todo" || task.activeCompletionId)
+      (!["todo", "in_progress", "blocked"].includes(task.status) || task.activeCompletionId)
     )
-      throw new Error("只有待办任务可以完成");
+      throw new Error("当前任务不能完成");
     if (
       action === "undo" &&
       (task.status !== "completed" || !task.activeCompletionId)

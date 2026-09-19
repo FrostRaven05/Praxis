@@ -1,3 +1,5 @@
+mod workspace;
+pub use workspace::{ScheduleEntry, WorkspaceAction, WorkspaceCommand};
 mod subtasks;
 pub use subtasks::AddSubtasksCommand;
 mod task_details;
@@ -41,6 +43,8 @@ pub struct CaptureCommand {
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct DailyTask {
+    pub status_reason: String,
+    pub project_status: Option<String>,
     pub important: bool,
     pub deadline: Option<String>,
     pub task_id: String,
@@ -112,7 +116,7 @@ pub struct Store {
 }
 
 const TASK_PROJECTION: &str = "SELECT t.id AS task_id, p.id AS plan_id, t.title,
-    t.important,t.deadline,p.execution_date, p.is_focus,p.focus_rank,p.estimated_minutes, t.created_at, t.project_id, t.status, t.source, t.version, t.active_completion_id,
+    t.status_reason,(SELECT status FROM projects WHERE id=t.project_id AND owner_id=t.owner_id) AS project_status,t.important,t.deadline,p.execution_date, p.is_focus,p.focus_rank,p.estimated_minutes, t.created_at, t.project_id, t.status, t.source, t.version, t.active_completion_id,
     (SELECT execution_date FROM execution_records e WHERE e.id=t.active_completion_id AND e.revoked_at IS NULL) AS completion_date
     FROM tasks t JOIN daily_plan_items p ON p.task_id = t.id AND p.owner_id = t.owner_id";
 
@@ -226,7 +230,7 @@ impl Store {
     pub async fn list_day(&self, date: &str) -> StoreResult<Vec<DailyTask>> {
         validate_date(date)?;
         sqlx::query_as::<_, DailyTask>(&format!(
-            "{TASK_PROJECTION} WHERE p.owner_id = ? AND p.is_summary=0 AND (
+            "{TASK_PROJECTION} WHERE p.owner_id = ? AND p.is_summary=0 AND p.removed=0 AND t.status<>'cancelled' AND (
                 (t.status <> 'completed' AND p.execution_date = ?) OR
                 (t.status = 'completed' AND EXISTS (
                   SELECT 1 FROM execution_records e WHERE e.id=t.active_completion_id
@@ -295,15 +299,6 @@ impl Store {
                 return Err("Operation reused with different content".into());
             }
         } else {
-            let current = sqlx::query_as::<_, DailyTask>(&format!(
-                "{TASK_PROJECTION} WHERE p.id=? AND t.id=? AND t.owner_id=?"
-            ))
-            .bind(&command.plan_id)
-            .bind(&command.task_id)
-            .bind(&self.owner_id)
-            .fetch_one(&mut *tx)
-            .await
-            .map_err(|e| e.to_string())?;
             let summary: bool = sqlx::query_scalar(
                 "SELECT EXISTS(SELECT 1 FROM tasks WHERE owner_id=? AND parent_task_id=?)",
             )
@@ -315,22 +310,25 @@ impl Store {
             if summary {
                 return Err("SUMMARY_TASK".into());
             }
+            let current = sqlx::query_as::<_, DailyTask>(&format!(
+                "{TASK_PROJECTION} WHERE p.is_summary=0 AND p.removed=0 AND p.id=? AND t.id=? AND t.owner_id=?"
+            ))
+            .bind(&command.plan_id)
+            .bind(&command.task_id)
+            .bind(&self.owner_id)
+            .fetch_one(&mut *tx)
+            .await
+            .map_err(|e| e.to_string())?;
             if current.version != command.expected_version {
                 return Err("STATE_CONFLICT".into());
             }
-            let (status, active, event) = if command.action == "complete" {
-                if current.status != "todo" || command.completion_id.is_some() {
+            let (target, event) = if command.action == "complete" {
+                if !["todo", "in_progress", "blocked"].contains(&current.status.as_str())
+                    || command.completion_id.is_some()
+                {
                     return Err("STATE_CONFLICT".into());
                 }
-                sqlx::query("INSERT INTO execution_records(id,owner_id,task_id,plan_id,execution_date,time_zone,occurred_at) VALUES (?,?,?,?,?,?,?)")
-                    .bind(&command.operation_id).bind(&self.owner_id).bind(&command.task_id).bind(&command.plan_id)
-                    .bind(&command.execution_date).bind(&command.time_zone).bind(&command.occurred_at)
-                    .execute(&mut *tx).await.map_err(|e|e.to_string())?;
-                (
-                    "completed",
-                    Some(command.operation_id.clone()),
-                    "task_completed",
-                )
+                ("completed", "task_completed")
             } else {
                 if current.status != "completed"
                     || current.active_completion_id.is_none()
@@ -338,16 +336,20 @@ impl Store {
                 {
                     return Err("STATE_CONFLICT".into());
                 }
-                let result=sqlx::query("UPDATE execution_records SET revoked_at=? WHERE id=? AND owner_id=? AND task_id=? AND revoked_at IS NULL")
-                    .bind(&command.occurred_at).bind(&command.completion_id).bind(&self.owner_id).bind(&command.task_id)
-                    .execute(&mut *tx).await.map_err(|e|e.to_string())?;
-                if result.rows_affected() != 1 {
-                    return Err("STATE_CONFLICT".into());
-                }
-                ("todo", None, "task_completion_undone")
+                ("todo", "task_completion_undone")
             };
-            sqlx::query("UPDATE tasks SET status=?,active_completion_id=?,version=version+1 WHERE id=? AND owner_id=?")
-                .bind(status).bind(active).bind(&command.task_id).bind(&self.owner_id).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+            self.apply_task_status(
+                &mut tx,
+                &command.task_id,
+                target,
+                "",
+                &command.operation_id,
+                &command.execution_date,
+                &command.time_zone,
+                &command.occurred_at,
+                Some(&command.plan_id),
+            )
+            .await?;
             sqlx::query("INSERT INTO domain_events(id,owner_id,task_id,kind,occurred_at,payload) VALUES (?,?,?,?,?,?)")
                 .bind(&command.operation_id).bind(&self.owner_id).bind(&command.task_id).bind(event).bind(&command.occurred_at).bind(&payload)
                 .execute(&mut *tx).await.map_err(|e|e.to_string())?;

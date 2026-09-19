@@ -7,10 +7,17 @@ export interface ProjectFields {
   priority: number;
 }
 export interface Project extends ProjectFields {
+  status?: string;
+  focused?: boolean;
+  planVersion?: number;
   id: string;
   version: number;
 }
 export interface ProjectTask {
+  plannedStart?: string | null;
+  plannedEnd?: string | null;
+  dependencies?: string[];
+  statusReason?: string;
   parentTaskId?: string | null;
   taskRank?: number;
   hasSummaryPlan?: boolean;
