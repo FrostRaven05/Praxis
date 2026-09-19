@@ -504,6 +504,192 @@ try {
     "Inbox assignment retains the original task; project fields, batch tasks and membership survive abrupt restart",
   );
 
+  const detailRow = app.page
+    .locator(".project-tasks .inbox-row")
+    .filter({ hasText: "实现报名接口" });
+  await detailRow
+    .getByRole("button", { name: "编辑详情", exact: true })
+    .click();
+  const fullDetails = () =>
+    app.page.getByRole("dialog", { name: "编辑任务详情", exact: true });
+  await fullDetails()
+    .getByLabel("任务名称", { exact: true })
+    .fill("实现完整报名接口");
+  await fullDetails()
+    .getByLabel("备注", { exact: true })
+    .fill("离线草稿\n需要保留");
+  await fullDetails()
+    .getByLabel("完成标准", { exact: true })
+    .fill("报名成功返回确认号");
+  await fullDetails().getByLabel("重要任务", { exact: true }).check();
+  await fullDetails()
+    .getByLabel("截止时间（本地时间）", { exact: true })
+    .fill("2030-02-02T18:30");
+  await fullDetails()
+    .getByLabel("预估工作量（分钟）", { exact: true })
+    .fill("45");
+  await app.page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await app.page.keyboard.press("Control+Shift+N");
+  await expect(fullDetails().getByLabel("备注", { exact: true })).toHaveValue(
+    "离线草稿\n需要保留",
+  );
+  await fullDetails()
+    .getByRole("button", { name: "保存任务详情", exact: true })
+    .click();
+  await expect(fullDetails().getByRole("status")).toHaveText(
+    "任务详情已保存到本机",
+  );
+  await fullDetails()
+    .getByLabel("备注", { exact: true })
+    .fill("连续保存后的备注");
+  await fullDetails()
+    .getByRole("button", { name: "保存任务详情", exact: true })
+    .click();
+  await expect(fullDetails().getByRole("status")).toHaveText(
+    "任务详情已保存到本机",
+  );
+  await fullDetails()
+    .getByRole("button", { name: "关闭详情编辑", exact: true })
+    .click();
+  await expect(fullDetails()).toHaveCount(0);
+  const editedProjectRow = app.page
+    .locator(".project-tasks .inbox-row")
+    .filter({ hasText: "实现完整报名接口" });
+  await expect(editedProjectRow).toContainText("尚未安排");
+  await expect(editedProjectRow).toContainText("重要");
+  await editedProjectRow
+    .getByRole("button", { name: "加入今日", exact: true })
+    .click();
+  await editedProjectRow
+    .getByRole("button", { name: "查看安排", exact: true })
+    .click();
+  const todayDetailRow = app.page
+    .locator(".task-item")
+    .filter({ hasText: "实现完整报名接口" });
+  await expect(todayDetailRow.getByLabel("预计投入分钟")).toHaveValue("45");
+  await expect(
+    todayDetailRow.getByRole("button", { name: "设为重点", exact: true }),
+  ).toBeVisible();
+  await todayDetailRow.locator(".task-row").click();
+  await app.page
+    .getByLabel("任务详情", { exact: true })
+    .getByRole("button", { name: "编辑详情", exact: true })
+    .click();
+  await expect(
+    fullDetails().getByLabel("完成标准", { exact: true }),
+  ).toHaveValue("报名成功返回确认号");
+  await expect(
+    fullDetails().getByLabel("截止时间（本地时间）", { exact: true }),
+  ).toHaveValue("2030-02-02T18:30");
+  await fullDetails()
+    .getByLabel("任务名称", { exact: true })
+    .fill("跨视图编辑后的接口");
+  await fullDetails()
+    .getByRole("button", { name: "保存任务详情", exact: true })
+    .click();
+  await expect(fullDetails().getByRole("status")).toHaveText(
+    "任务详情已保存到本机",
+  );
+  await fullDetails()
+    .getByRole("button", { name: "关闭详情编辑", exact: true })
+    .click();
+  await expect(fullDetails()).toHaveCount(0);
+  await app.page
+    .getByLabel("编辑任务标题", { exact: true })
+    .fill("详情保存后继续改标题");
+  await app.page.getByRole("button", { name: "保存修改", exact: true }).click();
+  await expect(
+    app.page.locator(".task-row").filter({ hasText: "详情保存后继续改标题" }),
+  ).toHaveCount(1);
+  results.push(
+    "Project and daily views share full details; background refresh preserves draft and consecutive edits use committed versions",
+  );
+  await app.page.keyboard.press("Control+Shift+N");
+  await app.page
+    .getByLabel("收件箱任务标题", { exact: true })
+    .fill("无日期编辑样本");
+  await app.page
+    .getByRole("button", { name: "存入收件箱", exact: true })
+    .click();
+  await app.page
+    .locator(".inbox-row")
+    .filter({ hasText: "无日期编辑样本" })
+    .getByRole("button", { name: "编辑详情", exact: true })
+    .click();
+  await fullDetails().getByLabel("任务名称", { exact: true }).fill("");
+  await fullDetails()
+    .getByRole("button", { name: "保存任务详情", exact: true })
+    .click();
+  await expect(fullDetails().getByRole("alert")).toContainText(
+    "请填写任务标题",
+  );
+  await fullDetails()
+    .getByLabel("任务名称", { exact: true })
+    .fill("无日期编辑已保存");
+  await fullDetails()
+    .getByLabel("备注", { exact: true })
+    .fill("仍然不安排日期");
+  await fullDetails()
+    .getByRole("button", { name: "保存任务详情", exact: true })
+    .click();
+  await expect(fullDetails().getByRole("status")).toHaveText(
+    "任务详情已保存到本机",
+  );
+  await fullDetails()
+    .getByRole("button", { name: "关闭详情编辑", exact: true })
+    .click();
+  await expect(fullDetails()).toHaveCount(0);
+  await expect(app.page.locator(".inbox-row")).toContainText(
+    "无日期编辑已保存",
+  );
+  stop(app.child);
+  app = await launch();
+  await app.page.keyboard.press("Control+Shift+N");
+  await app.page
+    .locator(".inbox-row")
+    .filter({ hasText: "无日期编辑已保存" })
+    .getByRole("button", { name: "编辑详情", exact: true })
+    .click();
+  await expect(fullDetails().getByLabel("备注", { exact: true })).toHaveValue(
+    "仍然不安排日期",
+  );
+  await expect(
+    fullDetails().getByLabel("预估工作量（分钟）", { exact: true }),
+  ).toHaveValue("");
+  await fullDetails()
+    .getByRole("button", { name: "关闭详情编辑", exact: true })
+    .click();
+  await expect(fullDetails()).toHaveCount(0);
+  await app.page.getByRole("button", { name: "项目", exact: true }).click();
+  await app.page
+    .locator(".project-card")
+    .filter({ hasText: "上线报名网站" })
+    .click();
+  await app.page
+    .locator(".project-tasks .inbox-row")
+    .filter({ hasText: "详情保存后继续改标题" })
+    .getByRole("button", { name: "编辑详情", exact: true })
+    .click();
+  await expect(fullDetails().getByLabel("备注", { exact: true })).toHaveValue(
+    "连续保存后的备注",
+  );
+  await expect(
+    fullDetails().getByLabel("重要任务", { exact: true }),
+  ).toBeChecked();
+  await expect(
+    fullDetails().getByLabel("截止时间（本地时间）", { exact: true }),
+  ).toHaveValue("2030-02-02T18:30");
+  await app.page.screenshot({
+    path: join(evidence, "desktop-task-details.png"),
+  });
+  await fullDetails()
+    .getByRole("button", { name: "关闭详情编辑", exact: true })
+    .click();
+  await expect(fullDetails()).toHaveCount(0);
+  results.push(
+    "Unscheduled inbox edits remain unscheduled; importance, deadline, criteria and estimates persist across native restart",
+  );
+
   stop(app.child);
   app = undefined;
   const invalidDirectory = join(data, "not-a-directory");

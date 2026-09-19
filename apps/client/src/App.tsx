@@ -1,3 +1,4 @@
+import { TaskDetailsButton } from "./TaskDetailsButton";
 import { ProjectsView } from "./ProjectsView";
 import { ProjectAssignment } from "./ProjectAssignment";
 import { InboxView } from "./InboxView";
@@ -137,6 +138,7 @@ export function App() {
   }
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
+      if (document.querySelector("dialog[open]")) return;
       if (
         desktopAvailable &&
         event.ctrlKey &&
@@ -297,7 +299,14 @@ export function App() {
             <span className="task-circle" aria-hidden="true" />
           )}
           <span className="task-text">
-            <span className="task-title">{item.title}</span>
+            <span className="task-title">
+              {item.important && (
+                <span className="task-important" aria-label="重要任务">
+                  重要
+                </span>
+              )}
+              {item.title}
+            </span>
             <span className="task-meta">
               {item.projectId ? "项目任务" : "临时事项"} · {item.executionDate}
             </span>
@@ -623,6 +632,19 @@ export function App() {
               key={"project:" + selected.taskId + ":" + selected.version}
               task={selected}
               onAssigned={async () => {
+                const rows = await refresh(displayedDate);
+                const current = rows?.find((t) => t.taskId === selected.taskId);
+                if (current) {
+                  setEditBaseline(current);
+                  setEditorRevision((n) => n + 1);
+                }
+              }}
+            />
+          )}
+          {desktopAvailable && (
+            <TaskDetailsButton
+              taskId={selected.taskId}
+              onSaved={async () => {
                 const rows = await refresh(displayedDate);
                 const current = rows?.find((t) => t.taskId === selected.taskId);
                 if (current) {

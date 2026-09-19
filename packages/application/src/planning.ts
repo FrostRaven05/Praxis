@@ -29,6 +29,8 @@ export interface CapacityCommand {
   minutes: number | null;
 }
 export interface InboxTask {
+  important?: boolean;
+  deadline?: string | null;
   taskId: string;
   title: string;
   version: number;

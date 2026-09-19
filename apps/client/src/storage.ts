@@ -60,3 +60,9 @@ export const projectStorage: import("@praxis/application").ProjectStorage = {
   addProjectTasks: (command) => invoke("add_project_tasks", { command }),
   assignProject: (command) => invoke("assign_project", { command }),
 };
+
+export const taskDetailsStorage: import("@praxis/application").TaskDetailsStorage =
+  {
+    read: (taskId) => invoke("task_details", { taskId }),
+    save: (command) => invoke("save_task_details", { command }),
+  };

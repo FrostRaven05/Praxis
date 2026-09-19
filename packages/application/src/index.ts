@@ -24,3 +24,5 @@ export type {
 } from "./planning";
 
 export * from "./projects";
+
+export * from "./task-details";

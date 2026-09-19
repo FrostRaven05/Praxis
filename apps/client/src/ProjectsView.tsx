@@ -1,3 +1,4 @@
+import { TaskDetailsButton } from "./TaskDetailsButton";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Projects,
@@ -101,6 +102,7 @@ export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
                   p.id === selectedId ? "project-card selected" : "project-card"
                 }
                 onClick={() => {
+                  if (p.id !== selectedId) setTasks([]);
                   setSelectedId(p.id);
                   setForm(null);
                   setTitles("");
@@ -175,14 +177,18 @@ export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
                   />
                   <button disabled={busy}>添加项目任务</button>
                 </form>
-                {loading ? (
-                  <p>正在读取任务…</p>
-                ) : (
+                {loading && <p>正在读取任务…</p>}
+                <>
                   <ul className="task-list project-tasks">
                     {tasks.map((task) => (
                       <li className="inbox-row" key={task.taskId}>
                         <div>
-                          <strong>{task.title}</strong>
+                          <strong>
+                            {task.important && (
+                              <span className="task-important">重要</span>
+                            )}
+                            {task.title}
+                          </strong>
                           <p className="task-meta">
                             {task.status === "completed" ? "已完成" : "待办"} ·{" "}
                             {task.completionDate ??
@@ -190,6 +196,11 @@ export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
                               "尚未安排"}
                           </p>
                         </div>
+                        <TaskDetailsButton
+                          taskId={task.taskId}
+                          onSaved={() => refresh(selected.id)}
+                          disabled={busy}
+                        />
                         {task.executionDate ? (
                           <button
                             disabled={busy}
@@ -222,7 +233,7 @@ export function ProjectsView({ onDay }: { onDay: (date: string) => void }) {
                       </li>
                     ))}
                   </ul>
-                )}
+                </>
                 {!loading && !tasks.length && (
                   <p className="empty-state">项目还没有任务，先写下下一步。</p>
                 )}

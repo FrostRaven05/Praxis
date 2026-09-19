@@ -293,6 +293,37 @@ async fn project_tasks(
         .map_err(|e| planning_error(&database, "project-tasks", None, e))
 }
 
+#[tauri::command]
+async fn task_details(
+    task_id: String,
+    database: State<'_, LocalDatabase>,
+) -> Result<store::TaskDetails, String> {
+    database
+        .get(None)
+        .await?
+        .task_details(&task_id)
+        .await
+        .map_err(|e| planning_error(&database, "task-details", None, e))
+}
+#[tauri::command]
+async fn save_task_details(
+    command: store::TaskDetailsCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<store::TaskDetails, String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .save_task_details(&command)
+        .await
+        .map_err(|e| {
+            planning_error(
+                &database,
+                "task-details-save",
+                Some(&command.operation_id),
+                e,
+            )
+        })
+}
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
@@ -319,6 +350,8 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            task_details,
+            save_task_details,
             capture_task,
             list_day,
             change_completion,

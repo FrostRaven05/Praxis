@@ -11,6 +11,8 @@ export interface CaptureCommand {
 }
 
 export interface DailyTask {
+  important?: boolean;
+  deadline?: string | null;
   taskId: string;
   planId: string;
   title: string;

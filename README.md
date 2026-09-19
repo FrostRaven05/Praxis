@@ -11,7 +11,7 @@ Ticket 01：桌面离线录入。只输入标题即可加入今天，任务、�
 - [产品需求](Spec.md)
 - [技术路线](TECHNOLOGY.md)
 - [本地 Tickets](.scratch/praxis-mvp/README.md)
-- [当前桌面切片](.scratch/praxis-mvp/issues/D04-desktop-projects.md)
+- [当前桌面切片](.scratch/praxis-mvp/issues/D05-desktop-task-details.md)
 - [桌面优先实施顺序](docs/desktop-first.md)
 - [完成与撤销验证记录](docs/implementation-desktop-completion.md)
 - [实施与验证记录](docs/implementation-01.md)
@@ -71,3 +71,5 @@ Ticket 02 已加入 Capacitor 工程与原生 SQLite 适配，尚未完成 APK �
 运行 `pnpm desktop:preview`。该命令通过 Tauri 构建内置页面，并将程序复制到独立预览目录后打开，无须启动 Vite。不要直接打开经过 `cargo test` 覆盖的 target/debug 程序；它可能访问未启动的开发服务器。
 
 [桌面项目管理验收](docs/implementation-desktop-projects.md)
+
+桌面已支持收件箱、项目及今日的统一任务详情编辑，包括备注、完成标准、独立重要度、带时区的截止时间和预估工作量。见 [D05 验收记录](docs/implementation-desktop-task-details.md)。

@@ -1025,3 +1025,114 @@ button:disabled {
     top: 32px;
   }
 }
+
+.task-details-dialog {
+  width: 560px;
+  max-width: calc(100vw - 40px);
+  max-height: calc(100dvh - 80px);
+  margin: auto;
+  padding: 28px;
+  border: 1px solid #d4ddcc;
+  border-radius: 16px;
+  background: #fafaf5;
+  color: #292b29;
+  box-shadow: 0 24px 90px #20302030;
+  overflow: auto;
+}
+.task-details-dialog::backdrop {
+  background: #26332655;
+}
+.task-details-dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.task-details-dialog header h2 {
+  font-size: 23px;
+  margin: 8px 0;
+}
+.task-details-dialog header button {
+  font-size: 24px;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+}
+.full-details-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.full-details-form label {
+  font-size: 14px;
+  font-weight: 600;
+}
+.full-details-form input:not([type="checkbox"]),
+.full-details-form textarea {
+  width: 100%;
+  border: 1px solid #ccd6c3;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: white;
+  font: inherit;
+  color: inherit;
+}
+.full-details-form textarea {
+  resize: vertical;
+}
+.full-details-form .importance-field {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+.field-help {
+  font-size: 12px;
+  color: #737e69;
+  margin: 0 0 8px;
+  line-height: 1.6;
+}
+.details-button,
+.task-details-dialog button {
+  border: 1px solid #c9d6bd;
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: #edf2e7;
+  color: #49613d;
+  font: inherit;
+  cursor: pointer;
+}
+.task-details-dialog button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.task-details-dialog .details-reload {
+  margin-top: 14px;
+  background: transparent;
+  font-size: 12px;
+}
+.details-notice {
+  font-size: 13px;
+  color: #49613d;
+  margin: 0;
+}
+.task-important {
+  font-size: 12px;
+  font-weight: 600;
+  color: #986b25;
+  margin-right: 6px;
+}
+.task-detail > .details-button {
+  margin: 16px 0;
+}
+.inbox-row .details-button {
+  white-space: nowrap;
+}
+
+.task-details-dialog fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}

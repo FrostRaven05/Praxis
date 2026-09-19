@@ -1,3 +1,4 @@
+import { TaskDetailsButton } from "./TaskDetailsButton";
 import { ProjectAssignment } from "./ProjectAssignment";
 import { useEffect, useState } from "react";
 import { calendarDate, type InboxTask } from "@praxis/application";
@@ -101,8 +102,18 @@ export function InboxView({
           {tasks.map((task) => (
             <li className="inbox-row" key={task.taskId}>
               <div>
-                <span>{task.title}</span>
+                <span>
+                  {task.important && (
+                    <span className="task-important">重要</span>
+                  )}
+                  {task.title}
+                </span>
                 <ProjectAssignment task={task} onAssigned={refresh} />
+                <TaskDetailsButton
+                  taskId={task.taskId}
+                  onSaved={refresh}
+                  disabled={busy}
+                />
               </div>
               <button
                 disabled={busy}

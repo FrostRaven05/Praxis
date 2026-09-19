@@ -11,6 +11,7 @@ pub struct InboxCommand {
 #[derive(Debug, Serialize, FromRow)]
 #[serde(rename_all = "camelCase")]
 pub struct InboxTask {
+    pub important: bool,
     pub task_id: String,
     pub title: String,
     pub version: i64,
@@ -68,7 +69,7 @@ impl Store {
         Ok(())
     }
     pub async fn list_inbox(&self) -> StoreResult<Vec<InboxTask>> {
-        sqlx::query_as("SELECT t.id AS task_id,t.title,t.version,t.created_at FROM tasks t WHERE t.owner_id=? AND t.status='todo' AND t.project_id IS NULL AND NOT EXISTS(SELECT 1 FROM daily_plan_items p WHERE p.owner_id=t.owner_id AND p.task_id=t.id) ORDER BY t.created_at,t.id")
+        sqlx::query_as("SELECT t.id AS task_id,t.title,t.version,t.created_at,t.important FROM tasks t WHERE t.owner_id=? AND t.status='todo' AND t.project_id IS NULL AND NOT EXISTS(SELECT 1 FROM daily_plan_items p WHERE p.owner_id=t.owner_id AND p.task_id=t.id) ORDER BY t.created_at,t.id")
  .bind(&self.owner_id).fetch_all(&self.pool).await.map_err(|e|e.to_string())
     }
     pub async fn schedule_task(&self, c: &ScheduleCommand) -> StoreResult<()> {
@@ -97,7 +98,15 @@ impl Store {
             if !allowed {
                 return Err("STATE_CONFLICT".into());
             }
-            sqlx::query("INSERT INTO daily_plan_items(id,owner_id,task_id,execution_date,time_zone,created_at) VALUES(?,?,?,?,?,?)").bind(&c.plan_id).bind(&self.owner_id).bind(&c.task_id).bind(&c.execution_date).bind(&c.time_zone).bind(&c.occurred_at).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+            let estimate: Option<i64> = sqlx::query_scalar(
+                "SELECT default_estimated_minutes FROM tasks WHERE id=? AND owner_id=?",
+            )
+            .bind(&c.task_id)
+            .bind(&self.owner_id)
+            .fetch_one(&mut *tx)
+            .await
+            .map_err(|e| e.to_string())?;
+            sqlx::query("INSERT INTO daily_plan_items(id,owner_id,task_id,execution_date,time_zone,created_at,estimated_minutes) VALUES(?,?,?,?,?,?,?)").bind(&c.plan_id).bind(&self.owner_id).bind(&c.task_id).bind(&c.execution_date).bind(&c.time_zone).bind(&c.occurred_at).bind(estimate).execute(&mut *tx).await.map_err(|e|e.to_string())?;
             sqlx::query("UPDATE tasks SET version=version+1 WHERE id=? AND owner_id=?")
                 .bind(&c.task_id)
                 .bind(&self.owner_id)

@@ -11,6 +11,8 @@ export interface Project extends ProjectFields {
   version: number;
 }
 export interface ProjectTask {
+  important?: boolean;
+  deadline?: string | null;
   taskId: string;
   title: string;
   version: number;

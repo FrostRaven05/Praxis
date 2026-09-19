@@ -1,3 +1,5 @@
+mod task_details;
+pub use task_details::{TaskDetails, TaskDetailsCommand};
 mod projects;
 pub use projects::{
     AddProjectTasksCommand, AssignProjectCommand, NewProjectTask, Project, ProjectTask,
@@ -37,6 +39,8 @@ pub struct CaptureCommand {
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct DailyTask {
+    pub important: bool,
+    pub deadline: Option<String>,
     pub task_id: String,
     pub plan_id: String,
     pub title: String,
@@ -106,7 +110,7 @@ pub struct Store {
 }
 
 const TASK_PROJECTION: &str = "SELECT t.id AS task_id, p.id AS plan_id, t.title,
-    p.execution_date, p.is_focus,p.focus_rank,p.estimated_minutes, t.created_at, t.project_id, t.status, t.source, t.version, t.active_completion_id,
+    t.important,t.deadline,p.execution_date, p.is_focus,p.focus_rank,p.estimated_minutes, t.created_at, t.project_id, t.status, t.source, t.version, t.active_completion_id,
     (SELECT execution_date FROM execution_records e WHERE e.id=t.active_completion_id AND e.revoked_at IS NULL) AS completion_date
     FROM tasks t JOIN daily_plan_items p ON p.task_id = t.id AND p.owner_id = t.owner_id";
 
