@@ -286,14 +286,16 @@ export function ProjectsView({
                         });
                       }}
                     >
-                      <label htmlFor="project-tasks">拆成可以行动的任务</label>
+                      <label className="sr-only" htmlFor="project-tasks">
+                        拆成可以行动的任务
+                      </label>
                       <textarea
                         id="project-tasks"
                         value={titles}
                         disabled={busy}
                         onChange={(e) => setTitles(e.target.value)}
                         placeholder="每行一条任务，暂时不必安排日期"
-                        rows={3}
+                        rows={2}
                       />
                       <button disabled={busy}>添加项目任务</button>
                     </form>

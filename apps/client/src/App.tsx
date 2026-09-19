@@ -331,7 +331,9 @@ export function App() {
               {item.projectStatus && item.projectStatus !== "active" && (
                 <>项目{projectStates[item.projectStatus]} · </>
               )}
-              {item.projectId ? "项目任务" : "临时事项"} · {item.executionDate}
+              {item.executionDate !== displayedDate && (
+                <>安排于 {item.executionDate}</>
+              )}
             </span>
           </span>
           <span className="task-arrow" aria-hidden="true">
@@ -363,12 +365,12 @@ export function App() {
           <span className="brand-mark">P</span>Praxis
           <span className="brand-dot">.</span>
         </a>
-        <p className="tagline">Turn intent into action.</p>
+
         <nav aria-label="主导航">
           <a
             className={view === "day" ? "nav-item active" : "nav-item"}
             href="#today"
-            aria-current="page"
+            aria-current={view === "day" ? "page" : undefined}
             onClick={() => selectDate(localDay().date)}
           >
             <span aria-hidden="true">☀</span>今日
@@ -437,17 +439,10 @@ export function App() {
         />
       ) : (
         <section className="today" id="today" aria-labelledby="today-title">
-          <header className="topbar">
-            <span>
-              我的工作台 <span className="breadcrumb-separator">/</span> 今日
-            </span>
-            <span className="local-badge">
-              {nativeAvailable ? "保存在本机" : "浏览器预览"}
-            </span>
-          </header>
           <div className="today-content">
-            <div className="date-row">
-              <span>
+            <header className="day-toolbar">
+              <h1 id="today-title">{recoveryDate ? "日程" : "今日"}</h1>
+              <span className="day-label">
                 {new Intl.DateTimeFormat("zh-CN", {
                   timeZone: "UTC",
                   month: "long",
@@ -455,29 +450,23 @@ export function App() {
                   weekday: "long",
                 }).format(new Date(displayedDate + "T12:00:00Z"))}
               </span>
-              <span>{displayedDate.slice(0, 4)}</span>
-            </div>
-
-            {desktopAvailable && (
-              <div className="date-navigation">
-                <label htmlFor="view-date">查看日期</label>
-                <input
-                  id="view-date"
-                  type="date"
-                  value={displayedDate}
-                  onChange={(e) => selectDate(e.target.value)}
-                />
-                <button onClick={() => selectDate(localDay().date)}>
-                  今天
-                </button>
-              </div>
-            )}
-            <p className="eyebrow">A LITTLE PROGRESS, EVERY DAY</p>
-            <h1 id="today-title">
-              {recoveryDate ? "为这一天，安排下一步" : "今天，从一件小事开始"}
-              <span>。</span>
-            </h1>
-            <p className="intro">把脑海里的下一步，变成清晰的行动。</p>
+              {desktopAvailable && (
+                <div className="date-navigation">
+                  <label className="sr-only" htmlFor="view-date">
+                    查看日期
+                  </label>
+                  <input
+                    id="view-date"
+                    type="date"
+                    value={displayedDate}
+                    onChange={(e) => selectDate(e.target.value)}
+                  />
+                  <button onClick={() => selectDate(localDay().date)}>
+                    今天
+                  </button>
+                </div>
+              )}
+            </header>
             <form
               className="capture-form"
               onSubmit={(event) => {
@@ -499,7 +488,7 @@ export function App() {
                   setTitle(event.target.value);
                   setSaveError("");
                 }}
-                placeholder="今天，想推进哪件事？"
+                placeholder="添加今日任务，按回车保存"
                 autoComplete="off"
                 disabled={saving || !nativeAvailable}
                 aria-invalid={Boolean(saveError)}
@@ -519,7 +508,6 @@ export function App() {
                 {pendingDate ? "重试原任务" : "添加至今日"} ·{" "}
                 {pendingDate ?? day.date}
               </span>
-              <span>只写标题，就可以开始</span>
             </div>
             {saveError && (
               <p className="error" id="save-error" role="alert">
@@ -527,7 +515,7 @@ export function App() {
               </p>
             )}
             <p className="save-notice" role="status">
-              {notice || "\u00a0"}
+              {notice}
             </p>
             {recoveryDate && (
               <div className="recovery-note">
@@ -550,7 +538,6 @@ export function App() {
                     {recoveryDate ? "当日重点" : "今日重点"}{" "}
                     <span>{focusItems.length}</span>
                   </h2>
-                  <span>建议聚焦 1–3 项</span>
                 </div>
                 <ul className="task-list">{focusItems.map(taskRow)}</ul>
               </section>
@@ -560,7 +547,6 @@ export function App() {
                 {recoveryDate ? recoveryDate + " · 待办" : "今日待办"}{" "}
                 <span>{pendingItems.length}</span>
               </h2>
-              <span>为今天留一点专注</span>
             </div>
             {loadError ? (
               <div className="load-error" role="alert">
@@ -581,11 +567,7 @@ export function App() {
               </p>
             ) : items.length === 0 ? (
               <div className="empty-state">
-                <span className="empty-icon" aria-hidden="true">
-                  ↗
-                </span>
-                <h2>留一点空间，给重要的事</h2>
-                <p>从一件小事开始，今天就有了方向。</p>
+                <p>暂无任务</p>
               </div>
             ) : (
               <ul className="task-list">{pendingItems.map(taskRow)}</ul>
@@ -631,10 +613,6 @@ export function App() {
                 )}
               </section>
             )}
-            <footer className="content-foot">
-              <span>PRAXIS / TODAY</span>
-              <span>想法，正在成为行动。</span>
-            </footer>
           </div>
         </section>
       )}

@@ -128,6 +128,8 @@ try {
     .all()) {
     expect((await button.boundingBox()).height).toBe(32);
   }
+  await app.page.setViewportSize({ width: 580, height: 600 });
+  await expect(app.page.locator("#capture-hint > span")).toBeVisible();
   await app.page.setViewportSize({ width: 1160, height: 800 });
   results.push("Titlebar buttons stay within 32px at minimum desktop width");
 
@@ -147,7 +149,7 @@ try {
   results.push("Titlebar double-click invokes native maximize");
   await app.page.screenshot({ path: join(evidence, "desktop-titlebar.png") });
 
-  await expect(app.page.getByText("留一点空间，给重要的事")).toBeVisible();
+  await expect(app.page.getByText("暂无任务")).toBeVisible();
   await app.page.getByRole("button", { name: "添加", exact: false }).click();
   await expect(app.page.getByRole("alert")).toHaveText("请填写任务标题");
   results.push("Blank title: rejected with visible message");
@@ -168,6 +170,16 @@ try {
     .click();
   await expect(app.page.getByLabel("任务详情", { exact: true })).toContainText(
     "未归属项目",
+  );
+  const compactRow = await app.page.locator(".task-item").first().boundingBox();
+  const captureBox = await app.page.locator(".capture-form").boundingBox();
+  expect(compactRow.height).toBeLessThan(80);
+  expect(captureBox.y).toBeLessThan(150);
+  await expect(app.page.locator(".eyebrow, .intro, .content-foot")).toHaveCount(
+    0,
+  );
+  results.push(
+    "Compact workspace keeps capture near top and default task rows below 80px",
   );
   await app.page.screenshot({ path: join(evidence, "desktop-captured.png") });
   results.push(
@@ -291,11 +303,13 @@ try {
     .filter({ hasText: "重启后保留编辑" });
   await planned.getByRole("button", { name: "设为重点", exact: true }).click();
   await expect(app.page.locator(".focus-section .task-row")).toHaveCount(1);
+  await planned.getByLabel("更多任务操作").click();
   await planned.getByLabel("预计投入分钟", { exact: true }).fill("45");
   await planned.getByRole("button", { name: "保存估时", exact: true }).click();
   await expect(app.page.getByLabel("每日负载", { exact: true })).toContainText(
     "已安排预计 45 分钟",
   );
+  await app.page.locator(".capacity-settings summary").click();
   await app.page.getByLabel("可用时长（分钟）", { exact: true }).fill("30");
   await app.page.getByRole("button", { name: "保存容量", exact: true }).click();
   await expect(app.page.getByLabel("每日负载", { exact: true })).toContainText(
@@ -306,9 +320,7 @@ try {
     "Focus grouping, estimate and capacity persist; overload warns without removing tasks",
   );
   await app.page.keyboard.press("Control+Shift+N");
-  await expect(
-    app.page.getByRole("heading", { name: "先记下来，稍后安排。" }),
-  ).toBeVisible();
+  await expect(app.page.getByRole("heading", { name: "收件箱" })).toBeVisible();
   await app.page
     .getByLabel("收件箱任务标题", { exact: true })
     .fill("从收件箱安排的任务");
@@ -326,6 +338,7 @@ try {
     .getByRole("button", { name: "设为重点", exact: true })
     .click();
   await expect(app.page.locator(".focus-section .task-row")).toHaveCount(2);
+  await scheduled.getByLabel("更多任务操作").click();
   await scheduled
     .getByRole("button", { name: "重点上移", exact: true })
     .click();
@@ -785,7 +798,7 @@ try {
     "Splitting a scheduled parent requires confirmation and retains its plan as a non-executable summary",
   );
 
-  app = await checkProjectWorkspace({app,launch,stop,evidence,results});
+  app = await checkProjectWorkspace({ app, launch, stop, evidence, results });
 
   stop(app.child);
   app = undefined;

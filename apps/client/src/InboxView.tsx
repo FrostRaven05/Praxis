@@ -35,13 +35,10 @@ export function InboxView({
   }, []);
   return (
     <section className="today inbox-view" aria-labelledby="inbox-heading">
-      <header className="topbar">
-        我的工作台 / 收件箱<span className="local-badge">保存在本机</span>
-      </header>
       <div className="today-content">
-        <p className="eyebrow">CAPTURE NOW, PLAN LATER</p>
-        <h1 id="inbox-heading">先记下来，稍后安排。</h1>
-        <p className="intro">这里的任务尚未安排日期。</p>
+        <header className="day-toolbar">
+          <h1 id="inbox-heading">收件箱</h1>
+        </header>
         <form
           className="capture-form"
           onSubmit={(e) => {
@@ -136,9 +133,7 @@ export function InboxView({
             </li>
           ))}
         </ul>
-        {!tasks.length && !error && (
-          <p className="empty-state">收件箱是空的，随时记下新想法。</p>
-        )}
+        {!tasks.length && !error && <p className="empty-state">收件箱为空</p>}
       </div>
     </section>
   );

@@ -1,0 +1,334 @@
+/* Compact workspace: keep content readable and controls at least 32px high. */
+:root {
+  --surface: #fff;
+  --surface-secondary: #f9f9f9;
+  --text-primary: #242b27;
+  --text-secondary: #667069;
+  --line: #e5e8e5;
+  --accent: #365342;
+}
+.workspace {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+.sidebar {
+  width: 212px;
+  padding: 20px 16px 16px;
+  background: var(--surface-secondary);
+  border-right: 1px solid var(--line);
+}
+.brand {
+  font-size: 22px;
+  margin-bottom: 24px;
+}
+.brand-mark {
+  width: 30px;
+  height: 32px;
+  font-size: 22px;
+}
+.nav-item,
+.sidebar nav button.nav-item {
+  padding: 9px 12px;
+  margin-top: 4px;
+  min-height: 40px;
+}
+.sidebar-foot {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.tracked-projects {
+  margin-top: 20px;
+}
+.tracked-project {
+  padding: 8px;
+  min-height: 36px;
+}
+.today {
+  margin-left: 212px;
+  width: calc(100% - 212px);
+}
+.today-content,
+.projects-view .today-content {
+  max-width: none;
+  padding: 16px 24px 24px;
+  margin: 0;
+}
+.day-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  min-height: 40px;
+  margin-bottom: 16px;
+}
+.day-toolbar h1 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.4;
+  font-weight: 600;
+}
+.day-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+.day-toolbar .date-navigation {
+  margin: 0 0 0 auto;
+}
+.date-navigation {
+  gap: 8px;
+  margin: 12px 0;
+}
+.date-navigation input,
+.date-navigation button {
+  min-height: 32px;
+  padding: 4px 8px;
+  font-size: 13px;
+}
+.capture-form {
+  min-height: 44px;
+  padding: 6px 8px 6px 12px;
+  border-radius: 8px;
+  margin: 0;
+  box-shadow: none;
+  background: var(--surface-secondary);
+}
+.capture-form input {
+  font-size: 14px;
+  padding: 4px 0;
+}
+.add-button {
+  min-height: 32px;
+  padding: 6px 12px;
+}
+.capture-hint {
+  margin: 4px 0;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.save-notice {
+  min-height: 0;
+  margin: 6px 0;
+  font-size: 12px;
+}
+.save-notice:empty {
+  display: none;
+}
+.recovery-note {
+  padding: 6px 10px;
+  margin: 8px 0;
+}
+.planning-panel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 0;
+  margin: 8px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.planning-panel strong {
+  font-weight: 500;
+}
+.planning-panel.overloaded {
+  padding: 8px;
+}
+.capacity-settings {
+  margin-left: auto;
+}
+.capacity-settings summary,
+.task-more summary {
+  cursor: pointer;
+  min-height: 32px;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-radius: 6px;
+}
+.capacity-settings[open] {
+  flex-basis: 100%;
+}
+.planning-panel form {
+  margin: 4px 8px 8px;
+}
+.list-heading {
+  margin: 12px 0 4px;
+  min-height: 28px;
+}
+.list-heading h2 {
+  font-size: 13px;
+}
+.focus-section {
+  background: transparent;
+}
+.task-item {
+  gap: 8px;
+  align-items: center;
+  flex-wrap: nowrap;
+  padding: 4px 0;
+}
+.task-row {
+  min-height: 44px;
+  padding: 8px;
+  gap: 8px;
+}
+.task-text {
+  font-size: 14px;
+}
+.task-meta {
+  font-size: 12px;
+  margin: 2px 0 0;
+  color: var(--text-secondary);
+}
+.task-meta:empty {
+  display: none;
+}
+.task-arrow {
+  display: none;
+}
+.completion-toggle {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+}
+.plan-controls {
+  width: auto;
+  padding: 0;
+  flex-shrink: 0;
+  align-items: flex-start;
+}
+.plan-controls button {
+  min-height: 32px;
+}
+.task-more {
+  max-width: 230px;
+}
+.task-more[open] {
+  padding: 0 4px 4px;
+  background: var(--surface-secondary);
+}
+.task-more form {
+  flex-wrap: wrap;
+  padding: 4px;
+}
+.task-more input {
+  min-height: 32px;
+}
+.task-more summary:hover,
+.capacity-settings summary:hover {
+  background: var(--surface-secondary);
+}
+summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.empty-state {
+  margin: 0;
+  padding: 32px 16px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.empty-state p {
+  margin: 0;
+}
+.inbox-row {
+  padding: 8px 0;
+  gap: 12px;
+  min-height: 48px;
+}
+.inbox-row button {
+  min-height: 32px;
+}
+.inbox-row .project-assignment {
+  margin: 4px 0;
+}
+.projects-view button:not(.project-card) {
+  font-size: 13px;
+  padding: 5px 10px;
+  min-height: 32px;
+}
+.project-heading h2 {
+  font-size: 18px;
+}
+.project-outcome {
+  font-size: 13px;
+  margin: 6px 0;
+}
+.project-task-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+.project-task-form textarea {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 8px;
+}
+.project-task-form button {
+  flex-shrink: 0;
+}
+.project-tasks .tree-task {
+  gap: 6px 12px;
+}
+.project-tasks .tree-task strong {
+  font-size: 14px;
+  font-weight: 500;
+}
+.project-tasks .task-move {
+  flex-basis: auto;
+  margin: 0;
+}
+.project-tasks .subtask-composer {
+  margin: 0;
+}
+.task-detail {
+  padding: 20px;
+}
+.detail-heading {
+  margin-bottom: 16px;
+}
+.task-detail h2 {
+  margin-top: 12px;
+  font-size: 18px;
+}
+.task-detail dl {
+  row-gap: 12px;
+  margin-top: 20px;
+}
+@media (max-width: 1000px) {
+  .task-item {
+    flex-wrap: wrap;
+  }
+  .plan-controls {
+    margin-left: auto;
+  }
+}
+@media (max-width: 700px) {
+  .today {
+    margin-left: 0;
+    width: 100%;
+  }
+  .today-content,
+  .projects-view .today-content {
+    padding: 16px;
+  }
+  .day-toolbar {
+    gap: 8px;
+  }
+  .day-toolbar .date-navigation {
+    margin-left: 0;
+  }
+  .plan-controls button,
+  .task-more summary,
+  .capacity-settings summary {
+    min-height: 44px;
+  }
+  .project-task-form {
+    flex-wrap: wrap;
+  }
+}

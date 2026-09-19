@@ -198,3 +198,5 @@ D06 桌面多级子任务与叶子进度已完成；验收见 docs/implementatio
 D07：桌面项目生命周期、排序移动、看板、甘特图及基础依赖顺延已实现，验收见 docs/implementation-desktop-project-workspace.md。原 13–18 的跨端同步与移动设备验收仍未完成。
 
 D08：追踪项目侧栏快捷入口与紧凑项目页已完成，保留原有追踪标记；详见 docs/implementation-desktop-tracked-projects.md。
+
+D09：紧凑桌面清单已完成，删除宣传及重复信息，折叠低频操作；验收见 docs/implementation-desktop-compact.md。

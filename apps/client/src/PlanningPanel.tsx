@@ -56,15 +56,23 @@ export function PlanningPanel({
           </p>
         )}
         {load.unknownCount > 0 && (
-          <p>还有任务待估时，当前总量不代表全部投入。</p>
+          <span title="当前估时未包含待估时任务"> · 估时未完整</span>
         )}
       </div>
-      <CapacityForm
-        key={date + ":" + load.capacityVersion}
-        date={date}
-        load={load}
-        onSaved={() => setReload((x) => x + 1)}
-      />
+      <details className="capacity-settings">
+        <summary>
+          可用时长
+          {load.capacityMinutes !== null
+            ? " · " + load.capacityMinutes + " 分钟"
+            : ""}
+        </summary>
+        <CapacityForm
+          key={date + ":" + load.capacityVersion}
+          date={date}
+          load={load}
+          onSaved={() => setReload((x) => x + 1)}
+        />
+      </details>
     </section>
   );
 }
