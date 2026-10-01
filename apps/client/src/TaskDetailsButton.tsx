@@ -8,26 +8,31 @@ import {
   type TaskDetails,
 } from "@praxis/application";
 import { taskDetailsStorage } from "./storage";
+import { DatePicker } from "./DatePicker";
 const editor = new TaskDetailEditor(taskDetailsStorage);
 const text = (e: unknown) => (e instanceof Error ? e.message : String(e));
 export function TaskDetailsButton({
   taskId,
   onSaved,
   disabled = false,
+  label = "编辑详情",
+  className = "details-button",
 }: {
   taskId: string;
   onSaved: () => Promise<unknown>;
   disabled?: boolean;
+  label?: string;
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <button
-        className="details-button"
+        className={className}
         disabled={disabled}
         onClick={() => setOpen(true)}
       >
-        编辑详情
+        {label}
       </button>
       {open &&
         createPortal(
@@ -254,13 +259,16 @@ function DetailForm({
       </label>
       <p className="field-help">任务重要度用于长期判断，与每日重点分别保存。</p>
       <label htmlFor="details-deadline">截止时间（本地时间）</label>
-      <input
+      <DatePicker
         id="details-deadline"
-        type="datetime-local"
+        label="截止时间（本地时间）"
+        mode="datetime"
+        clearable
+        className="date-picker-field"
         value={deadline}
         disabled={busy}
-        onChange={(e) => {
-          setDeadline(e.target.value);
+        onChange={(date) => {
+          setDeadline(date);
           setNotice("");
         }}
       />

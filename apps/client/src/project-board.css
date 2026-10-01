@@ -1,0 +1,236 @@
+.project-board {
+  min-width: 0;
+}
+.projects-view .project-board .kanban-board {
+  display: grid;
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(200px, 1fr);
+  align-items: start;
+  gap: 16px;
+  padding: 0 0 14px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+.project-board .kanban-column {
+  min-height: 200px;
+  min-width: 0;
+  padding: 0 2px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  transition: background 120ms ease;
+}
+.project-board .kanban-column.kanban-drop-target {
+  background: var(--selected);
+  outline: 1px dashed var(--primary);
+  outline-offset: -1px;
+}
+.project-board .kanban-column h3 {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  margin: 0 8px 8px;
+  padding: 0;
+  border: 0;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+.project-board .kanban-column h3 small {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-weight: 400;
+}
+.workspace .project-board .kanban-card {
+  min-width: 0;
+  margin: 0 0 8px;
+  padding: 10px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+  box-shadow: none;
+  cursor: grab;
+}
+.project-board .kanban-card:hover {
+  border-color: color-mix(in srgb, var(--text-secondary) 38%, var(--surface));
+}
+.project-board .kanban-card[draggable="false"] {
+  cursor: default;
+}
+.project-board .kanban-card-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  min-width: 0;
+}
+.workspace .projects-view .project-board button.kanban-task-title {
+  flex: 1;
+  min-width: 0;
+  min-height: 26px;
+  padding: 3px 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.workspace .projects-view .project-board .completed button.kanban-task-title {
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+}
+.workspace .projects-view .project-board .cancelled button.kanban-task-title {
+  color: var(--text-tertiary);
+}
+.workspace .project-board .kanban-completion-toggle {
+  display: grid;
+  place-items: center;
+  flex: 0 0 26px;
+  width: 26px;
+  height: 26px;
+  min-height: 26px;
+  padding: 3px;
+  border: 0;
+  border-radius: 50%;
+  color: var(--text-tertiary);
+  background: transparent;
+}
+.project-board .kanban-completion-toggle svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+}
+.workspace .project-board .kanban-completion-toggle:hover:not(:disabled),
+.workspace .project-board .kanban-completion-toggle[aria-pressed="true"] {
+  color: var(--primary);
+  background: var(--selected);
+}
+.project-board .kanban-cancelled-mark {
+  display: grid;
+  place-items: center;
+  flex: 0 0 26px;
+  height: 26px;
+  color: var(--text-tertiary);
+}
+.project-board .kanban-card-actions {
+  flex: 0 0 28px;
+  opacity: 0;
+}
+.project-board .kanban-card:hover .kanban-card-actions,
+.project-board .kanban-card:focus-within .kanban-card-actions,
+.project-board .kanban-card-actions:has([aria-expanded="true"]) {
+  opacity: 1;
+}
+.project-board .kanban-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px 9px;
+  margin: 3px 28px 0 31px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.project-board .kanban-card-meta > span:not(.kanban-important) {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-board .kanban-important {
+  color: var(--primary);
+}
+.project-board .kanban-card-reason {
+  margin: 5px 6px 0 31px;
+  color: var(--text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.project-board .kanban-empty {
+  margin: 0;
+  padding: 18px 8px;
+  color: var(--text-tertiary);
+  font-size: 12px;
+  text-align: left;
+}
+.project-board .kanban-reason-form,
+.project-board .kanban-error {
+  padding: 12px;
+  margin-bottom: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-secondary);
+  font-size: 12px;
+}
+.project-board .kanban-reason-form label {
+  display: block;
+  margin: 0 0 8px;
+  color: var(--text-primary);
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.project-board .kanban-reason-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.workspace .project-board .kanban-reason-controls input {
+  flex: 1 1 200px;
+  min-width: 0;
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+}
+.workspace .project-board .kanban-reason-controls button,
+.workspace .project-board .kanban-error button {
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+}
+.workspace .project-board .kanban-reason-controls button[type="submit"] {
+  border-color: transparent;
+  background: var(--primary);
+  color: var(--on-primary);
+}
+.project-board .kanban-error p {
+  margin: 0 0 8px;
+  color: var(--danger-text);
+  overflow-wrap: anywhere;
+}
+.project-board .kanban-error button + button {
+  margin-left: 8px;
+}
+.project-board button:focus-visible,
+.project-board input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+@media (hover: none), (pointer: coarse) {
+  .project-board .kanban-card-actions {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .project-board .kanban-column {
+    transition: none;
+  }
+}

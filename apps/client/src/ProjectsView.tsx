@@ -1,20 +1,14 @@
+import { ProjectIcon } from "./ProjectIcon";
 import { ProjectLifecycle } from "./ProjectLifecycle";
-import { TaskMoveControls } from "./TaskMoveControls";
+import { ProjectTaskList } from "./ProjectTaskList";
 import { KanbanView } from "./KanbanView";
 import { GanttView } from "./GanttView";
-import { taskStates, projectStates } from "@praxis/application";
-import { SubtaskComposer } from "./SubtaskComposer";
+import { projectStates } from "@praxis/application";
 import { projectTree } from "@praxis/application";
-import { TaskDetailsButton } from "./TaskDetailsButton";
+import { TaskActionMenu } from "./TaskActionMenu";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Projects,
-  calendarDate,
-  type Project,
-  type ProjectTask,
-} from "@praxis/application";
+import { Projects, type Project, type ProjectTask } from "@praxis/application";
 import { projectStorage } from "./storage";
-import { planning } from "./PlanningPanel";
 export const projects = new Projects(projectStorage);
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -25,6 +19,9 @@ export function ProjectsView({
   onProjectsChanged,
   navigationRevision,
   onBusyChange,
+  form,
+  onFormChange: setForm,
+  onSettings,
 }: {
   onDay: (date: string) => void;
   selectedId: string | null;
@@ -32,27 +29,36 @@ export function ProjectsView({
   onProjectsChanged: () => void;
   navigationRevision: number;
   onBusyChange: (busy: boolean) => void;
+  form: "new" | "edit" | null;
+  onFormChange: (form: "new" | "edit" | null) => void;
+  onSettings: () => void;
 }) {
   const [mode, setMode] = useState<"tasks" | "gantt" | "board">("tasks");
-  const [filter, setFilter] = useState("all"),
-    [showCancelled, setShowCancelled] = useState(false);
+  const [showCancelled, setShowCancelled] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(false);
+  const [viewBusy, setViewBusy] = useState(false);
   const [items, setItems] = useState<Project[]>([]),
     [tasks, setTasks] = useState<ProjectTask[]>([]);
-  const [form, setForm] = useState<"new" | "edit" | null>(null);
   const [titles, setTitles] = useState(""),
     [busy, setBusy] = useState(false),
     [loading, setLoading] = useState(true);
-  const [error, setError] = useState(""),
-    [notice, setNotice] = useState("");
+  const taskInput = useRef<HTMLInputElement>(null);
+  const focusAfterCapture = useRef(false);
+  const [error, setError] = useState("");
+  const locked = busy || viewBusy;
   useEffect(() => {
-    setForm(null);
     setTitles("");
-    setNotice("");
   }, [navigationRevision]);
   useEffect(() => {
-    onBusyChange(busy);
+    onBusyChange(locked);
     return () => onBusyChange(false);
-  }, [busy, onBusyChange]);
+  }, [locked, onBusyChange]);
+  useEffect(() => {
+    if (!busy && focusAfterCapture.current) {
+      focusAfterCapture.current = false;
+      taskInput.current?.focus();
+    }
+  }, [busy]);
   const query = useRef(0);
   const selected = items.find((p) => p.id === selectedId);
   const tree = projectTree(tasks);
@@ -60,7 +66,7 @@ export function ProjectsView({
   const total = roots.reduce((n, t) => n + t.leafTotal, 0);
   const done = roots.reduce((n, t) => n + t.leafDone, 0);
   const refresh = useCallback(
-    async (id: string | null) => {
+    async (id: string | null, reportFailure = false) => {
       const token = ++query.current;
       setLoading(true);
       try {
@@ -76,6 +82,7 @@ export function ProjectsView({
         }
       } catch (e) {
         if (token === query.current) setError(errorText(e));
+        if (reportFailure) throw e;
       } finally {
         if (token === query.current) setLoading(false);
       }
@@ -93,7 +100,7 @@ export function ProjectsView({
     };
   }, [selectedId, refresh]);
   async function run(action: () => Promise<void>) {
-    if (busy) return;
+    if (locked || loading) return;
     setBusy(true);
     setError("");
     try {
@@ -105,40 +112,14 @@ export function ProjectsView({
     }
   }
   return (
-    <section className="today projects-view" aria-labelledby="projects-heading">
+    <section
+      className="today projects-view simple-project-workspace"
+      aria-labelledby="projects-heading"
+    >
       <div className="today-content">
-        <header className="project-toolbar">
-          <h1 id="projects-heading" className="sr-only">
-            项目
-          </h1>
-          <div className="project-filters" aria-label="项目筛选">
-            {(
-              [
-                ["all", "全部项目"],
-                ["focused", "追踪项目"],
-                ["archived", "归档项目"],
-              ] as const
-            ).map(([key, label]) => (
-              <button
-                key={key}
-                aria-pressed={filter === key}
-                onClick={() => setFilter(key)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-          <button
-            className="new-project-button"
-            disabled={busy}
-            onClick={() => {
-              setForm("new");
-              setNotice("");
-            }}
-          >
-            新建项目
-          </button>
-        </header>
+        <h1 id="projects-heading" className="sr-only">
+          项目
+        </h1>
         {error && (
           <p role="alert" className="error">
             {error}{" "}
@@ -147,274 +128,266 @@ export function ProjectsView({
             </button>
           </p>
         )}
-        <p className="save-notice" role="status">
-          {notice}
-        </p>
-        <div className="project-layout">
-          <nav className="project-list" aria-label="项目列表">
-            {items
-              .filter((p) =>
-                filter === "archived"
-                  ? p.status === "archived"
-                  : filter === "focused"
-                    ? p.focused
-                    : p.status !== "archived",
-              )
-              .map((p) => (
-                <button
-                  key={p.id}
-                  disabled={busy}
-                  className={
-                    p.id === selectedId
-                      ? "project-card selected"
-                      : "project-card"
-                  }
-                  onClick={() => {
-                    if (p.id !== selectedId) setTasks([]);
-                    setSelectedId(p.id);
-                    setForm(null);
-                    setTitles("");
-                    setNotice("");
-                  }}
-                >
-                  <strong>{p.name}</strong>
-                  <small>
-                    {projectStates[p.status ?? "active"]}
-                    {p.focused ? " · 追踪" : ""}
-                  </small>
-                  <span>{p.outcome || "尚未填写预期结果"}</span>
-                  <small>
-                    {["低", "普通", "高"][p.priority]}优先级 ·{" "}
-                    {p.targetDate ?? "未设目标日期"}
-                  </small>
-                </button>
-              ))}
-            {!items.length && !loading && (
-              <p className="empty-state">从第一个项目开始。</p>
-            )}
-          </nav>
-          <div className="project-body">
-            {form && (
-              <ProjectForm
-                key={form === "new" ? "new" : selected?.id}
-                base={form === "edit" ? (selected ?? null) : null}
-                disabled={busy}
-                onCancel={() => setForm(null)}
-                onSave={(base, fields) =>
-                  run(async () => {
-                    const id = await projects.save(base, fields);
-                    setSelectedId(id);
-                    setForm(null);
-                    setNotice("项目已保存到本机");
-                    await refresh(id);
-                  })
-                }
+        <div className="project-body">
+          {form && (
+            <ProjectForm
+              key={form === "new" ? "new" : selected?.id}
+              base={form === "edit" ? (selected ?? null) : null}
+              disabled={busy}
+              onCancel={() => setForm(null)}
+              onSave={(base, fields) =>
+                run(async () => {
+                  const id = await projects.save(base, fields);
+                  setSelectedId(id);
+                  setForm(null);
+                  await refresh(id);
+                })
+              }
+            />
+          )}
+          {form === "edit" && selected && (
+            <div className="project-settings-section">
+              <h3>项目状态</h3>
+              <ProjectLifecycle
+                key={"lifecycle:" + selected.id}
+                project={selected}
+                onSaved={() => refresh(selected.id)}
               />
-            )}
-            {!form && selected && (
-              <>
-                <div className="project-heading">
-                  <h2>{selected.name}</h2>
-                  <button disabled={busy} onClick={() => setForm("edit")}>
-                    编辑项目
-                  </button>
+            </div>
+          )}
+          {!form && selected && (
+            <>
+              {selected.status === "archived" && (
+                <button className="project-back-button" onClick={onSettings}>
+                  <ProjectIcon name="arrow" />
+                  返回归档项目
+                </button>
+              )}
+              <header className="project-summary">
+                <div className="project-summary-main">
+                  <div className="project-heading">
+                    <span className="project-summary-icon">
+                      <ProjectIcon name="folder" />
+                    </span>
+                    <h2>{selected.name}</h2>
+                    {selected.status && selected.status !== "active" && (
+                      <span
+                        className="state-badge"
+                        data-state={selected.status ?? "active"}
+                      >
+                        {projectStates[selected.status ?? "active"]}
+                      </span>
+                    )}
+                  </div>
+                  {selected.outcome && (
+                    <p className="project-outcome">{selected.outcome}</p>
+                  )}
+                  {total > 0 && (
+                    <p className="project-progress" aria-label="项目任务进度">
+                      {done} / {total} 已完成
+                    </p>
+                  )}
                 </div>
-                <p className="project-outcome">
-                  {selected.outcome || "可以编辑项目，补充预期结果。"}
-                </p>
-                <p className="task-meta">
-                  目标日期：{selected.targetDate ?? "未设置"} ·{" "}
-                  {["低", "普通", "高"][selected.priority]}优先级
-                </p>
-                <p className="project-progress">
-                  叶子任务进度：{done} / {total} 已完成
-                </p>
-                <ProjectLifecycle
-                  key={selected.id}
-                  project={selected}
-                  onSaved={() => refresh(selected.id)}
+              </header>
+              <div className="project-view-toolbar">
+                <span className="project-section-label">任务</span>
+                <div className="project-view-controls">
+                  <div
+                    className="project-view-tabs"
+                    role="tablist"
+                    aria-label="项目视图"
+                  >
+                    {(
+                      [
+                        ["tasks", "任务视图"],
+                        ["gantt", "甘特图"],
+                        ["board", "看板"],
+                      ] as const
+                    ).map(([key, label]) => (
+                      <button
+                        role="tab"
+                        aria-label={label}
+                        title={label}
+                        key={key}
+                        id={"project-view-" + key}
+                        aria-controls="project-view-content"
+                        disabled={locked}
+                        tabIndex={mode === key ? 0 : -1}
+                        aria-selected={mode === key}
+                        onClick={() => setMode(key)}
+                        onKeyDown={(event) => {
+                          if (
+                            locked ||
+                            ![
+                              "ArrowLeft",
+                              "ArrowRight",
+                              "Home",
+                              "End",
+                            ].includes(event.key)
+                          )
+                            return;
+                          event.preventDefault();
+                          const keys = ["tasks", "gantt", "board"] as const;
+                          const index =
+                            event.key === "Home"
+                              ? 0
+                              : event.key === "End"
+                                ? 2
+                                : (keys.indexOf(key) +
+                                    (event.key === "ArrowRight" ? 1 : 2)) %
+                                  3;
+                          const next = keys[index]!;
+                          setMode(next);
+                          document
+                            .getElementById("project-view-" + next)
+                            ?.focus();
+                        }}
+                      >
+                        <ProjectIcon name={key} />
+                        <span>{key === "tasks" ? "列表" : label}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <TaskActionMenu label="项目选项" disabled={locked}>
+                    {(close) => (
+                      <>
+                        {mode === "tasks" &&
+                          tasks.some((task) => task.status === "completed") && (
+                            <button
+                              aria-pressed={showCompleted}
+                              onClick={() => {
+                                setShowCompleted(!showCompleted);
+                                close();
+                              }}
+                            >
+                              {showCompleted
+                                ? "隐藏已完成任务"
+                                : "显示已完成任务"}
+                            </button>
+                          )}
+                        {tasks.some((task) => task.status === "cancelled") && (
+                          <button
+                            aria-pressed={showCancelled}
+                            onClick={() => {
+                              setShowCancelled(!showCancelled);
+                              close();
+                            }}
+                          >
+                            {showCancelled
+                              ? "隐藏已取消任务"
+                              : "显示已取消任务"}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => {
+                            setForm("edit");
+                            close();
+                          }}
+                        >
+                          编辑项目
+                        </button>
+                      </>
+                    )}
+                  </TaskActionMenu>
+                </div>
+              </div>
+              <form
+                className="project-task-form capture-form"
+                aria-label="添加项目任务"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  if (locked || loading) return;
+                  focusAfterCapture.current = true;
+                  void run(async () => {
+                    if (!titles.trim()) throw new Error("请填写任务标题");
+                    await projects.add(selected.id, titles);
+                    setTitles("");
+                    await refresh(selected.id);
+                  });
+                }}
+              >
+                <span className="capture-circle" aria-hidden="true" />
+                <label className="sr-only" htmlFor="project-tasks">
+                  项目任务标题
+                </label>
+                <input
+                  ref={taskInput}
+                  id="project-tasks"
+                  autoComplete="off"
+                  value={titles}
+                  disabled={locked || loading}
+                  onChange={(event) => {
+                    setTitles(event.target.value);
+                    setError("");
+                  }}
+                  placeholder="添加项目任务，按回车保存"
                 />
-                <div
-                  className="project-view-tabs"
-                  role="tablist"
-                  aria-label="项目视图"
-                >
-                  {(
-                    [
-                      ["tasks", "任务视图"],
-                      ["gantt", "甘特图"],
-                      ["board", "看板"],
-                    ] as const
-                  ).map(([key, label]) => (
-                    <button
-                      role="tab"
-                      key={key}
-                      aria-selected={mode === key}
-                      onClick={() => setMode(key)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+                {busy && (
+                  <span className="capture-status" role="status">
+                    保存中…
+                  </span>
+                )}
+              </form>
+              {loading && (
+                <p className="project-loading" role="status">
+                  正在读取任务…
+                </p>
+              )}
+              <div
+                id="project-view-content"
+                role="tabpanel"
+                aria-labelledby={"project-view-" + mode}
+              >
                 {mode === "gantt" && (
                   <GanttView
-                    key={selected.id}
+                    key={"gantt:" + selected.id}
                     project={selected}
                     tasks={tasks}
-                    onSaved={() => refresh(selected.id)}
+                    showCancelled={showCancelled}
+                    disabled={busy || loading}
+                    onBusyChange={setViewBusy}
+                    onSaved={() => refresh(selected.id, true)}
                     onDay={onDay}
                   />
                 )}
                 {mode === "board" && (
                   <KanbanView
-                    key={selected.id}
+                    key={"board:" + selected.id}
                     tasks={tasks}
-                    onSaved={() => refresh(selected.id)}
+                    showCancelled={showCancelled}
+                    disabled={busy || loading}
+                    onBusyChange={setViewBusy}
+                    onSaved={() => refresh(selected.id, true)}
                   />
                 )}
                 {mode === "tasks" && (
-                  <>
-                    <form
-                      className="project-task-form"
-                      onSubmit={(e) => {
-                        e.preventDefault();
-                        void run(async () => {
-                          await projects.add(selected.id, titles);
-                          setTitles("");
-                          setNotice("项目任务已保存");
-                          await refresh(selected.id);
-                        });
-                      }}
-                    >
-                      <label className="sr-only" htmlFor="project-tasks">
-                        拆成可以行动的任务
-                      </label>
-                      <textarea
-                        id="project-tasks"
-                        value={titles}
-                        disabled={busy}
-                        onChange={(e) => setTitles(e.target.value)}
-                        placeholder="每行一条任务，暂时不必安排日期"
-                        rows={2}
-                      />
-                      <button disabled={busy}>添加项目任务</button>
-                    </form>
-                    {loading && <p>正在读取任务…</p>}
-                    <>
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={showCancelled}
-                          onChange={(e) => setShowCancelled(e.target.checked)}
-                        />
-                        显示已取消任务
-                      </label>
-                      <ul className="task-list project-tasks">
-                        {tree
-                          .filter(
-                            (t) => showCancelled || t.status !== "cancelled",
-                          )
-                          .map((task) => (
-                            <li
-                              className="inbox-row tree-task"
-                              key={task.taskId}
-                              style={{
-                                marginLeft: Math.min(task.depth, 8) * 18,
-                              }}
-                            >
-                              <div>
-                                <strong>
-                                  {task.important && (
-                                    <span className="task-important">重要</span>
-                                  )}
-                                  {task.title}
-                                </strong>
-                                <p className="task-meta">
-                                  {task.hasChildren
-                                    ? `汇总 · ${task.leafDone} / ${task.leafTotal} 已完成`
-                                    : (taskStates[task.status] ??
-                                      task.status)}{" "}
-                                  ·{" "}
-                                  {task.completionDate ??
-                                    task.executionDate ??
-                                    "尚未安排"}
-                                  {task.statusReason &&
-                                    " · " + task.statusReason}
-                                </p>
-                              </div>
-                              <TaskDetailsButton
-                                taskId={task.taskId}
-                                onSaved={() => refresh(selected.id)}
-                                disabled={busy}
-                              />
-                              {task.hasChildren ? (
-                                <span className="task-meta">
-                                  {task.hasSummaryPlan
-                                    ? "原安排已转为汇总记录"
-                                    : "仅执行叶子任务"}
-                                </span>
-                              ) : task.executionDate ? (
-                                <button
-                                  disabled={busy}
-                                  onClick={() =>
-                                    onDay(
-                                      task.completionDate ??
-                                        task.executionDate!,
-                                    )
-                                  }
-                                >
-                                  {task.status === "completed"
-                                    ? "查看完成记录"
-                                    : "查看安排"}
-                                </button>
-                              ) : ["todo", "in_progress", "blocked"].includes(
-                                  task.status,
-                                ) ? (
-                                <button
-                                  disabled={busy}
-                                  onClick={() =>
-                                    void run(async () => {
-                                      const zone =
-                                        Intl.DateTimeFormat().resolvedOptions()
-                                          .timeZone;
-                                      const date = calendarDate(
-                                        new Date(),
-                                        zone,
-                                      );
-                                      await planning.schedule(task, date, zone);
-                                      setNotice("已加入今日，仍是同一条任务");
-                                      await refresh(selected.id);
-                                    })
-                                  }
-                                >
-                                  加入今日
-                                </button>
-                              ) : null}
-                              <TaskMoveControls
-                                task={task}
-                                tasks={tasks}
-                                project={selected}
-                                onSaved={() => refresh(selected.id)}
-                              />
-                              <SubtaskComposer
-                                task={task}
-                                onSaved={() => refresh(selected.id)}
-                              />
-                            </li>
-                          ))}
-                      </ul>
-                    </>
-                  </>
+                  <ProjectTaskList
+                    key={selected.id}
+                    project={selected}
+                    tasks={tasks}
+                    busy={locked}
+                    showCancelled={showCancelled}
+                    showCompleted={showCompleted}
+                    onRun={run}
+                    onSaved={() => refresh(selected.id, true)}
+                    onDay={onDay}
+                  />
                 )}
-                {!loading && !tasks.length && (
-                  <p className="empty-state">项目还没有任务，先写下下一步。</p>
-                )}
-              </>
-            )}
-            {!form && !selected && items.length > 0 && (
-              <p className="empty-state">选择项目，查看下一步行动。</p>
-            )}
-          </div>
+              </div>
+              {mode === "tasks" && !loading && !tasks.length && (
+                <p className="project-list-empty">
+                  添加第一个任务，开始这个项目。
+                </p>
+              )}
+            </>
+          )}
+          {!form && !selected && !loading && (
+            <p className="empty-state">
+              {items.length > 0
+                ? "从左侧选择项目，查看下一步行动。"
+                : "从左侧新建第一个项目。"}
+            </p>
+          )}
         </div>
       </div>
     </section>
@@ -436,20 +409,30 @@ function ProjectForm({
 }) {
   const [snapshot] = useState(base);
   const [name, setName] = useState(base?.name ?? ""),
-    [outcome, setOutcome] = useState(base?.outcome ?? ""),
-    [date, setDate] = useState(base?.targetDate ?? ""),
-    [priority, setPriority] = useState(base?.priority ?? 1);
+    [outcome, setOutcome] = useState(base?.outcome ?? "");
   return (
     <form
       className="task-editor project-form"
       aria-label="项目基本信息"
       onSubmit={(e) => {
         e.preventDefault();
-        void onSave(snapshot, {
+        // Lifecycle edits can update the version while this name/outcome draft stays open.
+        // Rebase only when the editable fields themselves are unchanged.
+        const saveBase =
+          snapshot &&
+          base &&
+          snapshot.id === base.id &&
+          snapshot.name === base.name &&
+          snapshot.outcome === base.outcome &&
+          snapshot.targetDate === base.targetDate &&
+          snapshot.priority === base.priority
+            ? base
+            : snapshot;
+        void onSave(saveBase, {
           name,
           outcome,
-          targetDate: date || null,
-          priority,
+          targetDate: snapshot?.targetDate ?? null,
+          priority: snapshot?.priority ?? 1,
         });
       }}
     >
@@ -469,27 +452,10 @@ function ProjectForm({
         onChange={(e) => setOutcome(e.target.value)}
         rows={3}
       />
-      <label htmlFor="project-date">目标日期（可选）</label>
-      <input
-        id="project-date"
-        type="date"
-        value={date}
-        disabled={disabled}
-        onChange={(e) => setDate(e.target.value)}
-      />
-      <label htmlFor="project-priority">项目优先级</label>
-      <select
-        id="project-priority"
-        value={priority}
-        disabled={disabled}
-        onChange={(e) => setPriority(Number(e.target.value))}
-      >
-        <option value={0}>低</option>
-        <option value={1}>普通</option>
-        <option value={2}>高</option>
-      </select>
       <div className="project-actions">
-        <button disabled={disabled}>保存项目</button>
+        <button type="submit" disabled={disabled}>
+          保存项目
+        </button>
         <button type="button" disabled={disabled} onClick={onCancel}>
           取消
         </button>

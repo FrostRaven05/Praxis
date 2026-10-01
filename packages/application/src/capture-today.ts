@@ -25,6 +25,8 @@ export interface DailyTask {
   version?: number;
   isFocus?: boolean;
   focusRank?: number;
+  dayPeriod?: import("./day-schedule").DayPeriod;
+  dayRank?: number;
   estimatedMinutes?: number | null;
   activeCompletionId?: string | null;
   completionDate?: string | null;

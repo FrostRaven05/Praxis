@@ -1,0 +1,628 @@
+/* Daily workspace, inbox and task inspector based on the user's references. */
+.reference-workspace {
+  --sidebar-width: 216px;
+  --inspector-width: 360px;
+}
+.reference-workspace .sidebar {
+  width: var(--sidebar-width);
+  padding: 32px 16px 16px;
+}
+.reference-workspace .today {
+  margin-left: var(--sidebar-width);
+  width: calc(100% - var(--sidebar-width));
+}
+.reference-workspace .brand {
+  font-size: 22px;
+  margin-bottom: 28px;
+}
+.reference-workspace .nav-item {
+  min-height: 42px;
+  gap: 12px;
+}
+.reference-workspace .nav-item.active {
+  color: var(--text-primary);
+  background: var(--selected);
+  box-shadow: none;
+}
+.nav-item > .task-panel-icon {
+  color: var(--primary);
+}
+.reference-workspace .reference-day .today-content {
+  padding: 44px 24px 24px;
+}
+.reference-workspace .reference-day .day-toolbar {
+  padding-right: 0;
+  margin-bottom: 20px;
+  container-type: inline-size;
+}
+.reference-day .date-strip-row {
+  width: 472px;
+  max-width: 100%;
+  gap: 12px;
+}
+.reference-day .date-strip {
+  flex: 1;
+  gap: 4px;
+  padding: 2px 6px;
+  min-width: 0;
+  border-color: var(--line);
+  background: var(--surface);
+  min-height: 36px;
+}
+.reference-day .date-strip-days {
+  flex: 1;
+  justify-content: space-evenly;
+  gap: 2px;
+}
+.workspace .reference-day .date-strip button {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  font-size: 13px;
+}
+.reference-day .date-strip-label {
+  margin-left: 6px;
+  font-size: 13px;
+}
+.reference-workspace .reference-day .capture-form,
+.reference-workspace .projects-view .project-task-form {
+  display: flex;
+  flex-wrap: nowrap;
+  min-height: 48px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--primary);
+  border-radius: 7px;
+  padding: 7px 10px;
+  gap: 10px;
+}
+.capture-circle {
+  width: 19px;
+  height: 19px;
+  border: 1.6px solid var(--primary);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.reference-workspace .reference-day .capture-form input,
+.reference-workspace .projects-view .project-task-form input {
+  font-size: 13px;
+}
+.workspace .reference-day .add-button {
+  min-height: 30px;
+  font-size: 12px;
+  padding: 4px 9px;
+  background: transparent;
+  color: var(--primary);
+}
+.reference-day .task-item {
+  min-height: 54px;
+  padding: 7px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.reference-day .task-item:has(.task-row.selected) {
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+}
+.reference-day .task-row.selected {
+  background: transparent;
+}
+.reference-day .task-title {
+  font-size: 14px;
+  font-weight: 500;
+}
+.capture-status {
+  flex-shrink: 0;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+.reference-day .day-period {
+  margin: 20px 0 24px;
+  border-radius: 6px;
+}
+.reference-day .day-period .list-heading {
+  margin: 0;
+  padding-bottom: 10px;
+}
+.reference-day .day-period .list-heading h2 {
+  font-size: 15px;
+}
+.reference-day .period-empty {
+  min-height: 40px;
+  padding: 12px 16px;
+  margin: 0;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+.reference-day .day-period.is-drop-target {
+  outline: 1px dashed var(--primary);
+  background: var(--selected);
+}
+.reference-day .task-item {
+  position: relative;
+}
+.reference-day .task-item.is-dragging {
+  opacity: 0.45;
+}
+.reference-day .task-item.drop-before::before,
+.reference-day .task-item.drop-after::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--primary);
+  pointer-events: none;
+  z-index: 1;
+}
+.reference-day .task-item.drop-before::before {
+  top: -1px;
+}
+.reference-day .task-item.drop-after::after {
+  bottom: -1px;
+}
+.workspace .reference-day .task-drag-handle {
+  display: grid;
+  place-items: center;
+  min-height: 28px;
+  width: 16px;
+  padding: 0;
+  flex-shrink: 0;
+  color: var(--text-tertiary);
+  background: transparent;
+  cursor: grab;
+  opacity: 0.4;
+}
+.workspace .reference-day .task-drag-handle:active {
+  cursor: grabbing;
+}
+.reference-day .task-item:hover .task-drag-handle,
+.reference-day .task-drag-handle:focus-visible {
+  opacity: 1;
+}
+.task-drag-handle svg {
+  width: 12px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 3;
+  stroke-linecap: round;
+  fill: none;
+}
+.reference-workspace .reference-task-panel {
+  position: fixed;
+  display: flex;
+  flex-direction: column;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: var(--inspector-width);
+  padding: 40px 0 0;
+  background: var(--surface);
+  border-left: 1px solid var(--line);
+  box-shadow: none;
+  overflow: hidden;
+  z-index: 10;
+}
+.task-panel-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.task-panel-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 16px 12px;
+  flex-shrink: 0;
+}
+.task-status-pill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font-size: 11px;
+  white-space: nowrap;
+}
+.task-panel-toolbar-actions {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+.workspace .task-panel-toolbar-actions button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 3px;
+  background: transparent;
+  color: var(--text-tertiary);
+}
+.workspace .task-panel-toolbar-actions button[aria-pressed="true"] {
+  color: var(--primary);
+}
+.task-panel-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+}
+.task-panel-form {
+  margin: 0;
+}
+.task-panel-form > fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.task-panel-intro {
+  padding: 6px 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.workspace .reference-task-panel .task-panel-title,
+.workspace .reference-task-panel .task-panel-notes {
+  width: 100%;
+  min-width: 0;
+  resize: none;
+  padding: 6px 2px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  box-shadow: none;
+  line-height: 1.6;
+}
+.workspace .reference-task-panel .task-panel-title {
+  font-size: 17px;
+  font-weight: 500;
+  min-height: 36px;
+  max-height: 160px;
+}
+.workspace .reference-task-panel .task-panel-notes {
+  margin: 5px 0 12px;
+  font-size: 13px;
+  min-height: 32px;
+  max-height: 160px;
+}
+.workspace .reference-task-panel textarea:focus {
+  border-color: var(--focus-ring);
+}
+.task-date-options {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-secondary);
+}
+.workspace .task-date-options button,
+.task-date-picker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  white-space: nowrap;
+}
+.workspace .task-date-options button[aria-pressed="true"],
+.task-date-options .selected {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+.task-date-picker {
+  position: relative;
+  cursor: pointer;
+}
+.task-date-picker input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.task-date-picker:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.task-panel-field,
+.task-panel-project-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-width: 0;
+  margin: 0;
+  padding: 16px 18px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+}
+.task-panel-field > .task-panel-icon,
+.task-panel-project-field > .task-panel-icon {
+  margin-top: 2px;
+  color: var(--text-secondary);
+}
+.task-panel-field-body {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  flex: 1;
+  min-width: 0;
+}
+.task-panel-field-body > label,
+.task-panel-field-label,
+.task-panel-importance {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.workspace .reference-task-panel .task-panel-field-body input,
+.workspace .reference-task-panel .task-panel-field-body textarea,
+.workspace .reference-task-panel .project-assignment select {
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  padding: 5px 7px;
+  font-size: 12px;
+  background: var(--surface-secondary);
+}
+.task-effort-options {
+  display: flex;
+  gap: 3px;
+  width: 100%;
+}
+.task-effort-editor {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.workspace .reference-task-panel .task-effort-editor > input {
+  width: 66px;
+  flex-shrink: 0;
+}
+.workspace .task-effort-options button {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 4px;
+  min-height: 30px;
+  border-radius: 4px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+.workspace .task-effort-options button[aria-pressed="true"] {
+  background: var(--selected);
+  color: var(--primary);
+}
+.task-panel-importance {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.task-panel-importance input {
+  accent-color: var(--primary);
+}
+.task-panel-project-field .project-assignment {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+}
+.workspace .reference-task-panel .project-assignment select {
+  flex: 1;
+}
+.workspace .reference-task-panel .project-assignment button {
+  min-height: 32px;
+  padding: 5px 9px;
+  font-size: 12px;
+}
+.workspace .task-panel-project-link {
+  min-height: 24px;
+  padding: 0;
+  background: transparent;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.task-panel-feedback {
+  margin: 12px 18px;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.task-panel-feedback:empty {
+  display: none;
+}
+.task-panel-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  min-height: 60px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+}
+.task-panel-footer > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+.workspace .task-panel-footer > button {
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 12px;
+  min-height: 32px;
+  padding: 6px 12px;
+}
+.reference-workspace .simple-inbox .today-content {
+  padding: 44px 24px 24px;
+}
+.inbox-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.inbox-toolbar h1 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+}
+.inbox-toolbar h1 .task-panel-icon {
+  color: var(--primary);
+  width: 22px;
+  height: 22px;
+}
+.inbox-sort {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.workspace .inbox-sort select {
+  min-height: 32px;
+  padding: 4px 26px 4px 8px;
+  border-color: transparent;
+  background-color: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.reference-workspace .simple-inbox .capture-form {
+  min-height: 50px;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--primary);
+  border-radius: 7px;
+  background: var(--surface-secondary);
+}
+.reference-workspace .simple-inbox .capture-form input {
+  font-size: 14px;
+}
+.simple-inbox .inbox-list {
+  margin-top: 20px;
+}
+.simple-inbox .inbox-row {
+  display: block;
+  min-height: 50px;
+  padding: 0;
+  border-bottom: 1px solid var(--line);
+}
+.workspace .simple-inbox .inbox-task-title {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 50px;
+  padding: 12px;
+  gap: 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 400;
+}
+.inbox-task-title > span:nth-child(2) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.inbox-task-circle {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 1.3px solid var(--primary);
+  border-radius: 50%;
+}
+.workspace .simple-inbox .inbox-task-title:hover:not(:disabled),
+.simple-inbox .inbox-row.is-selected {
+  background: color-mix(in srgb, var(--primary) 5%, var(--surface));
+}
+.simple-inbox .inbox-task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 0 12px 12px 40px;
+}
+.inbox-task-actions form,
+.inbox-task-actions label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.workspace .simple-inbox .inbox-task-actions input,
+.workspace .simple-inbox .inbox-task-actions button {
+  min-height: 30px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+.workspace .simple-inbox .inbox-task-actions .details-button,
+.workspace .simple-inbox .inbox-collapse {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.simple-inbox .inbox-empty {
+  margin: 28px 12px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+}
+@media (min-width: 1000px) {
+  .reference-workspace .simple-inbox:has(.inbox-task-panel),
+  .reference-workspace:has(.reference-task-panel) .reference-day {
+    margin-right: var(--inspector-width);
+    width: calc(100% - var(--sidebar-width) - var(--inspector-width));
+  }
+}
+@container (max-width: 440px) {
+  .reference-day .date-strip {
+    flex-wrap: wrap;
+  }
+  .reference-day .date-strip-label {
+    flex-basis: 100%;
+    text-align: center;
+    margin: 4px 0 0;
+  }
+}
+@media (max-width: 999px) {
+  .reference-workspace .reference-day {
+    margin-right: 0;
+  }
+  .reference-workspace .reference-task-panel {
+    box-shadow: -8px 0 24px var(--shadow-color);
+  }
+}
+@media (max-width: 700px) {
+  .reference-workspace {
+    --sidebar-width: 180px;
+    --inspector-width: min(360px, 100vw);
+  }
+  .reference-workspace .sidebar {
+    padding: 32px 10px 12px;
+  }
+  .reference-workspace .reference-day .today-content {
+    padding: 40px 16px 16px;
+  }
+  .reference-workspace .simple-inbox .today-content {
+    padding: 40px 16px 16px;
+  }
+  .simple-inbox .inbox-task-actions {
+    padding-left: 12px;
+  }
+}

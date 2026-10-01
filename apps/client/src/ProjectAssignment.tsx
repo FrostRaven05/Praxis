@@ -74,7 +74,7 @@ export function ProjectAssignment({
           <button onClick={() => setReload((n) => n + 1)}>重读项目列表</button>
         </p>
       )}
-      {!items.length && !error && <small>先在「项目」中新建一个项目。</small>}
+      {!items.length && !error && <small>先在左侧新建一个项目。</small>}
     </div>
   );
 }

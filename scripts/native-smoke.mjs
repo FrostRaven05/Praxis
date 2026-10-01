@@ -1,4 +1,9 @@
 import { checkProjectWorkspace } from "./native-project-workspace.mjs";
+import {
+  chooseDate,
+  chooseViewDate,
+  viewDate,
+} from "./native-date-controls.mjs";
 import { chromium, expect } from "@playwright/test";
 import { spawn, execFileSync } from "node:child_process";
 import { mkdir, mkdtemp, writeFile, readFile, unlink } from "node:fs/promises";
@@ -205,7 +210,9 @@ try {
   await expect(
     app.page.getByRole("button", { name: /整理文章提纲 · 离线验证/ }),
   ).toBeVisible();
-  await expect(app.page.locator(".save-notice")).toContainText("已保存到本机");
+  await expect(app.page.getByLabel("任务标题", { exact: true })).toHaveValue(
+    "",
+  );
   await app.page.getByLabel("任务标题", { exact: true }).fill("为明天留下一步");
   await app.page.getByLabel("任务标题", { exact: true }).press("Enter");
   await expect(app.page.locator(".task-row")).toHaveCount(2);
@@ -266,14 +273,11 @@ try {
   await app.page.getByRole("button", { name: "撤销完成", exact: true }).click();
   await expect(app.page.locator(".completed-section")).toHaveCount(0);
   await expect(app.page.locator(".task-row")).toHaveCount(2);
-  await expect(app.page.locator(".save-notice")).toContainText("已撤销完成");
   results.push(
     "After abrupt restart completed task survives; undo restores pending task",
   );
 
-  const originalDay = await app.page
-    .getByLabel("查看日期", { exact: true })
-    .inputValue();
+  const originalDay = await viewDate(app.page);
   await app.page.getByRole("button", { name: /为明天留下一步/ }).click();
   await app.page.getByLabel("编辑任务标题", { exact: true }).fill("");
   await app.page.getByRole("button", { name: "保存修改", exact: true }).click();
@@ -283,25 +287,25 @@ try {
   await app.page
     .getByLabel("编辑任务标题", { exact: true })
     .fill("编辑后的下一步");
-  await app.page.getByLabel("安排日期", { exact: true }).fill("2030-01-15");
+  await chooseDate(app.page, "安排日期", "2030-01-15");
   await app.page.getByRole("button", { name: "保存修改", exact: true }).click();
-  await expect(app.page.getByLabel("查看日期", { exact: true })).toHaveValue(
-    "2030-01-15",
-  );
+  await expect(
+    app.page.getByRole("button", { name: "查看日期", exact: true }),
+  ).toHaveAttribute("aria-description", "2030-01-15");
   await expect(app.page.locator(".task-row")).toHaveCount(1);
   await expect(
     app.page.getByLabel("编辑任务标题", { exact: true }),
   ).toHaveValue("编辑后的下一步");
   await app.page.screenshot({ path: join(evidence, "desktop-edited.png") });
   await app.page.getByRole("button", { name: "关闭任务详情" }).click();
-  await app.page.getByLabel("查看日期", { exact: true }).fill(originalDay);
+  await chooseViewDate(app.page, originalDay);
   await expect(app.page.locator(".task-row")).toHaveCount(1);
-  await app.page.getByLabel("查看日期", { exact: true }).fill("2030-01-15");
+  await chooseViewDate(app.page, "2030-01-15");
   await expect(app.page.locator(".task-row")).toContainText("编辑后的下一步");
   await app.page.getByRole("button", { name: "撤销修改", exact: true }).click();
-  await expect(app.page.getByLabel("查看日期", { exact: true })).toHaveValue(
-    originalDay,
-  );
+  await expect(
+    app.page.getByRole("button", { name: "查看日期", exact: true }),
+  ).toHaveAttribute("aria-description", originalDay);
   await expect(app.page.locator(".task-row")).toHaveCount(2);
   results.push(
     "Edit title and reschedule preserve a single task; date navigation and undo restore original title/date",
@@ -310,11 +314,11 @@ try {
   await app.page
     .getByLabel("编辑任务标题", { exact: true })
     .fill("重启后保留编辑");
-  await app.page.getByLabel("安排日期", { exact: true }).fill("2030-01-15");
+  await chooseDate(app.page, "安排日期", "2030-01-15");
   await app.page.getByRole("button", { name: "保存修改", exact: true }).click();
-  await expect(app.page.getByLabel("查看日期", { exact: true })).toHaveValue(
-    "2030-01-15",
-  );
+  await expect(
+    app.page.getByRole("button", { name: "查看日期", exact: true }),
+  ).toHaveAttribute("aria-description", "2030-01-15");
   await expect(app.page.locator(".task-row")).toContainText("重启后保留编辑");
 
   await expect(
@@ -335,7 +339,7 @@ try {
   );
   stop(app.child);
   app = await launch();
-  await app.page.getByLabel("查看日期", { exact: true }).fill("2030-01-15");
+  await chooseViewDate(app.page, "2030-01-15");
   await expect(app.page.locator(".task-row")).toHaveCount(1);
   await expect(app.page.locator(".task-row")).toContainText("重启后保留编辑");
   results.push(
@@ -382,7 +386,7 @@ try {
     .getByRole("button", { name: "存入收件箱", exact: true })
     .click();
   await expect(app.page.locator(".inbox-row")).toHaveCount(1);
-  await app.page.getByLabel("安排到", { exact: true }).fill("2030-01-15");
+  await chooseDate(app.page, "安排到", "2030-01-15");
   await app.page.getByRole("button", { name: "安排任务", exact: true }).click();
   await expect(app.page.locator(".task-row")).toHaveCount(2);
   const scheduled = app.page
@@ -413,7 +417,7 @@ try {
   );
   stop(app.child);
   app = await launch();
-  await app.page.getByLabel("查看日期", { exact: true }).fill("2030-01-15");
+  await chooseViewDate(app.page, "2030-01-15");
   await expect(app.page.locator(".focus-section .task-row")).toHaveCount(1);
   await expect(app.page.locator(".task-row")).toHaveCount(2);
   await expect(app.page.getByLabel("每日负载", { exact: true })).toContainText(
@@ -426,7 +430,6 @@ try {
     "Focus, estimates, capacity and assigned inbox task survive native restart",
   );
 
-  await app.page.getByRole("button", { name: "项目", exact: true }).click();
   await app.page.getByRole("button", { name: "新建项目", exact: true }).click();
   await app.page.getByRole("button", { name: "保存项目", exact: true }).click();
   await expect(app.page.getByRole("alert")).toContainText("请填写项目名称");
@@ -442,12 +445,12 @@ try {
   await expect(app.page.locator(".project-heading")).toContainText(
     "上线报名网站",
   );
-  await app.page
-    .getByLabel("拆成可以行动的任务")
-    .fill("设计报名页面\n实现报名接口");
-  await app.page
-    .getByRole("button", { name: "添加项目任务", exact: true })
-    .click();
+  for (const title of ["设计报名页面", "实现报名接口"]) {
+    const input = app.page.getByLabel("项目任务标题", { exact: true });
+    await input.fill(title);
+    await input.press("Enter");
+    await expect(app.page.locator(".project-tasks")).toContainText(title);
+  }
   await expect(app.page.locator(".project-tasks .inbox-row")).toHaveCount(2);
   const projectRow = app.page
     .locator(".project-tasks .inbox-row")
@@ -472,7 +475,6 @@ try {
     .filter({ hasText: "报名页面已设计" })
     .getByRole("button", { name: "标为完成", exact: true })
     .click();
-  await app.page.getByRole("button", { name: "项目", exact: true }).click();
   await app.page
     .locator(".project-card")
     .filter({ hasText: "上线报名网站" })
@@ -493,7 +495,7 @@ try {
   );
 
   await app.page.getByRole("link", { name: /今日/ }).click();
-  await app.page.getByLabel("查看日期", { exact: true }).fill("2030-01-15");
+  await chooseViewDate(app.page, "2030-01-15");
   await app.page.getByRole("button", { name: /重启后保留编辑/ }).click();
   await app.page
     .getByLabel("归入项目", { exact: true })
@@ -518,7 +520,6 @@ try {
   await expect(
     app.page.locator(".task-row").filter({ hasText: "归属后立即编辑" }),
   ).toHaveCount(0);
-  await app.page.getByRole("button", { name: "项目", exact: true }).click();
   await app.page
     .locator(".project-card")
     .filter({ hasText: "上线报名网站" })
@@ -555,7 +556,6 @@ try {
   await expect(inboxProject).toHaveCount(0);
   stop(app.child);
   app = await launch();
-  await app.page.getByRole("button", { name: "项目", exact: true }).click();
   await app.page
     .locator(".project-card")
     .filter({ hasText: "上线报名网站" })
@@ -590,9 +590,7 @@ try {
     .getByLabel("完成标准", { exact: true })
     .fill("报名成功返回确认号");
   await fullDetails().getByLabel("重要任务", { exact: true }).check();
-  await fullDetails()
-    .getByLabel("截止时间（本地时间）", { exact: true })
-    .fill("2030-02-02T18:30");
+  await chooseDate(app.page, "截止时间（本地时间）", "2030-02-02T18:30");
   await fullDetails()
     .getByLabel("预估工作量（分钟）", { exact: true })
     .fill("45");
@@ -648,7 +646,7 @@ try {
   ).toHaveValue("报名成功返回确认号");
   await expect(
     fullDetails().getByLabel("截止时间（本地时间）", { exact: true }),
-  ).toHaveValue("2030-02-02T18:30");
+  ).toHaveAttribute("aria-description", "2030-02-02T18:30");
   await fullDetails()
     .getByLabel("任务名称", { exact: true })
     .fill("跨视图编辑后的接口");
@@ -728,7 +726,6 @@ try {
     .getByRole("button", { name: "关闭详情编辑", exact: true })
     .click();
   await expect(fullDetails()).toHaveCount(0);
-  await app.page.getByRole("button", { name: "项目", exact: true }).click();
   await app.page
     .locator(".project-card")
     .filter({ hasText: "上线报名网站" })
@@ -746,7 +743,7 @@ try {
   ).toBeChecked();
   await expect(
     fullDetails().getByLabel("截止时间（本地时间）", { exact: true }),
-  ).toHaveValue("2030-02-02T18:30");
+  ).toHaveAttribute("aria-description", "2030-02-02T18:30");
   await app.page.screenshot({
     path: join(evidence, "desktop-task-details.png"),
   });
@@ -758,10 +755,10 @@ try {
     "Unscheduled inbox edits remain unscheduled; importance, deadline, criteria and estimates persist across native restart",
   );
 
-  await app.page.getByLabel("拆成可以行动的任务").fill("多级拆分父任务");
   await app.page
-    .getByRole("button", { name: "添加项目任务", exact: true })
-    .click();
+    .getByLabel("项目任务标题", { exact: true })
+    .fill("多级拆分父任务");
+  await app.page.getByLabel("项目任务标题", { exact: true }).press("Enter");
   const treeRow = (title) =>
     app.page
       .locator(".project-tasks .inbox-row")
@@ -803,7 +800,6 @@ try {
     .filter({ hasText: "最深执行叶子" })
     .getByRole("button", { name: "标为完成", exact: true })
     .click();
-  await app.page.getByRole("button", { name: "项目", exact: true }).click();
   await app.page
     .locator(".project-card")
     .filter({ hasText: "上线报名网站" })
@@ -835,7 +831,6 @@ try {
   ).toHaveCount(0);
   stop(app.child);
   app = await launch();
-  await app.page.getByRole("button", { name: "项目", exact: true }).click();
   await app.page
     .locator(".project-card")
     .filter({ hasText: "上线报名网站" })
@@ -875,9 +870,7 @@ try {
   await expect(app.page.getByLabel("任务标题", { exact: true })).toHaveValue(
     "保存失败时保留输入",
   );
-  await expect(app.page.locator(".save-notice")).not.toContainText(
-    "已保存到本机",
-  );
+  await expect(app.page.locator(".task-row")).toHaveCount(0);
   results.push(
     "Unavailable database: readable error, draft retained, no false success",
   );
@@ -891,13 +884,17 @@ try {
     .getByRole("button", { name: "重试保存", exact: false })
     .click();
   await expect(app.page.locator(".task-row")).toHaveCount(1);
-  await expect(app.page.locator(".recovery-note")).toContainText("2026-09-16");
+  await expect(
+    app.page.getByRole("button", { name: "查看日期", exact: true }),
+  ).toHaveAttribute("aria-description", "2026-09-16");
   await app.page.screenshot({
     path: join(evidence, "desktop-midnight-retry.png"),
   });
 
   await app.page.getByRole("button", { name: "标为完成", exact: true }).click();
-  await expect(app.page.locator(".recovery-note")).toHaveCount(0);
+  await expect(
+    app.page.getByRole("button", { name: "查看日期", exact: true }),
+  ).toHaveAttribute("aria-description", "2026-09-17");
   await app.page.getByRole("button", { name: /已完成 · 1/ }).click();
   await expect(app.page.locator(".completed-section .task-row")).toHaveCount(1);
   await app.page.locator(".completed-section .task-row").click();
@@ -909,12 +906,17 @@ try {
   );
   await app.page.getByRole("button", { name: "关闭任务详情" }).click();
   await app.page.getByRole("button", { name: "撤销完成", exact: true }).click();
-  await expect(app.page.locator(".recovery-note")).toContainText("2026-09-16");
+  await expect(
+    app.page.getByRole("button", { name: "查看日期", exact: true }),
+  ).toHaveAttribute("aria-description", "2026-09-16");
   await expect(app.page.locator(".task-row")).toHaveCount(1);
   results.push(
     "Prior-day task completed today appears under actual completion day; undo returns to original plan",
   );
-  await app.page.getByRole("button", { name: "回到今日" }).click();
+  await app.page.getByRole("button", { name: "回到今天", exact: true }).click();
+  await expect(
+    app.page.getByRole("button", { name: "查看日期", exact: true }),
+  ).toHaveAttribute("aria-description", "2026-09-17");
   await expect(app.page.locator(".task-row")).toHaveCount(0);
   results.push(
     "Across-midnight retry: original day shown with saved task; return to today works",

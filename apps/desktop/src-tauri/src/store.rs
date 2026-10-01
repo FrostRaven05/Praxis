@@ -60,6 +60,10 @@ pub struct DailyTask {
     pub source: String,
     pub is_focus: bool,
     pub focus_rank: i64,
+    #[serde(default = "default_day_period")]
+    pub day_period: String,
+    #[serde(default)]
+    pub day_rank: i64,
     pub estimated_minutes: Option<i64>,
 }
 
@@ -115,8 +119,12 @@ pub struct Store {
     device_id: String,
 }
 
+fn default_day_period() -> String {
+    "morning".into()
+}
+
 const TASK_PROJECTION: &str = "SELECT t.id AS task_id, p.id AS plan_id, t.title,
-    t.status_reason,(SELECT status FROM projects WHERE id=t.project_id AND owner_id=t.owner_id) AS project_status,t.important,t.deadline,p.execution_date, p.is_focus,p.focus_rank,p.estimated_minutes, t.created_at, t.project_id, t.status, t.source, t.version, t.active_completion_id,
+    t.status_reason,(SELECT status FROM projects WHERE id=t.project_id AND owner_id=t.owner_id) AS project_status,t.important,t.deadline,p.execution_date, p.is_focus,p.focus_rank,p.day_period,p.day_rank,p.estimated_minutes, t.created_at, t.project_id, t.status, t.source, t.version, t.active_completion_id,
     (SELECT execution_date FROM execution_records e WHERE e.id=t.active_completion_id AND e.revoked_at IS NULL) AS completion_date
     FROM tasks t JOIN daily_plan_items p ON p.task_id = t.id AND p.owner_id = t.owner_id";
 

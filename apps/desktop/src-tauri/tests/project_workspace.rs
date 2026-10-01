@@ -402,6 +402,8 @@ async fn default_estimate_is_only_inherited_on_first_plan_and_failed_completion_
             expected_version: version(&s, &ids[0]).await,
             is_focus: true,
             focus_rank: 0,
+            day_period: None,
+            day_rank: None,
             estimated_minutes: Some(90),
         }],
     })

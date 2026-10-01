@@ -3,10 +3,10 @@
   color-scheme: light;
   --font-ui: "HarmonyOS Sans SC", "Segoe UI", "Microsoft YaHei", sans-serif;
   --font-data: ui-monospace, "Cascadia Code", Consolas, monospace;
-  --primary: #8b7355;
-  --primary-hover: #7a6548;
-  --primary-dark: #c9a86c;
-  --primary-dark-hover: #d9b87c;
+  --primary: #d1453b;
+  --primary-hover: #b8382f;
+  --primary-dark: #f28d82;
+  --primary-dark-hover: #ffa399;
   --on-primary: #ffffff;
   --on-primary-inverse: #111111;
   --surface: #ffffff;
@@ -21,7 +21,7 @@
   --warning: #f59e0b;
   --danger: #ef4444;
   --info: #3b82f6;
-  --sidebar-surface: var(--surface-secondary);
+  --sidebar-surface: #fcfaf8;
   --line: color-mix(in srgb, var(--text-secondary) 24%, var(--surface));
   --selected: color-mix(in srgb, var(--primary) 12%, var(--surface));
   --focus-ring: color-mix(in srgb, var(--primary) 25%, transparent);
@@ -52,4 +52,8 @@
     --text-secondary: #b4b4b4;
     --text-tertiary: #676767;
   }
+}
+
+:root {
+  --date-accent: var(--primary);
 }

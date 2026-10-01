@@ -8,6 +8,10 @@ pub struct PlanChange {
     pub is_focus: bool,
     pub estimated_minutes: Option<i64>,
     pub focus_rank: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub day_period: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub day_rank: Option<i64>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -83,6 +87,8 @@ impl Store {
             if !seen.insert(&c.plan_id)
                 || c.expected_version < 0
                 || c.focus_rank < 0
+                || c.day_rank.is_some_and(|rank| rank < 0)
+                || c.day_period.as_ref().is_some_and(|period| !["morning", "afternoon", "evening"].contains(&period.as_str()))
                 || c.estimated_minutes
                     .is_some_and(|m| !(1..=1440).contains(&m))
             {
@@ -116,8 +122,8 @@ impl Store {
                 {
                     return Err("STATE_CONFLICT".into());
                 }
-                sqlx::query("UPDATE daily_plan_items SET is_focus=?,estimated_minutes=?,focus_rank=? WHERE id=? AND owner_id=?")
-    .bind(c.is_focus).bind(c.estimated_minutes).bind(c.focus_rank).bind(&c.plan_id).bind(&self.owner_id).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+                sqlx::query("UPDATE daily_plan_items SET is_focus=?,estimated_minutes=?,focus_rank=?,day_period=COALESCE(?,day_period),day_rank=COALESCE(?,day_rank) WHERE id=? AND owner_id=?")
+    .bind(c.is_focus).bind(c.estimated_minutes).bind(c.focus_rank).bind(&c.day_period).bind(c.day_rank).bind(&c.plan_id).bind(&self.owner_id).execute(&mut *tx).await.map_err(|e|e.to_string())?;
                 sqlx::query("UPDATE tasks SET version=version+1 WHERE id=? AND owner_id=?")
                     .bind(&c.task_id)
                     .bind(&self.owner_id)

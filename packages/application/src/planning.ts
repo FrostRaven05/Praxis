@@ -7,6 +7,8 @@ export interface PlanChange {
   expectedVersion: number;
   isFocus: boolean;
   focusRank: number;
+  dayPeriod?: import("./day-schedule").DayPeriod;
+  dayRank?: number;
   estimatedMinutes: number | null;
 }
 export interface PlanCommand {
@@ -68,6 +70,8 @@ export function planChange(task: DailyTask): PlanChange {
     expectedVersion: task.version ?? 0,
     isFocus: task.isFocus ?? false,
     focusRank: task.focusRank ?? 0,
+    dayPeriod: task.dayPeriod ?? "morning",
+    dayRank: task.dayRank ?? 0,
     estimatedMinutes: task.estimatedMinutes ?? null,
   };
 }
@@ -98,6 +102,16 @@ export class Planning {
     for (const c of changes) {
       if (!Number.isSafeInteger(c.focusRank) || c.focusRank < 0)
         throw new Error("排序无效");
+      if (
+        c.dayRank !== undefined &&
+        (!Number.isSafeInteger(c.dayRank) || c.dayRank < 0)
+      )
+        throw new Error("排序无效");
+      if (
+        c.dayPeriod !== undefined &&
+        !["morning", "afternoon", "evening"].includes(c.dayPeriod)
+      )
+        throw new Error("时段无效");
       if (c.estimatedMinutes !== null) parseMinutes(String(c.estimatedMinutes));
     }
     await this.plans.execute(

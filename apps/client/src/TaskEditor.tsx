@@ -5,6 +5,7 @@ import {
   type EditReceipt,
 } from "@praxis/application";
 import { editStorage } from "./storage";
+import { DatePicker } from "./DatePicker";
 const editor = new EditTask(editStorage);
 export function TaskEditor({
   task,
@@ -51,11 +52,11 @@ export function TaskEditor({
         disabled={saving}
       />
       <label htmlFor="edit-date">安排日期</label>
-      <input
+      <DatePicker
         id="edit-date"
-        type="date"
+        label="安排日期"
         value={date}
-        onChange={(e) => setDate(e.target.value)}
+        onChange={setDate}
         disabled={saving || base.status === "completed"}
       />
       {base.status === "completed" && <p>已完成任务保留原安排日期。</p>}

@@ -3,10 +3,10 @@ version: alpha
 name: Adaptive Desktop Interface
 description: A general-purpose, theme-aware design system for clear and consistent product interfaces.
 colors:
-  primary: "#8B7355"
-  primary-hover: "#7A6548"
-  primary-dark: "#C9A86C"
-  primary-dark-hover: "#D9B87C"
+  primary: "#D1453B"
+  primary-hover: "#B8382F"
+  primary-dark: "#F28D82"
+  primary-dark-hover: "#FFA399"
   on-primary: "#FFFFFF"
   on-primary-inverse: "#111111"
   surface: "#FFFFFF"
@@ -14,6 +14,7 @@ colors:
   surface-tertiary: "#F0F0F0"
   surface-hover: "#ECECEC"
   surface-card: "#F7F7F8"
+  sidebar-surface: "#FCFAF8"
   text-primary: "#0D0D0D"
   text-secondary: "#6E6E80"
   text-tertiary: "#8E8EA0"
@@ -232,6 +233,25 @@ components:
 - **Badges and status:** 使用紧凑字号和全圆角。徽标用于短状态或计数，不承载长句。
 - **Tooltips:** 只补充无法从标签和图标直接理解的信息；简短、可延迟出现，并且不遮挡当前操作目标。
 - **Motion:** 悬浮与状态切换使用 150–200ms，面板与模态进入使用 200–300ms，优先 ease-out。加载动效只在任务进行时循环，并响应 `prefers-reduced-motion`。
+
+## Task controls
+
+任务控件参考 Todoist 的[任务详情](https://www.todoist.com/help/todoist/features/use-the-task-view-to-manage-tasks-in-todoist-eDeRDO0C)、[快速添加](https://www.todoist.com/help/todoist/product-updates/a-cleaner-simpler-quick-add-june-29-PuIpiLmLh)和[快捷键](https://www.todoist.com/help/todoist/features/use-keyboard-shortcuts-in-todoist-Wyovn2)，按 Praxis 现有任务模型实现：
+
+- 录入保持单行与回车保存；`Q` 定位当前视图的录入框。常用操作直接显示，层级移动、子任务等操作收进更多菜单。
+- 日期与截止时间统一使用简洁月历：圆形选中日期、今天描边、相邻月份淡化；点击年月展开月份选择，箭头切换月份或年份，点击日期直接选中并收起。移除弹层底部的日期输入、确认、提示和今天区域。截止时间仅增加时分选择，并保留清除入口。选择安排日期只修改表单草稿，保存或安排任务才写入本机；安排日期与截止时间分别保存。
+- 更多菜单支持上下方向键、Home、End；表单字段保留自身的编辑按键。月历使用单个 Tab 入口，方向键移动日期，Page Up/Down 移动月份，Shift+Page Up/Down 移动年份，月末不足时停在当月最后一天。
+- 弹层靠近触发控件，适配窗口边界；点击外部、移出焦点或按 Esc 收起。详情中的 Ctrl+Enter 保存，Esc 收起已保存的详情；有草稿时显示保存与取消修改入口。
+- 圆形完成控件切换任务完成状态；重点标记与拖动排序分别处理，不改变上午、下午、晚上分组。
+- 收件箱点击任务直接打开右侧编辑栏，列表保持可见；不再展开行内操作或打开详情模态。默认没有日期，编辑保存后仍留在收件箱；选择日期并保存后进入对应日程。草稿阻止切换任务，支持取消修改和 Ctrl+Enter 保存。
+- 日程页通过固定宽度的扁平日期条或月历切换日期，标题仅供辅助技术读取；保存后直接更新任务列表，详情有未保存修改时日期导航暂时禁用。页面不显示额外的保存成功提示、当前查看日期说明、返回今日横幅或标题与日期修改回执。
+
+项目的列表与看板参考 [Todoist 入门说明](https://www.todoist.com/zh-CN/help/todoist/get-started/get-started-with-todoist-OgNNJR)及[看板布局](https://www.todoist.com/help/todoist/features/use-the-board-layout-in-todoist-AiAVsyEI)。列表、甘特图和看板共用项目标题、视图切换、任务录入及更多选项：
+
+- 列表保留圆圈完成、标题详情、子任务折叠和同级拖动排序。仅展示实际日期、子任务进度和必要状态；已完成与已取消任务按需查看。
+- 看板使用列标题、数量和紧凑卡片。普通状态立即保存；阻塞或取消时填写原因。失败保留原操作并提供重试或重读。
+- 甘特图以时间轴和任务行为主；日期与依赖在编辑时出现，低频设置放入更多。单项排期直接保存，涉及其他任务或依赖顺延时确认方案；每日安排与项目排期保持独立。
+- 空态使用简短文字，保存后直接刷新；不显示持久的成功提示、撤销回执、重复任务选择区或无内容的筛选开关。
 
 ## Do's and Don'ts
 

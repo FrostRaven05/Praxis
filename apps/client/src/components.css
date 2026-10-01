@@ -298,3 +298,144 @@ input[type="checkbox"] {
 .workspace .detail-heading button:hover:not(:disabled) {
   background: var(--surface-hover);
 }
+
+/* Weekly date navigation follows the reference layout. */
+.date-strip-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  max-width: 100%;
+}
+.date-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  min-width: 0;
+}
+.date-strip-days {
+  display: flex;
+  gap: 8px;
+}
+.workspace .date-strip button,
+.workspace .date-strip-today {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 16px;
+  font-weight: 400;
+}
+.workspace .date-strip button:hover,
+.workspace .date-strip-today:hover {
+  background: var(--surface-hover);
+}
+.workspace .date-strip .is-today {
+  color: var(--date-accent);
+}
+.workspace .date-strip .is-selected,
+.workspace .date-strip .is-selected:hover {
+  background: var(--date-accent);
+  color: var(--on-primary);
+}
+.date-strip svg,
+.date-strip-today svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.date-strip-label {
+  position: relative;
+  margin-left: 8px;
+  white-space: nowrap;
+  font-size: 15px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.workspace .date-strip-today {
+  color: var(--text-primary);
+}
+@media (max-width: 640px) {
+  .date-strip-row {
+    gap: 6px;
+    width: 100%;
+  }
+  .date-strip {
+    flex: 1;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 6px;
+  }
+  .date-strip-days {
+    flex: 1;
+    justify-content: space-around;
+    gap: 0;
+  }
+  .workspace .date-strip button {
+    width: 28px;
+    height: 32px;
+    font-size: 14px;
+  }
+  .date-strip-label {
+    flex-basis: 100%;
+    text-align: center;
+    margin: 4px 0 0;
+    padding: 4px;
+  }
+}
+
+/* Overlay window chrome so it does not add an empty row above the workspace. */
+.desktop-shell .window-titlebar {
+  height: 24px;
+  background: transparent;
+  pointer-events: none;
+}
+.desktop-shell .window-drag-region {
+  margin-right: 138px;
+  background: transparent;
+  pointer-events: auto;
+}
+.desktop-shell .window-controls {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: var(--surface);
+  pointer-events: auto;
+}
+.desktop-shell .window-error {
+  pointer-events: auto;
+}
+.desktop-shell .day-toolbar,
+.desktop-shell .project-toolbar {
+  padding-right: 138px;
+}
+@media (max-width: 1100px) {
+  .desktop-shell .today-content {
+    padding-top: 40px;
+  }
+  .desktop-shell .day-toolbar,
+  .desktop-shell .project-toolbar {
+    padding-right: 0;
+  }
+}
+
+.desktop-shell .today-content {
+  padding-top: 36px;
+}
+.desktop-shell .sidebar {
+  padding-top: 32px;
+}

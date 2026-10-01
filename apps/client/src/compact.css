@@ -324,3 +324,7 @@ summary:focus-visible {
     flex-wrap: wrap;
   }
 }
+
+.today .save-notice:empty {
+  display: none;
+}

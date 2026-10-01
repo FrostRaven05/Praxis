@@ -11,7 +11,6 @@ export function ProjectLifecycle({
   const [open, setOpen] = useState(false),
     [base, setBase] = useState(project),
     [status, setStatus] = useState(project.status ?? "active"),
-    [focused, setFocused] = useState(project.focused ?? false),
     [arrangements, setArrangements] = useState<"keep" | "remove">("keep"),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
@@ -19,13 +18,11 @@ export function ProjectLifecycle({
     <section className="lifecycle">
       <span className="state-badge">
         {projectStates[project.status ?? "active"]}
-        {project.focused ? " · 追踪项目" : ""}
       </span>
       <button
         onClick={() => {
           setBase(project);
           setStatus(project.status ?? "active");
-          setFocused(project.focused ?? false);
           setArrangements("keep");
           setOpen(!open);
           setError("");
@@ -48,7 +45,7 @@ export function ProjectLifecycle({
                 projectId: base.id,
                 expectedVersion: base.version,
                 status,
-                focused,
+                focused: base.focused ?? false,
                 arrangements: ["paused", "archived"].includes(status)
                   ? arrangements
                   : "keep",
@@ -76,14 +73,6 @@ export function ProjectLifecycle({
                   </option>
                 ))}
               </select>
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={focused}
-                onChange={(e) => setFocused(e.target.checked)}
-              />
-              追踪项目
             </label>
             {["paused", "archived"].includes(status) && (
               <label>

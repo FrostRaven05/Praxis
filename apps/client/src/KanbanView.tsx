@@ -1,187 +1,402 @@
-import { useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   calendarDate,
   taskStates,
   projectTree,
   type ProjectTask,
+  type WorkspaceAction,
 } from "@praxis/application";
 import { workspace } from "./storage";
 import { TaskDetailsButton } from "./TaskDetailsButton";
+import { TaskActionMenu } from "./TaskActionMenu";
+
 const columns = ["todo", "in_progress", "blocked", "completed"];
+type StatusAction = Extract<WorkspaceAction, { kind: "status" }>;
+type StatusRequest = {
+  action: StatusAction;
+  title: string;
+  committed: boolean;
+};
+const errorText = (error: unknown) =>
+  error instanceof Error ? error.message : String(error);
+
 export function KanbanView({
   tasks,
   onSaved,
+  showCancelled = false,
+  onBusyChange,
+  disabled = false,
 }: {
   tasks: ProjectTask[];
   onSaved: () => Promise<unknown>;
+  showCancelled?: boolean;
+  onBusyChange?: (busy: boolean) => void;
+  disabled?: boolean;
 }) {
-  const leaves = projectTree(tasks).filter((t) => !t.hasChildren);
+  const leaves = projectTree(tasks).filter((task) => !task.hasChildren);
   const [transition, setTransition] = useState<{
-      task: ProjectTask;
-      status: string;
-    } | null>(null),
-    [reason, setReason] = useState(""),
-    [busy, setBusy] = useState(false),
-    [error, setError] = useState(""),
-    [showCancelled, setShowCancelled] = useState(false);
-  function choose(task: ProjectTask, status: string) {
-    if (task.status === status) return;
-    setTransition({ task, status });
-    setReason("");
-    setError("");
-  }
-  async function save() {
-    if (!transition) return;
-    setBusy(true);
-    setError("");
+    task: ProjectTask;
+    status: string;
+  } | null>(null);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const busyRef = useRef(false);
+  const [pending, setPending] = useState<StatusRequest | null>(null);
+  const [error, setError] = useState("");
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const headingId = useId();
+  const ownedBusy = busy || !!transition || !!pending;
+  const locked = disabled || ownedBusy;
+  useEffect(() => {
+    onBusyChange?.(ownedBusy);
+    return () => onBusyChange?.(false);
+  }, [ownedBusy, onBusyChange]);
+
+  function request(
+    task: ProjectTask,
+    status: string,
+    statusReason = "",
+  ): StatusRequest {
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    try {
-      await workspace.execute({
+    return {
+      action: {
         kind: "status",
-        taskId: transition.task.taskId,
-        expectedVersion: transition.task.version,
-        status: transition.status,
-        reason,
+        taskId: task.taskId,
+        expectedVersion: task.version,
+        status,
+        reason: statusReason,
         date: calendarDate(new Date(), zone),
         timeZone: zone,
-      });
+      },
+      title: task.title,
+      committed: false,
+    };
+  }
+
+  async function save(change: StatusRequest) {
+    if (busyRef.current || disabled) return;
+    busyRef.current = true;
+    setBusy(true);
+    setPending(change);
+    setError("");
+    try {
+      // Keep the original version and date when retrying an uncertain reply.
+      // If only the refresh failed, retry the read without repeating the write.
+      if (!change.committed) {
+        await workspace.execute(change.action);
+        change.committed = true;
+      }
       await onSaved();
+      setPending(null);
       setTransition(null);
-    } catch (e) {
-      setError(String(e));
+      setReason("");
+    } catch (failure) {
+      setError(errorText(failure));
     } finally {
+      busyRef.current = false;
       setBusy(false);
     }
   }
+
+  function choose(task: ProjectTask, status: string) {
+    if (locked || busyRef.current || task.status === status) return;
+    if (task.status === "cancelled" && status !== "restore") return;
+    if (task.status === "completed" && status === "cancelled") return;
+    setError("");
+    if (status === "blocked" || status === "cancelled") {
+      setTransition({ task, status });
+      setReason("");
+    } else {
+      void save(request(task, status));
+    }
+  }
+
+  async function reload() {
+    if (busyRef.current || disabled) return;
+    busyRef.current = true;
+    setBusy(true);
+    try {
+      await onSaved();
+      setPending(null);
+      setTransition(null);
+      setReason("");
+      setError("");
+    } catch (failure) {
+      setError(errorText(failure));
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
+    }
+  }
+
   function card(task: ProjectTask) {
+    const parent = tasks.find(
+      (candidate) => candidate.taskId === task.parentTaskId,
+    );
     return (
       <article
-        className="kanban-card"
+        className={`kanban-card${task.status === "completed" ? " completed" : ""}${task.status === "cancelled" ? " cancelled" : ""}`}
         key={task.taskId}
-        draggable={!busy && !transition}
-        onDragStart={(e) => {
-          e.dataTransfer.setData("application/praxis-task", task.taskId);
-          e.dataTransfer.effectAllowed = "move";
+        draggable={!locked && task.status !== "cancelled"}
+        data-task-id={task.taskId}
+        onDragStart={(event) => {
+          if (locked || busyRef.current || task.status === "cancelled") {
+            event.preventDefault();
+            return;
+          }
+          event.dataTransfer.setData("application/praxis-task", task.taskId);
+          event.dataTransfer.effectAllowed = "move";
+          setDraggedId(task.taskId);
+        }}
+        onDragEnd={() => {
+          setDraggedId(null);
+          setDropTarget(null);
         }}
       >
-        <strong>{task.title}</strong>
-        <p className="task-meta">
-          {task.executionDate ? "每日安排：" + task.executionDate : "尚未安排"}
-          {task.statusReason && " · " + task.statusReason}
-        </p>
-        <TaskDetailsButton
-          taskId={task.taskId}
-          onSaved={onSaved}
-          disabled={busy}
-        />
-        <label>
-          切换状态
-          <select
-            disabled={busy || !!transition}
-            value={task.status}
-            onChange={(e) => choose(task, e.target.value)}
+        <div className="kanban-card-heading">
+          {task.status !== "cancelled" ? (
+            <button
+              type="button"
+              className="kanban-completion-toggle"
+              aria-label={task.status === "completed" ? "撤销完成" : "标为完成"}
+              aria-pressed={task.status === "completed"}
+              title={task.title}
+              disabled={locked}
+              onClick={() =>
+                choose(task, task.status === "completed" ? "todo" : "completed")
+              }
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                {task.status === "completed" && <path d="m7.5 12 3 3 6-6" />}
+              </svg>
+            </button>
+          ) : (
+            <span className="kanban-cancelled-mark" aria-label="已取消">
+              −
+            </span>
+          )}
+          <TaskDetailsButton
+            taskId={task.taskId}
+            onSaved={onSaved}
+            disabled={locked}
+            label={task.title}
+            className="kanban-task-title"
+          />
+          <TaskActionMenu
+            label={"更多操作：" + task.title}
+            disabled={locked}
+            className="kanban-card-actions"
           >
-            {Object.entries(taskStates).map(([k, v]) => (
-              <option
-                key={k}
-                value={k}
-                disabled={task.status === "completed" && k === "cancelled"}
-              >
-                {v}
-              </option>
-            ))}
-            {task.status === "cancelled" && (
-              <option value="restore">恢复取消前状态</option>
+            {(close) =>
+              task.status === "cancelled" ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    close();
+                    choose(task, "restore");
+                  }}
+                >
+                  恢复任务
+                </button>
+              ) : (
+                <>
+                  {columns
+                    .filter((status) => status !== task.status)
+                    .map((status) => (
+                      <button
+                        key={status}
+                        type="button"
+                        onClick={() => {
+                          close();
+                          choose(task, status);
+                        }}
+                      >
+                        {status === "completed"
+                          ? "标为完成"
+                          : "移到" + taskStates[status]}
+                      </button>
+                    ))}
+                  {task.status !== "completed" && (
+                    <button
+                      type="button"
+                      className="kanban-cancel-action"
+                      onClick={() => {
+                        close();
+                        choose(task, "cancelled");
+                      }}
+                    >
+                      取消任务
+                    </button>
+                  )}
+                </>
+              )
+            }
+          </TaskActionMenu>
+        </div>
+        {(parent || task.executionDate || task.important) && (
+          <div className="kanban-card-meta">
+            {parent && <span title={parent.title}>{parent.title}</span>}
+            {task.executionDate && (
+              <time dateTime={task.executionDate}>{task.executionDate}</time>
             )}
-          </select>
-        </label>
+            {task.important && (
+              <span
+                className="kanban-important"
+                title="重要任务"
+                aria-label="重要任务"
+              >
+                ★
+              </span>
+            )}
+          </div>
+        )}
+        {task.statusReason && (
+          <p className="kanban-card-reason">{task.statusReason}</p>
+        )}
       </article>
     );
   }
+
+  const states =
+    showCancelled && leaves.some((task) => task.status === "cancelled")
+      ? [...columns, "cancelled"]
+      : columns;
   return (
-    <section aria-label="项目看板">
-      <p className="task-meta">
-        拖动叶子任务到目标列，或使用状态菜单。汇总父项的进度在任务视图显示。
-      </p>
+    <section className="project-board" aria-label="项目看板" aria-busy={busy}>
       {transition && (
         <form
-          className="workspace-editor"
-          aria-label="确认状态变更"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void save();
+          className="kanban-reason-form"
+          aria-label={
+            transition.status === "blocked" ? "阻塞原因" : "取消任务原因"
+          }
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (reason.trim())
+              void save(
+                pending ??
+                  request(transition.task, transition.status, reason.trim()),
+              );
           }}
         >
-          <fieldset disabled={busy}>
-            <h3>
-              {transition.task.title} →{" "}
-              {taskStates[transition.status] ?? "恢复取消前状态"}
-            </h3>
-            {["blocked", "cancelled"].includes(transition.status) && (
-              <label>
-                原因
-                <textarea
-                  required
-                  value={reason}
-                  onChange={(e) => setReason(e.target.value)}
-                />
-              </label>
-            )}
-            {transition.status === "completed" && (
-              <p>按实际完成日记录结果。未安排任务也会出现在今日已完成中。</p>
-            )}
-            {transition.task.status === "completed" && (
-              <p>此次变更会撤销原完成记录，历史仍保留。</p>
-            )}
-            <button>确认状态变更</button>{" "}
-            <button type="button" onClick={() => setTransition(null)}>
+          <label htmlFor={headingId + "-reason"}>
+            {transition.status === "blocked" ? "阻塞" : "取消"}：
+            {transition.task.title}
+          </label>
+          <div className="kanban-reason-controls">
+            <input
+              autoFocus
+              id={headingId + "-reason"}
+              required
+              value={reason}
+              placeholder={
+                transition.status === "blocked"
+                  ? "填写阻塞原因"
+                  : "填写取消原因"
+              }
+              disabled={busy || disabled || !!pending}
+              onChange={(event) => setReason(event.target.value)}
+            />
+            <button type="submit" disabled={busy || disabled || !reason.trim()}>
+              {busy ? "保存中…" : pending ? "重试" : "保存"}
+            </button>
+            <button
+              type="button"
+              disabled={busy || disabled || !!pending}
+              onClick={() => {
+                setTransition(null);
+                setReason("");
+                setPending(null);
+                setError("");
+              }}
+            >
               取消
             </button>
-          </fieldset>
-          {error && (
-            <p className="error" role="alert">
-              {error}
-            </p>
-          )}
+          </div>
         </form>
       )}
-      <div className="kanban-board">
-        {columns.map((state) => (
-          <section
-            key={state}
-            className="kanban-column"
-            data-status={state}
-            onDragOver={(e) => {
-              if (!busy && !transition) e.preventDefault();
-            }}
-            onDrop={(e) => {
-              e.preventDefault();
-              if (busy || transition) return;
-              const task = leaves.find(
-                (t) =>
-                  t.taskId ===
-                  e.dataTransfer.getData("application/praxis-task"),
-              );
-              if (task) choose(task, state);
-            }}
+      {error && (
+        <div className="kanban-error" role="alert">
+          <p>
+            {pending?.committed
+              ? "状态已保存，未能刷新看板。"
+              : "未能更新任务状态。"}{" "}
+            {error}
+          </p>
+          {pending && !transition && (
+            <button
+              type="button"
+              disabled={busy || disabled}
+              onClick={() => void save(pending)}
+            >
+              重试
+            </button>
+          )}
+          <button
+            type="button"
+            disabled={busy || disabled}
+            onClick={() => void reload()}
           >
-            <h3>
-              {taskStates[state]}{" "}
-              <small>{leaves.filter((t) => t.status === state).length}</small>
-            </h3>
-            {leaves.filter((t) => t.status === state).map(card)}
-          </section>
-        ))}
-      </div>
-      <button onClick={() => setShowCancelled(!showCancelled)}>
-        {showCancelled ? "收起" : "查看"}已取消任务（
-        {leaves.filter((t) => t.status === "cancelled").length}）
-      </button>
-      {showCancelled && (
-        <div className="cancelled-tasks">
-          {leaves.filter((t) => t.status === "cancelled").map(card)}
+            重新读取
+          </button>
         </div>
       )}
+      <div className="kanban-board">
+        {states.map((status) => {
+          const cards = leaves.filter((task) => task.status === status);
+          const dragged = leaves.find((task) => task.taskId === draggedId);
+          const canDrop =
+            !locked &&
+            dragged &&
+            dragged.status !== status &&
+            !(dragged.status === "completed" && status === "cancelled");
+          return (
+            <section
+              key={status}
+              className={`kanban-column${dropTarget === status ? " kanban-drop-target" : ""}`}
+              data-status={status}
+              aria-labelledby={headingId + "-" + status}
+              onDragOver={(event) => {
+                if (canDrop) {
+                  event.preventDefault();
+                  event.dataTransfer.dropEffect = "move";
+                  setDropTarget(status);
+                }
+              }}
+              onDragLeave={(event) => {
+                if (
+                  !(event.relatedTarget instanceof Node) ||
+                  !event.currentTarget.contains(event.relatedTarget)
+                ) {
+                  setDropTarget((target) =>
+                    target === status ? null : target,
+                  );
+                }
+              }}
+              onDrop={(event) => {
+                event.preventDefault();
+                setDropTarget(null);
+                setDraggedId(null);
+                if (locked || busyRef.current) return;
+                const task = leaves.find(
+                  (candidate) =>
+                    candidate.taskId ===
+                    event.dataTransfer.getData("application/praxis-task"),
+                );
+                if (task) choose(task, status);
+              }}
+            >
+              <h3 id={headingId + "-" + status}>
+                {status === "cancelled" ? "已取消" : taskStates[status]}
+                <small>{cards.length}</small>
+              </h3>
+              {cards.map(card)}
+              {!cards.length && <p className="kanban-empty">暂无任务</p>}
+            </section>
+          );
+        })}
+      </div>
     </section>
   );
 }

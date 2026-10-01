@@ -1,12 +1,15 @@
-import { TrackedProjects } from "./TrackedProjects";
+import { DateStrip } from "./DateStrip";
+import { ProjectNavigation } from "./ProjectNavigation";
+import { SettingsView } from "./SettingsView";
+import { ProjectIcon } from "./ProjectIcon";
 import { projectStates, taskStates } from "@praxis/application";
-import { TaskDetailsButton } from "./TaskDetailsButton";
+import { TaskDetailPanel } from "./TaskDetailPanel";
+import { TaskPanelIcon } from "./TaskPanelIcon";
+import { TaskActionMenu } from "./TaskActionMenu";
 import { ProjectsView } from "./ProjectsView";
-import { ProjectAssignment } from "./ProjectAssignment";
 import { InboxView } from "./InboxView";
-import { PlanningPanel, planning } from "./PlanningPanel";
+import { planning } from "./PlanningPanel";
 import { PlanControls } from "./PlanControls";
-import { TaskEditor, undoEdit } from "./TaskEditor";
 import { App as NativeApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import {
@@ -15,6 +18,8 @@ import {
   useRef,
   useState,
   type FormEvent,
+  type DragEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
 } from "react";
 import {
   calendarDate,
@@ -23,9 +28,12 @@ import {
   type DailyTask,
   type EditReceipt,
   validCalendarDate,
-  orderedFocus,
-  preparePlanChange,
-  moveFocusChanges,
+  dayPeriods,
+  dayPeriodLabels,
+  orderedDayTasks,
+  moveDayTaskChanges,
+  taskPeriod,
+  type DayPeriod,
   type PlanChange,
 } from "@praxis/application";
 import {
@@ -53,6 +61,11 @@ function message(error: unknown): string {
 export function App() {
   const [projectNavigation, setProjectNavigation] = useState(0);
   const [projectBusy, setProjectBusy] = useState(false);
+  const [detailBusy, setDetailBusy] = useState(false);
+  const [inboxBusy, setInboxBusy] = useState(false);
+  const [captureFocusRevision, setCaptureFocusRevision] = useState(0);
+  const [detailDirty, setDetailDirty] = useState(false);
+  const [projectForm, setProjectForm] = useState<"new" | "edit" | null>(null);
   const workspaceRef = useRef<HTMLElement>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
   const [projectRevision, setProjectRevision] = useState(0);
@@ -60,17 +73,16 @@ export function App() {
     () => setProjectRevision((n) => n + 1),
     [],
   );
-  const [view, setView] = useState<"day" | "inbox" | "projects">("day");
+  const [view, setView] = useState<"day" | "inbox" | "projects" | "settings">(
+    "day",
+  );
   useEffect(() => {
     workspaceRef.current?.scrollTo({ top: 0 });
   }, [view, projectId, projectNavigation]);
-  const [planRevision, setPlanRevision] = useState(0);
   const [planningBusy, setPlanningBusy] = useState(false);
   const [day, setDay] = useState(localDay);
   const [recoveryDate, setRecoveryDate] = useState<string | null>(null);
   const displayedDate = recoveryDate ?? day.date;
-  const [lastEdit, setLastEdit] = useState<EditReceipt | null>(null);
-  const [undoing, setUndoing] = useState(false);
   const [editorRevision, setEditorRevision] = useState(0);
   const [editBaseline, setEditBaseline] = useState<DailyTask | null>(null);
   const [items, setItems] = useState<DailyTask[]>([]);
@@ -79,20 +91,34 @@ export function App() {
   const [changingId, setChangingId] = useState<string | null>(null);
   const [changeError, setChangeError] = useState("");
   const [showCompleted, setShowCompleted] = useState(false);
-  const pendingItems = items.filter(
-    (item) => item.status !== "completed" && !item.isFocus,
-  );
-  const focusItems = orderedFocus(items);
   const completedItems = items.filter((item) => item.status === "completed");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [saveError, setSaveError] = useState("");
-  const [notice, setNotice] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const queryVersion = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const selected = items.find((item) => item.taskId === selectedId);
+  const [pendingPlan, setPendingPlan] = useState<{
+    date: string;
+    changes: PlanChange[];
+  } | null>(null);
+  const draggingPlan = useRef<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{
+    period: DayPeriod;
+    planId?: string;
+    position: "before" | "after";
+  } | null>(null);
+  const planLocked =
+    planningBusy ||
+    changingId !== null ||
+    detailBusy ||
+    detailDirty ||
+    saving ||
+    loading ||
+    pendingPlan !== null;
 
   const refresh = useCallback(async (date: string) => {
     const version = ++queryVersion.current;
@@ -101,7 +127,6 @@ export function App() {
       const tasks = await todayTasks.list(date);
       if (version === queryVersion.current) {
         setItems(tasks);
-        setPlanRevision((value) => value + 1);
         setLoadError("");
         return tasks;
       }
@@ -147,12 +172,83 @@ export function App() {
   }, [refresh, recoveryDate]);
 
   function openInbox() {
+    if (projectBusy || detailBusy || planningBusy || inboxBusy) return;
     setSelectedId(null);
     setView("inbox");
   }
+  const quickCapture = useCallback(() => {
+    if (
+      projectBusy ||
+      detailBusy ||
+      planningBusy ||
+      inboxBusy ||
+      detailDirty ||
+      (view === "day" && planLocked)
+    )
+      return;
+    const current = workspaceRef.current?.querySelector<HTMLInputElement>(
+      ".today .capture-form input:not(:disabled)",
+    );
+    if (current) {
+      current.focus();
+      current.scrollIntoView({ block: "nearest" });
+    } else {
+      setSelectedId(null);
+      setView("inbox");
+      setCaptureFocusRevision((revision) => revision + 1);
+    }
+  }, [
+    projectBusy,
+    detailBusy,
+    planningBusy,
+    inboxBusy,
+    detailDirty,
+    view,
+    planLocked,
+  ]);
+  function openProject(id: string) {
+    if (projectBusy || detailBusy || planningBusy || inboxBusy) return;
+    setProjectForm(null);
+    setProjectNavigation((n) => n + 1);
+    setSelectedId(null);
+    setProjectId(id);
+    setView("projects");
+  }
+  function openSettings() {
+    if (projectBusy || detailBusy || planningBusy || inboxBusy) return;
+    setSelectedId(null);
+    setView("settings");
+  }
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
-      if (document.querySelector("dialog[open]")) return;
+      if (
+        event.defaultPrevented ||
+        event.isComposing ||
+        event.repeat ||
+        document.querySelector("dialog[open]") ||
+        projectBusy ||
+        detailBusy ||
+        detailDirty ||
+        (view === "day" && planLocked) ||
+        planningBusy ||
+        inboxBusy
+      )
+        return;
+      if (
+        !event.ctrlKey &&
+        !event.metaKey &&
+        !event.altKey &&
+        !event.shiftKey &&
+        event.key.toLowerCase() === "q" &&
+        !(
+          event.target instanceof Element &&
+          event.target.closest("input, textarea, select, [contenteditable]")
+        ) &&
+        !document.querySelector(".task-action-popover,.date-picker-popover")
+      ) {
+        event.preventDefault();
+        quickCapture();
+      }
       if (
         desktopAvailable &&
         event.ctrlKey &&
@@ -166,39 +262,108 @@ export function App() {
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
-  async function updatePlanning(changes: PlanChange[]) {
+  }, [
+    projectBusy,
+    detailBusy,
+    detailDirty,
+    planningBusy,
+    inboxBusy,
+    quickCapture,
+    view,
+    planLocked,
+  ]);
+  async function updatePlanning(changes: PlanChange[], date = displayedDate) {
     if (planningBusy) return;
     setPlanningBusy(true);
     setChangeError("");
     try {
-      await planning.update(displayedDate, changes);
-      await refresh(displayedDate);
+      await planning.update(date, changes);
+      setPendingPlan(null);
+      const rows = await refresh(displayedDate);
+      const current = rows?.find((task) => task.taskId === selectedId);
+      if (current) {
+        setEditBaseline(current);
+        setEditorRevision((revision) => revision + 1);
+      }
     } catch (error) {
       setChangeError(message(error));
+      setPendingPlan({ date, changes });
     } finally {
       setPlanningBusy(false);
     }
   }
   async function savePlan(change: PlanChange) {
-    await updatePlanning([preparePlanChange(items, change)]);
+    if (planLocked) return;
+    await updatePlanning([change]);
   }
-  function moveFocus(task: DailyTask, direction: number) {
-    const changes = moveFocusChanges(items, task.planId, direction);
+  function moveDayTask(
+    planId: string,
+    period: DayPeriod,
+    anchorId?: string,
+    position: "before" | "after" = "before",
+  ) {
+    if (planLocked) return;
+    const changes = moveDayTaskChanges(
+      items,
+      planId,
+      period,
+      anchorId,
+      position,
+    );
     if (changes.length) void updatePlanning(changes);
+  }
+  function clearDrag() {
+    draggingPlan.current = null;
+    setDraggingId(null);
+    setDropTarget(null);
+  }
+  function dropTask(
+    event: DragEvent,
+    period: DayPeriod,
+    anchorId?: string,
+    position: "before" | "after" = "before",
+  ) {
+    if (!draggingPlan.current) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const planId = draggingPlan.current;
+    clearDrag();
+    moveDayTask(planId, period, anchorId, position);
+  }
+  function moveWithKeyboard(event: ReactKeyboardEvent, task: DailyTask) {
+    if (planLocked) return;
+    const period = taskPeriod(task);
+    const tasks = orderedDayTasks(items, period);
+    const index = tasks.findIndex((item) => item.planId === task.planId);
+    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+      event.preventDefault();
+      const target = tasks[index + (event.key === "ArrowUp" ? -1 : 1)];
+      if (target)
+        moveDayTask(
+          task.planId,
+          period,
+          target.planId,
+          event.key === "ArrowUp" ? "before" : "after",
+        );
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      const target =
+        dayPeriods[
+          dayPeriods.indexOf(period) + (event.key === "ArrowLeft" ? -1 : 1)
+        ];
+      if (target) moveDayTask(task.planId, target);
+    }
   }
   async function capture(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (saving) return;
+    if (saving || planningBusy) return;
     setSaving(true);
     setSaveError("");
-    setNotice("");
     try {
       const current = localDay();
       setDay(current);
       const task = await todayTasks.add(title, current.timeZone);
       setTitle("");
-      setNotice(`已保存到本机 · ${task.executionDate}`);
       // A refresh failure must not imply that the successful save failed.
       setRecoveryDate(
         task.executionDate !== current.date ? task.executionDate : null,
@@ -213,7 +378,7 @@ export function App() {
   }
 
   async function changeStatus(item: DailyTask) {
-    if (changingId) return;
+    if (changingId || planningBusy || pendingPlan) return;
     setChangingId(item.taskId);
     setChangeError("");
     try {
@@ -221,11 +386,6 @@ export function App() {
         item,
         item.status === "completed" ? "undo" : "complete",
         localDay().timeZone,
-      );
-      setNotice(
-        item.status === "completed"
-          ? "已撤销完成，任务回到待办"
-          : "已完成，执行记录已保存在本机",
       );
       const resultDate =
         updated.status === "completed"
@@ -241,33 +401,18 @@ export function App() {
   }
 
   async function showEdited(receipt: EditReceipt) {
-    setLastEdit(receipt);
     const date =
       receipt.after.status === "completed"
         ? (receipt.after.completionDate ?? displayedDate)
         : receipt.after.executionDate;
     setRecoveryDate(date === localDay().date ? null : date);
-    setNotice("修改已保存到本机");
     setEditBaseline(receipt.after);
     setEditorRevision((value) => value + 1);
     await refresh(date);
   }
-  async function undoLastEdit() {
-    if (!lastEdit || undoing) return;
-    setUndoing(true);
-    setChangeError("");
-    try {
-      const undone = await undoEdit(lastEdit);
-      await showEdited(undone);
-      setLastEdit(null);
-      setNotice("已撤销修改");
-    } catch (error) {
-      setChangeError(message(error));
-    } finally {
-      setUndoing(false);
-    }
-  }
   function selectDate(date: string) {
+    if (projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty)
+      return;
     if (!validCalendarDate(date)) return;
     setSelectedId(null);
     setView("day");
@@ -275,31 +420,99 @@ export function App() {
   }
 
   function taskRow(item: DailyTask) {
+    const canArrange =
+      desktopAvailable &&
+      ["todo", "in_progress", "blocked"].includes(item.status);
+    const targeted = dropTarget?.planId === item.planId;
     return (
       <li
         key={item.planId}
-        className={
-          item.status === "completed" ? "task-item completed" : "task-item"
-        }
+        data-plan-id={item.planId}
+        className={`task-item${item.status === "completed" ? " completed" : ""}${draggingId === item.planId ? " is-dragging" : ""}${targeted ? " drop-" + dropTarget.position : ""}`}
+        draggable={canArrange && !planLocked}
+        onDragStart={(event) => {
+          if (!canArrange || planLocked) {
+            event.preventDefault();
+            return;
+          }
+          draggingPlan.current = item.planId;
+          setDraggingId(item.planId);
+          event.dataTransfer.effectAllowed = "move";
+          event.dataTransfer.setData("application/x-praxis-plan", item.planId);
+        }}
+        onDragEnd={clearDrag}
+        onDragOver={(event) => {
+          if (!canArrange || !draggingPlan.current || planLocked) return;
+          event.preventDefault();
+          event.stopPropagation();
+          event.dataTransfer.dropEffect = "move";
+          const rect = event.currentTarget.getBoundingClientRect();
+          setDropTarget({
+            period: taskPeriod(item),
+            planId: item.planId,
+            position:
+              event.clientY < rect.top + rect.height / 2 ? "before" : "after",
+          });
+        }}
+        onDrop={(event) => {
+          if (!canArrange) return;
+          const rect = event.currentTarget.getBoundingClientRect();
+          dropTask(
+            event,
+            taskPeriod(item),
+            item.planId,
+            event.clientY < rect.top + rect.height / 2 ? "before" : "after",
+          );
+        }}
       >
+        {canArrange && (
+          <button
+            className="task-drag-handle"
+            disabled={planLocked}
+            aria-label={`拖动排序：${item.title}`}
+            aria-describedby="task-sort-help"
+            title="拖动排序；方向键调整顺序与时段"
+            onKeyDown={(event) => moveWithKeyboard(event, item)}
+          >
+            <svg viewBox="0 0 16 20" aria-hidden="true">
+              <path d="M5 4h.01M11 4h.01M5 10h.01M11 10h.01M5 16h.01M11 16h.01" />
+            </svg>
+          </button>
+        )}
         {desktopAvailable && (
           <button
             className="completion-toggle"
+            aria-pressed={item.status === "completed"}
+            aria-busy={changingId === item.taskId}
             aria-label={item.status === "completed" ? "撤销完成" : "标为完成"}
             title={item.title}
-            disabled={changingId !== null || planningBusy}
+            disabled={
+              changingId !== null ||
+              planningBusy ||
+              detailBusy ||
+              detailDirty ||
+              pendingPlan !== null
+            }
             onClick={() => {
               void changeStatus(item);
             }}
           >
-            {changingId === item.taskId
-              ? "…"
-              : item.status === "completed"
-                ? "✓"
-                : "○"}
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              {changingId === item.taskId ? (
+                <path className="completion-spinner" d="M12 3a9 9 0 1 1-9 9" />
+              ) : (
+                <>
+                  <circle cx="12" cy="12" r="9" />
+                  {item.status === "completed" && (
+                    <path className="completion-check" d="m7.5 12 3 3 6-6" />
+                  )}
+                </>
+              )}
+            </svg>
           </button>
         )}
         <button
+          disabled={detailBusy || planningBusy}
           className={
             selectedId === item.taskId ? "task-row selected" : "task-row"
           }
@@ -344,22 +557,60 @@ export function App() {
           <PlanControls
             key={item.planId + ":" + item.version}
             task={item}
-            busy={planningBusy || changingId !== null}
+            busy={planLocked}
             onChange={savePlan}
-            onMove={(direction) => moveFocus(item, direction)}
-            canUp={focusItems.findIndex((t) => t.planId === item.planId) > 0}
-            canDown={
-              focusItems.findIndex((t) => t.planId === item.planId) <
-              focusItems.length - 1
-            }
           />
+        )}
+        {desktopAvailable && (
+          <TaskActionMenu
+            key={item.planId + ":actions:" + item.version}
+            label={`更多操作：${item.title}`}
+            disabled={planLocked}
+          >
+            {(close) => (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditBaseline(item);
+                    setSelectedId(item.taskId);
+                    close();
+                  }}
+                >
+                  打开任务详情
+                </button>
+                {canArrange && (
+                  <>
+                    <p className="task-action-label">移动到时段</p>
+                    {dayPeriods.map((period) => (
+                      <button
+                        type="button"
+                        key={period}
+                        disabled={taskPeriod(item) === period}
+                        onClick={() => {
+                          moveDayTask(item.planId, period);
+                          close();
+                        }}
+                      >
+                        {dayPeriodLabels[period]}
+                        {taskPeriod(item) === period ? " · 当前" : ""}
+                      </button>
+                    ))}
+                  </>
+                )}
+              </>
+            )}
+          </TaskActionMenu>
         )}
       </li>
     );
   }
 
   return (
-    <main className="workspace" ref={workspaceRef}>
+    <main
+      className="workspace reference-workspace todoist-workspace"
+      ref={workspaceRef}
+    >
       <aside className="sidebar">
         <a className="brand" href="#today" aria-label="Praxis 首页">
           <span className="brand-mark">P</span>Praxis
@@ -367,50 +618,96 @@ export function App() {
         </a>
 
         <nav aria-label="主导航">
+          {desktopAvailable && (
+            <button
+              className="nav-item quick-capture"
+              aria-keyshortcuts="Q"
+              title="添加任务（Q）"
+              disabled={
+                projectBusy ||
+                detailBusy ||
+                planningBusy ||
+                inboxBusy ||
+                detailDirty ||
+                (view === "day" && planLocked)
+              }
+              onClick={quickCapture}
+            >
+              <span className="quick-capture-icon" aria-hidden="true">
+                +
+              </span>
+              添加任务
+              <span className="nav-shortcut" aria-hidden="true">
+                Q
+              </span>
+            </button>
+          )}
           <a
             className={view === "day" ? "nav-item active" : "nav-item"}
             href="#today"
             aria-current={view === "day" ? "page" : undefined}
-            onClick={() => selectDate(localDay().date)}
+            aria-disabled={
+              projectBusy || detailBusy || planningBusy || inboxBusy
+            }
+            onClick={(event) => {
+              if (projectBusy || detailBusy || planningBusy || inboxBusy)
+                event.preventDefault();
+              else selectDate(localDay().date);
+            }}
           >
-            <span aria-hidden="true">☀</span>今日
+            <TaskPanelIcon name="sun" />
+            今日
             <span className="nav-shortcut">
-              {items.length.toString().padStart(2, "0")}
+              {
+                items.filter(
+                  (task) => !["completed", "cancelled"].includes(task.status),
+                ).length
+              }
             </span>
           </a>
           {desktopAvailable && (
             <button
               className={view === "inbox" ? "nav-item active" : "nav-item"}
+              disabled={projectBusy || detailBusy || planningBusy || inboxBusy}
               onClick={openInbox}
             >
+              <TaskPanelIcon name="inbox" />
               收件箱 <span className="nav-shortcut">Ctrl ⇧ N</span>
-            </button>
-          )}
-          {desktopAvailable && (
-            <button
-              className={view === "projects" ? "nav-item active" : "nav-item"}
-              onClick={() => {
-                setSelectedId(null);
-                setView("projects");
-              }}
-            >
-              项目
             </button>
           )}
         </nav>
         {desktopAvailable && (
-          <TrackedProjects
+          <ProjectNavigation
             revision={projectRevision}
-            disabled={projectBusy}
-            selectedId={view === "projects" ? projectId : null}
-            onSelect={(id) => {
-              if (projectBusy) return;
+            disabled={projectBusy || detailBusy || planningBusy || inboxBusy}
+            selectedId={
+              view === "projects" && projectForm !== "new" ? projectId : null
+            }
+            onSelect={openProject}
+            onCreate={() => {
+              if (projectBusy || detailBusy || planningBusy || inboxBusy)
+                return;
+              setProjectForm("new");
               setProjectNavigation((n) => n + 1);
               setSelectedId(null);
-              setProjectId(id);
               setView("projects");
             }}
           />
+        )}
+        {desktopAvailable && (
+          <button
+            className={
+              view === "settings"
+                ? "sidebar-settings active"
+                : "sidebar-settings"
+            }
+            aria-current={view === "settings" ? "page" : undefined}
+            disabled={projectBusy || detailBusy || planningBusy || inboxBusy}
+            onClick={openSettings}
+          >
+            <ProjectIcon name="settings" />
+            设置
+          </button>
         )}
         <div className="sidebar-foot">
           <span className="status-dot" />
@@ -419,53 +716,49 @@ export function App() {
       </aside>
       {view === "projects" ? (
         <ProjectsView
+          form={projectForm}
+          onFormChange={setProjectForm}
           navigationRevision={projectNavigation}
           onBusyChange={setProjectBusy}
           selectedId={projectId}
           onSelect={setProjectId}
           onProjectsChanged={projectsChanged}
+          onSettings={openSettings}
           onDay={(date) => {
             selectDate(date);
             void refresh(date);
           }}
         />
+      ) : view === "settings" ? (
+        <SettingsView revision={projectRevision} onOpenProject={openProject} />
       ) : view === "inbox" ? (
         <InboxView
+          focusRevision={captureFocusRevision}
+          onBusyChange={setInboxBusy}
           onScheduled={(date) => {
+            setSelectedId(null);
             setView("day");
-            selectDate(date);
+            setRecoveryDate(date === localDay().date ? null : date);
             void refresh(date);
           }}
         />
       ) : (
-        <section className="today" id="today" aria-labelledby="today-title">
+        <section
+          className="today reference-day"
+          id="today"
+          aria-labelledby="today-title"
+        >
           <div className="today-content">
             <header className="day-toolbar">
-              <h1 id="today-title">{recoveryDate ? "日程" : "今日"}</h1>
-              <span className="day-label">
-                {new Intl.DateTimeFormat("zh-CN", {
-                  timeZone: "UTC",
-                  month: "long",
-                  day: "numeric",
-                  weekday: "long",
-                }).format(new Date(displayedDate + "T12:00:00Z"))}
-              </span>
-              {desktopAvailable && (
-                <div className="date-navigation">
-                  <label className="sr-only" htmlFor="view-date">
-                    查看日期
-                  </label>
-                  <input
-                    id="view-date"
-                    type="date"
-                    value={displayedDate}
-                    onChange={(e) => selectDate(e.target.value)}
-                  />
-                  <button onClick={() => selectDate(localDay().date)}>
-                    今天
-                  </button>
-                </div>
-              )}
+              <h1 id="today-title" className="sr-only">
+                {recoveryDate ? "日程" : "今日"}
+              </h1>
+              <DateStrip
+                date={displayedDate}
+                today={day.date}
+                onSelect={selectDate}
+                disabled={planningBusy || detailBusy || detailDirty}
+              />
             </header>
             <form
               className="capture-form"
@@ -474,9 +767,7 @@ export function App() {
               }}
               aria-label="添加今日任务"
             >
-              <span className="add-symbol" aria-hidden="true">
-                ＋
-              </span>
+              <span className="capture-circle" aria-hidden="true" />
               <label className="sr-only" htmlFor="task-title">
                 任务标题
               </label>
@@ -490,64 +781,24 @@ export function App() {
                 }}
                 placeholder="添加今日任务，按回车保存"
                 autoComplete="off"
-                disabled={saving || !nativeAvailable}
+                disabled={saving || planningBusy || !nativeAvailable}
                 aria-invalid={Boolean(saveError)}
-                aria-describedby={saveError ? "save-error" : "capture-hint"}
+                aria-describedby={saveError ? "save-error" : undefined}
               />
-              <button
-                className="add-button"
-                type="submit"
-                disabled={saving || !nativeAvailable}
-              >
-                {saving ? "保存中…" : pendingDate ? "重试保存" : "添加"}
-                <span aria-hidden="true">↵</span>
-              </button>
+              {(saving || pendingDate) && (
+                <span className="capture-status" role="status">
+                  {saving ? "保存中…" : "按回车重试"}
+                </span>
+              )}
             </form>
-            <div className="capture-hint" id="capture-hint">
-              <span>
-                {pendingDate ? "重试原任务" : "添加至今日"} ·{" "}
-                {pendingDate ?? day.date}
-              </span>
-            </div>
             {saveError && (
               <p className="error" id="save-error" role="alert">
                 {saveError}
               </p>
             )}
-            <p className="save-notice" role="status">
-              {notice}
+            <p id="task-sort-help" className="sr-only">
+              拖动任务可调整顺序和时段；聚焦拖动按钮后，上下方向键排序，左右方向键切换时段。
             </p>
-            {recoveryDate && (
-              <div className="recovery-note">
-                当前查看 {recoveryDate} 的任务记录。
-                <button onClick={() => setRecoveryDate(null)}>回到今日</button>
-              </div>
-            )}
-
-            {desktopAvailable && (
-              <PlanningPanel
-                key={displayedDate}
-                date={displayedDate}
-                revision={planRevision}
-              />
-            )}
-            {!loading && !loadError && focusItems.length > 0 && (
-              <section className="focus-section" aria-label="今日重点">
-                <div className="list-heading">
-                  <h2>
-                    {recoveryDate ? "当日重点" : "今日重点"}{" "}
-                    <span>{focusItems.length}</span>
-                  </h2>
-                </div>
-                <ul className="task-list">{focusItems.map(taskRow)}</ul>
-              </section>
-            )}
-            <div className="list-heading">
-              <h2>
-                {recoveryDate ? recoveryDate + " · 待办" : "今日待办"}{" "}
-                <span>{pendingItems.length}</span>
-              </h2>
-            </div>
             {loadError ? (
               <div className="load-error" role="alert">
                 <p>{loadError}</p>
@@ -565,34 +816,71 @@ export function App() {
               <p className="loading" role="status">
                 正在读取本机任务…
               </p>
-            ) : items.length === 0 ? (
-              <div className="empty-state">
-                <p>暂无任务</p>
-              </div>
             ) : (
-              <ul className="task-list">{pendingItems.map(taskRow)}</ul>
+              <div className="day-periods" aria-busy={planningBusy}>
+                {dayPeriods.map((period) => {
+                  const tasks = orderedDayTasks(items, period);
+                  return (
+                    <section
+                      key={period}
+                      className={`day-period${dropTarget?.period === period && !dropTarget.planId ? " is-drop-target" : ""}`}
+                      aria-label={dayPeriodLabels[period]}
+                      data-period={period}
+                      onDragOver={(event) => {
+                        if (!draggingPlan.current || planLocked) return;
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = "move";
+                        setDropTarget({ period, position: "after" });
+                      }}
+                      onDragLeave={(event) => {
+                        if (
+                          !event.currentTarget.contains(
+                            event.relatedTarget as Node | null,
+                          )
+                        )
+                          setDropTarget(null);
+                      }}
+                      onDrop={(event) => dropTask(event, period)}
+                    >
+                      <div className="list-heading">
+                        <h2>
+                          {dayPeriodLabels[period]} <span>{tasks.length}</span>
+                        </h2>
+                      </div>
+                      <ul className="task-list">{tasks.map(taskRow)}</ul>
+                      {tasks.length === 0 && (
+                        <p className="period-empty">
+                          {draggingId ? "拖到这里安排" : "暂无安排"}
+                        </p>
+                      )}
+                    </section>
+                  );
+                })}
+              </div>
             )}
 
-            {lastEdit && (
-              <div className="edit-notice">
-                <span>已修改：{lastEdit.after.title}</span>
-                <button
-                  disabled={undoing}
-                  onClick={() => {
-                    void undoLastEdit();
-                  }}
-                >
-                  {undoing ? "撤销中…" : "撤销修改"}
-                </button>
-              </div>
-            )}
             {changeError && (
               <div className="error" role="alert">
                 {changeError}
+                {pendingPlan && (
+                  <button
+                    disabled={planningBusy}
+                    onClick={() => {
+                      void updatePlanning(
+                        pendingPlan.changes,
+                        pendingPlan.date,
+                      );
+                    }}
+                  >
+                    重试保存排序与星标
+                  </button>
+                )}
                 <button
+                  disabled={planningBusy}
                   onClick={() => {
                     void refresh(displayedDate);
                     setChangeError("");
+                    setPendingPlan(null);
                   }}
                 >
                   重新读取
@@ -616,76 +904,33 @@ export function App() {
           </div>
         </section>
       )}
-      {selected && view === "day" && (
-        <aside className="task-detail" aria-label="任务详情">
-          <div className="detail-heading">
-            <span>任务详情</span>
-            <button
-              onClick={() => setSelectedId(null)}
-              aria-label="关闭任务详情"
-            >
-              ×
-            </button>
-          </div>
-          <span className="detail-tag">
-            {selected.projectId ? "项目任务" : "临时事项"}
-          </span>
-          <h2>{selected.title}</h2>
-          {desktopAvailable && (
-            <TaskEditor
-              key={selected.taskId + ":" + editorRevision}
-              task={
-                editBaseline?.taskId === selected.taskId
-                  ? editBaseline
-                  : selected
-              }
-              onSaved={showEdited}
-            />
-          )}
-          {desktopAvailable && (
-            <ProjectAssignment
-              key={"project:" + selected.taskId + ":" + selected.version}
-              task={selected}
-              onAssigned={async () => {
-                const rows = await refresh(displayedDate);
-                const current = rows?.find((t) => t.taskId === selected.taskId);
-                if (current) {
-                  setEditBaseline(current);
-                  setEditorRevision((n) => n + 1);
-                }
-              }}
-            />
-          )}
-          {desktopAvailable && (
-            <TaskDetailsButton
-              taskId={selected.taskId}
-              onSaved={async () => {
-                const rows = await refresh(displayedDate);
-                const current = rows?.find((t) => t.taskId === selected.taskId);
-                if (current) {
-                  setEditBaseline(current);
-                  setEditorRevision((n) => n + 1);
-                }
-              }}
-            />
-          )}
-          <dl>
-            <dt>安排日期</dt>
-            <dd>{selected.executionDate}</dd>
-            {selected.completionDate && (
-              <>
-                <dt>完成日期</dt>
-                <dd>{selected.completionDate}</dd>
-              </>
-            )}
-            <dt>项目</dt>
-            <dd>{selected.projectId ? "已归属项目" : "未归属项目"}</dd>
-            <dt>状态</dt>
-            <dd>{taskStates[selected.status]}</dd>
-            <dt>保存位置</dt>
-            <dd>此设备</dd>
-          </dl>
-        </aside>
+      {selected && view === "day" && desktopAvailable && (
+        <TaskDetailPanel
+          key={selected.taskId + ":" + editorRevision}
+          task={
+            editBaseline?.taskId === selected.taskId ? editBaseline : selected
+          }
+          onSaved={showEdited}
+          onUpdated={async () => {
+            const rows = await refresh(displayedDate);
+            const current = rows?.find(
+              (task) => task.taskId === selected.taskId,
+            );
+            if (current) {
+              setEditBaseline(current);
+              setEditorRevision((revision) => revision + 1);
+            }
+          }}
+          onClose={() => setSelectedId(null)}
+          onComplete={async () => {
+            await changeStatus(selected);
+            setEditBaseline(null);
+            setEditorRevision((revision) => revision + 1);
+          }}
+          onProject={openProject}
+          onBusyChange={setDetailBusy}
+          onDirtyChange={setDetailDirty}
+        />
       )}
     </main>
   );

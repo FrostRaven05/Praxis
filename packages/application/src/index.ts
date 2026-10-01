@@ -30,3 +30,4 @@ export * from "./task-details";
 export * from "./subtasks";
 
 export * from "./project-workspace";
+export * from "./day-schedule";

@@ -139,6 +139,8 @@ async fn editing_completed_details_keeps_completion_facts_and_arrangement_estima
             expected_version: 0,
             is_focus: true,
             focus_rank: 1,
+            day_period: None,
+            day_rank: None,
             estimated_minutes: Some(20),
         }],
     })

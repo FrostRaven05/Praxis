@@ -935,14 +935,16 @@ button:disabled {
 .desktop-shell {
   height: 100dvh;
   overflow: hidden;
-  padding-top: 32px;
+  padding-top: 0;
 }
 .desktop-shell .workspace {
-  height: calc(100dvh - 32px);
+  height: 100dvh;
   overflow: auto;
-  min-height: calc(100vh - 32px);
+  min-height: 100vh;
 }
-.desktop-shell .sidebar,
+.desktop-shell .sidebar {
+  top: 0;
+}
 .desktop-shell .task-detail {
   top: 32px;
 }

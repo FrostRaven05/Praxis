@@ -1,0 +1,340 @@
+.compact-gantt {
+  min-width: 0;
+}
+.compact-gantt .gantt-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 4px 0 16px;
+}
+.gantt-navigation,
+.gantt-toolbar-options,
+.gantt-scale,
+.gantt-editor-heading,
+.gantt-editor-actions,
+.gantt-comparison-heading {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.workspace .projects-view .compact-gantt .gantt-toolbar button {
+  min-height: 30px;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: 5px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+.workspace
+  .projects-view
+  .compact-gantt
+  .gantt-toolbar
+  button:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
+}
+.gantt-navigation > button:first-child,
+.gantt-navigation > button:nth-child(3) {
+  width: 30px;
+}
+.gantt-navigation svg {
+  display: block;
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+.gantt-range {
+  margin-left: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.gantt-toolbar-options {
+  margin-left: auto;
+  gap: 10px;
+}
+.gantt-scale {
+  gap: 2px;
+  background: var(--surface-secondary);
+  padding: 2px;
+  border-radius: 6px;
+}
+.workspace .projects-view .compact-gantt .gantt-scale button {
+  min-width: 34px;
+  min-height: 26px;
+  padding: 3px 8px;
+}
+.workspace
+  .projects-view
+  .compact-gantt
+  .gantt-scale
+  button[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: 0 1px 3px var(--shadow-color);
+}
+.gantt-anchor-setting {
+  display: grid;
+  gap: 8px;
+  margin: 6px 8px 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.gantt-anchor-setting input {
+  width: 100%;
+}
+.compact-gantt .gantt-scroll {
+  max-height: min(560px, 65vh);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.compact-gantt .gantt-scroll:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.gantt-grid-line {
+  opacity: 0.5;
+}
+.gantt-weekend {
+  opacity: 0.65;
+}
+.gantt-task-label[role="button"],
+.gantt-unscheduled {
+  cursor: pointer;
+}
+.gantt-task-label[role="button"]:hover:not([aria-disabled="true"]),
+.gantt-unscheduled:hover:not([aria-disabled="true"]) {
+  fill: var(--primary);
+}
+.gantt-task-bar {
+  cursor: grab;
+}
+.gantt-task-bar:active {
+  cursor: grabbing;
+}
+.gantt-task-bar[aria-disabled="true"],
+.gantt-task-label[aria-disabled="true"],
+.gantt-unscheduled[aria-disabled="true"] {
+  cursor: default;
+}
+.gantt-task-row[data-status="cancelled"] {
+  opacity: 0.55;
+}
+.gantt-task-bar:focus-visible,
+.gantt-task-label:focus-visible,
+.gantt-unscheduled:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+.compact-gantt .gantt-editor,
+.compact-gantt .gantt-preview,
+.compact-gantt .gantt-arrangement-comparison {
+  max-width: 640px;
+  margin: 0 0 16px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.gantt-editor > fieldset,
+.gantt-dependencies fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+.gantt-editor-heading {
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.compact-gantt .gantt-editor-heading h3,
+.compact-gantt .gantt-preview h3,
+.gantt-comparison-heading h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.gantt-editor .date-fields {
+  align-items: flex-start;
+  gap: 12px;
+}
+.gantt-editor .date-fields label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  min-width: 145px;
+}
+.gantt-editor .date-fields input {
+  min-height: 34px;
+  width: 100%;
+  padding: 6px 9px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.gantt-dependencies {
+  margin-top: 14px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.gantt-dependencies summary {
+  cursor: pointer;
+  padding: 3px 0;
+}
+.gantt-dependencies .dependency-options {
+  display: grid;
+  gap: 8px;
+  max-height: 160px;
+  overflow: auto;
+  margin-top: 10px;
+  padding: 4px 0;
+}
+.gantt-dependencies label {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--text-primary);
+}
+.gantt-editor-actions {
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 16px;
+}
+.workspace .projects-view .compact-gantt .gantt-editor-actions button,
+.workspace .projects-view .compact-gantt .gantt-arrangement-comparison button,
+.workspace .projects-view .compact-gantt .gantt-error button {
+  min-height: 32px;
+  border: 0;
+  border-radius: 5px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  padding: 6px 10px;
+  font-size: 12px;
+}
+.workspace .projects-view .compact-gantt .gantt-editor-actions .gantt-save {
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
+}
+.workspace
+  .projects-view
+  .compact-gantt
+  .gantt-editor-actions
+  .gantt-save:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+.gantt-preview ul {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  margin: 14px 0 0;
+  list-style: none;
+}
+.gantt-preview li {
+  display: grid;
+  gap: 3px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.gantt-preview li strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+.gantt-preview li span,
+.gantt-preview li small,
+.gantt-preview > p {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.gantt-preview > p {
+  margin: 14px 0 0;
+}
+.gantt-comparison-heading {
+  justify-content: space-between;
+}
+.gantt-arrangement-comparison > p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 10px 0 0;
+  font-size: 13px;
+}
+.gantt-arrangement-comparison time {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.gantt-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-size: 13px;
+}
+@media (max-width: 700px) {
+  .gantt-range {
+    font-size: 11px;
+    margin-left: 4px;
+  }
+  .gantt-toolbar-options {
+    gap: 4px;
+  }
+  .compact-gantt .gantt-editor,
+  .compact-gantt .gantt-preview,
+  .compact-gantt .gantt-arrangement-comparison {
+    padding: 12px;
+  }
+}
+.workspace .projects-view .compact-gantt .gantt-editor {
+  max-width: 640px;
+  padding: 12px;
+}
+.compact-gantt .gantt-editor > fieldset {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px 16px;
+}
+.compact-gantt .gantt-editor-heading,
+.compact-gantt .gantt-editor .date-fields {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+.compact-gantt .gantt-editor .date-fields {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 16px;
+}
+.compact-gantt .gantt-editor .date-fields > label {
+  flex: 0 1 auto;
+  min-width: 0;
+  gap: 4px;
+  margin: 0;
+}
+.workspace .projects-view .compact-gantt .gantt-editor .date-picker-trigger {
+  min-height: 32px;
+  padding: 5px 9px;
+  font-size: 12px;
+}
+.compact-gantt .gantt-editor .gantt-dependencies {
+  margin: 0;
+  align-self: center;
+}
+.compact-gantt .gantt-editor .gantt-editor-actions {
+  grid-column: 2;
+  margin: 0;
+  align-self: end;
+}

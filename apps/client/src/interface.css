@@ -1,0 +1,979 @@
+/* Shared interface refinements across daily tasks, inbox and project views. */
+.workspace .completion-toggle {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 3px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-tertiary);
+}
+.workspace .completion-toggle svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.workspace .completion-toggle:hover:not(:disabled) {
+  color: var(--primary);
+  background: var(--selected);
+}
+.workspace .completed .completion-toggle {
+  color: var(--primary);
+  background: transparent;
+}
+.completed .completion-toggle circle {
+  fill: var(--primary);
+  stroke: var(--primary);
+}
+.completed .completion-check {
+  stroke: var(--on-primary);
+  stroke-width: 2;
+}
+.completion-spinner {
+  transform-origin: center;
+  animation: completion-spin 1s linear infinite;
+}
+@keyframes completion-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.plan-controls {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.plan-controls svg {
+  width: 18px;
+  height: 18px;
+  stroke: currentColor;
+  stroke-width: 1.6;
+  stroke-linejoin: round;
+}
+.task-item {
+  min-height: 52px;
+  padding: 6px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.task-item .task-row {
+  border-radius: var(--radius-control);
+}
+.task-title,
+.inbox-row,
+.project-outcome,
+.tree-task strong,
+.kanban-card strong {
+  overflow-wrap: anywhere;
+}
+.task-text {
+  min-width: 0;
+}
+.task-meta {
+  line-height: 1.5;
+}
+.list-heading {
+  margin: 20px 0 8px;
+}
+.workspace .empty-state {
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-secondary);
+  padding: 28px 16px;
+  text-align: center;
+}
+.inbox-row {
+  align-items: center;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.inbox-row > div {
+  min-width: 0;
+  flex: 1;
+}
+.inbox-row > button {
+  flex-shrink: 0;
+}
+.workspace .date-navigation {
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin: 16px 0;
+}
+.workspace .project-form {
+  width: 100%;
+  max-width: 640px;
+  margin: 0;
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-sizing: border-box;
+}
+.project-form h2 {
+  margin: 0 0 12px;
+  font-size: 18px;
+}
+.task-editor,
+.full-details-form {
+  gap: 10px;
+}
+.task-editor label,
+.full-details-form label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.workspace .task-editor input,
+.workspace .task-editor textarea {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.project-form textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+.project-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.workspace .task-editor button[type="submit"] {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+.workspace .task-editor button[type="submit"]:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+.workspace .projects-view .project-card {
+  padding: 12px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  box-shadow: none;
+}
+.workspace .projects-view .project-card.selected {
+  border-color: var(--primary);
+  background: var(--selected);
+}
+.project-card strong {
+  overflow-wrap: anywhere;
+}
+.project-card > span {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.project-toolbar,
+.project-heading,
+.gantt-toolbar {
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.project-progress {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.project-view-tabs {
+  gap: 6px;
+  margin: 16px 0;
+}
+.project-tasks .tree-task {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.kanban-column {
+  border-radius: var(--radius-card);
+  background: var(--surface-secondary);
+  padding: 12px;
+}
+.kanban-column h3 {
+  font-size: 14px;
+  margin: 0 0 12px;
+}
+.workspace .kanban-card {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 12px;
+  box-shadow: none;
+}
+.gantt-scroll {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+}
+.task-detail {
+  width: min(400px, 100vw);
+  box-sizing: border-box;
+}
+.task-detail h2 {
+  overflow-wrap: anywhere;
+  line-height: 1.45;
+}
+.task-details-dialog {
+  width: min(560px, calc(100vw - 32px));
+  box-sizing: border-box;
+}
+.task-details-dialog header {
+  gap: 12px;
+}
+.task-details-dialog header h2 {
+  font-size: 20px;
+}
+@media (max-width: 700px) {
+  .task-item {
+    flex-wrap: nowrap;
+    gap: 4px;
+  }
+  .plan-controls {
+    flex-wrap: wrap;
+    max-width: 96px;
+  }
+  .workspace .project-form {
+    padding: 16px;
+  }
+  .inbox-row {
+    flex-wrap: wrap;
+  }
+  .inbox-row > div {
+    flex-basis: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .completion-spinner {
+    animation: none;
+  }
+}
+
+.project-tasks .tree-task {
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 12px;
+}
+.project-tasks .tree-task > div:first-child {
+  flex: 1 0 100%;
+}
+.project-tasks .tree-task > .task-move,
+.project-tasks .tree-task > .subtask-composer {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.project-tasks .tree-task button {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.project-tasks .tree-task .task-move {
+  gap: 4px;
+}
+
+/* Project navigation lives entirely in the persistent sidebar. */
+.sidebar-projects {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  margin-top: 24px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.sidebar-project-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+.sidebar-project-heading h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.workspace .sidebar-project-heading .new-project-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 32px;
+  padding: 4px 8px;
+  font-size: 12px;
+  background: var(--selected);
+  border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+  color: var(--primary);
+  white-space: nowrap;
+}
+.workspace .sidebar-project-heading .new-project-button:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+.new-project-button .project-icon {
+  width: 14px;
+  height: 14px;
+}
+.sidebar-project-count {
+  font-family: var(--font-data);
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+.sidebar-project-message {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+.sidebar-project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow-y: auto;
+  min-height: 0;
+  padding-bottom: 8px;
+}
+.workspace .sidebar-project-list .project-card {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  min-height: 44px;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text-secondary);
+  text-align: left;
+  flex-shrink: 0;
+}
+.workspace .sidebar-project-list .project-card:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+.workspace .sidebar-project-list .project-card.selected {
+  background: var(--selected);
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--primary) 16%, transparent);
+  box-shadow: none;
+}
+.workspace .sidebar-project-list .sidebar-project-icon {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  background: var(--surface);
+  color: var(--primary);
+}
+.workspace .sidebar-project-list .selected .sidebar-project-icon {
+  background: color-mix(in srgb, var(--primary) 14%, var(--surface));
+}
+.workspace .sidebar-project-list .project-selection-dot {
+  display: block;
+  width: 5px;
+  height: 5px;
+  flex-shrink: 0;
+  margin-left: auto;
+  border-radius: 50%;
+  background: var(--primary);
+}
+.project-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+.project-card .project-icon {
+  color: var(--primary);
+}
+.sidebar-project-list .project-card strong {
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.project-view-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 8px 0 12px;
+  margin-bottom: 16px;
+}
+.project-view-toolbar .lifecycle {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+.project-view-toolbar .lifecycle form {
+  flex-basis: 100%;
+}
+.workspace .project-view-toolbar .lifecycle > button {
+  min-height: 30px;
+  padding: 4px 8px;
+  font-size: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.projects-view .project-view-tabs {
+  margin: 0 0 0 auto;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  gap: 2px;
+  flex-wrap: nowrap;
+}
+.workspace .projects-view .project-view-tabs button {
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 5px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.workspace .projects-view .project-view-tabs button[aria-selected="true"] {
+  color: var(--primary);
+  background: var(--selected);
+}
+.project-heading h2 {
+  margin: 0;
+}
+.project-progress {
+  margin: 8px 0;
+}
+.project-tasks .tree-task {
+  position: relative;
+  flex-wrap: nowrap;
+  gap: 12px;
+  min-height: 56px;
+  padding: 10px 8px;
+  border-left: 2px solid var(--line);
+}
+.project-tasks .tree-task > div:first-child {
+  flex: 1 1 auto;
+}
+.workspace .projects-view button.project-task-title,
+.workspace .projects-view button.kanban-task-title {
+  display: block;
+  background: transparent;
+  padding: 0;
+  min-height: 24px;
+  text-align: left;
+  white-space: normal;
+  color: var(--text-primary);
+  font-weight: 500;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.workspace .projects-view button.project-task-title:hover,
+.workspace .projects-view button.kanban-task-title:hover {
+  color: var(--primary);
+  background: transparent;
+}
+.project-task-actions {
+  flex-shrink: 0;
+}
+.project-task-actions > summary {
+  display: grid;
+  place-items: center;
+  list-style: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+.project-task-actions > summary::-webkit-details-marker {
+  display: none;
+}
+.project-task-actions > summary:hover,
+.project-task-actions[open] > summary {
+  background: var(--selected);
+  color: var(--primary);
+}
+.project-task-action-menu {
+  position: absolute;
+  right: 8px;
+  top: calc(100% - 4px);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  width: min(320px, calc(100vw - 64px));
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-shadow: 0 8px 24px var(--shadow-color);
+}
+.project-task-action-menu .task-move,
+.project-task-action-menu .subtask-composer {
+  flex: initial;
+}
+.project-task-action-menu form {
+  max-width: 100%;
+}
+.project-tasks {
+  overflow: visible;
+}
+.projects-view .kanban-board {
+  grid-template-columns: repeat(4, minmax(200px, 1fr));
+  align-items: start;
+  gap: 12px;
+}
+.kanban-column {
+  min-height: 180px;
+  border: 1px solid var(--line);
+}
+.kanban-column h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--line);
+}
+.kanban-column[data-status="in_progress"] h3 {
+  border-color: var(--primary);
+}
+.kanban-column[data-status="blocked"] h3 {
+  border-color: var(--warning);
+}
+.kanban-column[data-status="completed"] h3 {
+  border-color: var(--success);
+}
+.kanban-column h3 small {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.kanban-empty {
+  font-size: 12px;
+  text-align: center;
+  color: var(--text-secondary);
+  padding: 24px 0;
+}
+.kanban-card label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.workspace .kanban-card select {
+  min-height: 30px;
+  padding: 4px 6px;
+  font-size: 12px;
+  max-width: 100%;
+}
+.gantt-toolbar {
+  margin-bottom: 12px;
+}
+.workspace .projects-view .gantt-toolbar button,
+.workspace .projects-view .gantt-toolbar select,
+.workspace .projects-view .gantt-toolbar input {
+  min-height: 32px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+.gantt-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.gantt-scroll {
+  max-height: 480px;
+  overflow: auto;
+  background: var(--surface);
+}
+.gantt-task-picker h3 {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.workspace .projects-view .gantt-task-picker > button {
+  font-size: 12px;
+  padding: 5px 10px;
+  min-height: 30px;
+}
+.gantt-task-picker details {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.workspace-editor h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+.workspace-editor .date-fields {
+  gap: 12px;
+}
+@media (max-width: 900px) {
+  .projects-view .project-layout {
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 12px;
+  }
+}
+@media (max-width: 700px) {
+  .projects-view .project-layout {
+    grid-template-columns: 1fr;
+  }
+  .project-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .workspace .projects-view .project-list .project-card {
+    width: auto;
+    max-width: 200px;
+  }
+}
+
+.project-settings-section {
+  max-width: 640px;
+  margin-top: 20px;
+  padding: 20px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface);
+  box-sizing: border-box;
+}
+.project-settings-section h3 {
+  margin: 0 0 12px;
+  font-size: 14px;
+}
+.project-settings-section .lifecycle {
+  margin: 0;
+}
+.project-settings-section .lifecycle form {
+  width: 100%;
+  margin-bottom: 0;
+}
+
+.workspace .sidebar-settings {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  margin-top: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  text-align: left;
+}
+.workspace .sidebar-settings.active {
+  background: var(--selected);
+  color: var(--primary);
+}
+.project-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-secondary);
+}
+.project-summary-main {
+  min-width: 0;
+  flex: 1;
+}
+.project-summary .project-heading {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+}
+.project-summary .project-heading h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 650;
+  line-height: 1.4;
+  letter-spacing: -0.4px;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+.project-summary-icon,
+.settings-section-icon {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--selected);
+  color: var(--primary);
+}
+.project-summary-icon .project-icon {
+  width: 21px;
+  height: 21px;
+}
+.project-summary .state-badge {
+  margin: 0;
+  font-size: 11px;
+  padding: 3px 9px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+.project-summary .state-badge[data-state="active"] {
+  background: var(--selected);
+  border-color: transparent;
+  color: var(--primary);
+}
+.project-summary .state-badge[data-state="completed"] {
+  color: var(--success-text);
+}
+.project-summary .project-outcome {
+  margin: 12px 0 16px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.project-summary .project-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.project-progress strong {
+  color: var(--text-primary);
+  font-family: var(--font-data);
+  font-weight: 600;
+}
+.project-progress progress {
+  width: 144px;
+  max-width: 100%;
+  height: 5px;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  appearance: none;
+  background: var(--surface-tertiary);
+  accent-color: var(--primary);
+}
+.project-progress progress::-webkit-progress-bar {
+  background: var(--surface-tertiary);
+  border-radius: 999px;
+}
+.project-progress progress::-webkit-progress-value {
+  background: var(--primary);
+  border-radius: 999px;
+}
+.workspace .project-summary .project-edit-button {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  min-height: 36px;
+  padding: 7px 12px;
+  font-size: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--text-secondary);
+}
+.project-edit-button .project-icon {
+  width: 15px;
+  height: 15px;
+}
+.project-section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.workspace .project-back-button {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 0;
+  margin-bottom: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.project-back-button .project-icon {
+  width: 14px;
+  height: 14px;
+  transform: rotate(180deg);
+}
+.settings-view .today-content {
+  max-width: 1024px;
+  padding: 24px;
+}
+.desktop-shell .settings-view .today-content {
+  padding-top: 48px;
+}
+.settings-heading h1 {
+  margin: 0 0 6px;
+  font-size: 24px;
+  line-height: 1.4;
+  letter-spacing: -0.4px;
+}
+.settings-heading p {
+  margin: 0 0 24px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.settings-card {
+  padding: 24px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+}
+.settings-card-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.settings-card-heading h2 {
+  margin: 0 0 6px;
+  font-size: 16px;
+  line-height: 1.4;
+}
+.settings-card-heading h2 span {
+  display: inline-block;
+  padding: 1px 6px;
+  margin-left: 6px;
+  background: var(--surface-tertiary);
+  border-radius: 5px;
+  color: var(--text-secondary);
+  font-family: var(--font-data);
+  font-size: 11px;
+  font-weight: 400;
+}
+.settings-card-heading p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.settings-empty {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 12px;
+  padding: 44px 16px 24px;
+  margin: 0;
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.settings-empty > .project-icon {
+  width: 28px;
+  height: 28px;
+  color: var(--text-tertiary);
+}
+.settings-empty strong {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+.settings-empty p {
+  font-size: 12px;
+  margin: 0;
+}
+.archived-project-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 16px;
+}
+.workspace .archived-project-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px;
+  background: var(--surface-secondary);
+  border: 1px solid transparent;
+  text-align: left;
+}
+.archived-project-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--primary);
+  border-radius: var(--radius-control);
+  flex-shrink: 0;
+}
+.archived-project-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.archived-project-info strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.archived-project-info > span {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 400;
+}
+.archived-project-card > .project-icon {
+  color: var(--text-tertiary);
+  width: 16px;
+}
+@media (max-width: 800px) {
+  .project-summary {
+    padding: 16px;
+    gap: 12px;
+  }
+  .project-summary .project-heading h2 {
+    font-size: 19px;
+  }
+}
+@media (max-width: 700px) {
+  .desktop-shell .sidebar {
+    display: flex;
+    width: 180px;
+    padding: 16px 10px;
+  }
+  .desktop-shell .today {
+    margin-left: 180px;
+    width: calc(100% - 180px);
+  }
+  .settings-card,
+  .settings-view .today-content {
+    padding: 16px;
+  }
+  .project-summary {
+    flex-wrap: wrap;
+  }
+  .project-summary-main {
+    flex-basis: 100%;
+  }
+}

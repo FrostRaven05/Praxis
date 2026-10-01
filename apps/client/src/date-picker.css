@@ -1,0 +1,292 @@
+.date-picker {
+  display: inline-flex;
+  min-width: 0;
+}
+.date-picker .date-picker-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.date-picker-trigger svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+.date-picker-trigger .date-picker-chevron {
+  width: 12px;
+  height: 12px;
+}
+.workspace.todoist-workspace
+  .reference-day
+  .date-strip-label
+  .date-picker-trigger {
+  display: inline-flex;
+  width: auto;
+  height: 28px;
+  min-height: 28px;
+  padding: 3px 6px;
+  gap: 4px;
+  border: 0;
+  border-radius: 5px;
+  color: var(--text-primary);
+  font-size: 12px;
+}
+.date-strip-label {
+  justify-content: center;
+}
+.date-strip-label .date-picker-trigger > svg:first-child {
+  display: none;
+}
+.workspace.todoist-workspace
+  .date-strip-label
+  .date-picker-trigger[aria-expanded="true"] {
+  background: var(--selected);
+  color: var(--primary);
+}
+.workspace.todoist-workspace .task-date-options .date-picker-trigger {
+  border: 0;
+  border-radius: 999px;
+}
+.task-date-options .date-picker {
+  border-radius: 999px;
+}
+.workspace.todoist-workspace .task-date-options .selected .date-picker-trigger {
+  color: var(--on-primary);
+}
+.workspace.todoist-workspace
+  .task-date-options
+  .date-picker-trigger
+  > svg:first-child {
+  display: none;
+}
+.date-picker-popover {
+  position: fixed;
+  z-index: 60;
+  width: min(288px, calc(100vw - 24px));
+  max-height: calc(100dvh - 56px);
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: 0 4px 20px var(--shadow-color);
+  font-size: 12px;
+}
+.date-picker-popover button {
+  min-height: 30px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.date-picker-popover button:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+.date-picker-popover button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.calendar-heading {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 5px 4px;
+}
+.calendar-heading h3 {
+  flex: 1;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+.calendar-heading button {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  font-size: 20px;
+}
+.calendar-heading .calendar-month-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: auto;
+  padding: 3px 5px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.calendar-month-toggle svg {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+.calendar-months {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+  padding: 8px 4px;
+}
+.calendar-months button {
+  min-height: 36px;
+}
+.calendar-months button[aria-pressed="true"] {
+  background: var(--selected);
+  color: var(--primary);
+}
+.calendar-grid {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+.calendar-grid th {
+  height: 24px;
+  color: var(--text-tertiary);
+  font-size: 11px;
+  font-weight: 400;
+}
+.calendar-grid td {
+  height: 34px;
+  padding: 0;
+  text-align: center;
+}
+.calendar-grid button {
+  width: 30px;
+  height: 30px;
+  min-height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 50%;
+}
+.calendar-grid .adjacent-month {
+  color: var(--text-tertiary);
+}
+.calendar-grid .calendar-today {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+.calendar-grid .selected,
+.calendar-grid .selected:hover {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+}
+.calendar-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 4px 6px;
+  padding: 6px 4px 8px;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-secondary);
+}
+.calendar-time > span:first-child {
+  margin-right: auto;
+}
+.date-picker-popover .calendar-time input {
+  width: 52px;
+  height: 28px;
+  min-height: 28px;
+  padding: 3px 5px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  color: var(--text-primary);
+  background: var(--surface-secondary);
+  font: inherit;
+  text-align: center;
+}
+.date-picker-field {
+  width: 100%;
+  align-items: center;
+  gap: 4px;
+}
+.date-picker-field .date-picker-trigger {
+  flex: 1;
+  min-width: 0;
+  min-height: 32px;
+  background: var(--surface-secondary);
+  justify-content: flex-start;
+}
+.date-picker-field .date-picker-trigger > span {
+  flex: 1;
+  text-align: left;
+}
+.date-picker .date-picker-clear {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  min-height: 28px;
+  padding: 3px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.date-picker-clear svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+.date-picker-trigger:hover:not(:disabled),
+.date-picker-clear:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+.date-picker-popover :focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+.workspace.todoist-workspace .task-panel-footer .task-panel-cancel {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.task-action-popover .task-move {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 5px 0;
+  border-top: 1px solid var(--line);
+}
+.task-action-popover .task-move > button {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  border-radius: 5px;
+}
+.task-action-popover .task-move > button[aria-label] {
+  width: calc(50% - 1px);
+}
+.task-action-popover .task-move > button:not([aria-label]),
+.task-action-popover .subtask-composer > button {
+  width: 100%;
+}
+.task-action-popover .task-move form {
+  flex-basis: 100%;
+  padding: 8px;
+  border-radius: 5px;
+  background: var(--surface-secondary);
+}
+.task-action-popover .subtask-composer {
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+.task-action-popover .subtask-composer > button {
+  border: 0;
+  background: transparent;
+  text-align: left;
+  border-radius: 5px;
+}

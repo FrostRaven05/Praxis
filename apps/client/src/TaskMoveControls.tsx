@@ -70,7 +70,7 @@ export function TaskMoveControls({
           )
         }
       >
-        ↑
+        ↑ 上移
       </button>
       <button
         aria-label="下移任务"
@@ -83,7 +83,7 @@ export function TaskMoveControls({
           )
         }
       >
-        ↓
+        ↓ 下移
       </button>
       <button
         disabled={busy}
