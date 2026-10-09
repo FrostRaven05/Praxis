@@ -1,3 +1,4 @@
+import { ProjectContextPanel } from "./ProjectContextPanel";
 import { ProjectIcon } from "./ProjectIcon";
 import { ProjectLifecycle } from "./ProjectLifecycle";
 import { ProjectTaskList } from "./ProjectTaskList";
@@ -37,6 +38,7 @@ export function ProjectsView({
   const [showCancelled, setShowCancelled] = useState(false);
   const [showCompleted, setShowCompleted] = useState(false);
   const [viewBusy, setViewBusy] = useState(false);
+  const [contextBusy, setContextBusy] = useState(false);
   const [items, setItems] = useState<Project[]>([]),
     [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [titles, setTitles] = useState(""),
@@ -45,7 +47,7 @@ export function ProjectsView({
   const taskInput = useRef<HTMLInputElement>(null);
   const focusAfterCapture = useRef(false);
   const [error, setError] = useState("");
-  const locked = busy || viewBusy;
+  const locked = busy || viewBusy || contextBusy;
   useEffect(() => {
     setTitles("");
   }, [navigationRevision]);
@@ -157,7 +159,7 @@ export function ProjectsView({
           )}
           {!form && selected && (
             <>
-              {selected.status === "archived" && (
+              {(selected.status === "archived" || !!selected.archivedAt) && (
                 <button className="project-back-button" onClick={onSettings}>
                   <ProjectIcon name="arrow" />
                   返回归档项目
@@ -189,6 +191,13 @@ export function ProjectsView({
                   )}
                 </div>
               </header>
+              <ProjectContextPanel
+                key={selected.id}
+                projectId={selected.id}
+                tasks={tasks}
+                onBusyChange={setContextBusy}
+                onSaved={() => refresh(selected.id, true)}
+              />
               <div className="project-view-toolbar">
                 <span className="project-section-label">任务</span>
                 <div className="project-view-controls">

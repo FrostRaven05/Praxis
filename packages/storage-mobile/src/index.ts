@@ -16,6 +16,22 @@ export interface Connection {
   commitTransaction(): Promise<unknown>;
   rollbackTransaction(): Promise<unknown>;
 }
+export interface MobileCapture {
+  id: string;
+  rawText: string;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface SaveCaptureCommand {
+  operationId: string;
+  id: string;
+  expectedVersion: number | null;
+  rawText: string;
+  occurredAt: string;
+}
+export const MAX_CAPTURE_CHARACTERS = 100_000;
+export class CaptureRejectedError extends Error {}
 const projection = `SELECT t.id AS taskId, p.id AS planId, t.title, p.execution_date AS executionDate,
 t.created_at AS createdAt, t.project_id AS projectId, t.status, t.source
 FROM tasks t JOIN daily_plan_items p ON p.task_id=t.id AND p.owner_id=t.owner_id`;
@@ -36,6 +52,142 @@ function validate(command: CaptureCommand) {
 export class MobileStorage implements TaskStorage {
   private queue: Promise<unknown> = Promise.resolve();
   constructor(private readonly connect: () => Promise<Connection>) {}
+  saveCapture(command: SaveCaptureCommand): Promise<void> {
+    return this.serial(async (db) => {
+      if (
+        !uuid.test(command.id) ||
+        !uuid.test(command.operationId) ||
+        !command.rawText.trim() ||
+        Array.from(command.rawText).length > MAX_CAPTURE_CHARACTERS ||
+        !Number.isFinite(Date.parse(command.occurredAt)) ||
+        (command.expectedVersion !== null &&
+          (!Number.isInteger(command.expectedVersion) ||
+            command.expectedVersion < 1))
+      )
+        throw new CaptureRejectedError(
+          "原文不能为空，且最多支持 100,000 个字符。",
+        );
+      await db.beginTransaction();
+      try {
+        await db.run(
+          "INSERT OR IGNORE INTO local_profile(singleton,owner_id,device_id) VALUES(1,?,?)",
+          [crypto.randomUUID(), crypto.randomUUID()],
+          false,
+        );
+        const identity = (
+          await db.query(
+            "SELECT owner_id,device_id FROM local_profile WHERE singleton=1",
+          )
+        ).values?.[0];
+        if (!identity) throw new Error("本机身份不可用");
+        const payload = JSON.stringify(command);
+        const replay = (
+          await db.query(
+            "SELECT payload FROM capture_events WHERE operation_id=? AND owner_id=?",
+            [command.operationId, identity.owner_id],
+          )
+        ).values?.[0];
+        if (replay) {
+          if (replay.payload !== payload)
+            throw new CaptureRejectedError(
+              "操作编号已用于其他内容，请另存原文。",
+            );
+        } else {
+          const previous = (
+            await db.query(
+              "SELECT version FROM captures WHERE id=? AND owner_id=?",
+              [command.id, identity.owner_id],
+            )
+          ).values?.[0];
+          if ((previous?.version ?? null) !== command.expectedVersion)
+            throw new CaptureRejectedError(
+              "收集项已更改；当前输入已保留，请另存原文后核对最新版本。",
+            );
+          if (previous)
+            await db.run(
+              "UPDATE captures SET raw_text=?, version=version+1, updated_at=? WHERE id=? AND owner_id=?",
+              [
+                command.rawText,
+                command.occurredAt,
+                command.id,
+                identity.owner_id,
+              ],
+              false,
+            );
+          else
+            await db.run(
+              "INSERT INTO captures(id,owner_id,raw_text,created_at,updated_at) VALUES(?,?,?,?,?)",
+              [
+                command.id,
+                identity.owner_id,
+                command.rawText,
+                command.occurredAt,
+                command.occurredAt,
+              ],
+              false,
+            );
+          await db.run(
+            "INSERT INTO capture_events(operation_id,owner_id,capture_id,kind,payload,occurred_at) VALUES(?,?,?,'save_capture',?,?)",
+            [
+              command.operationId,
+              identity.owner_id,
+              command.id,
+              payload,
+              command.occurredAt,
+            ],
+            false,
+          );
+          await db.run(
+            "INSERT INTO sync_outbox(operation_id,owner_id,device_id,protocol_version,kind,payload,created_at) VALUES(?,?,?,1,'save_capture',?,?)",
+            [
+              command.operationId,
+              identity.owner_id,
+              identity.device_id,
+              payload,
+              command.occurredAt,
+            ],
+            false,
+          );
+        }
+        await db.commitTransaction();
+      } catch (error) {
+        await db.rollbackTransaction().catch(() => undefined);
+        throw error;
+      }
+    }).catch((error: unknown) => {
+      if (error instanceof CaptureRejectedError) throw error;
+      recordStorageError(
+        "capture",
+        error,
+        uuid.test(command.operationId) ? command.operationId : undefined,
+      );
+      throw new Error(
+        "未能确认保存，请保留输入并重试；重复重试不会产生副本。",
+        { cause: error },
+      );
+    });
+  }
+  listCaptures(): Promise<MobileCapture[]> {
+    return this.serial(
+      async (db) =>
+        ((
+          await db.query(
+            "SELECT id,raw_text AS rawText,version,created_at AS createdAt,updated_at AS updatedAt FROM captures WHERE owner_id=(SELECT owner_id FROM local_profile WHERE singleton=1) ORDER BY created_at DESC,id",
+          )
+        ).values ?? []) as unknown as MobileCapture[],
+    );
+  }
+  captureQueueCount(): Promise<number> {
+    return this.serial(async (db) =>
+      Number(
+        (
+          await db.query(
+            "SELECT count(*) AS count FROM sync_outbox WHERE kind='save_capture' AND owner_id=(SELECT owner_id FROM local_profile WHERE singleton=1)",
+          )
+        ).values?.[0]?.count ?? 0,
+      ),
+    );
+  }
   private serial<T>(action: (db: Connection) => Promise<T>): Promise<T> {
     const result = this.queue.then(async () => action(await this.connect()));
     this.queue = result.catch(() => undefined);

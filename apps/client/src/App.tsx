@@ -1,3 +1,5 @@
+import { ProductivityView } from "./ProductivityView";
+import { FollowedViews } from "./SearchViews";
 import { DateStrip } from "./DateStrip";
 import { ProjectNavigation } from "./ProjectNavigation";
 import { SettingsView } from "./SettingsView";
@@ -7,7 +9,8 @@ import { TaskDetailPanel } from "./TaskDetailPanel";
 import { TaskPanelIcon } from "./TaskPanelIcon";
 import { TaskActionMenu } from "./TaskActionMenu";
 import { ProjectsView } from "./ProjectsView";
-import { InboxView } from "./InboxView";
+import { ContentView } from "./ContentView";
+import { MobileCaptureView } from "./MobileCaptureView";
 import { planning } from "./PlanningPanel";
 import { PlanControls } from "./PlanControls";
 import { App as NativeApp } from "@capacitor/app";
@@ -59,6 +62,44 @@ function message(error: unknown): string {
 }
 
 export function App() {
+  const [workTaskId, setWorkTaskId] = useState<string | null>(null);
+  const [workProjectId, setWorkProjectId] = useState<string | null>(null);
+  const [workViewId, setWorkViewId] = useState<string | null>(null);
+  const [workViewRevision, setWorkViewRevision] = useState(0);
+  const [workReviewId, setWorkReviewId] = useState<string | null>(null);
+  useEffect(() => {
+    const open = (e: Event) => {
+      setWorkReviewId((e as CustomEvent<string>).detail);
+      setWorkViewId(null);
+      setWorkTaskId(null);
+      setWorkProjectId(null);
+      setView("work");
+    };
+    window.addEventListener("praxis-work-review", open);
+    return () => window.removeEventListener("praxis-work-review", open);
+  }, []);
+  useEffect(() => {
+    const open = (e: Event) => {
+      setWorkTaskId(null);
+      setWorkViewId(null);
+      setWorkReviewId(null);
+      setWorkProjectId((e as CustomEvent<string>).detail);
+      setView("work");
+    };
+    window.addEventListener("praxis-work-project", open);
+    return () => window.removeEventListener("praxis-work-project", open);
+  }, []);
+  useEffect(() => {
+    const open = (e: Event) => {
+      setWorkViewId(null);
+      setWorkProjectId(null);
+      setWorkReviewId(null);
+      setWorkTaskId((e as CustomEvent<string>).detail);
+      setView("work");
+    };
+    window.addEventListener("praxis-work-task", open);
+    return () => window.removeEventListener("praxis-work-task", open);
+  }, []);
   const [projectNavigation, setProjectNavigation] = useState(0);
   const [projectBusy, setProjectBusy] = useState(false);
   const [detailBusy, setDetailBusy] = useState(false);
@@ -73,9 +114,9 @@ export function App() {
     () => setProjectRevision((n) => n + 1),
     [],
   );
-  const [view, setView] = useState<"day" | "inbox" | "projects" | "settings">(
-    "day",
-  );
+  const [view, setView] = useState<
+    "day" | "inbox" | "projects" | "settings" | "work"
+  >(desktopAvailable ? "work" : Capacitor.isNativePlatform() ? "inbox" : "day");
   useEffect(() => {
     workspaceRef.current?.scrollTo({ top: 0 });
   }, [view, projectId, projectNavigation]);
@@ -186,17 +227,9 @@ export function App() {
       (view === "day" && planLocked)
     )
       return;
-    const current = workspaceRef.current?.querySelector<HTMLInputElement>(
-      ".today .capture-form input:not(:disabled)",
-    );
-    if (current) {
-      current.focus();
-      current.scrollIntoView({ block: "nearest" });
-    } else {
-      setSelectedId(null);
-      setView("inbox");
-      setCaptureFocusRevision((revision) => revision + 1);
-    }
+    setSelectedId(null);
+    setView("inbox");
+    setCaptureFocusRevision((revision) => revision + 1);
   }, [
     projectBusy,
     detailBusy,
@@ -622,7 +655,7 @@ export function App() {
             <button
               className="nav-item quick-capture"
               aria-keyshortcuts="Q"
-              title="添加任务（Q）"
+              title="随手记（Q）"
               disabled={
                 projectBusy ||
                 detailBusy ||
@@ -636,10 +669,25 @@ export function App() {
               <span className="quick-capture-icon" aria-hidden="true">
                 +
               </span>
-              添加任务
+              随手记
               <span className="nav-shortcut" aria-hidden="true">
                 Q
               </span>
+            </button>
+          )}
+          {desktopAvailable && (
+            <button
+              className={view === "work" ? "nav-item active" : "nav-item"}
+              disabled={projectBusy || detailBusy || planningBusy || inboxBusy}
+              onClick={() => {
+                setWorkTaskId(null);
+                setWorkProjectId(null);
+                setWorkViewId(null);
+                setWorkReviewId(null);
+                setView("work");
+              }}
+            >
+              今日与近期
             </button>
           )}
           <a
@@ -656,7 +704,7 @@ export function App() {
             }}
           >
             <TaskPanelIcon name="sun" />
-            今日
+            每日安排
             <span className="nav-shortcut">
               {
                 items.filter(
@@ -676,6 +724,28 @@ export function App() {
             </button>
           )}
         </nav>
+        {!desktopAvailable && Capacitor.isNativePlatform() && (
+          <button
+            className={view === "inbox" ? "nav-item active" : "nav-item"}
+            onClick={() => setView("inbox")}
+          >
+            本机收件箱
+          </button>
+        )}
+        {desktopAvailable && (
+          <FollowedViews
+            revision={projectRevision}
+            disabled={projectBusy || detailBusy || planningBusy || inboxBusy}
+            onOpen={(id) => {
+              setWorkViewId(id);
+              setWorkReviewId(null);
+              setWorkViewRevision((n) => n + 1);
+              setWorkTaskId(null);
+              setWorkProjectId(null);
+              setView("work");
+            }}
+          />
+        )}
         {desktopAvailable && (
           <ProjectNavigation
             revision={projectRevision}
@@ -714,7 +784,17 @@ export function App() {
           本地工作空间
         </div>
       </aside>
-      {view === "projects" ? (
+      {view === "work" ? (
+        <ProductivityView
+          initialTaskId={workTaskId}
+          initialProjectId={workProjectId}
+          initialViewId={workViewId}
+          initialReviewId={workReviewId}
+          viewRevision={workViewRevision}
+          onChanged={projectsChanged}
+          onBusyChange={setInboxBusy}
+        />
+      ) : view === "projects" ? (
         <ProjectsView
           form={projectForm}
           onFormChange={setProjectForm}
@@ -731,8 +811,11 @@ export function App() {
         />
       ) : view === "settings" ? (
         <SettingsView revision={projectRevision} onOpenProject={openProject} />
+      ) : view === "inbox" && !desktopAvailable ? (
+        <MobileCaptureView onBusyChange={setInboxBusy} />
       ) : view === "inbox" ? (
-        <InboxView
+        <ContentView
+          onChanged={projectsChanged}
           focusRevision={captureFocusRevision}
           onBusyChange={setInboxBusy}
           onScheduled={(date) => {

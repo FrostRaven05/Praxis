@@ -8,6 +8,7 @@ export interface ProjectFields {
 }
 export interface Project extends ProjectFields {
   status?: string;
+  archivedAt?: string | null;
   focused?: boolean;
   planVersion?: number;
   id: string;

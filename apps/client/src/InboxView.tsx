@@ -94,7 +94,7 @@ export function InboxView({
     try {
       await planning.capture(title);
       setTitle("");
-      setNotice("已保存到收件箱");
+      setNotice("已保存为独立任务");
       await refresh();
     } catch (error) {
       setError(message(error));
@@ -124,7 +124,7 @@ export function InboxView({
         <header className="inbox-toolbar">
           <h1 id="inbox-heading">
             <TaskPanelIcon name="inbox" />
-            收件箱
+            独立任务
           </h1>
           <label className="inbox-sort">
             <span>按创建日期</span>
@@ -231,7 +231,7 @@ export function InboxView({
           </ul>
         )}
         {!loading && !tasks.length && !loadError && (
-          <p className="inbox-empty">收件箱为空，先记下下一件事。</p>
+          <p className="inbox-empty">暂无未安排的独立任务。</p>
         )}
       </div>
       {selected && (

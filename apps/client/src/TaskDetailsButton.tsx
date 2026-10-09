@@ -1,3 +1,5 @@
+import { RelatedRecords } from "./RelatedRecords";
+import { TaskTimeLink } from "./TaskTimeLink";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -34,6 +36,7 @@ export function TaskDetailsButton({
       >
         {label}
       </button>
+      <TaskTimeLink taskId={taskId} disabled={disabled || open} />
       {open &&
         createPortal(
           <TaskDetailsDialog
@@ -146,6 +149,7 @@ function TaskDetailsDialog({
           重新加载（放弃本次编辑）
         </button>
       </fieldset>
+      <RelatedRecords targetType="task" targetId={taskId} />
     </dialog>
   );
 }

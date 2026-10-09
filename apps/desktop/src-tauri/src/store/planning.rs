@@ -163,7 +163,7 @@ impl Store {
         .fetch_optional(&self.pool)
         .await
         .map_err(|e| e.to_string())?;
-        let (estimated,unknown):(i64,i64)=sqlx::query_as("SELECT COALESCE(SUM(p.estimated_minutes),0),COALESCE(SUM(CASE WHEN p.estimated_minutes IS NULL THEN 1 ELSE 0 END),0) FROM daily_plan_items p JOIN tasks t ON t.id=p.task_id AND t.owner_id=p.owner_id WHERE p.owner_id=? AND p.is_summary=0 AND p.removed=0 AND p.execution_date=? AND t.status<>'cancelled'")
+        let (estimated,unknown):(i64,i64)=sqlx::query_as("SELECT COALESCE(SUM(p.estimated_minutes),0),COALESCE(SUM(CASE WHEN p.estimated_minutes IS NULL THEN 1 ELSE 0 END),0) FROM daily_plan_items p JOIN tasks t ON t.id=p.task_id AND t.owner_id=p.owner_id WHERE p.owner_id=? AND p.is_summary=0 AND p.removed=0 AND p.execution_date=? AND t.deleted_at IS NULL AND t.status<>'cancelled'")
  .bind(&self.owner_id).bind(date).fetch_one(&self.pool).await.map_err(|e|e.to_string())?;
         let (minutes, version) = capacity.unwrap_or((None, 0));
         Ok(DayLoad {

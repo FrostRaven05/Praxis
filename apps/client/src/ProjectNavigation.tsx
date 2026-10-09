@@ -15,7 +15,9 @@ export function ProjectNavigation({
   onCreate: () => void;
 }) {
   const { items, error, loading, reload } = useProjectList(revision);
-  const visible = items.filter((project) => project.status !== "archived");
+  const visible = items.filter(
+    (project) => project.status !== "archived" && !project.archivedAt,
+  );
   return (
     <section className="sidebar-projects" aria-label="项目导航">
       <div className="sidebar-project-heading">

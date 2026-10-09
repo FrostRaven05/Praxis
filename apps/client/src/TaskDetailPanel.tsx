@@ -1,3 +1,5 @@
+import { RelatedRecords } from "./RelatedRecords";
+import { TaskTimeLink } from "./TaskTimeLink";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   EditTask,
@@ -451,6 +453,8 @@ export function TaskDetailPanel({
           {notice}
         </p>
       </div>
+      <RelatedRecords targetType="task" targetId={task.taskId} />
+      <TaskTimeLink taskId={task.taskId} disabled={busy || dirty} showSummary />
       <footer className="task-panel-footer">
         <span>
           <span className="status-dot" />

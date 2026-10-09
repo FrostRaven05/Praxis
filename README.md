@@ -1,5 +1,11 @@
 # Praxis
 
+T15–T21 的桌面本地能力和 T22 手机离线收集适配见 [本轮实施与验证](docs/implementation-p1-followups.md)。Android 真机、同步、完整导出与发布验收仍按 [当前工单](ticket.md) 的依赖推进；AI 相关 T32–T34 暂缓。
+
+T08–T14 已完成 Windows 本地实现：今日与近期、独立时间与工作空间时区、优先级/标签/等待、每日结果、分区和安全项目终结。见 [实施与验收记录](docs/implementation-p1-core.md)。
+
+P0 原文收集、独立记录、澄清与安全撤销、项目下一步/恢复卡及本地备份恢复已交付。见 [P0 实施与验证](docs/implementation-p0.md) 和 [后续工单](ticket.md)。
+
 Turn intent into action.
 
 Ticket 01：桌面离线录入。只输入标题即可加入今天，任务、每日安排、历史事件与待同步操作在一个 SQLite 事务中保存。关闭应用后重新打开仍可读取。

@@ -16,6 +16,9 @@
     "desktop:build": "pnpm --filter @praxis/desktop tauri build",
     "test:native": "powershell -NoProfile -File scripts/test-native.ps1",
     "test:desktop": "node scripts/native-smoke.mjs",
+    "test:p0": "node scripts/native-p0.mjs",
+    "test:p1": "node scripts/native-p1.mjs",
+    "test:p2": "node scripts/native-p2.mjs",
     "desktop:preview": "powershell -NoProfile -File scripts/preview-desktop.ps1"
   },
   "devDependencies": {

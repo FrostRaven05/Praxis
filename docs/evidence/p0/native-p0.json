@@ -1,0 +1,13 @@
+{
+  "checkedAt": "2026-10-09T14:00:22.620Z",
+  "runtime": "Tauri + WebView2 native SQLite",
+  "dataDirectory": "C:\\Project\\01Project\\Praxis\\.tools\\p0-qa-HgaRi5",
+  "results": [
+    "Native raw capture, IME guard, mixed resolution preview, project and provenance",
+    "Edited output blocks destructive undo; explicit keep restores capture without data loss",
+    "Project next action opens details; completing same task in Today clears reference",
+    "Backup restore switches to verified copy after forced restart; task, record and context survive",
+    "Capture type switching preserves text; independent record and task remain separate"
+  ],
+  "pageErrors": []
+}

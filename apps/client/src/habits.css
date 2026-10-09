@@ -1,0 +1,57 @@
+.habits-panel {
+  padding: 1rem;
+  max-width: 100%;
+  color: inherit;
+}
+.habits-panel header,
+.habit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+.habits-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0.5rem 0;
+}
+.habits-panel input,
+.habits-panel textarea,
+.habits-panel select {
+  max-width: 100%;
+  color: inherit;
+  background: var(--surface, transparent);
+  border: 1px solid var(--border, #888);
+  border-radius: 5px;
+  padding: 0.45rem;
+}
+.habit-card {
+  border: 1px solid var(--border, #888);
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 0.75rem 0;
+  overflow-wrap: anywhere;
+}
+.habit-card h3 {
+  margin-top: 0;
+}
+.habit-card p {
+  font-size: 0.9rem;
+}
+.habit-form {
+  border: 1px solid var(--border, #888);
+  padding: 1rem;
+  border-radius: 8px;
+}
+.habit-form fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+.habit-form fieldset label {
+  flex-direction: row;
+}
+.habits-panel [role="alert"] {
+  color: var(--danger, #bf4545);
+}

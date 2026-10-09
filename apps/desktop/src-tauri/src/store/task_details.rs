@@ -30,7 +30,7 @@ pub struct TaskDetailsCommand {
     pub estimated_minutes: Option<i64>,
     pub occurred_at: String,
 }
-const DETAILS:&str="SELECT id AS task_id,title,notes,completion_criteria,important,deadline,deadline_time_zone,default_estimated_minutes AS estimated_minutes,version,status,project_id FROM tasks WHERE id=? AND owner_id=?";
+const DETAILS:&str="SELECT id AS task_id,title,notes,completion_criteria,important,deadline,deadline_time_zone,default_estimated_minutes AS estimated_minutes,version,CASE WHEN waiting=1 THEN 'waiting' ELSE status END AS status,project_id FROM tasks WHERE id=? AND owner_id=?";
 impl Store {
     pub async fn task_details(&self, task_id: &str) -> StoreResult<TaskDetails> {
         sqlx::query_as(DETAILS)

@@ -237,7 +237,7 @@ impl Store {
                     time_zone,
                     &c.occurred_at,
                 )?;
-                let current:Option<(i64,String,Option<String>,Option<String>,String)>=sqlx::query_as("SELECT version,status,cancelled_from,cancelled_reason,status_reason FROM tasks WHERE id=? AND owner_id=?").bind(task_id).bind(&self.owner_id).fetch_optional(&mut *tx).await.map_err(|e|e.to_string())?;
+                let current:Option<(i64,String,Option<String>,Option<String>,String)>=sqlx::query_as("SELECT version,CASE WHEN waiting=1 THEN 'waiting' ELSE status END,cancelled_from,cancelled_reason,status_reason FROM tasks WHERE id=? AND owner_id=?").bind(task_id).bind(&self.owner_id).fetch_optional(&mut *tx).await.map_err(|e|e.to_string())?;
                 let Some((version, old, previous, previous_reason, old_reason)) = current else {
                     return Err("STATE_CONFLICT".into());
                 };
@@ -255,8 +255,15 @@ impl Store {
                 } else {
                     (status.clone(), reason.trim().to_string())
                 };
-                if !["todo", "in_progress", "blocked", "completed", "cancelled"]
-                    .contains(&target.as_str())
+                if ![
+                    "todo",
+                    "in_progress",
+                    "blocked",
+                    "waiting",
+                    "completed",
+                    "cancelled",
+                ]
+                .contains(&target.as_str())
                 {
                     return Err(user("任务状态无效"));
                 }
@@ -272,7 +279,7 @@ impl Store {
                 self.apply_task_status(
                     &mut tx,
                     task_id,
-                    &target,
+                    if target == "waiting" { "todo" } else { &target },
                     &reason,
                     &c.operation_id,
                     date,
@@ -281,6 +288,13 @@ impl Store {
                     None,
                 )
                 .await?;
+                sqlx::query("UPDATE tasks SET waiting=? WHERE id=? AND owner_id=?")
+                    .bind(target == "waiting")
+                    .bind(task_id)
+                    .bind(&self.owner_id)
+                    .execute(&mut *tx)
+                    .await
+                    .map_err(|e| e.to_string())?;
                 if target == "cancelled" {
                     sqlx::query("UPDATE tasks SET cancelled_from=?,cancelled_reason=? WHERE id=? AND owner_id=?").bind(&old).bind(&old_reason).bind(task_id).bind(&self.owner_id).execute(&mut *tx).await.map_err(|e|e.to_string())?;
                 }
@@ -391,6 +405,13 @@ impl Store {
         at: &str,
         preferred_plan: Option<&str>,
     ) -> StoreResult<()> {
+        let saved_plan: Option<String> =
+            sqlx::query_scalar("SELECT plan_value FROM tasks WHERE id=? AND owner_id=?")
+                .bind(task)
+                .bind(&self.owner_id)
+                .fetch_one(&mut **tx)
+                .await
+                .map_err(|e| e.to_string())?;
         let summary: bool = sqlx::query_scalar(
             "SELECT EXISTS(SELECT 1 FROM tasks WHERE owner_id=? AND parent_task_id=?)",
         )
@@ -437,6 +458,18 @@ impl Store {
             None
         };
         sqlx::query("UPDATE tasks SET status=?,status_reason=?,active_completion_id=?,version=version+1 WHERE id=? AND owner_id=?").bind(target).bind(if target=="blocked"||target=="cancelled"{reason}else{""}).bind(completion).bind(task).bind(&self.owner_id).execute(&mut **tx).await.map_err(|e|e.to_string())?;
+        sqlx::query("UPDATE tasks SET plan_value=?,completed_at=? WHERE id=? AND owner_id=?")
+            .bind(saved_plan)
+            .bind(if target == "completed" {
+                Some(at)
+            } else {
+                None
+            })
+            .bind(task)
+            .bind(&self.owner_id)
+            .execute(&mut **tx)
+            .await
+            .map_err(|e| e.to_string())?;
         Ok(())
     }
 }

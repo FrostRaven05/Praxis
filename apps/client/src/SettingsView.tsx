@@ -1,3 +1,4 @@
+import { BackupPanel } from "./BackupPanel";
 import { ProjectIcon } from "./ProjectIcon";
 import { useProjectList } from "./useProjectList";
 
@@ -9,7 +10,9 @@ export function SettingsView({
   onOpenProject: (id: string) => void;
 }) {
   const { items, error, loading, reload } = useProjectList(revision);
-  const archived = items.filter((project) => project.status === "archived");
+  const archived = items.filter(
+    (project) => project.status === "archived" || !!project.archivedAt,
+  );
   return (
     <section className="today settings-view" aria-labelledby="settings-heading">
       <div className="today-content">
@@ -17,6 +20,7 @@ export function SettingsView({
           <h1 id="settings-heading">设置</h1>
           <p>管理工作空间中的归档项目。</p>
         </header>
+        <BackupPanel />
         <section className="settings-card" aria-labelledby="archived-heading">
           <header className="settings-card-heading">
             <span className="settings-section-icon">

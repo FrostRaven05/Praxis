@@ -1,0 +1,36 @@
+.mobile-capture {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 1rem max(1rem, env(safe-area-inset-right))
+    max(5rem, env(safe-area-inset-bottom)) max(1rem, env(safe-area-inset-left));
+  overflow-wrap: anywhere;
+}
+.mobile-capture textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 9rem;
+  font: inherit;
+  margin: 0.75rem 0;
+}
+.mobile-capture button {
+  min-height: 44px;
+  min-width: 44px;
+  margin: 0.3rem;
+  padding: 0.6rem 0.9rem;
+  white-space: normal;
+}
+.mobile-capture ul {
+  list-style: none;
+  padding: 0;
+}
+.mobile-capture li {
+  border-top: 1px solid currentColor;
+  padding: 1rem 0;
+}
+.mobile-capture-original {
+  white-space: pre-wrap;
+}
+.mobile-capture small {
+  display: block;
+}

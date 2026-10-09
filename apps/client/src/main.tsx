@@ -29,3 +29,5 @@ import "./date-picker.css";
 import "./project-workspace.css";
 import "./project-board.css";
 import "./project-gantt.css";
+
+import "./content.css";

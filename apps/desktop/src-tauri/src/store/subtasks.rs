@@ -44,7 +44,7 @@ impl Store {
             if version != c.expected_version {
                 return Err("STATE_CONFLICT".into());
             }
-            let project = project.ok_or("Subtasks require a project")?;
+
             if status != "todo" {
                 return Err("Only pending tasks can be split".into());
             }

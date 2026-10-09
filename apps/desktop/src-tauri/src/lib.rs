@@ -1,5 +1,251 @@
 pub mod store;
 
+#[tauri::command]
+async fn recurrence_edit_preview(
+    action: store::RecurrenceAction,
+    database: State<'_, LocalDatabase>,
+) -> Result<serde_json::Value, String> {
+    database
+        .get(None)
+        .await?
+        .recurrence_edit_preview(&action)
+        .await
+        .map_err(|e| {
+            database.record_error("recurrence_preview", None, &e);
+            e.strip_prefix("USER:")
+                .unwrap_or("无法读取规则预览，请刷新后重试。")
+                .to_string()
+        })
+}
+
+#[tauri::command]
+async fn review_snapshot(database: State<'_, LocalDatabase>) -> Result<serde_json::Value, String> {
+    database
+        .get(None)
+        .await?
+        .review_snapshot(&chrono::Utc::now().to_rfc3339())
+        .await
+        .map_err(|e| {
+            database.record_error("review_read", None, &e);
+            "无法读取项目检查和周回顾，请重试。".into()
+        })
+}
+#[tauri::command]
+async fn review_command(
+    command: store::ReviewCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .review_command(&command)
+        .await
+        .map_err(|e| {
+            database.record_error("review_write", Some(&command.operation_id), &e);
+            if let Some(message) = e.strip_prefix("USER:") {
+                message.to_string()
+            } else if e.starts_with("STATE_CONFLICT") {
+                "回顾已更新，请重新读取后重试；输入仍保留。".into()
+            } else {
+                "未能确认保存结果，请重试；同一操作不会重复提交。".into()
+            }
+        })
+}
+
+#[tauri::command]
+async fn view_snapshot(database: State<'_, LocalDatabase>) -> Result<serde_json::Value, String> {
+    database
+        .get(None)
+        .await?
+        .view_snapshot()
+        .await
+        .map_err(|e| {
+            database.record_error("view_read", None, &e);
+            "无法读取保存视图，请重试。".into()
+        })
+}
+#[tauri::command]
+async fn view_query(
+    query: store::ViewQuery,
+    database: State<'_, LocalDatabase>,
+) -> Result<serde_json::Value, String> {
+    database
+        .get(None)
+        .await?
+        .view_query(&query)
+        .await
+        .map_err(|e| {
+            database.record_error("view_query", None, &e);
+            e.strip_prefix("USER:")
+                .unwrap_or("无法搜索，请检查条件后重试。")
+                .to_string()
+        })
+}
+#[tauri::command]
+async fn view_command(
+    command: store::ViewCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .view_command(&command)
+        .await
+        .map_err(|e| {
+            database.record_error("view_write", Some(&command.operation_id), &e);
+            if let Some(message) = e.strip_prefix("USER:") {
+                message.to_string()
+            } else if e.starts_with("STATE_CONFLICT") {
+                "视图已更新，请重新打开；输入仍保留。".into()
+            } else {
+                "未能确认保存结果，请重试；同一操作不会重复提交。".into()
+            }
+        })
+}
+
+#[tauri::command]
+async fn trash_snapshot(database: State<'_, LocalDatabase>) -> Result<serde_json::Value, String> {
+    database
+        .get(None)
+        .await?
+        .trash_snapshot()
+        .await
+        .map_err(|e| {
+            database.record_error("trash_read", None, &e);
+            "无法读取数据，请重试。".into()
+        })
+}
+#[tauri::command]
+async fn trash_command(
+    command: store::TrashCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .trash_command(&command)
+        .await
+        .map_err(|e| {
+            database.record_error("trash_write", Some(&command.operation_id), &e);
+            if let Some(message) = e.strip_prefix("USER:") {
+                message.to_string()
+            } else if e.starts_with("STATE_CONFLICT") {
+                "内容已更新，请刷新后重试；未保存的输入仍保留。".into()
+            } else {
+                "未能确认保存结果，请重试；同一操作不会重复提交。".into()
+            }
+        })
+}
+
+#[tauri::command]
+async fn recurrence_snapshot(
+    database: State<'_, LocalDatabase>,
+) -> Result<serde_json::Value, String> {
+    database
+        .get(None)
+        .await?
+        .recurrence_snapshot()
+        .await
+        .map_err(|e| {
+            database.record_error("recurrence_read", None, &e);
+            "无法读取数据，请重试。".into()
+        })
+}
+#[tauri::command]
+async fn recurrence_command(
+    command: store::RecurrenceCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .recurrence_command(&command)
+        .await
+        .map_err(|e| {
+            database.record_error("recurrence_write", Some(&command.operation_id), &e);
+            if let Some(message) = e.strip_prefix("USER:") {
+                message.to_string()
+            } else if e.starts_with("STATE_CONFLICT") {
+                "内容已更新，请刷新后重试；未保存的输入仍保留。".into()
+            } else {
+                "未能确认保存结果，请重试；同一操作不会重复提交。".into()
+            }
+        })
+}
+
+#[tauri::command]
+async fn habit_snapshot(
+    date: String,
+    database: State<'_, LocalDatabase>,
+) -> Result<serde_json::Value, String> {
+    database
+        .get(None)
+        .await?
+        .habit_snapshot(&date)
+        .await
+        .map_err(|e| {
+            database.record_error("habit_read", None, &e);
+            "无法读取数据，请重试。".into()
+        })
+}
+#[tauri::command]
+async fn habit_command(
+    command: store::HabitCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .habit_command(&command)
+        .await
+        .map_err(|e| {
+            database.record_error("habit_write", Some(&command.operation_id), &e);
+            if let Some(message) = e.strip_prefix("USER:") {
+                message.to_string()
+            } else if e.starts_with("STATE_CONFLICT") {
+                "内容已更新，请刷新后重试；未保存的输入仍保留。".into()
+            } else {
+                "未能确认保存结果，请重试；同一操作不会重复提交。".into()
+            }
+        })
+}
+
+#[tauri::command]
+async fn productivity_snapshot(
+    database: State<'_, LocalDatabase>,
+) -> Result<serde_json::Value, String> {
+    database
+        .get(None)
+        .await?
+        .productivity_snapshot()
+        .await
+        .map_err(|e| {
+            database.record_error("productivity_read", None, &e);
+            "无法读取工作空间，请重试。".into()
+        })
+}
+#[tauri::command]
+async fn productivity_command(
+    command: store::ProductivityCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .productivity_command(&command)
+        .await
+        .map_err(|e| {
+            database.record_error("productivity_write", Some(&command.operation_id), &e);
+            if let Some(message) = e.strip_prefix("USER:") {
+                message.to_string()
+            } else if e.starts_with("STATE_CONFLICT") {
+                "内容已更新，请返回并重新打开后再预览。未保存的输入仍保留。".into()
+            } else {
+                "未能确认保存结果，请检查输入并重试；重复提交不会重复创建。".into()
+            }
+        })
+}
+
 use std::{io::Write, path::PathBuf};
 use store::{CaptureCommand, DailyTask, Store};
 use tauri::{Manager, State};
@@ -376,6 +622,65 @@ async fn project_workspace(
             }
         })
 }
+#[tauri::command]
+async fn content_snapshot(database: State<'_, LocalDatabase>) -> Result<serde_json::Value, String> {
+    database
+        .get(None)
+        .await?
+        .content_snapshot()
+        .await
+        .map_err(|_| "读取失败，请重试；本机内容仍保留。".into())
+}
+#[tauri::command]
+async fn content_command(
+    command: store::ContentCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .content_command(&command)
+        .await
+        .map_err(|e| {
+            database.record_error("content", Some(&command.operation_id), &e);
+            if let Some(s) = e.strip_prefix("USER:") {
+                s.to_string()
+            } else if e == "STATE_CONFLICT" {
+                "内容已变化，请重新读取后再操作；草稿仍保留。".into()
+            } else {
+                "保存未确认，请重试；同一操作不会重复提交。".into()
+            }
+        })
+}
+#[tauri::command]
+async fn backup_list(
+    database: State<'_, LocalDatabase>,
+) -> Result<Vec<store::backup::BackupInfo>, String> {
+    store::backup::list_backups(database.path.parent().ok_or("没有数据库目录")?)
+        .map_err(|_| "无法读取备份列表".into())
+}
+#[tauri::command]
+async fn backup_create(database: State<'_, LocalDatabase>) -> Result<String, String> {
+    database
+        .get(None)
+        .await?
+        .create_backup(database.path.parent().ok_or("没有数据库目录")?)
+        .await
+        .map_err(|_| "备份失败，请检查磁盘和目录权限。".into())
+}
+#[tauri::command]
+async fn backup_restore(
+    name: String,
+    database: State<'_, LocalDatabase>,
+) -> Result<String, String> {
+    store::backup::prepare_restore(database.path.parent().ok_or("没有数据库目录")?, &name)
+        .await
+        .map_err(|e| {
+            e.strip_prefix("USER:")
+                .unwrap_or("恢复失败，原数据库未被替换。请检查备份和目录权限。")
+                .to_string()
+        })
+}
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
@@ -395,7 +700,7 @@ pub fn run() {
                 None => (data_dir, log_dir),
             };
             app.manage(LocalDatabase {
-                path: data_dir.join("praxis.db"),
+                path: store::backup::selected_database(&data_dir),
                 diagnostics_path: log_dir.join("storage-errors.jsonl"),
                 diagnostics_lock: std::sync::Mutex::new(()),
                 store: OnceCell::new(),
@@ -403,6 +708,25 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            recurrence_edit_preview,
+            review_snapshot,
+            review_command,
+            view_snapshot,
+            view_query,
+            view_command,
+            trash_snapshot,
+            trash_command,
+            recurrence_snapshot,
+            recurrence_command,
+            habit_snapshot,
+            habit_command,
+            productivity_snapshot,
+            productivity_command,
+            content_snapshot,
+            content_command,
+            backup_list,
+            backup_create,
+            backup_restore,
             project_workspace,
             add_subtasks,
             task_details,

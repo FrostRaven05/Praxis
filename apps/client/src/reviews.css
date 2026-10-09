@@ -1,0 +1,65 @@
+.review-view {
+  display: grid;
+  gap: 1.2rem;
+  max-width: 960px;
+  width: 100%;
+  min-width: 0;
+}
+.review-view section {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+}
+.review-view p {
+  line-height: 1.6;
+}
+.review-view button {
+  margin: 0.25rem;
+}
+.review-view input,
+.review-view textarea {
+  font: inherit;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.5rem;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.review-view textarea {
+  display: block;
+  width: 100%;
+  margin: 0.4rem 0 1rem;
+}
+.review-view fieldset {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 0.8rem;
+}
+.review-view label {
+  display: block;
+}
+.review-view .review-project {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.4rem 0;
+}
+.review-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.review-dates input {
+  display: block;
+}
+.review-view li {
+  margin: 0.5rem 0;
+  overflow-wrap: anywhere;
+}
+.review-view input[type="number"] {
+  width: 6rem;
+}

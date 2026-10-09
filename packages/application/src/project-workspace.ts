@@ -7,11 +7,13 @@ export const projectStates: Record<string, string> = {
   paused: "暂停",
   completed: "完成",
   archived: "归档",
+  cancelled: "已取消",
 };
 export const taskStates: Record<string, string> = {
   todo: "待办",
   in_progress: "进行中",
   blocked: "阻塞",
+  waiting: "等待",
   completed: "已完成",
   cancelled: "取消",
 };

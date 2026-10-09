@@ -1,3 +1,18 @@
+mod reviews;
+mod trash;
+mod views;
+pub use reviews::{ReviewAction, ReviewCommand};
+pub use trash::{TrashAction, TrashCommand};
+pub use views::{ViewAction, ViewCommand, ViewQuery};
+mod recurrence;
+pub use recurrence::{RecurrenceAction, RecurrenceCommand};
+mod habits;
+pub use habits::{HabitAction, HabitCommand};
+mod productivity;
+pub use productivity::{ProductivityAction, ProductivityCommand, TimeValue};
+pub mod backup;
+mod content;
+pub use content::{ContentAction, ContentCommand, Link, NewProject, Output};
 mod workspace;
 pub use workspace::{ScheduleEntry, WorkspaceAction, WorkspaceCommand};
 mod subtasks;
@@ -27,6 +42,15 @@ use sqlx::{
 use uuid::Uuid;
 
 type StoreResult<T> = Result<T, String>;
+
+static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!("./migrations");
+pub fn current_schema_version() -> i64 {
+    MIGRATOR
+        .iter()
+        .map(|migration| migration.version)
+        .max()
+        .unwrap_or(0)
+}
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -124,12 +148,13 @@ fn default_day_period() -> String {
 }
 
 const TASK_PROJECTION: &str = "SELECT t.id AS task_id, p.id AS plan_id, t.title,
-    t.status_reason,(SELECT status FROM projects WHERE id=t.project_id AND owner_id=t.owner_id) AS project_status,t.important,t.deadline,p.execution_date, p.is_focus,p.focus_rank,p.day_period,p.day_rank,p.estimated_minutes, t.created_at, t.project_id, t.status, t.source, t.version, t.active_completion_id,
+    t.status_reason,(SELECT status FROM projects WHERE id=t.project_id AND owner_id=t.owner_id) AS project_status,t.important,t.deadline,p.execution_date, p.is_focus,p.focus_rank,p.day_period,p.day_rank,p.estimated_minutes, t.created_at, t.project_id, CASE WHEN t.waiting=1 THEN 'waiting' ELSE t.status END AS status, t.source, t.version, t.active_completion_id,
     (SELECT execution_date FROM execution_records e WHERE e.id=t.active_completion_id AND e.revoked_at IS NULL) AS completion_date
     FROM tasks t JOIN daily_plan_items p ON p.task_id = t.id AND p.owner_id = t.owner_id";
 
 impl Store {
     pub async fn open(path: &Path) -> StoreResult<Self> {
+        let existed = path.is_file() && path.metadata().map_err(|e| e.to_string())?.len() > 0;
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent).map_err(|error| error.to_string())?;
         }
@@ -145,7 +170,23 @@ impl Store {
             .connect_with(options)
             .await
             .map_err(|error| error.to_string())?;
-        sqlx::migrate!("./migrations")
+        if existed {
+            let version: i64 = sqlx::query_scalar(
+                "SELECT COALESCE(MAX(version),0) FROM _sqlx_migrations WHERE success=1",
+            )
+            .fetch_one(&pool)
+            .await
+            .unwrap_or(0);
+            if version < current_schema_version() {
+                backup::snapshot(
+                    &pool,
+                    path.parent().ok_or("Missing database directory")?,
+                    "before-upgrade",
+                )
+                .await?;
+            }
+        }
+        MIGRATOR
             .run(&pool)
             .await
             .map_err(|error| error.to_string())?;
@@ -238,7 +279,7 @@ impl Store {
     pub async fn list_day(&self, date: &str) -> StoreResult<Vec<DailyTask>> {
         validate_date(date)?;
         sqlx::query_as::<_, DailyTask>(&format!(
-            "{TASK_PROJECTION} WHERE p.owner_id = ? AND p.is_summary=0 AND p.removed=0 AND t.status<>'cancelled' AND (
+            "{TASK_PROJECTION} WHERE p.owner_id = ? AND t.deleted_at IS NULL AND p.is_summary=0 AND p.removed=0 AND t.status<>'cancelled' AND (
                 (t.status <> 'completed' AND p.execution_date = ?) OR
                 (t.status = 'completed' AND EXISTS (
                   SELECT 1 FROM execution_records e WHERE e.id=t.active_completion_id

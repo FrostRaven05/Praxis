@@ -1,7 +1,7 @@
 import { recordStorageError } from "./diagnostics";
 import { CapacitorSQLite, SQLiteConnection } from "@capacitor-community/sqlite";
 import { MobileStorage } from "./index";
-import { initialStatements } from "./migration";
+import { initialStatements, captureStatements } from "./migration";
 const sqlite = new SQLiteConnection(CapacitorSQLite);
 let opening: ReturnType<typeof open> | undefined;
 async function open() {
@@ -10,12 +10,13 @@ async function open() {
       toVersion: 1,
       statements: initialStatements,
     },
+    { toVersion: 2, statements: captureStatements },
   ]);
   const db = await sqlite.createConnection(
     "praxis",
     false,
     "no-encryption",
-    1,
+    2,
     false,
   );
   try {

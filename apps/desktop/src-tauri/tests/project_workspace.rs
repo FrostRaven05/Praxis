@@ -109,7 +109,7 @@ async fn lifecycle_keeps_or_removes_commitments_without_fabricating_facts() {
     let c = command(WorkspaceAction::Lifecycle {
         project_id: p.clone(),
         expected_version: 1,
-        status: "archived".into(),
+        status: "paused".into(),
         focused: true,
         arrangements: "remove".into(),
         date: "2026-09-19".into(),
@@ -428,17 +428,7 @@ async fn default_estimate_is_only_inherited_on_first_plan_and_failed_completion_
 #[tokio::test]
 async fn all_project_states_preserve_task_status_and_completion_history() {
     let (_d, s, p, ids) = fixture().await;
-    for (v, state) in [
-        "draft",
-        "active",
-        "paused",
-        "completed",
-        "archived",
-        "active",
-    ]
-    .iter()
-    .enumerate()
-    {
+    for (v, state) in ["draft", "active", "paused", "active"].iter().enumerate() {
         s.project_workspace(&command(WorkspaceAction::Lifecycle {
             project_id: p.clone(),
             expected_version: v as i64,

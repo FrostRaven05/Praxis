@@ -1,3 +1,4 @@
+import { RelatedRecords } from "./RelatedRecords";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   TaskDetailEditor,
@@ -399,6 +400,7 @@ export function InboxTaskPanel({
           {notice}
         </p>
       </div>
+      <RelatedRecords targetType="task" targetId={task.taskId} />
       <footer className="task-panel-footer">
         <span>
           <span className="status-dot" />

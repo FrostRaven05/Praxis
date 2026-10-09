@@ -1,0 +1,15 @@
+{
+  "checkedAt": "2026-10-09T14:01:38.510Z",
+  "dataDirectory": "C:\\Project\\01Project\\Praxis\\.tools\\p2-qa-U0chV2",
+  "results": [
+    "T15: Native UI delete and restore preserves identity and excludes deleted task from workspace",
+    "T18: Native UI creates rule and expands next 30 days; returning task list refreshes generated instances",
+    "T19: Future rule preview preserves today's occurrence; workspace time-zone confirmation updates template atomically",
+    "T16: Offline search saves a followed stable view and sidebar restores its filters",
+    "T21: Habit pause previews next-day effective rule and preserves current-day entry",
+    "T20: Native habit form, complete, undo, skip and Today summary use persistent date identity",
+    "T17: Manual review saves an independent record without creating tasks; unsaved draft guards navigation",
+    "Abrupt restart preserves restored tasks, generated occurrences and habit entries without page errors"
+  ],
+  "errors": []
+}

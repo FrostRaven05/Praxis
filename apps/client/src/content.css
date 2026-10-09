@@ -1,0 +1,104 @@
+.content-view .today-content {
+  max-width: 960px;
+}
+.content-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0;
+}
+.content-card {
+  margin: 16px 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.content-card h2 {
+  font-size: 16px;
+  margin: 0 0 12px;
+}
+.content-card label {
+  display: block;
+  margin: 10px 0;
+}
+.content-card input:not([type="checkbox"]),
+.content-card textarea,
+.content-card select {
+  display: block;
+  width: 100%;
+  padding: 8px;
+  margin-top: 5px;
+  color: inherit;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+.content-card textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+.content-card fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.content-card button,
+.content-tabs button {
+  min-height: 36px;
+  padding: 6px 12px;
+  margin: 4px 6px 4px 0;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+}
+.content-card pre,
+.related-records pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+}
+.content-card small {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.content-output {
+  border-bottom: 1px solid var(--line);
+  padding: 10px 0;
+}
+.content-card details,
+.related-records details {
+  margin: 10px 0;
+}
+.project-context {
+  font-size: 13px;
+}
+.project-context p {
+  margin: 7px 0;
+}
+.reference-workspace.todoist-workspace .content-view .simple-inbox {
+  height: auto;
+  margin-left: 0;
+  width: 100%;
+}
+.reference-workspace.todoist-workspace .content-view .simple-inbox .today-content {
+  max-width: none;
+  margin: 0;
+  padding: 16px 0;
+}
+.content-card button,
+.content-tabs button {
+  color: var(--text-primary);
+  background: var(--surface-secondary);
+}
+.content-tabs button[aria-pressed="true"] {
+  background: var(--selected);
+  border-color: var(--primary);
+}
+@media (max-width: 640px) {
+  .content-card button,
+  .content-tabs button {
+    min-height: 44px;
+  }
+  .content-card input,
+  .content-card textarea {
+    font-size: 16px;
+  }
+}

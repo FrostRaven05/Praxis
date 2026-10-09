@@ -1,0 +1,80 @@
+.search-views {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+.search-views fieldset {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  margin: 0.6rem 0;
+  padding: 0.8rem;
+  min-width: 0;
+}
+.search-views label {
+  display: grid;
+  gap: 0.25rem;
+  max-width: 100%;
+}
+.search-views input,
+.search-views select {
+  max-width: 100%;
+  min-width: 0;
+}
+.search-views input[type="checkbox"] {
+  width: auto;
+}
+.view-shortcuts,
+.view-condition {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.view-group {
+  width: 100%;
+  border-bottom: 1px solid var(--line);
+  padding: 0.5rem 0;
+}
+.view-condition {
+  margin: 0.4rem 0;
+}
+.search-views article {
+  border: 1px solid var(--line);
+  border-radius: 0.6rem;
+  padding: 0.75rem;
+  margin: 0.5rem 0;
+  overflow-wrap: anywhere;
+}
+.search-views article small {
+  display: block;
+  margin-top: 0.4rem;
+}
+.view-detail {
+  position: fixed;
+  z-index: 60;
+  inset: 10% 15%;
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 2px solid var(--line);
+  padding: 1.5rem;
+  overflow: auto;
+  box-shadow: 0 0 0 100vmax var(--backdrop);
+  border-radius: 1rem;
+}
+.view-detail div {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin-bottom: 1rem;
+}
+@media (max-width: 680px) {
+  .view-detail {
+    inset: 4%;
+  }
+  .view-condition > * {
+    max-width: 100%;
+  }
+}
