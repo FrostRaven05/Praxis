@@ -1,7 +1,7 @@
 # Praxis 后续开发 Tickets
 
 > 整理日期：2026-10-08  
-> 状态：T01–T21 已完成 Windows 桌面本地范围；T22 完成本机收集适配，Android 真机验收受阻；T23–T31 已由独立子 agent 核查并列出依赖缺口；T32–T34 按用户要求暂时搁置。  
+> 状态：T01–T21 已完成 Windows 桌面本地范围；2026-10-11 已交付参考布局手机端及非 AI 本地功能，APK/模拟器主流程通过，T22/T24/T29 仍有真机或跨端验收缺口；云同步未实现；T32–T34 暂停。详见 docs/implementation-mobile-reference.md。  
 > 依据：Praxis_SPEC_v0.1.md、Praxis_DEV_PLAN_v0.1.md，以及当前代码、数据库迁移、正式旧工单和实施记录。  
 > 按用户要求集中在本文件；不创建外部 Issue，不修改旧工单状态。
 
@@ -350,11 +350,11 @@
 **What to build:** 用户在手机无网络时保存原文，强制退出后仍可找回并继续编辑。
 
 **Blocked by:** T03。  
-**Status:** partial / blocked — 本机收集适配及主机 SQLite 测试完成；缺 SDK/JDK 和真机，APK 及移动验收未完成。见 docs/implementation-t22.md。  
+**Status:** partial — SDK/JDK 已安装，APK 已构建安装；模拟器验证原文、澄清撤销、断网强制重启及提交响应丢失重试通过。真机及其余异常场景仍待验收。见 docs/implementation-mobile-reference.md。  
 **对应需求:** DEV-10；CAP-001/002；AT-01 的本地部分、AT-36/37。
 
 - [ ] 复用已有 Capacitor 工程和原生 SQLite，生成可安装 APK；记录实际设备和系统版本。
-- [ ] 手机原生适配接入独立收集项；未接同步时明确本地模式，不冒充云端保存。
+- [x] 手机原生适配接入独立收集项；未接同步时明确本地模式，不冒充云端保存。
 - [ ] 验证断网、杀进程、重启、返回前台和失败重试；数据与队列不丢失。
 - [ ] 验证中文输入法、安全区、软键盘、系统字体放大和触控目标。
 
@@ -377,7 +377,7 @@
 **What to build:** 手机可查看和更新恢复卡、下一步、任务日期与状态，无须回桌面确认保存。
 
 **Blocked by:** T07、T11、T13、T22。  
-**Status:** blocked — 独立子 agent 已核查；T22 未验收，任务/项目移动适配未完成。见 docs/implementation-t24.md。  
+**Status:** partial — 任务/项目手机存储和参考布局已实现，模拟器完成父子任务/完成/重启等流程；真机完整验收及全部桌面规则对齐仍未完成。见 docs/implementation-mobile-reference.md。  
 **对应需求:** DEV-10；SPEC 4.4；UX-002–004。
 
 - [ ] 完成、编辑、安排、项目读取和恢复卡接入手机原生存储，不调用仅桌面可用接口。
@@ -445,7 +445,7 @@
 **What to build:** 用户能导出自己的全部业务数据，并在新工作空间恢复完整关系和历史。
 
 **Blocked by:** T28、T06、T12。  
-**Status:** blocked — 独立子 agent 已核查；T28 未完成，整库备份不等于完整 JSON 导出。见 docs/implementation-t29.md。  
+**Status:** partial / blocked — 已实现手机本机 JSON（实体与手机操作历史）导出、校验预览、隔离新空间恢复，模拟器通过；T28 及桌面/手机统一完整格式恢复未完成，不将手机格式视为全工单完成。见 docs/implementation-mobile-reference.md。  
 **对应需求:** DATA-001/002；AT-33。
 
 - [ ] 导出带 schema_version 的 JSON，覆盖收集来源、任务、项目、分区、记录关系、标签、每日计划、重复、习惯、视图及历史。
@@ -475,7 +475,7 @@
 **What to build:** 用户按需保存项目策略和决策依据，后续能回看判断变化。
 
 **Blocked by:** T30。  
-**Status:** blocked — 独立子 agent 已核查；依赖 T30，此项非 AI 暂停范围。见 docs/implementation-t31.md。  
+**Status:** partial / blocked — 手机端策略/决策可编辑文本模板已落地，关联本机记录；T30 及同步/完整历史验收未完成。此项非 AI 暂停范围。见 docs/implementation-mobile-reference.md。  
 **对应需求:** DEV-13；STRAT-001/002。
 
 - [ ] 策略卡包含问题、方针、行动、明确不做及调整/停止条件，默认折叠。
@@ -521,7 +521,7 @@
 
 ## 后续评审与推进建议
 
-T01–T21 已完成桌面本地范围。下一步先提供 Android SDK/JDK 和已授权设备，完成 T22 的 APK 与真机验收；随后按 T23、T24 的各自依赖推进身份/同步服务与手机任务适配。T23 仍需明确服务项目、区域、测试账号及安全边界。T25–T31 不越过前置假称完成，逐项缺口见对应 implementation-t*.md；T32–T34 暂缓。
+T01–T21 已完成桌面本地范围。Android 环境、APK 和手机非 AI 本地功能已推进，详见 2026-10-11 的 implementation-mobile-reference.md；旧 implementation-t*.md 的环境缺失说明是历史记录。后续补足真机验收、桌面规则对齐与跨端通用数据格式。T23 仍需服务项目、区域、测试账号及安全边界；同步相关工单不因本地功能可用而完成。T32–T34 暂缓。
 
 评审重点：
 

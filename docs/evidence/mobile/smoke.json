@@ -1,0 +1,17 @@
+{
+  "stamp": "2652188",
+  "project": "手机验收项目 2652188",
+  "task": "准备演示 2652188",
+  "checks": [
+    "v2 capture preserved",
+    "capture create/clarify/undo",
+    "project/task/subtask",
+    "complete child and parent",
+    "today list",
+    "habit check",
+    "JSON export",
+    "no horizontal overflow"
+  ],
+  "errors": [],
+  "entityCount": 15
+}

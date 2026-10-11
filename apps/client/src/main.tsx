@@ -3,6 +3,8 @@ import { isTauri } from "@tauri-apps/api/core";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { Capacitor } from "@capacitor/core";
+import { lazy, Suspense } from "react";
 import "./theme.css";
 import "./styles.css";
 import "./compact.css";
@@ -10,6 +12,11 @@ import "./components.css";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing application root");
+const MobileApp = lazy(() =>
+  import("./mobile/MobileApp").then((module) => ({
+    default: module.MobileApp,
+  })),
+);
 createRoot(root).render(
   <StrictMode>
     {isTauri() ? (
@@ -17,6 +24,10 @@ createRoot(root).render(
         <TitleBar />
         <App />
       </div>
+    ) : Capacitor.isNativePlatform() ? (
+      <Suspense fallback={<p role="status">正在打开本机工作空间…</p>}>
+        <MobileApp />
+      </Suspense>
     ) : (
       <App />
     )}

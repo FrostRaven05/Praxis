@@ -1,0 +1,149 @@
+.mobile-extras {
+  padding: 18px 18px 100px;
+  color: var(--text-primary, #24352f);
+}
+.mobile-extras h2 {
+  font-size: 23px;
+  margin: 0 0 20px;
+}
+.mobile-extras h3 {
+  font-size: 17px;
+  margin: 8px 0;
+}
+.mobile-extras fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.mobile-extras article {
+  padding: 16px 0;
+  border-bottom: 1px solid #dbe3df;
+}
+.mobile-extras input:not([type="checkbox"]),
+.mobile-extras textarea,
+.mobile-extras select {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  border: 1px solid #c4d2ca;
+  border-radius: 10px;
+  background: var(--surface, #fff);
+  color: inherit;
+  font: inherit;
+  margin-top: 6px;
+}
+.mobile-extras label {
+  display: block;
+  font-size: 14px;
+  margin: 10px 0;
+}
+.mobile-extras button {
+  min-height: 44px;
+  padding: 10px 15px;
+  border-radius: 12px;
+  border: 1px solid #c7d7cc;
+  background: #edf4ed;
+  color: #254b36;
+  font: inherit;
+  cursor: pointer;
+}
+.mobile-extras button:disabled {
+  opacity: 0.5;
+}
+.mx-form {
+  background: var(--surface, #fff);
+  border: 1px solid #e1e7e2;
+  border-radius: 18px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.mx-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 10px 0;
+}
+.mx-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.mx-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.mx-muted {
+  font-size: 13px;
+  color: #69776c;
+  line-height: 1.5;
+}
+.mx-error {
+  padding: 12px;
+  border-radius: 12px;
+  background: #fff0ec;
+  color: #942e1e;
+  margin-bottom: 12px;
+}
+.mx-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  font-size: 12px;
+}
+.mx-metrics > div {
+  background: #edf4ed;
+  border-radius: 16px;
+  padding: 18px 10px;
+}
+.mx-metrics strong {
+  display: block;
+  font-size: 28px;
+  color: #345b43;
+  margin-bottom: 7px;
+}
+.mx-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin: 14px 0;
+}
+.mx-bar meter {
+  flex: 1;
+  height: 20px;
+}
+.mx-clock {
+  font-size: 64px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  padding: 30px 0;
+}
+.mx-json {
+  font-family: monospace !important;
+  font-size: 12px !important;
+}
+.mobile-extras summary {
+  cursor: pointer;
+  min-height: 44px;
+  line-height: 1.5;
+}
+.mobile-extras small {
+  color: #748477;
+}
+.mobile-extras input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  margin-right: 7px;
+}
+@media (max-width: 340px) {
+  .mx-grid {
+    grid-template-columns: 1fr;
+  }
+  .mx-metrics {
+    grid-template-columns: 1fr;
+  }
+}

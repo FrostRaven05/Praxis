@@ -1,26 +1,30 @@
 import { recordStorageError } from "./diagnostics";
 import { CapacitorSQLite, SQLiteConnection } from "@capacitor-community/sqlite";
 import { MobileStorage } from "./index";
-import { initialStatements, captureStatements } from "./migration";
+import {
+  initialStatements,
+  captureStatements,
+  workspaceStatements,
+} from "./migration";
 const sqlite = new SQLiteConnection(CapacitorSQLite);
 let opening: ReturnType<typeof open> | undefined;
 async function open() {
+  // A WebView reload resets JS state but can leave the native connection alive.
+  // Reconcile the plugin's connection registry before creating/retrieving it.
+  await sqlite.checkConnectionsConsistency();
   await sqlite.addUpgradeStatement("praxis", [
     {
       toVersion: 1,
       statements: initialStatements,
     },
     { toVersion: 2, statements: captureStatements },
+    { toVersion: 3, statements: workspaceStatements },
   ]);
-  const db = await sqlite.createConnection(
-    "praxis",
-    false,
-    "no-encryption",
-    2,
-    false,
-  );
+  const db = (await sqlite.isConnection("praxis", false)).result
+    ? await sqlite.retrieveConnection("praxis", false)
+    : await sqlite.createConnection("praxis", false, "no-encryption", 3, false);
   try {
-    await db.open();
+    if (!(await db.isDBOpen()).result) await db.open();
     await db.execute("PRAGMA foreign_keys=ON;", false);
     await db.query("PRAGMA journal_mode=WAL;");
     await db.execute("PRAGMA synchronous=FULL;", false);

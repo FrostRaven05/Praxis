@@ -1,0 +1,10 @@
+{
+  "checks": [
+    "unknown commit response replays frozen operation",
+    "Android back cancellation preserves draft",
+    "export/import creates isolated workspace and original remains selectable",
+    "native JSON file written and Android chooser opened (no external send)",
+    "offline force-stop/relaunch preserves tasks"
+  ],
+  "restoredEntities": 15
+}

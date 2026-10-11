@@ -1,5 +1,15 @@
 import { recordStorageError } from "./diagnostics";
 import {
+  readWorkspace,
+  changeWorkspace,
+  exportWorkspace,
+  importWorkspace,
+  listWorkspaces,
+  switchWorkspace,
+  type WorkspaceCommand,
+} from "./workspace";
+export * from "./workspace";
+import {
   calendarDate,
   type CaptureCommand,
   type DailyTask,
@@ -52,6 +62,24 @@ function validate(command: CaptureCommand) {
 export class MobileStorage implements TaskStorage {
   private queue: Promise<unknown> = Promise.resolve();
   constructor(private readonly connect: () => Promise<Connection>) {}
+  workspaceSnapshot() {
+    return this.serial(readWorkspace);
+  }
+  workspaceCommand(command: WorkspaceCommand) {
+    return this.serial((db) => changeWorkspace(db, command));
+  }
+  workspaceExport() {
+    return this.serial(exportWorkspace);
+  }
+  workspaceImport(json: string, operationId: string) {
+    return this.serial((db) => importWorkspace(db, json, operationId));
+  }
+  workspaceList() {
+    return this.serial(listWorkspaces);
+  }
+  workspaceSwitch(id: string) {
+    return this.serial((db) => switchWorkspace(db, id));
+  }
   saveCapture(command: SaveCaptureCommand): Promise<void> {
     return this.serial(async (db) => {
       if (

@@ -13,3 +13,19 @@ export const captureStatements = [
   `INSERT INTO sync_outbox SELECT * FROM sync_outbox_v1`,
   `DROP TABLE sync_outbox_v1`,
 ];
+
+// Additive migration: existing capture history and queues stay intact.
+export const workspaceStatements = [
+  `CREATE TABLE mobile_workspaces(id TEXT PRIMARY KEY,title TEXT NOT NULL,active INTEGER NOT NULL DEFAULT 0 CHECK(active IN (0,1)))`,
+  `CREATE UNIQUE INDEX mobile_one_active_workspace ON mobile_workspaces(active) WHERE active=1`,
+  `INSERT INTO mobile_workspaces VALUES('local','本机工作空间',1)`,
+  `CREATE TABLE mobile_entities(workspace_id TEXT NOT NULL REFERENCES mobile_workspaces(id),id TEXT NOT NULL,kind TEXT NOT NULL,version INTEGER NOT NULL CHECK(version>0),data TEXT NOT NULL CHECK(json_valid(data)),deleted INTEGER NOT NULL DEFAULT 0,created_at TEXT NOT NULL,updated_at TEXT NOT NULL,PRIMARY KEY(workspace_id,id))`,
+  `CREATE TABLE mobile_operations(operation_id TEXT PRIMARY KEY,workspace_id TEXT NOT NULL REFERENCES mobile_workspaces(id),payload TEXT NOT NULL CHECK(json_valid(payload)),occurred_at TEXT NOT NULL)`,
+  `CREATE TABLE mobile_import_history(workspace_id TEXT NOT NULL REFERENCES mobile_workspaces(id),operation_id TEXT NOT NULL,payload TEXT NOT NULL CHECK(json_valid(payload)),occurred_at TEXT NOT NULL,PRIMARY KEY(workspace_id,operation_id))`,
+  `CREATE TABLE mobile_import_receipts(operation_id TEXT PRIMARY KEY,json TEXT NOT NULL)`,
+  `INSERT INTO mobile_entities SELECT 'local',t.id,'task',1,json_object('title',t.title,'status',t.status,'executionDate',(SELECT MIN(execution_date) FROM daily_plan_items p WHERE p.task_id=t.id),'projectId',NULL,'priority',0,'tags',json('[]')),0,t.created_at,t.created_at FROM tasks t`,
+  `INSERT INTO mobile_entities SELECT 'local',id,'capture',version,json_object('rawText',raw_text,'status','inbox'),0,created_at,updated_at FROM captures`,
+  `INSERT INTO mobile_entities SELECT 'local',MIN(id),'plan',1,json_object('date',execution_date,'taskIds',json_group_array(task_id),'timeZone',MIN(time_zone)),0,MIN(created_at),MAX(created_at) FROM daily_plan_items GROUP BY execution_date`,
+  `INSERT OR IGNORE INTO mobile_import_history SELECT 'local',id,payload,occurred_at FROM domain_events`,
+  `INSERT OR IGNORE INTO mobile_import_history SELECT 'local',operation_id,payload,occurred_at FROM capture_events`,
+];
