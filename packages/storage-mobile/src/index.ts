@@ -1,3 +1,17 @@
+import {
+  resolveLan,
+  bindLan,
+  lanState,
+  prepareLan,
+  ackLan,
+  blockLan,
+  pullLan,
+  type LanBinding,
+  type LanCommand,
+  type LanCapture,
+  type LanPage,
+} from "./lan";
+export * from "./lan";
 import { recordStorageError } from "./diagnostics";
 import {
   readWorkspace,
@@ -62,6 +76,35 @@ function validate(command: CaptureCommand) {
 export class MobileStorage implements TaskStorage {
   private queue: Promise<unknown> = Promise.resolve();
   constructor(private readonly connect: () => Promise<Connection>) {}
+  lanBind(b: LanBinding) {
+    return this.serial((db) => bindLan(db, b));
+  }
+  lanResolve(
+    id: string,
+    keep: boolean,
+    localVersion: number,
+    remoteVersion: number,
+    operationId: string,
+  ) {
+    return this.serial((db) =>
+      resolveLan(db, id, keep, localVersion, remoteVersion, operationId),
+    );
+  }
+  lanState() {
+    return this.serial(lanState);
+  }
+  lanPrepare() {
+    return this.serial(prepareLan);
+  }
+  lanAck(command: LanCommand, capture: LanCapture) {
+    return this.serial((db) => ackLan(db, command, capture));
+  }
+  lanBlock(id: string) {
+    return this.serial((db) => blockLan(db, id));
+  }
+  lanPull(page: LanPage) {
+    return this.serial((db) => pullLan(db, page));
+  }
   workspaceSnapshot() {
     return this.serial(readWorkspace);
   }

@@ -191,7 +191,7 @@ export function Inbox({
   const disabled = busy || !!pending;
   return (
     <section className="pm-inbox">
-      <p className="pm-local-note">本机收件箱 · 原文会保留，尚未接入云同步</p>
+      <p className="pm-local-note">原文先保存在本机；配对后通过局域网自动同步。</p>
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
       {pending && !busy && (

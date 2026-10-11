@@ -495,3 +495,18 @@
   border-radius: 10px;
   padding: 10px;
 }
+.pm-lan-sync {
+  padding: 6px 16px;
+  background: var(--surface);
+  font-size: 12px;
+}
+.pm-lan-sync button {
+  background: transparent;
+  color: inherit;
+  border: 0;
+  padding: 5px;
+}
+.pm-lan-sync pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

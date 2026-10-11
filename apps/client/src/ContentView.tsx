@@ -1,3 +1,5 @@
+import { LanSyncStatus } from "./LanSyncStatus";
+import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   emptyContent,
@@ -35,6 +37,9 @@ export function ContentView({
   const busyRef = useRef(false);
   const [text, setText] = useState(""),
     [type, setType] = useState<"capture" | "task" | "record">("capture");
+  const [rawEditing, setRawEditing] = useState<CaptureItem | null>(null);
+  const [rawDraft, setRawDraft] = useState("");
+  const [rawOperation, setRawOperation] = useState(() => crypto.randomUUID());
   const [captureId, setCaptureId] = useState(() => crypto.randomUUID());
   const [selected, setSelected] = useState<CaptureItem | null>(null),
     [editing, setEditing] = useState<ContentRecord | null | undefined>(
@@ -65,11 +70,25 @@ export function ContentView({
   useEffect(() => {
     input.current?.focus();
   }, [focusRevision]);
+  const syncBlocked = useRef(false);
+  const syncRefresh = useCallback(() => {
+    if (syncBlocked.current) return;
+    void readContent()
+      .then((d) => {
+        if (!syncBlocked.current) setData(d);
+      })
+      .catch(() => undefined);
+  }, []);
   const dirty =
+    rawEditing !== null ||
     text.length > 0 ||
     selected !== null ||
     editing !== undefined ||
     undo !== null;
+  syncBlocked.current = dirty || busy;
+  useEffect(() => {
+    if (!dirty && !busy) syncRefresh();
+  }, [dirty, busy, syncRefresh]);
   useEffect(() => {
     onBusyChange(busy || dirty);
     return () => onBusyChange(false);
@@ -81,7 +100,7 @@ export function ContentView({
     setError("");
     try {
       await fn();
-      setNotice("已保存到本机（同步尚未启用）");
+      setNotice("已保存到本机，已配对的收集项将自动同步");
       await reload();
       onChanged();
     } catch (e) {
@@ -123,6 +142,31 @@ export function ContentView({
     <section className="today content-view">
       <div className="today-content">
         <h1>收件箱与记录</h1>
+        <LanSyncStatus onRefresh={syncRefresh} />
+        <details>
+          <summary>收集项同步活动记录</summary>
+          {data.events
+            .filter((e) =>
+              [
+                "capture_sync_received",
+                "capture_raw_edited",
+                "capture_sync_resolved",
+              ].includes(e.kind),
+            )
+            .map((e) => (
+              <article key={e.id}>
+                <p>
+                  {new Date(e.occurredAt).toLocaleString()} ·{" "}
+                  {e.kind === "capture_sync_received"
+                    ? "接收远端原文"
+                    : e.kind === "capture_raw_edited"
+                      ? "编辑原文"
+                      : "处理同步冲突"}
+                </p>
+                <CaptureHistory payload={e.payload} />
+              </article>
+            ))}
+        </details>
         <nav className="content-tabs" aria-label="内容类型">
           {(
             [
@@ -201,8 +245,65 @@ export function ContentView({
               <>
                 {!data.captures.length && <p>暂无原文，先记录一件事。</p>}
                 {data.captures.map((item) => (
-                  <article className="content-card" key={item.id}>
+                  <article
+                    className="content-card"
+                    data-capture-id={item.id}
+                    key={item.id}
+                  >
                     <pre>{item.rawText}</pre>
+                    <button
+                      disabled={busy || dirty}
+                      onClick={() => {
+                        setRawEditing(item);
+                        setRawDraft(item.rawText);
+                        setRawOperation(crypto.randomUUID());
+                      }}
+                    >
+                      编辑原文
+                    </button>
+                    {rawEditing?.id === item.id && (
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          void run(async () => {
+                            await invoke("lan_capture_edit", {
+                              operationId: rawOperation,
+                              id: item.id,
+                              expectedVersion: rawEditing.version,
+                              rawText: rawDraft,
+                            });
+                            setRawEditing(null);
+                            setRawDraft("");
+                          });
+                        }}
+                      >
+                        <label>
+                          编辑收集项原文
+                          <textarea
+                            aria-label="编辑收集项原文"
+                            value={rawDraft}
+                            disabled={busy}
+                            onChange={(e) => {
+                              setRawDraft(e.target.value);
+                              setRawOperation(crypto.randomUUID());
+                            }}
+                          />
+                        </label>
+                        <button disabled={busy || !rawDraft.trim()}>
+                          保存原文
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => {
+                            setRawEditing(null);
+                            setRawDraft("");
+                          }}
+                        >
+                          取消编辑原文
+                        </button>
+                      </form>
+                    )}
                     <p>
                       {item.state === "pending"
                         ? "待澄清"
@@ -666,5 +767,29 @@ function RecordEditor({
         </button>
       </fieldset>
     </form>
+  );
+}
+
+function CaptureHistory({ payload }: { payload: unknown }) {
+  if (!payload || typeof payload !== "object") return null;
+  const entry = payload as {
+    before?: { rawText?: unknown; deleted?: unknown } | null;
+    after?: { rawText?: unknown; deleted?: unknown };
+    copyId?: unknown;
+  };
+  return (
+    <>
+      <p>修改前{entry.before?.deleted ? "（已删除）" : ""}</p>
+      <pre>
+        {typeof entry.before?.rawText === "string"
+          ? entry.before.rawText
+          : "（原项尚不存在）"}
+      </pre>
+      <p>修改后{entry.after?.deleted ? "（已删除）" : ""}</p>
+      <pre>
+        {typeof entry.after?.rawText === "string" ? entry.after.rawText : ""}
+      </pre>
+      {!!entry.copyId && <p>本机文字已另存为新收集项。</p>}
+    </>
   );
 }

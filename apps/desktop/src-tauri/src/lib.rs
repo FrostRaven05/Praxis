@@ -1,4 +1,46 @@
+mod lan_sync;
 pub mod store;
+#[tauri::command]
+async fn lan_sync_conflicts(
+    database: State<'_, LocalDatabase>,
+) -> Result<serde_json::Value, String> {
+    database.get(None).await?.lan_conflicts().await
+}
+#[tauri::command]
+async fn lan_sync_resolve(
+    operation_id: String,
+    id: String,
+    remote_version: i64,
+    local_text: String,
+    keep_copy: bool,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(None)
+        .await?
+        .lan_resolve(&operation_id, &id, remote_version, &local_text, keep_copy)
+        .await
+}
+#[tauri::command]
+async fn lan_sync_status(
+    runtime: State<'_, lan_sync::LanRuntime>,
+) -> Result<serde_json::Value, String> {
+    Ok(runtime.status.read().await.clone())
+}
+#[tauri::command]
+async fn lan_capture_edit(
+    operation_id: String,
+    id: String,
+    expected_version: i64,
+    raw_text: String,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(None)
+        .await?
+        .lan_edit_capture(&operation_id, &id, expected_version, &raw_text)
+        .await
+}
 
 #[tauri::command]
 async fn recurrence_edit_preview(
@@ -705,9 +747,17 @@ pub fn run() {
                 diagnostics_lock: std::sync::Mutex::new(()),
                 store: OnceCell::new(),
             });
+            app.manage(lan_sync::LanRuntime {
+                status: tokio::sync::RwLock::new(serde_json::json!({"state":"starting"})),
+            });
+            lan_sync::start(app.handle().clone(), data_dir.join("lan-sync.dpapi"));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            lan_sync_status,
+            lan_sync_conflicts,
+            lan_sync_resolve,
+            lan_capture_edit,
             recurrence_edit_preview,
             review_snapshot,
             review_command,

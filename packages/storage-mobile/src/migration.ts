@@ -29,3 +29,9 @@ export const workspaceStatements = [
   `INSERT OR IGNORE INTO mobile_import_history SELECT 'local',id,payload,occurred_at FROM domain_events`,
   `INSERT OR IGNORE INTO mobile_import_history SELECT 'local',operation_id,payload,occurred_at FROM capture_events`,
 ];
+
+export const lanStatements = [
+  `CREATE TABLE mobile_lan_binding(singleton INTEGER PRIMARY KEY CHECK(singleton=1),workspace_id TEXT NOT NULL REFERENCES mobile_workspaces(id),base_url TEXT NOT NULL,owner_id TEXT NOT NULL,device_id TEXT NOT NULL,cursor INTEGER NOT NULL DEFAULT 0,last_success TEXT)`,
+  `CREATE TABLE mobile_lan_shadow(id TEXT PRIMARY KEY,remote TEXT,conflict INTEGER NOT NULL DEFAULT 0)`,
+  `CREATE TABLE mobile_lan_pending(id TEXT PRIMARY KEY,payload TEXT NOT NULL,blocked INTEGER NOT NULL DEFAULT 0)`,
+];

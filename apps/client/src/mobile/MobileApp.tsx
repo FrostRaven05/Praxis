@@ -1,3 +1,4 @@
+import { LanSyncPanel } from "./LanSyncPanel";
 import { useEffect, useRef, useState } from "react";
 import type {
   WorkspaceEntity,
@@ -475,6 +476,7 @@ export function MobileApp() {
   }
   return (
     <div className="pm-app">
+      <LanSyncPanel refresh={refresh} />
       <header className="pm-header">
         <div className="pm-top">
           <button

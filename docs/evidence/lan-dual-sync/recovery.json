@@ -1,0 +1,7 @@
+{
+  "testedAt": "2026-10-11T05:03:15.670Z",
+  "checks": [
+    "Conflict keep-copy choice preserves both texts and automatically synchronizes the new capture",
+    "Desktop saves and restarts while backend is stopped; server restart automatically drains durable queue and Android receives once"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-11T05:01:33.048Z",
+  "stamp": "【双端同步验收 1791694837509】",
+  "checks": [
+    "Desktop UI creation automatically appears once in Android UI",
+    "Android UI edit automatically updates the same desktop capture",
+    "Offline Android edit survives process restart and automatically uploads after network recovery",
+    "Concurrent native UI edits retain both values in Android conflict review; no automatic overwrite"
+  ],
+  "errors": [],
+  "scope": "Native UI capture sync; no direct backend mutations; only listed checks executed; server restart requires separate acceptance"
+}
