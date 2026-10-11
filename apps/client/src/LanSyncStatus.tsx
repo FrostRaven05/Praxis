@@ -1,30 +1,80 @@
 import { useEffect, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
+import "./lan-sync.css";
 type Status = {
   state?: string;
   message?: string;
   lastSuccess?: string;
-  conflictCount?: number;
-  pendingCount?: number;
+  entityConflicts?: number;
+  entityPending?: number;
+  entityCursor?: number;
+};
+export type SyncedEntity = {
+  id: string;
+  kind: string;
+  version: number;
+  data: Record<string, unknown>;
+  deleted: boolean;
+  createdAt: string;
+  updatedAt: string;
 };
 type Conflict = {
-  id: string;
-  localText: string;
-  remote: { rawText: string; version: number; deleted: boolean } | null;
+  operationId: string;
+  local: SyncedEntity[];
+  remote: SyncedEntity[];
+  message: string;
+  token: string;
 };
 type Resolution = {
   operationId: string;
-  id: string;
-  remoteVersion: number;
-  localText: string;
-  keepCopy: boolean;
+  resolutionId: string;
+  decision: "local" | "remote" | "merge";
+  token: string;
+  merged: SyncedEntity[] | null;
 };
+const kinds: Record<string, string> = {
+  task: "任务",
+  project: "项目",
+  section: "分区",
+  plan: "每日安排",
+  capture: "收件箱",
+  record: "记录",
+  habit: "习惯",
+  habit_check: "习惯记录",
+  recurrence: "重复规则",
+  review: "回顾",
+  view: "保存视图",
+  settings: "设置",
+  strategy: "策略",
+  decision: "决策",
+  focus: "专注",
+  desktop_row: "关联数据",
+};
+function EntityText({ entity }: { entity: SyncedEntity }) {
+  return (
+    <article>
+      <strong>
+        {kinds[entity.kind] ?? entity.kind} ·{" "}
+        {String(entity.data.title ?? entity.data.rawText ?? entity.id)}
+      </strong>
+      <p>
+        版本 {entity.version}
+        {entity.deleted ? " · 已删除" : ""} ·{" "}
+        {new Date(entity.updatedAt).toLocaleString()}
+      </p>
+      <pre>{JSON.stringify(entity.data, null, 2)}</pre>
+    </article>
+  );
+}
 export function LanSyncStatus({ onRefresh }: { onRefresh: () => void }) {
-  const [status, setStatus] = useState<Status>({});
-  const [conflicts, setConflicts] = useState<Conflict[]>([]);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [pending, setPending] = useState<Resolution | null>(null);
+  const [status, setStatus] = useState<Status>({}),
+    [conflicts, setConflicts] = useState<Conflict[]>([]);
+  const [error, setError] = useState(""),
+    [busy, setBusy] = useState(false),
+    [pending, setPending] = useState<Resolution | null>(null),
+    [open, setOpen] = useState(false);
+  const [mergeDraft, setMergeDraft] = useState<Record<string, string>>({});
+  const [mergeTokens, setMergeTokens] = useState<Record<string, string>>({});
   useEffect(() => {
     if (!isTauri()) return;
     let active = true;
@@ -32,12 +82,13 @@ export function LanSyncStatus({ onRefresh }: { onRefresh: () => void }) {
     const poll = async () => {
       try {
         const s = await invoke<Status>("lan_sync_status");
-        const c = await invoke<Conflict[]>("lan_sync_conflicts");
+        const c = await invoke<Conflict[]>("lan_entity_conflicts");
         if (!active) return;
         setStatus(s);
         setConflicts(c);
-        if (s.lastSuccess && s.lastSuccess !== last) {
-          last = s.lastSuccess;
+        const revision = `${s.entityCursor ?? 0}:${s.lastSuccess ?? ""}`;
+        if (s.lastSuccess && revision !== last) {
+          last = revision;
           onRefresh();
         }
       } catch {
@@ -49,7 +100,7 @@ export function LanSyncStatus({ onRefresh }: { onRefresh: () => void }) {
       }
     };
     void poll();
-    const timer = setInterval(() => void poll(), 5000);
+    const timer = setInterval(() => void poll(), 3000);
     return () => {
       active = false;
       clearInterval(timer);
@@ -61,45 +112,66 @@ export function LanSyncStatus({ onRefresh }: { onRefresh: () => void }) {
     setError("");
     setPending(command);
     try {
-      await invoke("lan_sync_resolve", command);
+      await invoke("lan_entity_resolve", command);
       setPending(null);
-      setConflicts(await invoke<Conflict[]>("lan_sync_conflicts"));
+      await invoke<Conflict[]>("lan_entity_conflicts")
+        .then(setConflicts)
+        .catch(() => undefined);
       onRefresh();
     } catch (e) {
       const message = String(e);
       setError(message);
-      if (
-        message === "冲突内容已更新，请刷新后再次选择" ||
-        message === "请等待服务端冲突版本到达"
-      ) {
+      if (/已变化|已更新|STALE|INVALID|CONFLICT_CHANGED/.test(message)) {
         setPending(null);
-        setConflicts(await invoke<Conflict[]>("lan_sync_conflicts"));
+        await invoke<Conflict[]>("lan_entity_conflicts")
+          .then(setConflicts)
+          .catch(() => undefined);
       }
     } finally {
       setBusy(false);
     }
   }
-  async function resolve(c: Conflict, keepCopy: boolean) {
-    if (!c.remote || busy || pending) return;
+  function resolve(c: Conflict, decision: Resolution["decision"]) {
+    if (busy || pending) return;
+    let merged: SyncedEntity[] | null = null;
+    if (decision === "merge") {
+      try {
+        merged = JSON.parse(
+          mergeDraft[c.operationId] ?? JSON.stringify(c.local),
+        );
+        if (!Array.isArray(merged)) throw Error();
+      } catch {
+        setError("合并内容不是有效 JSON 对象列表，请检查后重试。");
+        return;
+      }
+    }
     if (
-      !window.confirm(
-        keepCopy
-          ? "保留本机文字为新的收集项，并将原项更新为服务端版本？"
-          : "将此收集项更新为服务端版本？本机旧文字保存在操作记录中。",
+      !confirm(
+        decision === "remote"
+          ? "采用服务端这一批关联内容？本机版本会保存在同步历史。"
+          : "将选择的内容作为这一批关联对象的新版本上传？双方旧版本会保存在同步历史。",
       )
     )
       return;
-    await submit({
-      operationId: crypto.randomUUID(),
-      id: c.id,
-      remoteVersion: c.remote.version,
-      localText: c.localText,
-      keepCopy,
+    void submit({
+      operationId: c.operationId,
+      resolutionId: crypto.randomUUID(),
+      decision,
+      token:
+        decision === "merge"
+          ? (mergeTokens[c.operationId] ?? c.token)
+          : c.token,
+      merged,
     });
   }
   return (
-    <aside data-testid="lan-sync-status" aria-label="局域网同步">
-      <p role="status">
+    <aside className="lan-sync" aria-label="局域网同步">
+      <button
+        data-testid="lan-sync-status"
+        className="lan-sync-summary"
+        onClick={() => setOpen(!open)}
+        aria-expanded={open}
+      >
         局域网：
         {status.state === "online"
           ? "已连接"
@@ -107,43 +179,111 @@ export function LanSyncStatus({ onRefresh }: { onRefresh: () => void }) {
             ? "尚未配对"
             : status.state === "starting"
               ? "正在连接"
-              : "离线"}{" "}
-        · 待上传 {status.pendingCount ?? 0} · 冲突 {status.conflictCount ?? 0}
-        {status.lastSuccess
-          ? ` · 最近成功 ${new Date(status.lastSuccess).toLocaleTimeString()}`
-          : ""}
-      </p>
-      {status.message && <p>{status.message}</p>}
-      <small>
-        自动同步收集项原文及删除状态。澄清结果、任务和项目暂仅保存在本机。冲突保留双方内容，不会自动覆盖。
-      </small>
-      {error && <p role="alert">{error}</p>}
-      {pending && (
-        <button disabled={busy} onClick={() => void submit(pending)}>
-          重试冲突处理
-        </button>
+              : "离线"}
+        <small>
+          待上传 {status.entityPending ?? 0} · 冲突{" "}
+          {status.entityConflicts ?? 0}
+        </small>
+      </button>
+      {open && (
+        <section className="lan-sync-detail">
+          <button className="lan-sync-close" onClick={() => setOpen(false)}>
+            关闭同步详情
+          </button>
+          <h2>工作空间同步</h2>
+          <p>
+            任务、项目、安排、记录、习惯等内容自动同步。修改先保存在本机，连接恢复后继续上传。
+          </p>
+          <p>
+            最近成功：
+            {status.lastSuccess
+              ? new Date(status.lastSuccess).toLocaleString()
+              : "尚未同步"}
+          </p>
+          {status.message && <p role="status">{status.message}</p>}
+          {error && <p role="alert">{error}</p>}
+          {pending && (
+            <button disabled={busy} onClick={() => void submit(pending)}>
+              重试冲突处理
+            </button>
+          )}
+          {conflicts.map((c) => (
+            <details key={c.operationId} data-testid="entity-sync-conflict">
+              <summary>{c.local.length} 项关联内容同步冲突</summary>
+              <p>{c.message}</p>
+              <div className="lan-sync-versions">
+                <section>
+                  <h3>本机版本</h3>
+                  {c.local.map((e) => (
+                    <EntityText key={e.id} entity={e} />
+                  ))}
+                </section>
+                <section>
+                  <h3>服务端版本</h3>
+                  {c.remote.map((e) => (
+                    <EntityText key={e.id} entity={e} />
+                  ))}
+                </section>
+              </div>
+              <button
+                disabled={busy || !!pending}
+                onClick={() => resolve(c, "local")}
+              >
+                保留本机内容
+              </button>
+              <button
+                disabled={busy || !!pending}
+                onClick={() => resolve(c, "remote")}
+              >
+                采用服务端
+              </button>
+              <details>
+                <summary>手动合并字段</summary>
+                <button
+                  disabled={busy || !!pending}
+                  onClick={() => {
+                    setMergeDraft((d) => ({
+                      ...d,
+                      [c.operationId]: JSON.stringify(c.local, null, 2),
+                    }));
+                    setMergeTokens((t) => ({ ...t, [c.operationId]: c.token }));
+                  }}
+                >
+                  载入最新本机版本重新编辑
+                </button>
+                <p>
+                  编辑对象的 data
+                  字段，保留对象标识；保存时会重新校验版本和关联。
+                </p>
+                <textarea
+                  aria-label="合并后的内容"
+                  rows={14}
+                  value={
+                    mergeDraft[c.operationId] ??
+                    JSON.stringify(c.local, null, 2)
+                  }
+                  onChange={(e) => {
+                    setMergeTokens((tokens) => ({
+                      ...tokens,
+                      [c.operationId]: tokens[c.operationId] ?? c.token,
+                    }));
+                    setMergeDraft({
+                      ...mergeDraft,
+                      [c.operationId]: e.target.value,
+                    });
+                  }}
+                />
+                <button
+                  disabled={busy || !!pending}
+                  onClick={() => resolve(c, "merge")}
+                >
+                  保存合并
+                </button>
+              </details>
+            </details>
+          ))}
+        </section>
       )}
-      {conflicts.map((c) => (
-        <details key={c.id} data-testid="lan-conflict">
-          <summary>收集项同步冲突</summary>
-          <p>本机版本</p>
-          <pre>{c.localText}</pre>
-          <p>服务端版本{c.remote?.deleted ? "（已删除）" : ""}</p>
-          <pre>{c.remote?.rawText ?? "等待拉取服务端版本…"}</pre>
-          <button
-            disabled={busy || !!pending || !c.remote}
-            onClick={() => void resolve(c, false)}
-          >
-            采用服务端
-          </button>
-          <button
-            disabled={busy || !!pending || !c.remote}
-            onClick={() => void resolve(c, true)}
-          >
-            保留本机为新收集项
-          </button>
-        </details>
-      ))}
     </aside>
   );
 }

@@ -1,3 +1,4 @@
+import { useLanRefresh } from "./useLanRefresh";
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { RetriableCommands } from "../../../packages/application/src/retriable-commands";
@@ -5,6 +6,7 @@ import "./search-views.css";
 
 type Condition = { field: string; op: string; value: string };
 type Query = {
+  mobileFilter?: Record<string, unknown>;
   text: string;
   entityType: string;
   projectId: string | null;
@@ -128,6 +130,10 @@ export function FollowedViews({
   revision?: number;
 }) {
   const [views, setViews] = useState<Saved[]>([]);
+  useLanRefresh(
+    () => invoke<Snapshot>("view_snapshot"),
+    (s) => setViews(s.views.filter((v) => v.followed)),
+  );
   const [error, setError] = useState("");
   useEffect(() => {
     let alive = true;
@@ -178,6 +184,41 @@ export function SearchViews({
   const request = useRef(0);
   const loadedId = useRef<string | null>(null);
   const newId = useRef(crypto.randomUUID());
+  const savedDirty =
+    !!saved &&
+    (name !== saved.name ||
+      followed !== saved.followed ||
+      JSON.stringify(query) !== JSON.stringify(saved.query));
+  useLanRefresh(
+    async () => {
+      const s = await invoke<Snapshot>("view_snapshot");
+      const fresh =
+        saved && !savedDirty
+          ? s.views.find((v) => v.id === saved.id)
+          : undefined;
+      const removed = !!saved && !fresh && !savedDirty;
+      const r = removed
+        ? null
+        : await invoke<Result>("view_query", { query: fresh?.query ?? query });
+      return { s, r, fresh, removed };
+    },
+    ({ s, r, fresh, removed }) => {
+      setSnapshot(s);
+      setResult(r);
+      if (fresh) {
+        setSaved(fresh);
+        setQuery(fresh.query);
+        setName(fresh.name);
+        setFollowed(fresh.followed);
+      }
+      if (removed) {
+        setSaved(null);
+        setError("此视图已被另一端删除。筛选输入仍保留，可另存为新视图。");
+      }
+    },
+    busy || deleteConfirm || savedDirty,
+    JSON.stringify(query),
+  );
   async function refresh() {
     const s = await invoke<Snapshot>("view_snapshot");
     setSnapshot(s);
@@ -405,7 +446,7 @@ export function SearchViews({
   return (
     <section className="search-views" aria-label="搜索与视图">
       <h2>搜索与工作视图</h2>
-      <p>本机离线搜索。回收站内容不参与结果；保存的视图只包含任务。</p>
+      <p>本机离线搜索。回收站内容不参与结果；手机保存的视图保留原筛选条件。</p>
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
       {!snapshot ? (
@@ -458,7 +499,48 @@ export function SearchViews({
               void search(query);
             }}
           >
-            <fieldset disabled={busy}>
+            {query.mobileFilter && (
+              <section aria-label="手机视图筛选条件">
+                <h3>手机保存的筛选条件</h3>
+                <dl>
+                  {Object.entries(query.mobileFilter)
+                    .filter(([, value]) => value !== "" && value != null)
+                    .map(([key, value]) => (
+                      <div key={key}>
+                        <dt>
+                          {(
+                            {
+                              query: "文字",
+                              kind: "类型",
+                              projectId: "项目",
+                              status: "状态",
+                              priority: "优先级",
+                              due: "期限范围",
+                              preset: "预设",
+                              operator: "条件关系",
+                              sort: "排序",
+                              group: "分组",
+                              includeArchived: "包含归档",
+                            } as Record<string, string>
+                          )[key] ?? key}
+                        </dt>
+                        <dd>{String(value)}</dd>
+                      </div>
+                    ))}
+                </dl>
+                <p>
+                  筛选条件保持手机原有语义，可在手机修改；这里可重命名、关注或保存副本。
+                </p>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => void search(query)}
+                >
+                  重新执行手机视图
+                </button>
+              </section>
+            )}
+            <fieldset disabled={busy || !!query.mobileFilter}>
               <legend>搜索范围</legend>
               <label>
                 文字
@@ -539,7 +621,7 @@ export function SearchViews({
               </label>
             </fieldset>
             {query.entityType === "task" && (
-              <fieldset disabled={busy}>
+              <fieldset disabled={busy || !!query.mobileFilter}>
                 <legend>
                   条件组：组内全部符合（AND），组间任一符合（OR，最多 3 组）
                 </legend>
@@ -580,7 +662,7 @@ export function SearchViews({
                 </p>
               </fieldset>
             )}
-            <fieldset disabled={busy}>
+            <fieldset disabled={busy || !!query.mobileFilter}>
               <legend>展示</legend>
               <label>
                 排序
@@ -628,7 +710,7 @@ export function SearchViews({
               </button>
             </fieldset>
           </form>
-          {query.entityType === "task" && (
+          {(query.entityType === "task" || !!query.mobileFilter) && (
             <fieldset disabled={busy}>
               <legend>保存任务视图</legend>
               <label>

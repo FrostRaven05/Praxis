@@ -35,3 +35,12 @@ export const lanStatements = [
   `CREATE TABLE mobile_lan_shadow(id TEXT PRIMARY KEY,remote TEXT,conflict INTEGER NOT NULL DEFAULT 0)`,
   `CREATE TABLE mobile_lan_pending(id TEXT PRIMARY KEY,payload TEXT NOT NULL,blocked INTEGER NOT NULL DEFAULT 0)`,
 ];
+
+export const entitySyncStatements = [
+  `CREATE TABLE mobile_entity_sync_state(singleton INTEGER PRIMARY KEY CHECK(singleton=1),cursor INTEGER NOT NULL DEFAULT 0,last_success TEXT,generation TEXT)`,
+  `INSERT INTO mobile_entity_sync_state(singleton) VALUES(1)`,
+  `CREATE TABLE mobile_entity_sync_shadow(id TEXT PRIMARY KEY,remote TEXT NOT NULL)`,
+  `CREATE TABLE mobile_entity_sync_pending(singleton INTEGER PRIMARY KEY CHECK(singleton=1),payload TEXT NOT NULL)`,
+  `CREATE TABLE mobile_entity_sync_conflicts(operation_id TEXT PRIMARY KEY,payload TEXT NOT NULL)`,
+  `CREATE TABLE mobile_entity_sync_rejected(singleton INTEGER PRIMARY KEY CHECK(singleton=1),payload TEXT NOT NULL,error TEXT NOT NULL)`,
+];

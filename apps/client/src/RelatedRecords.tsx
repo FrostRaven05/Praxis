@@ -1,3 +1,4 @@
+import { useLanRefresh } from "./useLanRefresh";
 import { useEffect, useState } from "react";
 import { type ContentSnapshot } from "@praxis/application";
 import { readContent, contentError } from "./content-storage";
@@ -10,6 +11,7 @@ export function RelatedRecords({
 }) {
   const [data, setData] = useState<ContentSnapshot | null>(null),
     [error, setError] = useState("");
+  useLanRefresh(readContent, setData);
   useEffect(() => {
     let active = true;
     void readContent()

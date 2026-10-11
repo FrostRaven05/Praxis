@@ -21,6 +21,8 @@ pub struct ViewQuery {
     pub groups: Vec<Vec<ViewCondition>>,
     pub sort: String,
     pub group_by: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mobile_filter: Option<Value>,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -49,7 +51,10 @@ pub enum ViewAction {
         expected_version: i64,
     },
 }
-fn validate_query(q: &ViewQuery) -> StoreResult<()> {
+pub(super) fn validate_query(q: &ViewQuery) -> StoreResult<()> {
+    if let Some(filter) = &q.mobile_filter {
+        validate_mobile_filter(filter)?;
+    }
     if q.text.len() > 2000
         || !["all", "task", "project", "record", "habit"].contains(&q.entity_type.as_str())
         || ![
@@ -125,6 +130,135 @@ fn validate_query(q: &ViewQuery) -> StoreResult<()> {
         }
     }
     Ok(())
+}
+fn filter_text<'a>(filter: &'a Value, key: &str) -> &'a str {
+    filter.get(key).and_then(Value::as_str).unwrap_or("")
+}
+fn validate_mobile_filter(filter: &Value) -> StoreResult<()> {
+    if !filter.is_object() || filter_text(filter, "query").len() > 2000 {
+        return Err("USER:手机视图筛选无效".into());
+    }
+    for (key, valid) in [
+        (
+            "kind",
+            vec![
+                "", "task", "project", "record", "habit", "strategy", "decision", "review",
+            ],
+        ),
+        (
+            "status",
+            vec![
+                "",
+                "todo",
+                "in_progress",
+                "waiting",
+                "blocked",
+                "completed",
+                "cancelled",
+                "active",
+                "paused",
+                "draft",
+                "archived",
+            ],
+        ),
+        ("mode", vec!["", "and", "or"]),
+        ("priority", vec!["", "0", "1", "2", "3"]),
+        ("due", vec!["", "overdue", "today", "week"]),
+        ("sort", vec!["", "title", "priority", "due", "updated"]),
+        ("group", vec!["", "none", "kind", "project", "status"]),
+        (
+            "preset",
+            vec!["", "unplanned", "focus", "small", "waiting", "week"],
+        ),
+    ] {
+        if !valid.contains(&filter_text(filter, key)) {
+            return Err(format!("USER:手机视图不支持筛选字段 {key}"));
+        }
+    }
+    let project = filter_text(filter, "projectId");
+    if !project.is_empty() {
+        Uuid::parse_str(project).map_err(|_| "USER:手机视图项目引用无效")?;
+    }
+    Ok(())
+}
+fn mobile_matches(row: &Value, filter: &Value, today: NaiveDate, zone: Tz) -> bool {
+    let kind = row["mobileKind"].as_str().unwrap_or("");
+    let selected = filter_text(filter, "kind");
+    if !selected.is_empty() && selected != kind {
+        return false;
+    }
+    if filter.get("includeArchived") != Some(&json!(true))
+        && (row["archived"] == 1 || row["mobileArchived"] == 1)
+    {
+        return false;
+    }
+    let status = row["mobileStatus"]
+        .as_str()
+        .or_else(|| row["status"].as_str())
+        .unwrap_or("");
+    let active = kind == "task" && !["completed", "cancelled"].contains(&status);
+    let due = date_value(&row["deadline"], zone);
+    let end = (today + Days::days(6)).to_string();
+    let start = today.to_string();
+    let priority = row["priority"].as_i64().map(|p| if p == 4 { 0 } else { p });
+    match filter_text(filter, "preset") {
+        "unplanned"
+            if !active || row["projectId"].is_string() || row["executionDate"].is_string() =>
+        {
+            return false
+        }
+        "focus" if !active || !priority.is_some_and(|p| [1, 2].contains(&p)) => return false,
+        "small" if !active || !row["estimate"].as_i64().is_some_and(|n| n > 0 && n <= 15) => {
+            return false
+        }
+        "waiting" if !active || row["waiting"] != true => return false,
+        "week" if !active || !due.as_ref().is_some_and(|d| d >= &start && d <= &end) => {
+            return false
+        }
+        _ => {}
+    }
+    let mut checks = Vec::new();
+    let text = filter_text(filter, "query");
+    if !text.is_empty() {
+        checks.push(
+            format!(
+                "{} {}",
+                row["title"].as_str().unwrap_or(""),
+                row["mobileBody"]
+                    .as_str()
+                    .or_else(|| row["body"].as_str())
+                    .unwrap_or("")
+            )
+            .to_lowercase()
+            .contains(&text.to_lowercase()),
+        );
+    }
+    let selected_status = filter_text(filter, "status");
+    if !selected_status.is_empty() {
+        checks.push(status == selected_status);
+    }
+    let project = filter_text(filter, "projectId");
+    if !project.is_empty() {
+        checks.push(row["projectId"] == project || row["id"] == project);
+    }
+    let selected_priority = filter_text(filter, "priority");
+    if !selected_priority.is_empty() {
+        checks.push(kind == "task" && priority == selected_priority.parse().ok());
+    }
+    let selected_due = filter_text(filter, "due");
+    if !selected_due.is_empty() {
+        checks.push(due.as_ref().is_some_and(|d| match selected_due {
+            "overdue" => d < &start,
+            "today" => d == &start,
+            _ => d >= &start && d <= &end,
+        }));
+    }
+    checks.is_empty()
+        || if filter_text(filter, "mode") == "or" {
+            checks.into_iter().any(|v| v)
+        } else {
+            checks.into_iter().all(|v| v)
+        }
 }
 fn date_value(v: &Value, zone: Tz) -> Option<String> {
     if v["kind"] == "date" {
@@ -202,7 +336,7 @@ impl Store {
             } => {
                 Uuid::parse_str(id).map_err(|_| "USER:无效视图标识")?;
                 validate_query(query)?;
-                if query.entity_type != "task"
+                if (query.entity_type != "task" && query.mobile_filter.is_none())
                     || name.trim().is_empty()
                     || name.chars().count() > 120
                 {
@@ -303,16 +437,28 @@ impl Store {
             .parse()
             .map_err(|_| "USER:工作空间时区无效")?;
         let today = Utc::now().with_timezone(&zone).date_naive();
+        let mirror_rows: Vec<(String, String, String, Option<String>)> = sqlx::query_as(
+            "SELECT id,kind,updated_at,json_extract(data,'$.status') FROM lan_entities",
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+        let mirrors: std::collections::BTreeMap<_, _> = mirror_rows
+            .into_iter()
+            .map(|(id, kind, updated, status)| (id, (kind, updated, status)))
+            .collect();
+        let dates:Vec<(String,String)>=sqlx::query_as("SELECT task_id,max(execution_date) FROM daily_plan_items WHERE removed=0 GROUP BY task_id").fetch_all(&self.pool).await.map_err(|e|e.to_string())?;
+        let execution_dates: std::collections::BTreeMap<_, _> = dates.into_iter().collect();
         let mut rows = Vec::<Value>::new();
         let queries=[
-            ("task", "SELECT json_object('id',t.id,'type','task','title',t.title,'body',t.notes,'projectId',t.project_id,'projectName',p.name,'status',CASE WHEN t.waiting=1 THEN 'waiting' ELSE t.status END,'priority',t.priority_level,'estimate',t.default_estimated_minutes,'plan',json(t.plan_value),'deadline',json(t.deadline_value),'followUp',json(t.follow_up_value),'nextAction',json(CASE WHEN c.next_action_task_id=t.id THEN 'true' ELSE 'false' END),'independent',json(CASE WHEN t.project_id IS NULL THEN 'true' ELSE 'false' END),'projectActive',json(CASE WHEN p.status='active' AND p.canceled=0 THEN 'true' ELSE 'false' END),'unblocked',json(CASE WHEN t.status='blocked' OR EXISTS(SELECT 1 FROM task_dependencies d JOIN tasks before ON before.id=d.predecessor_id WHERE d.task_id=t.id AND before.deleted_at IS NULL AND before.status NOT IN('completed','cancelled')) THEN 'false' ELSE 'true' END),'labels',json((SELECT json_group_array(label_id) FROM task_labels WHERE task_id=t.id)),'archived',p.archived_at IS NOT NULL,'created',t.created_at) FROM tasks t LEFT JOIN projects p ON p.id=t.project_id LEFT JOIN project_context c ON c.project_id=t.project_id WHERE t.owner_id=? AND t.deleted_at IS NULL AND (p.id IS NULL OR p.deleted_at IS NULL)"),
-            ("project","SELECT json_object('id',p.id,'type','project','title',p.name,'body',p.outcome||' '||coalesce(c.definition_of_done,'')||' '||coalesce(c.blocker_text,'')||' '||coalesce(c.last_context,'')||' '||coalesce(c.restart_hint,''),'projectId',p.id,'projectName',p.name,'status',CASE WHEN p.canceled=1 THEN 'cancelled' ELSE p.status END,'archived',p.archived_at IS NOT NULL,'created',p.created_at) FROM projects p LEFT JOIN project_context c ON c.project_id=p.id WHERE p.owner_id=? AND p.deleted_at IS NULL"),
-            ("record","SELECT json_object('id',r.id,'type','record','title',r.title,'body',r.body,'status',r.record_type,'projectIds',json((SELECT json_group_array(coalesce(p.id,t.project_id)) FROM record_links l LEFT JOIN projects p ON l.target_type='project' AND p.id=l.target_id AND p.deleted_at IS NULL LEFT JOIN tasks t ON l.target_type='task' AND t.id=l.target_id AND t.deleted_at IS NULL WHERE l.record_id=r.id)),'archived',0,'created',r.created_at) FROM records r WHERE r.owner_id=? AND r.deleted_at IS NULL"),
-            ("habit","SELECT json_object('id',h.id,'type','habit','title',h.name,'body',h.notes||' '||h.trigger_context||' '||h.normal_version||' '||h.minimum_version,'projectId',h.project_id,'projectName',p.name,'status','habit','archived',p.archived_at IS NOT NULL,'created',h.created_at) FROM habits h LEFT JOIN projects p ON p.id=h.project_id WHERE h.owner_id=?")
+            ("task", "SELECT json_object('id',t.id,'type','task','title',t.title,'body',t.notes,'projectId',t.project_id,'projectName',p.name,'status',CASE WHEN t.waiting=1 THEN 'waiting' ELSE t.status END,'rawStatus',t.status,'priority',t.priority_level,'estimate',t.default_estimated_minutes,'plan',json(t.plan_value),'deadline',json(t.deadline_value),'followUp',json(t.follow_up_value),'nextAction',json(CASE WHEN c.next_action_task_id=t.id THEN 'true' ELSE 'false' END),'independent',json(CASE WHEN t.project_id IS NULL THEN 'true' ELSE 'false' END),'projectActive',json(CASE WHEN p.status='active' AND p.canceled=0 THEN 'true' ELSE 'false' END),'unblocked',json(CASE WHEN t.status='blocked' OR EXISTS(SELECT 1 FROM task_dependencies d JOIN tasks before ON before.id=d.predecessor_id WHERE d.task_id=t.id AND before.deleted_at IS NULL AND before.status NOT IN('completed','cancelled')) THEN 'false' ELSE 'true' END),'labels',json((SELECT json_group_array(label_id) FROM task_labels WHERE task_id=t.id)),'archived',p.archived_at IS NOT NULL,'created',t.created_at) FROM tasks t LEFT JOIN projects p ON p.id=t.project_id LEFT JOIN project_context c ON c.project_id=t.project_id WHERE t.owner_id=? AND t.deleted_at IS NULL AND (p.id IS NULL OR p.deleted_at IS NULL)"),
+            ("project","SELECT json_object('id',p.id,'type','project','title',p.name,'mobileBody','','deadline',json(CASE WHEN p.target_date IS NOT NULL THEN json_object('kind','date','date',p.target_date) ELSE 'null' END),'body',p.outcome||' '||coalesce(c.definition_of_done,'')||' '||coalesce(c.blocker_text,'')||' '||coalesce(c.last_context,'')||' '||coalesce(c.restart_hint,''),'projectId',p.id,'projectName',p.name,'status',CASE WHEN p.canceled=1 THEN 'cancelled' ELSE p.status END,'archived',p.archived_at IS NOT NULL,'created',p.created_at) FROM projects p LEFT JOIN project_context c ON c.project_id=p.id WHERE p.owner_id=? AND p.deleted_at IS NULL"),
+            ("record","SELECT json_object('id',r.id,'type','record','title',r.title,'body',r.body,'status',r.record_type,'projectId',(SELECT target_id FROM record_links WHERE record_id=r.id AND target_type='project' ORDER BY target_id LIMIT 1),'projectName',(SELECT p.name FROM projects p JOIN record_links l ON l.target_id=p.id AND l.target_type='project' WHERE l.record_id=r.id ORDER BY p.id LIMIT 1),'projectIds',json((SELECT json_group_array(coalesce(p.id,t.project_id)) FROM record_links l LEFT JOIN projects p ON l.target_type='project' AND p.id=l.target_id AND p.deleted_at IS NULL LEFT JOIN tasks t ON l.target_type='task' AND t.id=l.target_id AND t.deleted_at IS NULL WHERE l.record_id=r.id)),'archived',0,'mobileArchived',(SELECT p.archived_at IS NOT NULL FROM projects p JOIN record_links l ON l.target_id=p.id AND l.target_type='project' WHERE l.record_id=r.id ORDER BY p.id LIMIT 1),'created',r.created_at) FROM records r WHERE r.owner_id=? AND r.deleted_at IS NULL"),
+            ("habit","SELECT json_object('id',h.id,'type','habit','title',h.name,'mobileBody',h.notes,'body',h.notes||' '||h.trigger_context||' '||h.normal_version||' '||h.minimum_version,'projectId',h.project_id,'projectName',p.name,'status','habit','archived',p.archived_at IS NOT NULL,'created',h.created_at) FROM habits h LEFT JOIN projects p ON p.id=h.project_id WHERE h.owner_id=? AND h.deleted_at IS NULL AND (h.project_id IS NULL OR p.deleted_at IS NULL)")
         ];
         let text = q.text.to_lowercase();
         for (kind, sql) in queries {
-            if q.entity_type != "all" && q.entity_type != kind {
+            if q.mobile_filter.is_none() && q.entity_type != "all" && q.entity_type != kind {
                 continue;
             }
             let found: Vec<String> = sqlx::query_scalar(sql)
@@ -321,8 +467,31 @@ impl Store {
                 .await
                 .map_err(|e| e.to_string())?;
             for raw in found {
-                let row: Value = serde_json::from_str(&raw).map_err(|e| e.to_string())?;
-                if !q.include_archived && row["archived"] == 1 {
+                let mut row: Value = serde_json::from_str(&raw).map_err(|e| e.to_string())?;
+                if let Some(filter) = &q.mobile_filter {
+                    let id = row["id"].as_str().unwrap_or("").to_string();
+                    let mirror = mirrors.get(&id);
+                    row["mobileKind"] = json!(mirror.map(|m| m.0.as_str()).unwrap_or(kind));
+                    row["updated"] = json!(mirror
+                        .map(|m| m.1.as_str())
+                        .unwrap_or_else(|| row["created"].as_str().unwrap_or("")));
+                    row["executionDate"] = json!(execution_dates.get(&id));
+                    if kind == "task" {
+                        row["waiting"] = json!(row["status"] == "waiting");
+                        if row["status"] == "waiting" {
+                            row["mobileStatus"] = json!(mirror
+                                .and_then(|m| m.2.as_deref())
+                                .filter(|s| *s == "waiting")
+                                .unwrap_or_else(|| row["rawStatus"].as_str().unwrap_or("todo")));
+                        }
+                    }
+                    if !mobile_matches(&row, filter, today, zone) {
+                        continue;
+                    }
+                    rows.push(row);
+                    continue;
+                }
+                if !q.include_archived && (row["archived"] == 1 || row["mobileArchived"] == 1) {
                     continue;
                 }
                 if !format!(
@@ -358,23 +527,49 @@ impl Store {
                 rows.push(row);
             }
         }
+        let selected_sort = q
+            .mobile_filter
+            .as_ref()
+            .map(|f| filter_text(f, "sort"))
+            .unwrap_or(q.sort.as_str());
         let sort_key = |r: &Value| -> String {
-            match q.sort.as_str() {
-                "priority" => format!("{}", r["priority"].as_i64().unwrap_or(9)),
+            match selected_sort {
+                "priority" => format!(
+                    "{}",
+                    r["priority"]
+                        .as_i64()
+                        .unwrap_or(if q.mobile_filter.is_some() { 4 } else { 9 })
+                ),
+                "due" => date_value(&r["deadline"], zone).unwrap_or("9999-99-99".into()),
                 "plan" | "deadline" | "followUp" => {
-                    date_value(&r[&q.sort], zone).unwrap_or("9999-99-99".into())
+                    date_value(&r[selected_sort], zone).unwrap_or("9999-99-99".into())
                 }
-                _ => r[&q.sort].as_str().unwrap_or("").to_lowercase(),
+                _ => r[selected_sort].as_str().unwrap_or("").to_lowercase(),
             }
         };
-        rows.sort_by_key(|r| (sort_key(r), r["id"].as_str().unwrap_or("").to_owned()));
+        if selected_sort == "updated" || (q.mobile_filter.is_some() && selected_sort.is_empty()) {
+            rows.sort_by(|a, b| {
+                b["updated"]
+                    .as_str()
+                    .cmp(&a["updated"].as_str())
+                    .then_with(|| a["id"].as_str().cmp(&b["id"].as_str()))
+            });
+        } else {
+            rows.sort_by_key(|r| (sort_key(r), r["id"].as_str().unwrap_or("").to_owned()));
+        }
+        let group_by = q
+            .mobile_filter
+            .as_ref()
+            .map(|f| filter_text(f, "group"))
+            .unwrap_or(q.group_by.as_str());
         for row in &mut rows {
-            row["group"] = match q.group_by.as_str() {
+            row["group"] = match group_by {
                 "project" => row["projectName"]
                     .as_str()
                     .unwrap_or("独立 / 无项目")
                     .into(),
-                "status" => row["status"].clone(),
+                "status" => row.get("mobileStatus").unwrap_or(&row["status"]).clone(),
+                "kind" => row["mobileKind"].clone(),
                 "priority" => row["priority"]
                     .as_i64()
                     .map(|n| json!(format!("P{n}")))
@@ -394,6 +589,12 @@ impl Store {
             .collect();
         if let Some(id) = &q.project_id {
             refs.push(("project", id));
+        }
+        if let Some(filter) = &q.mobile_filter {
+            let project = filter_text(filter, "projectId");
+            if !project.is_empty() {
+                refs.push(("project", project));
+            }
         }
         for (kind, id) in refs {
             let key = if kind == "project" {

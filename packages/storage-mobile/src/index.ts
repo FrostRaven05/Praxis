@@ -1,3 +1,22 @@
+export {
+  structuredReview,
+  reviewBody,
+  blankReview,
+  type StructuredReview,
+} from "./structured-review";
+import {
+  entityState,
+  prepareEntities,
+  ackEntities,
+  pullEntities,
+  rejectEntities,
+  resolveEntities,
+  rebaseEntities,
+  repairRejected,
+  type EntityCommand,
+  type EntityPage,
+} from "./entity-sync";
+export * from "./entity-sync";
 import {
   resolveLan,
   bindLan,
@@ -76,6 +95,64 @@ function validate(command: CaptureCommand) {
 export class MobileStorage implements TaskStorage {
   private queue: Promise<unknown> = Promise.resolve();
   constructor(private readonly connect: () => Promise<Connection>) {}
+  entityState() {
+    return this.serial(entityState);
+  }
+  entityRebase(
+    entities: import("./workspace").WorkspaceEntity[],
+    cursor: number,
+    generation: string,
+  ) {
+    return this.serial((db) =>
+      rebaseEntities(db, entities, cursor, generation),
+    );
+  }
+  entityPrepare() {
+    return this.serial(prepareEntities);
+  }
+  entityAck(
+    command: EntityCommand,
+    entities: import("./workspace").WorkspaceEntity[],
+  ) {
+    return this.serial((db) => ackEntities(db, command, entities));
+  }
+  entityPull(page: EntityPage) {
+    return this.serial((db) => pullEntities(db, page));
+  }
+  entityReject(error?: string) {
+    return this.serial((db) => rejectEntities(db, error));
+  }
+  entityRepair(command: WorkspaceCommand) {
+    return this.serial((db) => repairRejected(db, command));
+  }
+  entityResolve(
+    operationId: string,
+    keepLocal: boolean,
+    expected: string,
+    resolutionId: string,
+    merged?: import("./workspace").WorkspaceEntity[],
+  ) {
+    return this.serial((db) =>
+      resolveEntities(
+        db,
+        operationId,
+        keepLocal,
+        expected,
+        resolutionId,
+        merged,
+      ),
+    );
+  }
+  lanPending() {
+    return this.serial(async (db) => {
+      const row = (
+        await db.query(
+          "SELECT payload FROM mobile_lan_pending WHERE blocked=0 ORDER BY rowid LIMIT 1",
+        )
+      ).values?.[0];
+      return row ? (JSON.parse(String(row.payload)) as LanCommand) : null;
+    });
+  }
   lanBind(b: LanBinding) {
     return this.serial((db) => bindLan(db, b));
   }

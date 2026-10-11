@@ -1,8 +1,8 @@
 # Praxis
 
-2026-10-11：已建立可运行的 [局域网开发后端](docs/backend-lan.md)，并接入 [Windows / Android 收集项自动同步](docs/implementation-lan-clients.md)。任务和项目全域同步仍待实现。手机端界面见 [手机端记录](docs/implementation-mobile-reference.md)。
+2026-10-11：已建立可运行的 [局域网开发后端](docs/backend-lan.md)，Windows / Android 已接入 [非 AI 全域自动同步](docs/implementation-full-sync.md)，覆盖任务、项目、安排、记录、视图、重复和习惯等对象。实际双端验收使用 Windows WebView2 与 Android 17 模拟器；最终验收状态见该记录。手机端界面见 [手机端记录](docs/implementation-mobile-reference.md)。
 
-T15–T21 的桌面本地能力和 T22 手机离线收集适配见 [本轮实施与验证](docs/implementation-p1-followups.md)。Android 真机、同步、完整导出与发布验收仍按 [当前工单](ticket.md) 的依赖推进；AI 相关 T32–T34 暂缓。
+T15–T21 的桌面本地能力和 T22 手机离线收集适配见 [本轮实施与验证](docs/implementation-p1-followups.md)。Android 真机、云登录、统一完整导出与发布/规模验收仍按 [当前工单](ticket.md) 推进；AI 相关 T32–T34 暂缓。Android 当前在前台及恢复前台/网络后同步，系统停止 App 期间不承诺持续后台工作。
 
 T08–T14 已完成 Windows 本地实现：今日与近期、独立时间与工作空间时区、优先级/标签/等待、每日结果、分区和安全项目终结。见 [实施与验收记录](docs/implementation-p1-core.md)。
 
@@ -12,7 +12,7 @@ Turn intent into action.
 
 Ticket 01：桌面离线录入。只输入标题即可加入今天，任务、每日安排、历史事件与待同步操作在一个 SQLite 事务中保存。关闭应用后重新打开仍可读取。
 
-桌面已支持录入、详情编辑、日期查看、改期、完成与撤销；已完成默认折叠，按实际完成日期显示。已支持每日重点排序、估时、容量提醒及收件箱；已支持项目基本信息、批量任务、临时任务归属和项目任务加入今日；完整项目功能及云同步继续按 Tickets 实现；outbox 仅保存在本机。
+桌面已支持录入、详情编辑、日期查看、改期、完成与撤销；已完成默认折叠，按实际完成日期显示。每日重点、估时、容量提醒、收件箱、项目、批量任务和项目任务加入今日已实现；本机队列在配对后自动发送至局域网后端，云同步继续按 Tickets 推进。
 
 ## 文档与任务
 
@@ -40,7 +40,7 @@ pnpm desktop
 
 ```powershell
 . .\scripts\native-env.ps1
-pnpm --filter @praxis/desktop exec tauri build --debug --no-bundle
+pnpm desktop:build
 ```
 
 产物为桌面工程 target/debug/praxis-desktop.exe。当前不生成签名安装包。
@@ -70,7 +70,7 @@ test:desktop 要先构建上述调试程序。它启动真实 Tauri/WebView2，�
 
 ## Android 开发进度
 
-Ticket 02 已加入 Capacitor 工程与原生 SQLite 适配，尚未完成 APK 构建和真机验收。构建依赖、命令、测试结果及 iOS 范围见 [移动端实施记录](docs/implementation-02.md)。
+Capacitor 与原生 SQLite 已接入，调试 APK 已构建并安装至 Android 17 模拟器，已验证本机功能及局域网双端流程；物理设备验收尚未完成。当前界面及本机范围见 [手机端记录](docs/implementation-mobile-reference.md)，双端范围见 [全域同步记录](docs/implementation-full-sync.md)。[早期移动端记录](docs/implementation-02.md) 保留最初工程接入与 iOS 范围。
 
 [桌面编辑、改期与日期查看验收](docs/implementation-desktop-edit.md)
 

@@ -56,6 +56,8 @@ pub struct Template {
     pub start_date: String,
     pub time_zone: String,
     pub interval_days: i64,
+    #[serde(skip_serializing)]
+    pub interval_days_extended: Option<i64>,
     pub weekdays: String,
     pub enabled: bool,
     pub expanded_through: Option<String>,
@@ -70,7 +72,7 @@ pub fn matches(t: &Template, d: NaiveDate) -> bool {
     let days: Vec<u32> = serde_json::from_str(&t.weekdays).unwrap_or_default();
     d >= start
         && if days.is_empty() {
-            (d - start).num_days() % t.interval_days == 0
+            (d - start).num_days() % t.interval_days_extended.unwrap_or(t.interval_days) == 0
         } else {
             days.contains(&d.weekday().number_from_monday())
         }
@@ -83,7 +85,8 @@ fn pending_rules(t: &Template, rules: &[Rule], through: NaiveDate) -> StoreResul
     };
     let mut result = vec![];
     while d <= through {
-        if matches(&rule_at(t, rules, d), d) {
+        let rule = rule_at(t, rules, d);
+        if rule.enabled && matches(&rule, d) {
             result.push(d)
         }
         d = d.succ_opt().ok_or("日期超出范围")?;
@@ -96,6 +99,9 @@ struct Rule {
     effective_date: String,
     title: String,
     interval_days: i64,
+    #[serde(skip_serializing)]
+    interval_days_extended: Option<i64>,
+    active: bool,
     weekdays: String,
     time_zone: String,
     anchor_date: String,
@@ -110,13 +116,15 @@ fn rule_at(t: &Template, rules: &[Rule], d: NaiveDate) -> Template {
         out.start_date = r.anchor_date.clone();
         out.title = r.title.clone();
         out.interval_days = r.interval_days;
+        out.interval_days_extended = r.interval_days_extended;
+        out.enabled = out.enabled && r.active;
         out.weekdays = r.weekdays.clone();
         out.time_zone = r.time_zone.clone();
     }
     out
 }
 async fn rules(tx: &mut Transaction<'_, Sqlite>, id: &str) -> StoreResult<Vec<Rule>> {
-    sqlx::query_as("SELECT effective_date,title,interval_days,weekdays,time_zone,anchor_date FROM recurrence_rules WHERE template_id=? ORDER BY effective_date").bind(id).fetch_all(&mut **tx).await.map_err(|e|e.to_string())
+    sqlx::query_as("SELECT effective_date,title,interval_days,interval_days_extended,active,weekdays,time_zone,anchor_date FROM recurrence_rules WHERE template_id=? ORDER BY effective_date").bind(id).fetch_all(&mut **tx).await.map_err(|e|e.to_string())
 }
 async fn future(
     tx: &mut Transaction<'_, Sqlite>,
@@ -186,7 +194,7 @@ impl Store {
         Ok(json!({"effects":effects}))
     }
     pub async fn recurrence_snapshot(&self) -> StoreResult<Value> {
-        let templates:Vec<Template>=sqlx::query_as("SELECT r.* FROM recurrence_templates r LEFT JOIN projects p ON p.id=r.project_id WHERE r.owner_id=? AND (r.project_id IS NULL OR p.deleted_at IS NULL) ORDER BY r.start_date,r.id").bind(&self.owner_id).fetch_all(&self.pool).await.map_err(|e|e.to_string())?;
+        let templates:Vec<Template>=sqlx::query_as("SELECT r.* FROM recurrence_templates r LEFT JOIN projects p ON p.id=r.project_id WHERE r.owner_id=? AND r.deleted_at IS NULL AND (r.project_id IS NULL OR p.deleted_at IS NULL) ORDER BY r.start_date,r.id").bind(&self.owner_id).fetch_all(&self.pool).await.map_err(|e|e.to_string())?;
         let mut rows = vec![];
         for t in templates {
             let mut tx = self.pool.begin().await.map_err(|e| e.to_string())?;
@@ -200,7 +208,18 @@ impl Store {
             } else {
                 0
             };
-            rows.push(json!({"template":t,"rules":rs,"futureTasks":tasks.iter().map(|(id,version,key,title,exception,status)|json!({"id":id,"version":version,"occurrenceKey":key,"title":title,"exception":exception,"status":status})).collect::<Vec<_>>(),"through":through.to_string(),"remaining":remaining}));
+            let mut wire_template = serde_json::to_value(&t).map_err(|e| e.to_string())?;
+            wire_template["intervalDays"] =
+                json!(t.interval_days_extended.unwrap_or(t.interval_days));
+            let wire_rules = rs
+                .iter()
+                .map(|r| {
+                    let mut v = serde_json::to_value(r).unwrap();
+                    v["intervalDays"] = json!(r.interval_days_extended.unwrap_or(r.interval_days));
+                    v
+                })
+                .collect::<Vec<_>>();
+            rows.push(json!({"template":wire_template,"rules":wire_rules,"futureTasks":tasks.iter().map(|(id,version,key,title,exception,status)|json!({"id":id,"version":version,"occurrenceKey":key,"title":title,"exception":exception,"status":status})).collect::<Vec<_>>(),"through":through.to_string(),"remaining":remaining}));
         }
         Ok(json!({"templates":rows}))
     }
@@ -260,14 +279,15 @@ impl Store {
                 .execute(&mut *tx)
                 .await
                 .map_err(|e| e.to_string())?;
-                sqlx::query("INSERT INTO recurrence_rules VALUES(?,?,?,?,?,?,?)")
+                sqlx::query("INSERT INTO recurrence_rules(template_id,effective_date,title,interval_days,weekdays,time_zone,anchor_date,interval_days_extended,active) VALUES(?,?,?,?,?,?,?,?,1)")
                     .bind(id)
                     .bind(effective_date)
                     .bind(title.trim())
-                    .bind(interval_days)
+                    .bind((*interval_days).min(366))
                     .bind(json!(weekdays).to_string())
                     .bind(time_zone)
                     .bind(effective_date)
+                    .bind(interval_days)
                     .execute(&mut *tx)
                     .await
                     .map_err(|e| e.to_string())?;
@@ -309,7 +329,7 @@ impl Store {
                     || start.year() > 2200
                     || title.trim().is_empty()
                     || title.chars().count() > 500
-                    || !(1..=366).contains(interval_days)
+                    || !(1..=3650).contains(interval_days)
                     || weekdays.iter().any(|d| !(1..=7).contains(d))
                 {
                     return Err("USER:请填写有效标题、1900–2200日期、间隔或星期".into());
@@ -326,8 +346,8 @@ impl Store {
                         .fetch_optional(&mut *tx)
                         .await
                         .map_err(|e| e.to_string())?;
-                sqlx::query("INSERT INTO recurrence_templates(id,owner_id,title,project_id,start_date,time_zone,interval_days,weekdays) VALUES(?,?,?,?,?,?,?,?)").bind(id).bind(&self.owner_id).bind(title.trim()).bind(project_id).bind(start_date).bind(zone.ok_or("USER:请先在时间设置确认工作空间时区")?).bind(interval_days).bind(serde_json::to_string(weekdays).unwrap()).execute(&mut *tx).await.map_err(|e|e.to_string())?;
-                sqlx::query("INSERT INTO recurrence_rules SELECT id,start_date,title,interval_days,weekdays,time_zone,start_date FROM recurrence_templates WHERE id=?").bind(id).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+                sqlx::query("INSERT INTO recurrence_templates(id,owner_id,title,project_id,start_date,time_zone,interval_days,weekdays,interval_days_extended) VALUES(?,?,?,?,?,?,?,?,?)").bind(id).bind(&self.owner_id).bind(title.trim()).bind(project_id).bind(start_date).bind(zone.ok_or("USER:请先在时间设置确认工作空间时区")?).bind((*interval_days).min(366)).bind(serde_json::to_string(weekdays).unwrap()).bind(interval_days).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+                sqlx::query("INSERT INTO recurrence_rules(template_id,effective_date,title,interval_days,weekdays,time_zone,anchor_date,interval_days_extended) SELECT id,start_date,title,interval_days,weekdays,time_zone,start_date,interval_days_extended FROM recurrence_templates WHERE id=?").bind(id).execute(&mut *tx).await.map_err(|e|e.to_string())?;
                 entity = id.clone();
             }
             RecurrenceAction::Expand {
@@ -429,7 +449,7 @@ pub(super) async fn change_zone(
     expected: &Option<Vec<(String, i64)>>,
 ) -> StoreResult<()> {
     let ts: Vec<Template> = sqlx::query_as(
-        "SELECT * FROM recurrence_templates WHERE owner_id=? AND enabled=1 ORDER BY id",
+        "SELECT * FROM recurrence_templates WHERE owner_id=? AND deleted_at IS NULL AND enabled=1 ORDER BY id",
     )
     .bind(owner)
     .fetch_all(&mut **tx)
@@ -450,7 +470,7 @@ pub(super) async fn change_zone(
     for t in ts {
         let rs = rules(tx, &t.id).await?;
         let active = rule_at(&t, &rs, date(&effective)?);
-        sqlx::query("INSERT INTO recurrence_rules VALUES(?,?,?,?,?,?,?) ON CONFLICT(template_id,effective_date) DO UPDATE SET time_zone=excluded.time_zone").bind(&t.id).bind(&effective).bind(active.title).bind(active.interval_days).bind(active.weekdays).bind(zone).bind(active.start_date).execute(&mut **tx).await.map_err(|e|e.to_string())?;
+        sqlx::query("INSERT INTO recurrence_rules(template_id,effective_date,title,interval_days,weekdays,time_zone,anchor_date,interval_days_extended,active) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(template_id,effective_date) DO UPDATE SET time_zone=excluded.time_zone").bind(&t.id).bind(&effective).bind(active.title).bind(active.interval_days).bind(active.weekdays).bind(zone).bind(active.start_date).bind(active.interval_days_extended).bind(active.enabled).execute(&mut **tx).await.map_err(|e|e.to_string())?;
         sqlx::query(
             "UPDATE recurrence_rules SET time_zone=? WHERE template_id=? AND effective_date>=?",
         )
@@ -482,6 +502,7 @@ fn edited_template(
         start_date: effective.into(),
         title: title.trim().into(),
         interval_days: interval,
+        interval_days_extended: Some(interval),
         weekdays: json!(days).to_string(),
         time_zone: zone.into(),
         ..t
@@ -511,7 +532,7 @@ fn validate_edit(
         || effective.year() > 2200
         || title.trim().is_empty()
         || title.chars().count() > 500
-        || !(1..=366).contains(&interval)
+        || !(1..=3650).contains(&interval)
         || days.iter().any(|d| !(1..=7).contains(d))
     {
         return Err(

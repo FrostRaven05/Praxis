@@ -75,6 +75,8 @@ struct Schedule {
     weekdays: String,
     weekly_target: i64,
     paused: bool,
+    interval_days: i64,
+    time_zone: Option<String>,
 }
 #[derive(FromRow, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -98,6 +100,13 @@ fn applies(s: &Schedule, d: NaiveDate) -> bool {
         || s.effective_until
             .as_ref()
             .is_some_and(|end| d.to_string() >= *end)
+    {
+        return false;
+    }
+    if s.interval_days > 1
+        && day(&s.effective_from)
+            .map(|start| (d - start).num_days() % s.interval_days != 0)
+            .unwrap_or(true)
     {
         return false;
     }
@@ -180,8 +189,14 @@ impl Store {
                 }
                 sqlx::query("INSERT INTO habits(id,owner_id,name,start_date,trigger_context,normal_version,minimum_version,notes,project_id,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)")
                     .bind(id).bind(&self.owner_id).bind(name.trim()).bind(start_date).bind(trigger_context).bind(normal_version).bind(minimum_version).bind(notes).bind(project_id).bind(&c.occurred_at).execute(&mut *tx).await.map_err(|e|e.to_string())?;
-                sqlx::query("INSERT INTO habit_schedules(habit_id,version,effective_from,frequency,weekdays,weekly_target) VALUES(?,0,?,?,?,?)")
-                    .bind(id).bind(start_date).bind(frequency).bind(json!(days).to_string()).bind(weekly_target).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+                let zone: Option<String> =
+                    sqlx::query_scalar("SELECT time_zone FROM workspace_settings WHERE owner_id=?")
+                        .bind(&self.owner_id)
+                        .fetch_optional(&mut *tx)
+                        .await
+                        .map_err(|e| e.to_string())?;
+                sqlx::query("INSERT INTO habit_schedules(habit_id,version,effective_from,frequency,weekdays,weekly_target,time_zone) VALUES(?,0,?,?,?,?,?)")
+                    .bind(id).bind(start_date).bind(frequency).bind(json!(days).to_string()).bind(weekly_target).bind(zone.unwrap_or("Asia/Hong_Kong".into())).execute(&mut *tx).await.map_err(|e|e.to_string())?;
                 (id.clone(), None)
             }
             HabitAction::Rule {
@@ -249,7 +264,7 @@ impl Store {
                 .execute(&mut *tx)
                 .await
                 .map_err(|e| e.to_string())?;
-                sqlx::query("INSERT INTO habit_schedules(habit_id,version,effective_from,frequency,weekdays,weekly_target,paused) VALUES(?,?,?,?,?,?,?)").bind(id).bind(old.version+1).bind(effective_from).bind(frequency).bind(json!(days).to_string()).bind(weekly_target).bind(paused).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+                sqlx::query("INSERT INTO habit_schedules(habit_id,version,effective_from,frequency,weekdays,weekly_target,paused,time_zone) VALUES(?,?,?,?,?,?,?,?)").bind(id).bind(old.version+1).bind(effective_from).bind(frequency).bind(json!(days).to_string()).bind(weekly_target).bind(paused).bind(time_zone).execute(&mut *tx).await.map_err(|e|e.to_string())?;
                 sqlx::query("UPDATE habits SET version=version+1 WHERE id=?")
                     .bind(id)
                     .execute(&mut *tx)
@@ -343,7 +358,7 @@ impl Store {
                     .map_err(|_| "Invalid workspace timezone")?,
             )
             .date_naive();
-        let habits:Vec<Habit>=sqlx::query_as("SELECT id,name,start_date,trigger_context,normal_version,minimum_version,notes,project_id,version FROM habits WHERE owner_id=? ORDER BY created_at,id").bind(&self.owner_id).fetch_all(&mut *tx).await.map_err(|e|e.to_string())?;
+        let habits:Vec<Habit>=sqlx::query_as("SELECT id,name,start_date,trigger_context,normal_version,minimum_version,notes,project_id,version FROM habits WHERE owner_id=? AND deleted_at IS NULL ORDER BY created_at,id").bind(&self.owner_id).fetch_all(&mut *tx).await.map_err(|e|e.to_string())?;
         let rules: Vec<Schedule> = sqlx::query_as(
             "SELECT s.* FROM habit_schedules s JOIN habits h ON h.id=s.habit_id WHERE h.owner_id=?",
         )

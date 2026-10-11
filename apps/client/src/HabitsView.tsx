@@ -1,3 +1,4 @@
+import { useLanRefresh } from "./useLanRefresh";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { RetriableCommands } from "../../../packages/application/src/retriable-commands";
@@ -36,6 +37,7 @@ type Row = {
   habit: Habit;
   entry: Entry | null;
   schedule: {
+    intervalDays?: number;
     paused: boolean;
     frequency: string;
     weeklyTarget: number;
@@ -92,6 +94,22 @@ export function HabitsView({
   const [creating, setCreating] = useState(false);
   const [projects, setProjects] = useState<{ id: string; name: string }[]>([]);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  useLanRefresh(
+    () => invoke<Snapshot>("habit_snapshot", { date: date ?? selected }),
+    (next) => {
+      setSnapshot(next);
+      setNotes({});
+    },
+    busy ||
+      creating ||
+      Object.entries(notes).some(
+        ([id, note]) =>
+          note !==
+          (snapshot?.habits.find((row) => row.habit.id === id)?.entry?.note ??
+            ""),
+      ),
+    date ?? selected,
+  );
   async function refresh() {
     setSnapshot(
       await invoke<Snapshot>("habit_snapshot", { date: date ?? selected }),
@@ -161,13 +179,15 @@ export function HabitsView({
       <article className="habit-card" key={h.id} data-habit-id={h.id}>
         <h3>{h.name}</h3>
         <p>
-          {row.schedule?.frequency === "weekly"
-            ? `每周 ${row.schedule.weeklyTarget} 次`
-            : row.schedule?.frequency === "daily"
-              ? "每日"
-              : row.schedule
-                ? `星期 ${JSON.parse(row.schedule.weekdays).join("、")}`
-                : "该日尚未开始"}{" "}
+          {(row.schedule?.intervalDays ?? 1) > 1
+            ? `每 ${row.schedule?.intervalDays} 天`
+            : row.schedule?.frequency === "weekly"
+              ? `每周 ${row.schedule.weeklyTarget} 次`
+              : row.schedule?.frequency === "daily"
+                ? "每日"
+                : row.schedule
+                  ? `星期 ${JSON.parse(row.schedule.weekdays).join("、")}`
+                  : "该日尚未开始"}{" "}
           ·{" "}
           {row.applicable
             ? row.entry?.status === "done"

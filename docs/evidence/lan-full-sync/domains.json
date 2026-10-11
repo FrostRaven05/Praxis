@@ -1,0 +1,11 @@
+{
+  "testedAt": "2026-10-11T06:17:56.910Z",
+  "tag": "全域验收 1791698242654 内容 1791699403620",
+  "checks": [
+    "Mobile record links to project and task arrive in native content; desktop body edit returns to mobile with links intact",
+    "Habit rule and same-day check synchronize; desktop same-day update does not duplicate; mobile undo and re-complete retain identity",
+    "Mobile recurrence expansion arrives on desktop; native expansion of same date range keeps one logical task per day",
+    "Non-AI strategy notes synchronize in both directions"
+  ],
+  "errors": []
+}

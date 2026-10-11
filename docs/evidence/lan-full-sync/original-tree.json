@@ -1,0 +1,7 @@
+{
+  "testedAt": "2026-10-11T06:57:50.451Z",
+  "checks": [
+    "Original native three-level task tree arrives on Android and both nesting levels expand to its original leaf without flattening"
+  ],
+  "errors": []
+}

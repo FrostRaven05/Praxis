@@ -1,0 +1,10 @@
+{
+  "testedAt": "2026-10-11T06:57:04.649Z",
+  "stamp": "全域验收 1791698242654",
+  "checks": [
+    "Offline Android edit survives force-stop/restart; reconnect merges its note with desktop independent title without losing either field",
+    "Same-field edits retain both texts in a real Android conflict; unrelated project continues syncing; explicit local resolution converges",
+    "Backend stop preserves desktop edits; new server generation reconciles snapshot and automatically delivers pending note to Android"
+  ],
+  "errors": []
+}

@@ -472,3 +472,4 @@ fn validate_context(
 }
 
 pub mod lan;
+pub mod entities;

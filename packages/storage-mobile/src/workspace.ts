@@ -92,6 +92,7 @@ export const workspaceKinds = [
   "strategy",
   "decision",
   "focus",
+  "desktop_row",
 ] as const;
 export type WorkspaceKind = (typeof workspaceKinds)[number];
 export interface WorkspaceEntity {
@@ -163,10 +164,53 @@ export async function readWorkspace(
   ).values?.[0];
   return { entities, pendingOperations: Number(pending?.count ?? 0) };
 }
-function validateGraph(entities: WorkspaceEntity[]) {
+export function validateGraph(entities: WorkspaceEntity[]) {
+  if (entities.filter((e) => e.kind === "settings" && !e.deleted).length > 1)
+    reject("工作空间只能有一份有效设置。");
   const byId = new Map(entities.map((e) => [e.id, e]));
+  // Follow each ancestor chain iteratively; valid existing trees have no depth limit.
+  const checkedTasks = new Set<string>();
+  for (const task of entities) {
+    if (task.deleted || task.kind !== "task" || checkedTasks.has(task.id))
+      continue;
+    const chain = new Set<string>();
+    let current = task;
+    while (!checkedTasks.has(current.id)) {
+      if (chain.has(current.id))
+        reject("任务父子关系不能形成循环，必须属于同一项目和分区。");
+      chain.add(current.id);
+      const parent = byId.get(String(current.data.parentId ?? ""));
+      if (!parent || parent.deleted || parent.kind !== "task") break;
+      current = parent;
+    }
+    for (const id of chain) checkedTasks.add(id);
+  }
   for (const e of entities.filter((e) => !e.deleted)) {
     const d = e.data;
+    if (
+      (e.kind === "review" && d.periodStart != null) ||
+      (["record", "review"].includes(e.kind) &&
+        [
+          "periodStart",
+          "periodEnd",
+          "achievements",
+          "blockers",
+          "stopPause",
+          "nextFocus",
+        ].every((k) => typeof d[k] === "string"))
+    ) {
+      if (
+        !date(d.periodStart) ||
+        !date(d.periodEnd) ||
+        String(d.periodStart) > String(d.periodEnd) ||
+        ["achievements", "blockers", "stopPause", "nextFocus"].some(
+          (k) =>
+            typeof d[k] !== "string" ||
+            new TextEncoder().encode(String(d[k])).length > 100000,
+        )
+      )
+        reject("回顾期间或内容无效。");
+    }
     if (
       e.kind === "capture" &&
       (typeof d.rawText !== "string" ||
@@ -230,6 +274,13 @@ function validateGraph(entities: WorkspaceEntity[]) {
         reject("说明内容无效或过长。");
     if (e.kind === "task") {
       if (
+        d.estimatedMinutes != null &&
+        (!Number.isInteger(d.estimatedMinutes) ||
+          Number(d.estimatedMinutes) < 1 ||
+          Number(d.estimatedMinutes) > 1440)
+      )
+        reject("估时必须在 1 至 1440 分钟之间。");
+      if (
         !["todo", "in_progress", "blocked", "completed", "cancelled"].includes(
           String(d.status),
         )
@@ -259,12 +310,11 @@ function validateGraph(entities: WorkspaceEntity[]) {
           reject("关联内容不存在或已在回收站。");
         if (
           key === "parentId" &&
-          (ref.data.parentId ||
-            ref.id === e.id ||
+          (ref.id === e.id ||
             (ref.data.projectId ?? null) !== (d.projectId ?? null) ||
             (ref.data.sectionId ?? null) !== (d.sectionId ?? null))
         )
-          reject("子任务必须与父任务属于同一项目，且只允许一层。");
+          reject("子任务必须与父任务属于同一项目和分区。");
         if (key === "sectionId" && ref.data.projectId !== d.projectId)
           reject("分区不属于该项目。");
       }
@@ -304,6 +354,14 @@ function validateGraph(entities: WorkspaceEntity[]) {
         reject("习惯打卡需要有效习惯和日期。");
     }
     if (e.kind === "habit" || e.kind === "recurrence") {
+      if (
+        e.kind === "habit" &&
+        d.target != null &&
+        (!Number.isInteger(d.target) ||
+          Number(d.target) < 1 ||
+          Number(d.target) > 7)
+      )
+        reject("习惯目标必须在 1 至 7 之间。");
       if (d.ruleHistory != null) {
         if (!Array.isArray(d.ruleHistory) || d.ruleHistory.length > 1000)
           reject("历史规则格式无效。");
@@ -326,7 +384,7 @@ function validateGraph(entities: WorkspaceEntity[]) {
             rule.target != null &&
             (!Number.isInteger(rule.target) ||
               Number(rule.target) < 1 ||
-              Number(rule.target) > 10000)
+              Number(rule.target) > 7)
           )
             reject("习惯目标无效。");
           if (
@@ -741,11 +799,28 @@ export async function changeWorkspace(
       }
       entities.set(e.id, { ...e, data, deleted });
     };
-    // A parent move carries its children atomically; children never own placement.
+    // Placement is inherited from the tree root, independent of insertion order.
+    const placementRoots = new Map<string, WorkspaceEntity>();
     for (const e of [...entities.values()].filter(
       (e) => !e.deleted && e.kind === "task" && e.data.parentId,
     )) {
-      const parent = entities.get(String(e.data.parentId));
+      let parent = entities.get(String(e.data.parentId));
+      const ancestors = new Set([e.id]);
+      while (parent && parent.kind === "task" && !parent.deleted) {
+        if (ancestors.has(parent.id))
+          reject("任务父子关系不能形成循环，必须属于同一项目和分区。");
+        ancestors.add(parent.id);
+        const root = placementRoots.get(parent.id);
+        if (root) {
+          parent = root;
+          break;
+        }
+        const next = entities.get(String(parent.data.parentId ?? ""));
+        if (!next || next.kind !== "task" || next.deleted) break;
+        parent = next;
+      }
+      if (parent && parent.kind === "task" && !parent.deleted)
+        for (const id of ancestors) placementRoots.set(id, parent);
       if (
         parent &&
         parent.kind === "task" &&
@@ -760,9 +835,11 @@ export async function changeWorkspace(
         });
     }
     // Deleting a parent keeps its dependent rows recoverable in the same transaction.
-    for (const e of [...entities.values()].filter(
+    const deletionQueue = [...entities.values()].filter(
       (e) => seen.has(e.id) && e.deleted,
-    )) {
+    );
+    for (let i = 0; i < deletionQueue.length; i++) {
+      const e = deletionQueue[i]!;
       if (e.kind === "project" || e.kind === "task")
         for (const child of entities.values())
           if (
@@ -770,8 +847,10 @@ export async function changeWorkspace(
             (e.kind === "project"
               ? child.data.projectId === e.id
               : child.data.parentId === e.id)
-          )
+          ) {
             modify(child, { ...child.data, deletedWith: e.id }, true);
+            deletionQueue.push(entities.get(child.id)!);
+          }
       if (e.kind === "habit")
         for (const child of entities.values())
           if (
@@ -785,15 +864,22 @@ export async function changeWorkspace(
           if (task.kind === "task" && task.data.sectionId === e.id)
             modify(task, { ...task.data, sectionId: null });
     }
-    for (const e of [...entities.values()].filter(
+    const restorationQueue = [...entities.values()].filter(
       (e) => seen.has(e.id) && !e.deleted,
-    )) {
+    );
+    for (let i = 0; i < restorationQueue.length; i++) {
+      const e = restorationQueue[i]!;
       for (const child of entities.values())
         if (child.deleted && child.data.deletedWith === e.id) {
           const data = { ...child.data };
           delete data.deletedWith;
           modify(child, data, false);
+          restorationQueue.push(entities.get(child.id)!);
         }
+    }
+    for (const e of [...entities.values()].filter(
+      (e) => seen.has(e.id) && !e.deleted,
+    )) {
       if (e.kind === "task") {
         if (
           e.data.status === "completed" &&

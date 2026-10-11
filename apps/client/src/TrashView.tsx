@@ -1,3 +1,4 @@
+import { useLanRefresh } from "./useLanRefresh";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { RetriableCommands } from "../../../packages/application/src/retriable-commands";
@@ -46,6 +47,16 @@ export function TrashView({ onChanged }: { onChanged?: () => void }) {
   const [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
+  useLanRefresh(
+    () => invoke<Snapshot>("trash_snapshot"),
+    (next) => {
+      setData(next);
+      setRecoveryDays(String(next.settings.recoveryDays));
+    },
+    busy ||
+      confirm ||
+      recoveryDays !== String(data?.settings.recoveryDays ?? 30),
+  );
   async function reload() {
     const snapshot = await invoke<Snapshot>("trash_snapshot");
     setData(snapshot);

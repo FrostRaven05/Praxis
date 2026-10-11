@@ -1,3 +1,4 @@
+import { useLanRefresh } from "./useLanRefresh";
 import { useEffect, useState } from "react";
 import { Planning, parseMinutes, type DayLoad } from "@praxis/application";
 import { planningStorage } from "./storage";
@@ -12,6 +13,7 @@ export function PlanningPanel({
   const [load, setLoad] = useState<DayLoad | null>(null);
   const [error, setError] = useState("");
   const [reload, setReload] = useState(0);
+  useLanRefresh(() => planningStorage.dayLoad(date), setLoad, false, date);
   useEffect(() => {
     let active = true;
 

@@ -1,3 +1,12 @@
+import { scheduleId, workspaceSettingsId } from "./sync-identity";
+import { editRecordLinks, firstRecordLink } from "./record-links";
+import { habitCheckCommand } from "./habit-check-command";
+import {
+  structuredReview,
+  reviewBody,
+  blankReview,
+  type StructuredReview,
+} from "@praxis/storage-mobile";
 import { useEffect, useRef, useState } from "react";
 import {
   WorkspaceRejectedError,
@@ -72,7 +81,18 @@ const fresh = (
   kind: WorkspaceKind,
   data: Record<string, unknown>,
 ): WorkspaceChange => ({
-  id: crypto.randomUUID(),
+  id:
+    kind === "habit_check"
+      ? scheduleId("habit_check", String(data.habitId), String(data.date))
+      : kind === "task" && data.recurrenceId
+        ? scheduleId(
+            "task",
+            String(data.recurrenceId),
+            String(data.originalDate),
+          )
+        : kind === "settings"
+          ? workspaceSettingsId()
+          : crypto.randomUUID(),
   kind,
   expectedVersion: null,
   data,
@@ -123,6 +143,7 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
     [body, setBody] = useState(""),
     [selected, setSelected] = useState<WorkspaceEntity | null>(null),
     [recordKind, setRecordKind] = useState<WorkspaceKind>("record");
+  const [reviewDraft, setReviewDraft] = useState<StructuredReview | null>(null);
   const [date, setDate] = useState(day()),
     [frequency, setFrequency] = useState("daily"),
     [target, setTarget] = useState(3),
@@ -144,6 +165,7 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
   }, [section, snapshot]);
   useEffect(() => {
     setSelected(null);
+    setReviewDraft(null);
     setName("");
     setBody("");
     setRecordKind(
@@ -161,8 +183,11 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
     setConfirmImport(false);
   }, [section]);
   const dirty =
-    ["records", "templates", "review", "habits", "repeat"].includes(section) &&
-    !!(name || body);
+    (["records", "templates", "review", "habits", "repeat", "focus"].includes(
+      section,
+    ) &&
+      !!(name || body || selected)) ||
+    (section === "settings" && (zone !== timeZone || !!json || !!preview));
   useEffect(() => {
     onBusyChange?.(busy || !!pending || dirty);
   }, [busy, pending, dirty, onBusyChange]);
@@ -214,6 +239,7 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
   }
   function reset() {
     setSelected(null);
+    setReviewDraft(null);
     setName("");
     setBody("");
     setProjectId("");
@@ -221,11 +247,12 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
   }
   function edit(e: WorkspaceEntity) {
     setSelected(e);
+    setReviewDraft(structuredReview(e.data));
     setName(title(e));
     setBody(str(e.data.body));
     setRecordKind(e.kind);
-    setProjectId(str(e.data.projectId));
-    setTaskId(str(e.data.taskId));
+    setProjectId(firstRecordLink(e.data, "project"));
+    setTaskId(firstRecordLink(e.data, "task"));
   }
   const button = (label: string, fn: () => void, cls = "") => (
     <button type="button" className={cls} disabled={busy} onClick={fn}>
@@ -240,9 +267,11 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
         const data = {
           ...selected?.data,
           title: name.trim(),
-          body,
+          body: reviewDraft ? reviewBody(reviewDraft) : body,
+          ...reviewDraft,
           projectId: projectId || null,
           taskId: taskId || null,
+          links: editRecordLinks(selected?.data ?? {}, projectId, taskId),
         };
         void run(
           [selected ? change(selected, data) : fresh(recordKind, data)],
@@ -259,14 +288,54 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
           maxLength={10000}
         />
       </label>
-      <label>
-        正文
-        <textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          rows={8}
-        />
-      </label>
+      {reviewDraft ? (
+        <div>
+          {(
+            [
+              ["periodStart", "回顾开始日期"],
+              ["periodEnd", "回顾结束日期"],
+              ["achievements", "推进成果"],
+              ["blockers", "阻塞"],
+              ["stopPause", "停止 / 暂停"],
+              ["nextFocus", "下周重点"],
+            ] as const
+          ).map(([key, label]) => (
+            <label key={key}>
+              {label}
+              {key === "periodStart" || key === "periodEnd" ? (
+                <input
+                  type="date"
+                  required
+                  value={reviewDraft[key]}
+                  onChange={(e) =>
+                    setReviewDraft({ ...reviewDraft, [key]: e.target.value })
+                  }
+                />
+              ) : (
+                <textarea
+                  value={reviewDraft[key]}
+                  onChange={(e) =>
+                    setReviewDraft({ ...reviewDraft, [key]: e.target.value })
+                  }
+                />
+              )}
+            </label>
+          ))}
+          <details>
+            <summary>生成的回顾正文</summary>
+            <pre>{reviewBody(reviewDraft)}</pre>
+          </details>
+        </div>
+      ) : (
+        <label>
+          正文
+          <textarea
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            rows={8}
+          />
+        </label>
+      )}
       <label>
         关联项目
         <select
@@ -460,6 +529,7 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
               reset();
               setRecordKind(k);
               setBody(templates[k] || "");
+              if (k === "review") setReviewDraft(blankReview(day()));
             }),
           )}
         </div>
@@ -508,6 +578,7 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
               setProjectId(p.id);
               setName(`${title(p)} · ${day()} 回顾`);
               setBody(templates.review || "");
+              setReviewDraft(blankReview(day()));
             }}
           />
         )}
@@ -835,25 +906,22 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
                         <small>（新建、规则变更或暂停造成的不完整周）</small>
                       )}
                     </p>
+                    {check?.data.note && <p>{String(check.data.note)}</p>}
                     <div className="mx-actions">
                       {applicable &&
                         button(
                           check?.data.status === "done" ? "已完成" : "完成",
                           () =>
                             void run([
-                              check
-                                ? change(check, {
-                                    ...check.data,
-                                    status: "done",
-                                  })
-                                : fresh("habit_check", {
-                                    habitId: e.id,
-                                    date,
-                                    status: "done",
-                                    timeZone,
-                                    recordedAt: iso(),
-                                    ruleEffectiveDate: rule.effectiveDate,
-                                  }),
+                              habitCheckCommand(
+                                snapshot.entities,
+                                e.id,
+                                date,
+                                "done",
+                                timeZone,
+                                iso(),
+                                rule.effectiveDate,
+                              ),
                             ]),
                         )}
                       {applicable &&
@@ -861,19 +929,15 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
                           "跳过",
                           () =>
                             void run([
-                              check
-                                ? change(check, {
-                                    ...check.data,
-                                    status: "skipped",
-                                  })
-                                : fresh("habit_check", {
-                                    habitId: e.id,
-                                    date,
-                                    status: "skipped",
-                                    timeZone,
-                                    recordedAt: iso(),
-                                    ruleEffectiveDate: rule.effectiveDate,
-                                  }),
+                              habitCheckCommand(
+                                snapshot.entities,
+                                e.id,
+                                date,
+                                "skipped",
+                                timeZone,
+                                iso(),
+                                rule.effectiveDate,
+                              ),
                             ]),
                         )}
                       {!applicable && <small>当前日期不适用或习惯已暂停</small>}
@@ -1005,7 +1069,7 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
             ))}
           </select>
         </label>
-        <p>本机离线保存 · 云同步尚未连接</p>
+        <p>本机离线保存 · 配对后自动同步工作空间</p>
         <form
           className="mx-form"
           onSubmit={(e) => {
@@ -1175,6 +1239,7 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
             setRecordKind("review");
             setProjectId(p.id);
             setName(`${title(p)} · ${day()} 回顾`);
+            setReviewDraft(blankReview(day()));
             setBody(
               "回顾期间：\n\n成果：\n\n阻塞：\n\n停止或暂停事项：\n\n下周重点：",
             );

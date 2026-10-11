@@ -1,0 +1,18 @@
+{
+  "testedAt": "2026-10-11T06:57:54.113Z",
+  "desktop": {
+    "conflicts": 0,
+    "entityConflicts": 0,
+    "entityCursor": 162,
+    "entityPending": 0,
+    "lastSuccess": "2026-10-11T06:57:49.971037600+00:00",
+    "pending": 0,
+    "state": "online"
+  },
+  "android": {
+    "status": "工作空间自动同步已运行",
+    "visibleConflicts": 0,
+    "rejectedBatches": 0
+  },
+  "errors": []
+}

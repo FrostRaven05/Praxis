@@ -1,0 +1,10 @@
+{
+  "testedAt": "2026-10-11T05:58:02.915Z",
+  "stamp": "全域验收 1791698242654",
+  "checks": [
+    "Android UI project, task, relationship and recovery card automatically arrive in native desktop storage",
+    "Desktop assigns next action and edits recovery card; Android receives, completes task, and both clients clear next-action reference atomically",
+    "Android daily result and closing note automatically arrive on desktop"
+  ],
+  "errors": []
+}

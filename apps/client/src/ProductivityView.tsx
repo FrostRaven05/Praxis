@@ -1,10 +1,12 @@
+import { useLanRefresh } from "./useLanRefresh";
+import { SyncedNotes } from "./SyncedNotes";
 import { SubtaskComposer } from "./SubtaskComposer";
 import { TrashView } from "./TrashView";
 import { SearchViews } from "./SearchViews";
 import { ReviewView } from "./ReviewView";
 import { RepeatView } from "./RepeatView";
 import { HabitsView } from "./HabitsView";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import {
   calendarDate,
@@ -57,6 +59,41 @@ const projectStatuses: Record<string, string> = {
   draft: "草稿",
 };
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
+type EditorGuard = (scope: string, dirty: boolean) => void;
+// A draft keeps the version that supplied its fields. Clean forms follow refreshed data.
+function useGuardedDraft<T>(
+  value: T,
+  scope: string,
+  onDirtyChange: EditorGuard,
+) {
+  const [base, setBase] = useState(value);
+  const [draft, setDraft] = useState(value);
+  const dirty = JSON.stringify(base) !== JSON.stringify(draft);
+  const valueKey = JSON.stringify(value);
+  const latest = useRef(value);
+  latest.current = value;
+  useEffect(() => {
+    if (!dirty) {
+      setBase(latest.current);
+      setDraft(latest.current);
+    }
+  }, [valueKey, dirty]);
+  useEffect(() => {
+    onDirtyChange(scope, dirty);
+    return () => onDirtyChange(scope, false);
+  }, [scope, dirty, onDirtyChange]);
+  return {
+    draft,
+    setDraft,
+    base,
+    dirty,
+    accept: () => setBase(draft),
+    discard: () => {
+      setBase(latest.current);
+      setDraft(latest.current);
+    },
+  };
+}
 export function openWorkTask(id: string) {
   window.dispatchEvent(new CustomEvent("praxis-work-task", { detail: id }));
 }
@@ -92,6 +129,31 @@ export function ProductivityView({
     } | null>(null),
     [clock, setClock] = useState(() => new Date());
   const savingRef = useRef(false);
+  const [confirmedAction, setConfirmedAction] = useState<Action | null>(null);
+  const [dirtyEditors, setDirtyEditors] = useState<Set<string>>(
+    () => new Set(),
+  );
+  const setEditorDirty = useCallback<EditorGuard>((scope, dirty) => {
+    setDirtyEditors((old) => {
+      if (old.has(scope) === dirty) return old;
+      const next = new Set(old);
+      if (dirty) next.add(scope);
+      else next.delete(scope);
+      return next;
+    });
+    if (dirty && scope.startsWith("day:"))
+      setDate((old) => old || scope.slice(4));
+  }, []);
+  const hasDraft = dirtyEditors.size > 0;
+  const automaticBlocked = useRef(false);
+  automaticBlocked.current =
+    busy || childBusy || edit !== null || confirm !== null || hasDraft;
+  const readGeneration = useRef(0);
+  useLanRefresh(
+    readWork,
+    setData,
+    busy || childBusy || edit !== null || confirm !== null || hasDraft,
+  );
   const openedId = useRef<string | null>(null);
   useEffect(() => {
     if (initialReviewId) setTab("review");
@@ -105,23 +167,30 @@ export function ProductivityView({
       setTab("projects");
     }
   }, [initialProjectId]);
-  const refresh = async () => {
+  const refresh = async (automatic = false) => {
+    const generation = ++readGeneration.current;
     const s = await readWork();
-    setData(s);
+    if (
+      generation === readGeneration.current &&
+      (!automatic || !automaticBlocked.current)
+    )
+      setData(s);
     return s;
   };
   useEffect(() => {
-    void refresh().catch((e) => setError(errorText(e)));
+    void refresh(true).catch((e) => setError(errorText(e)));
   }, [tab]);
   useEffect(() => {
-    void refresh().catch((e) => setError(errorText(e)));
+    void refresh(true).catch((e) => setError(errorText(e)));
     const timer = setInterval(() => setClock(new Date()), 15000);
     return () => clearInterval(timer);
   }, []);
   useEffect(() => {
-    onBusyChange(busy || childBusy || edit !== null || confirm !== null);
+    onBusyChange(
+      busy || childBusy || edit !== null || confirm !== null || hasDraft,
+    );
     return () => onBusyChange(false);
-  }, [busy, childBusy, edit, confirm, onBusyChange]);
+  }, [busy, childBusy, edit, confirm, hasDraft, onBusyChange]);
   useEffect(() => {
     if (initialTaskId && data && openedId.current !== initialTaskId) {
       openedId.current = initialTaskId;
@@ -150,7 +219,7 @@ export function ProductivityView({
     today = calendarDate(clock, zone),
     date = selectedDate || today;
   function changeStatus(t: WorkTask, status: string) {
-    if (!data || busy || confirm || edit || childBusy) return;
+    if (!data || busy || confirm || edit || childBusy || hasDraft) return;
     const related = subtree(data.tasks, t.id).filter((t) => !terminal(t));
     const parents: WorkTask[] = [];
     let p = data.tasks.find((x) => x.id === t.parentId);
@@ -192,7 +261,7 @@ export function ProductivityView({
         <div>
           <button
             className="work-title"
-            disabled={busy || !!confirm || !!edit || childBusy}
+            disabled={busy || !!confirm || !!edit || childBusy || hasDraft}
             onClick={() => setEdit(t)}
           >
             {t.title}
@@ -227,7 +296,7 @@ export function ProductivityView({
           )}
         </div>
         <select
-          disabled={busy || !!confirm || !!edit || childBusy}
+          disabled={busy || !!confirm || !!edit || childBusy || hasDraft}
           aria-label={`${t.title} 状态`}
           value={t.status}
           onChange={(e) => changeStatus(t, e.target.value)}
@@ -260,7 +329,7 @@ export function ProductivityView({
         <p>本地保存 · 工作空间时区 {data.settings[0]?.timeZone ?? "待确认"}</p>
       </header>
       {error && <p role="alert">{error}</p>}
-      <fieldset disabled={busy || childBusy || !!edit || !!confirm}>
+      <fieldset disabled={busy || childBusy || !!edit || !!confirm || hasDraft}>
         <nav className="work-tabs">
           {[
             ["today", "今日"],
@@ -273,6 +342,7 @@ export function ProductivityView({
             ["trash", "回收站"],
             ["search", "搜索与视图"],
             ["review", "项目检查与周回顾"],
+            ["notes", "策略决策与专注"],
           ].map(([k, v]) => (
             <button key={k} aria-pressed={tab === k} onClick={() => setTab(k!)}>
               {v}
@@ -282,7 +352,7 @@ export function ProductivityView({
         </nav>
       </fieldset>
       {!data.settings.length ? (
-        <ZoneEditor data={data} save={save} />
+        <ZoneEditor data={data} save={save} onDirtyChange={setEditorDirty} />
       ) : (
         <>
           {(tab === "today" || tab === "upcoming") && (
@@ -291,25 +361,29 @@ export function ProductivityView({
               <input
                 aria-label="所选日期"
                 type="date"
+                disabled={hasDraft}
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
               />
               {date !== today && (
                 <strong> 浏览 {date}（当前属性，不还原历史快照）</strong>
               )}
-              <button onClick={() => setDate("")}>回到今日</button>
+              <button disabled={hasDraft} onClick={() => setDate("")}>
+                回到今日
+              </button>
             </label>
           )}
           {tab === "today" && (
             <>
               <HabitsView date={date} compact />
               <DailyEditor
-                key={date + ":" + (dayNote?.version ?? -1)}
+                key={date}
                 date={date}
                 data={data}
                 note={dayNote}
                 save={save}
                 zone={zone}
+                onDirtyChange={setEditorDirty}
               />
               {[0, 1, 2, 3].map((g) => (
                 <section key={g}>
@@ -344,6 +418,7 @@ export function ProductivityView({
             </>
           )}
           {tab === "repeat" && <RepeatView />}
+          {tab === "notes" && <SyncedNotes onBusyChange={setChildBusy} />}
           {tab === "review" && (
             <ReviewView
               initialReviewId={initialReviewId ?? null}
@@ -418,6 +493,7 @@ export function ProductivityView({
                 选择项目{" "}
                 <select
                   value={project ?? ""}
+                  disabled={hasDraft}
                   onChange={(e) => setProject(e.target.value || null)}
                 >
                   <option value="">请选择</option>
@@ -433,20 +509,30 @@ export function ProductivityView({
                 .filter((p) => p.id === project)
                 .map((p) => (
                   <ProjectEditor
-                    key={p.id + ":" + p.version + ":" + p.planVersion}
+                    key={p.id}
                     project={p}
                     data={data}
                     save={save}
                     confirm={setConfirm}
                     row={row}
+                    onDirtyChange={setEditorDirty}
+                    confirmedAction={confirmedAction}
                   />
                 ))}
             </>
           )}
           {tab === "settings" && (
             <>
-              <ZoneEditor data={data} save={save} />
-              <LabelEditor data={data} save={save} />
+              <ZoneEditor
+                data={data}
+                save={save}
+                onDirtyChange={setEditorDirty}
+              />
+              <LabelEditor
+                data={data}
+                save={save}
+                onDirtyChange={setEditorDirty}
+              />
               <details>
                 <summary>升级映射报告</summary>
                 <p>{data.migrationReport}</p>
@@ -507,6 +593,7 @@ export function ProductivityView({
               disabled={busy}
               onClick={async () => {
                 if (await save(confirm.action)) {
+                  setConfirmedAction(confirm.action);
                   setConfirm(null);
                   setEdit(null);
                 }
@@ -952,23 +1039,41 @@ function DailyEditor({
   note,
   save,
   zone,
+  onDirtyChange,
 }: {
   date: string;
   data: WorkSnapshot;
   note: DayNote | undefined;
   save: (a: Action) => Promise<boolean>;
   zone: string;
+  onDirtyChange: EditorGuard;
 }) {
-  const [outcome, setOutcome] = useState(note?.outcome ?? ""),
-    [closing, setClosing] = useState(note?.closing ?? ""),
-    [focus, setFocus] = useState(
-      note?.focusIds ??
+  const form = useGuardedDraft(
+    {
+      outcome: note?.outcome ?? "",
+      closing: note?.closing ?? "",
+      focus:
+        note?.focusIds ??
         data.legacyPlans
           .filter((p) => p.date === date && p.focus)
           .sort((a, b) => a.rank - b.rank)
           .map((p) => p.taskId),
-    ),
-    [notice, setNotice] = useState("");
+      version: note?.version ?? null,
+    },
+    "day:" + date,
+    onDirtyChange,
+  );
+  const { outcome, closing, focus } = form.draft;
+  const setOutcome = (outcome: string) =>
+    form.setDraft((d) => ({ ...d, outcome }));
+  const setClosing = (closing: string) =>
+    form.setDraft((d) => ({ ...d, closing }));
+  const setFocus = (focus: string[] | ((f: string[]) => string[])) =>
+    form.setDraft((d) => ({
+      ...d,
+      focus: typeof focus === "function" ? focus(d.focus) : focus,
+    }));
+  const [notice, setNotice] = useState("");
   return (
     <details className="work-daily" open>
       <summary>{date} 的结果与重点</summary>
@@ -1039,14 +1144,26 @@ function DailyEditor({
               outcome,
               closing,
               focusIds: focus,
-              expectedVersion: note?.version ?? null,
+              expectedVersion: form.base.version,
             })
-          )
+          ) {
+            form.accept();
             setNotice("已保存");
+          }
         }}
       >
         保存每日结果
       </button>
+      {form.dirty && (
+        <button
+          onClick={() => {
+            form.discard();
+            setNotice("");
+          }}
+        >
+          放弃每日修改
+        </button>
+      )}
       <span role="status">{notice}</span>
     </details>
   );
@@ -1054,15 +1171,25 @@ function DailyEditor({
 function ZoneEditor({
   data,
   save,
+  onDirtyChange,
 }: {
   data: WorkSnapshot;
   save: (a: Action) => Promise<boolean>;
+  onDirtyChange: EditorGuard;
 }) {
-  const [zone, setZone] = useState(
-      data.settings[0]?.timeZone ??
+  const form = useGuardedDraft(
+    {
+      zone:
+        data.settings[0]?.timeZone ??
         Intl.DateTimeFormat().resolvedOptions().timeZone,
-    ),
-    [preview, setPreview] = useState(false),
+      version: data.settings[0]?.version ?? null,
+    },
+    "zone",
+    onDirtyChange,
+  );
+  const zone = form.draft.zone;
+  const setZone = (zone: string) => form.setDraft((d) => ({ ...d, zone }));
+  const [preview, setPreview] = useState(false),
     [invalid, setInvalid] = useState("");
   const [templates, setTemplates] = useState<
     Array<{
@@ -1077,7 +1204,11 @@ function ZoneEditor({
     }>
   >([]);
   const [reading, setReading] = useState(false);
-  const old = data.settings[0]?.timeZone ?? "UTC";
+  const old = form.base.zone;
+  useEffect(() => {
+    onDirtyChange("zone-preview", preview || reading);
+    return () => onDirtyChange("zone-preview", false);
+  }, [preview, reading, onDirtyChange]);
   return (
     <section>
       <h2>工作空间时区</h2>
@@ -1088,6 +1219,7 @@ function ZoneEditor({
         IANA 时区{" "}
         <input
           aria-label="工作空间时区"
+          disabled={reading}
           value={zone}
           onChange={(e) => {
             setZone(e.target.value);
@@ -1157,19 +1289,33 @@ function ZoneEditor({
                 await save({
                   type: "zone",
                   timeZone: zone,
-                  expectedVersion: data.settings[0]?.version ?? null,
+                  expectedVersion: form.base.version,
                   expectedTemplates: templates.map(({ template }) => [
                     template.id,
                     template.version,
                   ]),
                 })
-              )
+              ) {
+                form.accept();
                 setPreview(false);
+              }
             }}
           >
             确认工作空间时区
           </button>
         </>
+      )}
+      {(form.dirty || preview) && (
+        <button
+          disabled={reading}
+          onClick={() => {
+            form.discard();
+            setPreview(false);
+            setInvalid("");
+          }}
+        >
+          放弃时区修改
+        </button>
       )}
     </section>
   );
@@ -1177,22 +1323,34 @@ function ZoneEditor({
 function LabelEditor({
   data,
   save,
+  onDirtyChange,
 }: {
   data: WorkSnapshot;
   save: (a: Action) => Promise<boolean>;
+  onDirtyChange: EditorGuard;
 }) {
   const [id, setId] = useState(""),
-    [name, setName] = useState(""),
     [newId, setNewId] = useState(() => crypto.randomUUID());
+  const selected = data.labels.find((l) => l.id === id);
+  const form = useGuardedDraft(
+    { name: selected?.name ?? "", version: selected?.version ?? null },
+    "label",
+    onDirtyChange,
+  );
+  const name = form.draft.name;
+  const setName = (name: string) => form.setDraft((d) => ({ ...d, name }));
+  useEffect(() => {
+    if (id && !selected && !form.dirty) setId("");
+  }, [id, selected, form.dirty]);
   return (
     <section>
       <h2>标签</h2>
       <select
         aria-label="编辑标签"
         value={id}
+        disabled={form.dirty}
         onChange={(e) => {
           setId(e.target.value);
-          setName(data.labels.find((l) => l.id === e.target.value)?.name ?? "");
         }}
       >
         <option value="">新建标签</option>
@@ -1214,11 +1372,10 @@ function LabelEditor({
               type: "label",
               id: id || newId,
               name,
-              expectedVersion:
-                data.labels.find((l) => l.id === id)?.version ?? null,
+              expectedVersion: form.base.version,
             })
           ) {
-            setName("");
+            form.accept();
             setId("");
             setNewId(crypto.randomUUID());
           }
@@ -1226,6 +1383,7 @@ function LabelEditor({
       >
         保存标签
       </button>
+      {form.dirty && <button onClick={form.discard}>放弃标签修改</button>}
       <p>重命名保留标签身份和所有任务引用。</p>
     </section>
   );
@@ -1236,28 +1394,73 @@ function ProjectEditor({
   save,
   confirm,
   row,
+  onDirtyChange,
+  confirmedAction,
 }: {
   project: WorkProject;
   data: WorkSnapshot;
   save: (a: Action) => Promise<boolean>;
   confirm: (v: { action: Action; description: string }) => void;
   row: (t: WorkTask, r?: string[]) => React.ReactNode;
+  onDirtyChange: EditorGuard;
+  confirmedAction: Action | null;
 }) {
-  const [status, setStatus] = useState(
-      p.status === "draft" ? "active" : p.status,
-    ),
-    [archive, setArchive] = useState(!!p.archivedAt),
-    [focused, setFocused] = useState(!!p.focused),
-    [cancel, setCancel] = useState(false),
-    [section, setSection] = useState(""),
-    [name, setName] = useState(""),
-    [rank, setRank] = useState(0),
+  const form = useGuardedDraft(
+    {
+      status: p.status === "draft" ? "active" : p.status,
+      archive: !!p.archivedAt,
+      focused: !!p.focused,
+      cancel: false,
+      version: p.version,
+      planVersion: p.planVersion,
+    },
+    "project:" + p.id,
+    onDirtyChange,
+  );
+  const { status, archive, focused, cancel } = form.draft;
+  const setStatus = (status: string) =>
+    form.setDraft((d) => ({ ...d, status }));
+  const setArchive = (archive: boolean) =>
+    form.setDraft((d) => ({ ...d, archive }));
+  const setFocused = (focused: boolean) =>
+    form.setDraft((d) => ({ ...d, focused }));
+  const setCancel = (cancel: boolean) =>
+    form.setDraft((d) => ({ ...d, cancel }));
+  const [section, setSection] = useState(""),
     [sectionId, setSectionId] = useState(() => crypto.randomUUID());
   const tasks = data.tasks.filter((t) => t.projectId === p.id),
     top = tasks.filter((t) => !t.parentId),
     leaves = tasks.filter((t) => !tasks.some((c) => c.parentId === t.id)),
     remaining = tasks.filter((t) => !terminal(t)),
     selected = data.sections.find((s) => s.id === section);
+  const sectionForm = useGuardedDraft(
+    {
+      name: selected?.name ?? "",
+      rank: selected?.rank ?? 0,
+      version: selected?.version ?? null,
+    },
+    "section:" + p.id,
+    onDirtyChange,
+  );
+  const { name, rank } = sectionForm.draft;
+  const setName = (name: string) =>
+    sectionForm.setDraft((d) => ({ ...d, name }));
+  const setRank = (rank: number) =>
+    sectionForm.setDraft((d) => ({ ...d, rank }));
+  useEffect(() => {
+    if (section && !selected && !sectionForm.dirty) setSection("");
+  }, [section, selected, sectionForm.dirty]);
+  useEffect(() => {
+    if (confirmedAction?.type === "project" && confirmedAction.id === p.id)
+      form.discard();
+    if (
+      confirmedAction?.type === "section" &&
+      confirmedAction.projectId === p.id
+    ) {
+      sectionForm.discard();
+      setSection("");
+    }
+  }, [confirmedAction]);
   return (
     <section>
       <h2>{p.name}</h2>
@@ -1317,8 +1520,8 @@ function ProjectEditor({
               action: {
                 type: "project",
                 id: p.id,
-                expectedVersion: p.version,
-                expectedPlanVersion: p.planVersion,
+                expectedVersion: form.base.version,
+                expectedPlanVersion: form.base.planVersion,
                 status,
                 archive,
                 focused,
@@ -1330,17 +1533,16 @@ function ProjectEditor({
         >
           预览项目变更
         </button>
+        {form.dirty && <button onClick={form.discard}>放弃项目修改</button>}
       </details>
       <details>
         <summary>管理分区</summary>
         <select
           aria-label="编辑分区"
           value={section}
+          disabled={sectionForm.dirty}
           onChange={(e) => {
             setSection(e.target.value);
-            const s = data.sections.find((s) => s.id === e.target.value);
-            setName(s?.name ?? "");
-            setRank(s?.rank ?? 0);
           }}
         >
           <option value="">新建分区</option>
@@ -1374,10 +1576,10 @@ function ProjectEditor({
                 name,
                 rank,
                 delete: false,
-                expectedVersion: selected?.version ?? null,
+                expectedVersion: sectionForm.base.version,
               })
             ) {
-              setName("");
+              sectionForm.accept();
               setSection("");
               setSectionId(crypto.randomUUID());
             }
@@ -1385,8 +1587,12 @@ function ProjectEditor({
         >
           保存分区
         </button>
+        {sectionForm.dirty && (
+          <button onClick={sectionForm.discard}>放弃分区修改</button>
+        )}
         {selected && (
           <button
+            disabled={sectionForm.dirty}
             onClick={() =>
               confirm({
                 action: {

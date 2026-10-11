@@ -6,6 +6,7 @@ import {
   captureStatements,
   workspaceStatements,
   lanStatements,
+  entitySyncStatements,
 } from "./migration";
 const sqlite = new SQLiteConnection(CapacitorSQLite);
 let opening: ReturnType<typeof open> | undefined;
@@ -21,10 +22,11 @@ async function open() {
     { toVersion: 2, statements: captureStatements },
     { toVersion: 3, statements: workspaceStatements },
     { toVersion: 4, statements: lanStatements },
+    { toVersion: 5, statements: entitySyncStatements },
   ]);
   const db = (await sqlite.isConnection("praxis", false)).result
     ? await sqlite.retrieveConnection("praxis", false)
-    : await sqlite.createConnection("praxis", false, "no-encryption", 4, false);
+    : await sqlite.createConnection("praxis", false, "no-encryption", 5, false);
   try {
     if (!(await db.isDBOpen()).result) await db.open();
     await db.execute("PRAGMA foreign_keys=ON;", false);

@@ -1,6 +1,15 @@
 mod lan_sync;
 pub mod store;
 #[tauri::command]
+async fn lan_entity_snapshot(database: State<'_, LocalDatabase>) -> Result<Vec<store::entities::Entity>, String> { database.get(None).await?.entities_snapshot().await }
+#[tauri::command]
+async fn lan_entity_conflicts(database: State<'_, LocalDatabase>) -> Result<serde_json::Value, String> { database.get(None).await?.entities_conflicts().await }
+#[tauri::command]
+async fn lan_entity_resolve(operation_id:String,resolution_id:String,decision:String,token:String,merged:Option<Vec<store::entities::Entity>>,database: State<'_, LocalDatabase>) -> Result<(), String> { database.get(None).await?.entities_resolve(&operation_id,&resolution_id,&decision,&token,merged).await }
+#[tauri::command]
+async fn lan_entity_edit(operation_id:String,entity:store::entities::Entity,expected:Option<store::entities::Entity>,database: State<'_, LocalDatabase>) -> Result<(), String> { database.get(None).await?.entities_edit(&operation_id,entity,expected).await }
+
+#[tauri::command]
 async fn lan_sync_conflicts(
     database: State<'_, LocalDatabase>,
 ) -> Result<serde_json::Value, String> {
@@ -754,6 +763,10 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            lan_entity_snapshot,
+            lan_entity_conflicts,
+            lan_entity_resolve,
+            lan_entity_edit,
             lan_sync_status,
             lan_sync_conflicts,
             lan_sync_resolve,

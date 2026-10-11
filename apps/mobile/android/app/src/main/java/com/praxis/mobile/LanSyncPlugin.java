@@ -88,7 +88,7 @@ import javax.net.ssl.*;
         JSONObject c=config();
         if(c==null)throw new Exception("Unpaired");
         String method=call.getString("method"),path=call.getString("path");
-        if(!(("POST".equals(method)&&"/v1/captures/commands".equals(path))||("GET".equals(method)&&path!=null&&path.matches("/v1/captures/changes\\?after=[0-9]+&limit=25"))))throw new Exception("Forbidden endpoint");
+        if(path==null||!(("POST".equals(method)&&(path.matches("/v1/entities/commands\\?generation=[0-9a-fA-F-]{36}")||"/v1/captures/commands".equals(path)))||("GET".equals(method)&&(path.matches("/v1/(captures|entities)/changes\\?after=[0-9]+&limit=25")||path.matches("/v1/entities/snapshot\\?limit=100(&at=[0-9]+&afterId=[0-9a-fA-F-]{36}&generation=[0-9a-fA-F-]{36})?")))))throw new Exception("Forbidden endpoint");
         KeyStore trust=KeyStore.getInstance(KeyStore.getDefaultType());
         trust.load(null);
         trust.setCertificateEntry("lan",CertificateFactory.getInstance("X.509").generateCertificate(new ByteArrayInputStream(c.getString("caPem").getBytes(StandardCharsets.UTF_8))));
@@ -109,7 +109,7 @@ import javax.net.ssl.*;
           JSONObject body=new JSONObject(call.getObject("body").toString());
           if(!c.getString("deviceId").equals(body.getString("deviceId")))throw new Exception("Device mismatch");
           byte[] payload=body.toString().getBytes(StandardCharsets.UTF_8);
-          if(payload.length>1048576)throw new Exception("Body too large");
+          if(payload.length>8388608)throw new Exception("Body too large");
           try(OutputStream out=connection.getOutputStream()){
             out.write(payload);
           }

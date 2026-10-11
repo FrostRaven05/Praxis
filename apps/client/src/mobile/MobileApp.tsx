@@ -68,11 +68,24 @@ export function MobileApp() {
       Intl.DateTimeFormat().resolvedOptions().timeZone,
   );
   const today = calendarDate(new Date(), timeZone);
-  async function refresh() {
+  const draftActive = useRef(false);
+  draftActive.current = !!(
+    editing ||
+    childBusy ||
+    organizing ||
+    saving.current ||
+    pending.current
+  );
+  async function refresh(background = false) {
+    if (background && draftActive.current) return;
     const sequence = ++refreshSequence.current;
     try {
       const next = await mobileStorage.workspaceSnapshot();
-      if (sequence !== refreshSequence.current) return;
+      if (
+        sequence !== refreshSequence.current ||
+        (background && draftActive.current)
+      )
+        return;
       const zone = String(
         next.entities.find((e) => e.kind === "settings" && !e.deleted)?.data
           .timeZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
@@ -476,7 +489,7 @@ export function MobileApp() {
   }
   return (
     <div className="pm-app">
-      <LanSyncPanel refresh={refresh} />
+      <LanSyncPanel refresh={() => refresh(true)} />
       <header className="pm-header">
         <div className="pm-top">
           <button

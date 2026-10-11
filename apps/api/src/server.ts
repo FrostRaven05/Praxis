@@ -1,5 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
+import { EntityStore, entityKinds, type EntityCommand } from "./entities.js";
 import { CaptureStore, StoreError, type CaptureCommand } from "./store.js";
 
 export interface DeviceCredential {
@@ -59,15 +60,19 @@ export function createServer(options: ServerOptions): FastifyInstance {
   }
   const app = Fastify({
     logger: false,
-    bodyLimit: 1024 * 1024,
+    bodyLimit: 8 * 1024 * 1024,
     requestTimeout: 15000,
     ajv: { customOptions: { coerceTypes: false, removeAdditional: false } },
     ...(options.https ? { https: options.https } : {}),
   }) as unknown as FastifyInstance;
   const store = new CaptureStore(options.databasePath);
+  const entities = new EntityStore(options.databasePath);
   const identities = new WeakMap<FastifyRequest, DeviceCredential>();
   const windows = new Map<string, { start: number; count: number }>();
-  app.addHook("onClose", async () => store.close());
+  app.addHook("onClose", async () => {
+    entities.close();
+    store.close();
+  });
   app.addHook("onRequest", async (request, reply) => {
     if (!request.url.split("?")[0]?.startsWith("/v1/")) return;
     const header = request.headers.authorization;
@@ -98,7 +103,13 @@ export function createServer(options: ServerOptions): FastifyInstance {
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof StoreError)
       return reply
-        .code(error.code === "INVALID_CURSOR" ? 400 : 409)
+        .code(
+          error.code === "INVALID_CURSOR"
+            ? 400
+            : error.code === "BODY_TOO_LARGE"
+              ? 413
+              : 409,
+        )
         .send({ error: error.code });
     const statusCode =
       error instanceof Error && "statusCode" in error
@@ -113,12 +124,13 @@ export function createServer(options: ServerOptions): FastifyInstance {
   app.get("/", async (_request, reply) =>
     reply
       .type("text/plain; charset=utf-8")
-      .send("Praxis 局域网后端服务运行中。当前提供收件箱同步接口。"),
+      .send("Praxis 局域网后端服务运行中。提供收件箱及全域实体同步接口。"),
   );
   app.get("/health", async () => ({
     status: "ok",
     service: "praxis-lan",
-    protocolVersion: 1,
+    protocolVersion: 2,
+    generation: entities.generation,
   }));
   app.post<{ Body: CaptureCommand }>(
     "/v1/captures/commands",
@@ -132,7 +144,9 @@ export function createServer(options: ServerOptions): FastifyInstance {
         [...request.body.rawText].length > 100000
       )
         return reply.code(400).send({ error: "INVALID_REQUEST" });
-      return store.command(identity.ownerId, request.body);
+      // Seeding has already finished. Reject all legacy writers immediately to
+      // close the window before an owner's first full-sync command.
+      return reply.code(409).send({ error: "PROTOCOL_UPGRADED" });
     },
   );
   app.get<{ Querystring: { after?: string; limit?: string } }>(
@@ -159,6 +173,133 @@ export function createServer(options: ServerOptions): FastifyInstance {
       )
         return reply.code(400).send({ error: "INVALID_CURSOR" });
       return store.changes(identities.get(request)!.ownerId, after, limit);
+    },
+  );
+  const entityChangeSchema = {
+    type: "object",
+    additionalProperties: false,
+    required: ["id", "kind", "expectedVersion", "data", "deleted", "createdAt"],
+    properties: {
+      id: { type: "string", pattern: uuid },
+      kind: { type: "string", enum: entityKinds },
+      expectedVersion: commandSchema.properties.expectedVersion,
+      data: { type: "object" },
+      baseData: { type: "object" },
+      deleted: { type: "boolean" },
+      createdAt: { type: "string", maxLength: 40 },
+    },
+  };
+  app.post<{ Body: EntityCommand; Querystring: { generation?: string } }>(
+    "/v1/entities/commands",
+    {
+      schema: {
+        body: {
+          type: "object",
+          additionalProperties: false,
+          required: ["operationId", "deviceId", "changes"],
+          properties: {
+            operationId: { type: "string", pattern: uuid },
+            deviceId: { type: "string", pattern: uuid },
+            changes: {
+              type: "array",
+              minItems: 1,
+              maxItems: 10000,
+              items: entityChangeSchema,
+            },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const identity = identities.get(request)!;
+      if (request.body.deviceId !== identity.deviceId)
+        return reply.code(403).send({ error: "DEVICE_MISMATCH" });
+      if (
+        request.body.changes.some(
+          (c) => !Number.isFinite(Date.parse(c.createdAt)),
+        )
+      )
+        return reply.code(400).send({ error: "INVALID_REQUEST" });
+      if (!request.query.generation)
+        return reply.code(428).send({ error: "GENERATION_REQUIRED" });
+      if (request.query.generation !== entities.generation)
+        return reply.code(409).send({ error: "GENERATION_CHANGED" });
+      return {
+        ...entities.command(identity.ownerId, request.body),
+        generation: entities.generation,
+      };
+    },
+  );
+  app.get<{ Querystring: { after?: string; limit?: string } }>(
+    "/v1/entities/changes",
+    {
+      schema: {
+        querystring: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            after: { type: "string", pattern: "^(0|[1-9][0-9]*)$" },
+            limit: { type: "string", pattern: "^[1-9][0-9]*$" },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const after = Number(request.query.after ?? "0"),
+        limit = Number(request.query.limit ?? "25");
+      if (
+        !Number.isSafeInteger(after) ||
+        !Number.isSafeInteger(limit) ||
+        limit > 100
+      )
+        return reply.code(400).send({ error: "INVALID_CURSOR" });
+      return entities.changes(identities.get(request)!.ownerId, after, limit);
+    },
+  );
+  app.get<{
+    Querystring: {
+      at?: string;
+      afterId?: string;
+      limit?: string;
+      generation?: string;
+    };
+  }>(
+    "/v1/entities/snapshot",
+    {
+      schema: {
+        querystring: {
+          type: "object",
+          additionalProperties: false,
+          properties: {
+            at: { type: "string", pattern: "^(0|[1-9][0-9]*)$" },
+            afterId: { type: "string", maxLength: 36 },
+            limit: { type: "string", pattern: "^[1-9][0-9]*$" },
+            generation: { type: "string", pattern: uuid },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const at =
+          request.query.at === undefined ? undefined : Number(request.query.at),
+        limit = Number(request.query.limit ?? 100);
+      if (
+        (at !== undefined && !Number.isSafeInteger(at)) ||
+        !Number.isSafeInteger(limit) ||
+        limit > 1000
+      )
+        return reply.code(400).send({ error: "INVALID_CURSOR" });
+      if (
+        request.query.generation &&
+        request.query.generation !== entities.generation
+      )
+        return reply.code(409).send({ error: "GENERATION_CHANGED" });
+      return entities.snapshot(
+        identities.get(request)!.ownerId,
+        at,
+        request.query.afterId ?? "",
+        limit,
+      );
     },
   );
   return app;

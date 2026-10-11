@@ -1,3 +1,4 @@
+import { useLanRefresh } from "./useLanRefresh";
 import { ProjectContextPanel } from "./ProjectContextPanel";
 import { ProjectIcon } from "./ProjectIcon";
 import { ProjectLifecycle } from "./ProjectLifecycle";
@@ -48,6 +49,21 @@ export function ProjectsView({
   const focusAfterCapture = useRef(false);
   const [error, setError] = useState("");
   const locked = busy || viewBusy || contextBusy;
+  useLanRefresh(
+    () =>
+      Promise.all([
+        projectStorage.listProjects(),
+        selectedId
+          ? projectStorage.projectTasks(selectedId)
+          : Promise.resolve([]),
+      ]),
+    ([next, rows]) => {
+      setItems(next);
+      setTasks(rows);
+    },
+    locked || form !== null || titles.length > 0,
+    selectedId,
+  );
   useEffect(() => {
     setTitles("");
   }, [navigationRevision]);

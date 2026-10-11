@@ -1,0 +1,12 @@
+{
+  "testedAt": "2026-10-11T06:55:13.984Z",
+  "tag": "全域验收 1791698242654 视图 1791701669375",
+  "checks": [
+    "Desktop saved view with project and priority conditions synchronizes and executes in Android",
+    "Android flat saved view arrives as executable native filter, preserving its original semantics",
+    "Both native clients execute the same saved-view deadline predicate for an instant crossing midnight between display and workspace timezones",
+    "Android structured weekly review reaches native dedicated review; desktop field edit returns to mobile with consistent body",
+    "Remote daily-plan update preserves unsaved desktop draft; native Store CAS and stale UI save both reject old versions; explicit discard loads latest remote result"
+  ],
+  "errors": []
+}

@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "desktop": "pnpm --filter @praxis/desktop tauri dev",
-    "desktop:build": "pnpm --filter @praxis/desktop tauri build",
+    "desktop:build": "pnpm --filter @praxis/desktop tauri build --features tauri/custom-protocol",
     "test:native": "powershell -NoProfile -File scripts/test-native.ps1",
     "test:desktop": "node scripts/native-smoke.mjs",
     "test:p0": "node scripts/native-p0.mjs",

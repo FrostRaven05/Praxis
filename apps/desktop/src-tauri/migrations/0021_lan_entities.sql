@@ -1,0 +1,13 @@
+CREATE TABLE lan_entities(id TEXT PRIMARY KEY, kind TEXT NOT NULL, version INTEGER NOT NULL, data TEXT NOT NULL CHECK(json_valid(data)), deleted INTEGER NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL, native_table TEXT, native_key TEXT);
+CREATE TABLE lan_entity_state(singleton INTEGER PRIMARY KEY CHECK(singleton=1), cursor INTEGER NOT NULL DEFAULT 0, last_success TEXT);
+INSERT INTO lan_entity_state(singleton) VALUES(1);
+CREATE TABLE lan_entity_pending(operation_id TEXT PRIMARY KEY, payload TEXT NOT NULL, blocked INTEGER NOT NULL DEFAULT 0, remote TEXT, message TEXT NOT NULL DEFAULT '');
+CREATE TABLE lan_entity_resolutions(id TEXT PRIMARY KEY, payload TEXT NOT NULL);
+CREATE TABLE lan_entity_history(id TEXT PRIMARY KEY, occurred_at TEXT NOT NULL, payload TEXT NOT NULL);
+ALTER TABLE lan_entities ADD COLUMN local_data TEXT;
+CREATE TABLE lan_entity_local(id TEXT PRIMARY KEY, payload TEXT NOT NULL CHECK(json_valid(payload)));
+ALTER TABLE lan_entity_state ADD COLUMN generation TEXT;
+ALTER TABLE habits ADD COLUMN deleted_at TEXT;
+ALTER TABLE sections ADD COLUMN deleted_at TEXT;
+ALTER TABLE recurrence_templates ADD COLUMN deleted_at TEXT;
+ALTER TABLE habit_schedules ADD COLUMN interval_days INTEGER NOT NULL DEFAULT 1 CHECK(interval_days BETWEEN 1 AND 3650);

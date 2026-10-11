@@ -1,0 +1,28 @@
+{
+  "testedAt": "2026-10-11T06:57:50.516Z",
+  "baselineCounts": {
+    "tasks": 16,
+    "projects": 1,
+    "records": 0,
+    "captures": 12,
+    "task_labels": 0,
+    "task_dependencies": 0
+  },
+  "retained": {
+    "tasks": 16,
+    "projects": 1,
+    "records": 0,
+    "captures": 12,
+    "task_labels": 0,
+    "task_dependencies": 0
+  },
+  "counts": {
+    "tasks": 61,
+    "projects": 11,
+    "records": 13,
+    "captures": 12,
+    "task_labels": 0,
+    "task_dependencies": 0
+  },
+  "errors": []
+}

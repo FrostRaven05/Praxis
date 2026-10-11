@@ -85,8 +85,8 @@ impl Store {
                 {
                     return Err("USER:回顾期间或内容无效".into());
                 }
-                let current:Option<i64>=sqlx::query_scalar("SELECT r.version FROM records r JOIN weekly_reviews w ON w.record_id=r.id WHERE r.id=? AND r.owner_id=? AND r.deleted_at IS NULL AND r.record_type='review'").bind(id).bind(&self.owner_id).fetch_optional(&mut *tx).await.map_err(|e|e.to_string())?;
-                if current != *expected_version {
+                let current:Option<(i64,String,String,String)>=sqlx::query_as("SELECT r.version,r.title,w.period_start,w.period_end FROM records r JOIN weekly_reviews w ON w.record_id=r.id WHERE r.id=? AND r.owner_id=? AND r.deleted_at IS NULL AND r.record_type='review'").bind(id).bind(&self.owner_id).fetch_optional(&mut *tx).await.map_err(|e|e.to_string())?;
+                if current.as_ref().map(|r| r.0) != *expected_version {
                     return Err("STATE_CONFLICT".into());
                 }
                 let mut seen = std::collections::HashSet::new();
@@ -99,7 +99,13 @@ impl Store {
                         return Err("USER:关联项目已删除或不存在，请刷新".into());
                     }
                 }
-                let title = format!("周回顾 {start} — {end}");
+                // The mobile editor allows custom titles. Only an existing generated
+                // title follows period changes; editing fields must keep custom text.
+                let title = match &current {
+                    Some((_, title, old_start, old_end))
+                        if title != &format!("周回顾 {old_start} — {old_end}") => title.clone(),
+                    _ => format!("周回顾 {start} — {end}"),
+                };
                 let body=format!("期间：{start} — {end}\n\n推进成果\n{achievements}\n\n阻塞\n{blockers}\n\n停止 / 暂停\n{stop_pause}\n\n下周重点\n{next_focus}");
                 if current.is_some() {
                     sqlx::query("UPDATE weekly_reviews SET period_start=?,period_end=?,achievements=?,blockers=?,stop_pause=?,next_focus=? WHERE record_id=?").bind(start).bind(end).bind(achievements).bind(blockers).bind(stop_pause).bind(next_focus).bind(id).execute(&mut *tx).await.map_err(|e|e.to_string())?;

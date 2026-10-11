@@ -1,3 +1,5 @@
+import { LanSyncStatus } from "./LanSyncStatus";
+import { useLanRefresh } from "./useLanRefresh";
 import { ProductivityView } from "./ProductivityView";
 import { FollowedViews } from "./SearchViews";
 import { DateStrip } from "./DateStrip";
@@ -176,6 +178,16 @@ export function App() {
     } finally {
       if (version === queryVersion.current) setLoading(false);
     }
+  }, []);
+  useLanRefresh(
+    () => todayTasks.list(displayedDate),
+    setItems,
+    planLocked || view !== "day",
+    displayedDate,
+  );
+  const synced = useCallback(() => {
+    window.dispatchEvent(new Event("praxis-lan-sync"));
+    setProjectRevision((n) => n + 1);
   }, []);
 
   useEffect(() => {
@@ -783,6 +795,7 @@ export function App() {
           <span className="status-dot" />
           本地工作空间
         </div>
+        {desktopAvailable && <LanSyncStatus onRefresh={synced} />}
       </aside>
       {view === "work" ? (
         <ProductivityView

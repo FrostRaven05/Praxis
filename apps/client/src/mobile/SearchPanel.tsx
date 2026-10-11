@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { executeNativeView } from "./native-view-query";
 import type { WorkspaceChange, WorkspaceEntity } from "@praxis/storage-mobile";
 import {
   emptyFilter,
@@ -19,14 +20,55 @@ export function SearchPanel({
 }) {
   const [filter, setFilter] = useState<SearchFilter>(emptyFilter),
     [name, setName] = useState("");
+  const [loadedView, setLoadedView] = useState<WorkspaceEntity | null>(null);
+  const [viewMessage, setViewMessage] = useState("");
+  const activeView = loadedView
+    ? (entities.find((e) => e.id === loadedView.id && !e.deleted) ?? null)
+    : null;
+  const nativeQuery =
+    activeView?.data.nativeQuery ??
+    (typeof activeView?.data.query === "object" ? activeView.data.query : null);
+  const nativeResult = nativeQuery
+    ? executeNativeView(entities, nativeQuery, today)
+    : null;
   const live = entities.filter((e) => !e.deleted),
-    results = searchEntities(entities, filter, today);
-  const set = (key: keyof SearchFilter, value: string | boolean) =>
+    results = viewMessage
+      ? []
+      : (nativeResult?.results ?? searchEntities(entities, filter, today));
+  const set = (key: keyof SearchFilter, value: string | boolean) => {
+    setLoadedView(null);
+    setViewMessage("");
     setFilter({ ...filter, [key]: value });
+  };
+  useEffect(() => {
+    if (!loadedView) return;
+    if (!activeView) {
+      setLoadedView(null);
+      setViewMessage("当前视图已在另一端删除，请选择其他视图或重新筛选。");
+      return;
+    }
+    if (
+      !activeView.data.nativeQuery &&
+      typeof activeView.data.query !== "object"
+    )
+      setFilter({
+        ...emptyFilter,
+        ...Object.fromEntries(
+          Object.keys(emptyFilter).map((k) => [
+            k,
+            typeof activeView.data[k] ===
+            typeof emptyFilter[k as keyof SearchFilter]
+              ? activeView.data[k]
+              : emptyFilter[k as keyof SearchFilter],
+          ]),
+        ),
+      });
+  }, [activeView, loadedView]);
   const groups = new Map<string, WorkspaceEntity[]>();
   for (const e of results) {
-    const key =
-      filter.group === "project"
+    const key = nativeResult
+      ? nativeResult.group(e)
+      : filter.group === "project"
         ? (live.find((p) => p.id === e.data.projectId)?.data.title as string) ||
           "独立内容"
         : filter.group === "status"
@@ -68,87 +110,109 @@ export function SearchPanel({
   return (
     <>
       <div className="mx-form">
-        <label>
-          搜索标题或正文
-          <input
-            type="search"
-            value={filter.query}
-            onChange={(e) => set("query", e.target.value)}
-          />
-        </label>
-        {select("preset", "常用清单", [
-          ["", "自定义"],
-          ["unplanned", "未安排独立任务"],
-          ["focus", "集中推进（高优先级）"],
-          ["small", "零碎处理（15 分钟内）"],
-          ["waiting", "等待跟进"],
-          ["week", "未来七日期限"],
-        ])}
-        <div className="mx-grid">
-          {select("kind", "类型", [
-            ["", "全部"],
-            ...[
-              "task",
-              "project",
-              "record",
-              "habit",
-              "strategy",
-              "decision",
-              "review",
-            ].map((k) => [k, kindLabel(k)] as [string, string]),
+        {viewMessage && <p role="alert">{viewMessage}</p>}
+        {nativeQuery && (
+          <div>
+            <p>
+              正在使用同步的桌面筛选视图，完整保留其 AND / OR 条件、排序和分组。
+            </p>
+            <details>
+              <summary>查看完整筛选条件</summary>
+              <pre>{JSON.stringify(nativeQuery, null, 2)}</pre>
+            </details>
+            <button
+              onClick={() => {
+                setLoadedView(null);
+                setFilter(emptyFilter);
+              }}
+            >
+              返回手机自定义筛选
+            </button>
+          </div>
+        )}
+        <fieldset disabled={!!nativeQuery}>
+          <label>
+            搜索标题或正文
+            <input
+              type="search"
+              value={filter.query}
+              onChange={(e) => set("query", e.target.value)}
+            />
+          </label>
+          {select("preset", "常用清单", [
+            ["", "自定义"],
+            ["unplanned", "未安排独立任务"],
+            ["focus", "集中推进（高优先级）"],
+            ["small", "零碎处理（15 分钟内）"],
+            ["waiting", "等待跟进"],
+            ["week", "未来七日期限"],
           ])}
-          {select("status", "状态", [
-            ["", "不限"],
-            ["todo", "待办"],
-            ["in_progress", "进行中"],
-            ["blocked", "阻塞"],
-            ["completed", "完成"],
-            ["cancelled", "取消"],
-          ])}
-          {select("projectId", "项目", [
-            ["", "不限"],
-            ...live
-              .filter((e) => e.kind === "project")
-              .map((e) => [e.id, entityTitle(e)] as [string, string]),
-          ])}
-          {select("priority", "优先级", [
-            ["", "不限"],
-            ["1", "P1 最高"],
-            ["2", "P2 高"],
-            ["3", "P3 中"],
-            ["0", "P4 普通"],
-          ])}
-          {select("due", "真实期限", [
-            ["", "不限"],
-            ["overdue", "已逾期"],
-            ["today", "今天到期"],
-            ["week", "未来七日"],
-          ])}
-          {select("mode", "条件关系", [
-            ["and", "全部满足 AND"],
-            ["or", "任一满足 OR"],
-          ])}
-          {select("sort", "排序", [
-            ["updated", "最近修改"],
-            ["due", "期限从近到远"],
-            ["priority", "优先级从高到低"],
-            ["title", "标题"],
-          ])}
-          {select("group", "分组", [
-            ["kind", "按类型"],
-            ["project", "按项目"],
-            ["status", "按状态"],
-            ["none", "不分组"],
-          ])}
-        </div>
-        <label>
-          <input
-            type="checkbox"
-            checked={filter.includeArchived}
-            onChange={(e) => set("includeArchived", e.target.checked)}
-          />
-          包含归档项目
-        </label>
+          <div className="mx-grid">
+            {select("kind", "类型", [
+              ["", "全部"],
+              ...[
+                "task",
+                "project",
+                "record",
+                "habit",
+                "strategy",
+                "decision",
+                "review",
+              ].map((k) => [k, kindLabel(k)] as [string, string]),
+            ])}
+            {select("status", "状态", [
+              ["", "不限"],
+              ["todo", "待办"],
+              ["in_progress", "进行中"],
+              ["blocked", "阻塞"],
+              ["completed", "完成"],
+              ["cancelled", "取消"],
+            ])}
+            {select("projectId", "项目", [
+              ["", "不限"],
+              ...live
+                .filter((e) => e.kind === "project")
+                .map((e) => [e.id, entityTitle(e)] as [string, string]),
+            ])}
+            {select("priority", "优先级", [
+              ["", "不限"],
+              ["1", "P1 最高"],
+              ["2", "P2 中"],
+              ["3", "P3 低"],
+              ["0", "P4 普通"],
+            ])}
+            {select("due", "真实期限", [
+              ["", "不限"],
+              ["overdue", "已逾期"],
+              ["today", "今天到期"],
+              ["week", "未来七日"],
+            ])}
+            {select("mode", "条件关系", [
+              ["and", "全部满足 AND"],
+              ["or", "任一满足 OR"],
+            ])}
+            {select("sort", "排序", [
+              ["updated", "最近修改"],
+              ["due", "期限从近到远"],
+              ["priority", "优先级从高到低"],
+              ["title", "标题"],
+            ])}
+            {select("group", "分组", [
+              ["kind", "按类型"],
+              ["project", "按项目"],
+              ["status", "按状态"],
+              ["none", "不分组"],
+            ])}
+          </div>
+          <label>
+            <input
+              type="checkbox"
+              checked={filter.includeArchived}
+              onChange={(e) => set("includeArchived", e.target.checked)}
+            />
+            包含归档项目
+          </label>
+        </fieldset>
         <label>
           视图名称
           <input value={name} onChange={(e) => setName(e.target.value)} />
@@ -162,7 +226,9 @@ export function SearchPanel({
                   id: crypto.randomUUID(),
                   kind: "view",
                   expectedVersion: null,
-                  data: { ...filter, title: name.trim() },
+                  data: nativeQuery
+                    ? { ...activeView?.data, title: name.trim(), nativeQuery }
+                    : { ...filter, title: name.trim() },
                 },
               ],
               () => setName(""),
@@ -178,17 +244,22 @@ export function SearchPanel({
           .map((e) => (
             <span key={e.id}>
               <button
-                onClick={() =>
+                onClick={() => {
+                  setLoadedView(e);
+                  setViewMessage("");
                   setFilter({
                     ...emptyFilter,
                     ...Object.fromEntries(
                       Object.keys(emptyFilter).map((k) => [
                         k,
-                        e.data[k] ?? emptyFilter[k as keyof SearchFilter],
+                        typeof e.data[k] ===
+                        typeof emptyFilter[k as keyof SearchFilter]
+                          ? e.data[k]
+                          : emptyFilter[k as keyof SearchFilter],
                       ]),
                     ),
-                  })
-                }
+                  });
+                }}
               >
                 {entityTitle(e)}
               </button>
@@ -211,9 +282,16 @@ export function SearchPanel({
             </span>
           ))}
       </div>
-      {filter.projectId && !live.some((e) => e.id === filter.projectId) && (
-        <p role="alert">视图引用的项目已删除，请重新选择。</p>
-      )}
+      {nativeResult?.warnings.map((w) => (
+        <p role="alert" key={w}>
+          {w}
+        </p>
+      ))}
+      {!nativeQuery &&
+        filter.projectId &&
+        !live.some((e) => e.id === filter.projectId) && (
+          <p role="alert">视图引用的项目已删除，请重新选择。</p>
+        )}
       <p>{results.length} 条结果</p>
       {[...groups].map(([group, items]) => (
         <section key={group}>

@@ -1,3 +1,4 @@
+import { useLanRefresh } from "./useLanRefresh";
 import { TaskDetailsButton } from "./TaskDetailsButton";
 import { useEffect, useState } from "react";
 import {
@@ -27,6 +28,15 @@ export function ProjectContextPanel({
     [busy, setBusy] = useState(false),
     [editing, setEditing] = useState(false),
     [loading, setLoading] = useState(true);
+  useLanRefresh(
+    readContent,
+    (d) => {
+      setData(d);
+      setBase(d.contexts.find((c) => c.projectId === projectId) ?? null);
+    },
+    busy || editing,
+    projectId,
+  );
   useEffect(() => {
     let active = true;
     setLoading(true);

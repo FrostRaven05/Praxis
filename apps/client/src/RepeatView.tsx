@@ -1,3 +1,4 @@
+import { useLanRefresh } from "./useLanRefresh";
 import { calendarDate } from "@praxis/application";
 import { useEffect, useState } from "react";
 import { RetriableCommands } from "../../../packages/application/src/retriable-commands";
@@ -51,6 +52,11 @@ export function RepeatView() {
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [stop, setStop] = useState<Template | null>(null);
+  useLanRefresh(
+    () => invoke<{ templates: Row[] }>("recurrence_snapshot"),
+    (s) => setRows(s.templates),
+    busy || stop !== null,
+  );
   async function refresh() {
     const s = await invoke<{ templates: Row[] }>("recurrence_snapshot");
     setRows(s.templates);
@@ -116,7 +122,7 @@ export function RepeatView() {
           <input
             type="number"
             min={1}
-            max={366}
+            max={3650}
             value={interval}
             onChange={(e) => setInterval(Number(e.target.value))}
           />
@@ -361,7 +367,7 @@ function RuleEditor({
               <input
                 type="number"
                 min={1}
-                max={366}
+                max={3650}
                 value={interval}
                 onChange={(e) => setInterval(Number(e.target.value))}
               />

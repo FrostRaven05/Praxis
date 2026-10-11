@@ -1,0 +1,17 @@
+{
+  "testedAt": "2026-10-11T06:47:08.520Z",
+  "checks": [
+    "Confirmed all capture business fields and deletion state were identical before explicitly adopting canonical wire creation metadata; original native creation timestamps remain protected"
+  ],
+  "resolvedLegacyCaptures": 4,
+  "status": {
+    "conflicts": 0,
+    "entityConflicts": 0,
+    "entityCursor": 123,
+    "entityPending": 0,
+    "lastSuccess": "2026-10-11T06:47:07.529114600+00:00",
+    "pending": 0,
+    "state": "online"
+  },
+  "errors": []
+}

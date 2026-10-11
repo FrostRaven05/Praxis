@@ -69,6 +69,24 @@ async fn weekly_review_is_an_editable_record_and_retry_survives_restart() {
         "验证初稿"
     );
 }
+
+#[tokio::test]
+async fn generated_weekly_review_title_follows_period_changes() {
+    let dir = tempfile::tempdir().unwrap();
+    let s = Store::open(&dir.path().join("p.db")).await.unwrap();
+    let review = id();
+    let mut action = json!({"type":"save","id":review,"expectedVersion":null,"start":"2026-10-05","end":"2026-10-11","achievements":"成果","blockers":"","stopPause":"","nextFocus":"下一步","projectIds":[]});
+    s.review_command(&command(action.clone())).await.unwrap();
+    action["expectedVersion"] = json!(0);
+    action["start"] = json!("2026-10-12");
+    action["end"] = json!("2026-10-18");
+    s.review_command(&command(action)).await.unwrap();
+    let records = s.content_snapshot().await.unwrap();
+    assert_eq!(
+        records["records"][0]["title"],
+        "周回顾 2026-10-12 — 2026-10-18"
+    );
+}
 #[tokio::test]
 async fn diagnostics_use_local_deadlines_and_latest_recorded_evidence_not_timestamp_text_order() {
     let dir = tempfile::tempdir().unwrap();

@@ -1,4 +1,4 @@
-import { LanSyncStatus } from "./LanSyncStatus";
+import { useLanRefresh } from "./useLanRefresh";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
@@ -86,6 +86,7 @@ export function ContentView({
     editing !== undefined ||
     undo !== null;
   syncBlocked.current = dirty || busy;
+  useLanRefresh(readContent, setData, dirty || busy);
   useEffect(() => {
     if (!dirty && !busy) syncRefresh();
   }, [dirty, busy, syncRefresh]);
@@ -142,7 +143,6 @@ export function ContentView({
     <section className="today content-view">
       <div className="today-content">
         <h1>收件箱与记录</h1>
-        <LanSyncStatus onRefresh={syncRefresh} />
         <details>
           <summary>收集项同步活动记录</summary>
           {data.events

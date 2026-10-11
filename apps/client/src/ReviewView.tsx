@@ -1,3 +1,4 @@
+import { useLanRefresh } from "./useLanRefresh";
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { RetriableCommands } from "../../../packages/application/src/retriable-commands";
@@ -52,6 +53,14 @@ export function ReviewView({
     [dirty, setDirty] = useState(false),
     [saved, setSaved] = useState("");
   const lock = useRef(false);
+  useLanRefresh(
+    () => invoke<Snapshot>("review_snapshot"),
+    (next) => {
+      setData(next);
+      setDays(next.settings.staleDays);
+    },
+    busy || dirty || draft !== null || days !== (data?.settings.staleDays ?? 7),
+  );
   const opened = useRef<string | null>(null);
   useEffect(() => {
     if (!initialReviewId || !data || opened.current === initialReviewId) return;

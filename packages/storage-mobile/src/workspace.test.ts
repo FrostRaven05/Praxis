@@ -154,6 +154,102 @@ it("rejects parent cycles and duplicate habit checks without partial writes", as
     db.close();
   }
 });
+it("moves, deletes and restores an entire nested task tree regardless of row order", async () => {
+  const { db, storage, upgrade } = setup();
+  upgrade();
+  try {
+    const p = change("project", { title: "Original", status: "active" });
+    const destination = change("project", {
+      title: "Destination",
+      status: "active",
+    });
+    const section = change("section", {
+      title: "Original section",
+      projectId: p.id,
+    });
+    const root = {
+      ...change("task", {
+        title: "Root",
+        status: "todo",
+        projectId: p.id,
+        sectionId: section.id,
+      }),
+      id: "10000000-0000-4000-8000-000000000003",
+    };
+    const child = {
+      ...change("task", {
+        title: "Child",
+        status: "todo",
+        projectId: p.id,
+        sectionId: section.id,
+        parentId: root.id,
+      }),
+      id: "10000000-0000-4000-8000-000000000002",
+    };
+    const grandchild = {
+      ...change("task", {
+        title: "Grandchild",
+        status: "todo",
+        projectId: p.id,
+        sectionId: section.id,
+        parentId: child.id,
+      }),
+      id: "10000000-0000-4000-8000-000000000001",
+    };
+    await storage.workspaceCommand({
+      operationId: crypto.randomUUID(),
+      occurredAt,
+      changes: [grandchild, child, root, section, p, destination],
+    });
+    async function rootChange(patch: Record<string, unknown>, deleted = false) {
+      const current = (await storage.workspaceSnapshot()).entities.find(
+        (e) => e.id === root.id,
+      )!;
+      await storage.workspaceCommand({
+        operationId: crypto.randomUUID(),
+        occurredAt,
+        changes: [
+          {
+            id: current.id,
+            kind: current.kind,
+            expectedVersion: current.version,
+            data: { ...current.data, ...patch },
+            deleted,
+          },
+        ],
+      });
+    }
+    await rootChange({ projectId: destination.id, sectionId: null });
+    const moved = (await storage.workspaceSnapshot()).entities.filter(
+      (e) => e.kind === "task",
+    );
+    expect(moved).toHaveLength(3);
+    expect(
+      moved.every(
+        (e) => e.data.projectId === destination.id && e.data.sectionId === null,
+      ),
+    ).toBe(true);
+    await rootChange({}, true);
+    expect(
+      (await storage.workspaceSnapshot()).entities
+        .filter((e) => e.kind === "task")
+        .every((e) => e.deleted),
+    ).toBe(true);
+    await rootChange({}, false);
+    const restored = (await storage.workspaceSnapshot()).entities.filter(
+      (e) => e.kind === "task",
+    );
+    expect(restored.every((e) => !e.deleted && !e.data.deletedWith)).toBe(true);
+    expect(restored.find((e) => e.id === grandchild.id)?.data.parentId).toBe(
+      child.id,
+    );
+    expect(restored.find((e) => e.id === child.id)?.data.parentId).toBe(
+      root.id,
+    );
+  } finally {
+    db.close();
+  }
+});
 it("imports into a separate switchable workspace and rejects damaged references atomically", async () => {
   const { db, storage, upgrade } = setup();
   upgrade();
