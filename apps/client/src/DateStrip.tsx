@@ -41,7 +41,7 @@ export function DateStrip({
                 aria-current={item === today ? "date" : undefined}
                 onClick={() => onSelect(item)}
               >
-                {item === today ? "今" : Number(item.slice(-2))}
+                {item === today ? "今" : item.slice(-2)}
               </button>
             );
           })}

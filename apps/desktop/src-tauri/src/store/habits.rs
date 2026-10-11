@@ -63,6 +63,7 @@ struct Habit {
     notes: String,
     project_id: Option<String>,
     version: i64,
+    created_at: String,
 }
 #[derive(FromRow, Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -142,6 +143,50 @@ fn validated_weekdays(
     Ok(days)
 }
 impl Store {
+    pub(super) async fn apply_habit_arrangements(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        c: &PlanCommand,
+    ) -> StoreResult<()> {
+        let selected = day(&c.date)?;
+        let mut seen = std::collections::HashSet::new();
+        for change in &c.habit_changes {
+            if !seen.insert(&change.habit_id)
+                || change.day_rank < 1
+                || change.expected_version.is_some_and(|v| v < 0)
+                || !["morning", "afternoon", "evening"].contains(&change.day_period.as_str())
+            {
+                return Err("USER:习惯安排无效".into());
+            }
+            let rule: Option<Schedule> = sqlx::query_as("SELECT s.* FROM habit_schedules s JOIN habits h ON h.id=s.habit_id WHERE h.owner_id=? AND h.id=? AND h.deleted_at IS NULL AND s.effective_from<=? AND (s.effective_until IS NULL OR s.effective_until>?)")
+                .bind(&self.owner_id).bind(&change.habit_id).bind(&c.date).bind(&c.date).fetch_optional(&mut **tx).await.map_err(|e| e.to_string())?;
+            if rule.is_none_or(|r| !applies(&r, selected)) {
+                return Err("STATE_CONFLICT".into());
+            }
+            let recorded: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM habit_entries WHERE habit_id=? AND local_date=? AND status IS NOT NULL)")
+                .bind(&change.habit_id).bind(&c.date).fetch_one(&mut **tx).await.map_err(|e| e.to_string())?;
+            if recorded {
+                return Err("STATE_CONFLICT".into());
+            }
+            let version: Option<i64> = sqlx::query_scalar(
+                "SELECT version FROM habit_daily_plans WHERE habit_id=? AND local_date=?",
+            )
+            .bind(&change.habit_id)
+            .bind(&c.date)
+            .fetch_optional(&mut **tx)
+            .await
+            .map_err(|e| e.to_string())?;
+            if version != change.expected_version {
+                return Err("STATE_CONFLICT".into());
+            }
+            sqlx::query("INSERT INTO habit_daily_plans(habit_id,local_date,day_period,day_rank) VALUES(?,?,?,?) ON CONFLICT(habit_id,local_date) DO UPDATE SET day_period=excluded.day_period,day_rank=excluded.day_rank,version=habit_daily_plans.version+1")
+                .bind(&change.habit_id).bind(&c.date).bind(&change.day_period).bind(change.day_rank).execute(&mut **tx).await.map_err(|e| e.to_string())?;
+            sqlx::query("INSERT INTO habit_events(id,habit_id,local_date,occurred_at,payload) VALUES(?,?,?,?,?)")
+                .bind(format!("{}:{}",c.operation_id,change.habit_id)).bind(&change.habit_id).bind(&c.date).bind(&c.occurred_at)
+                .bind(json!({"kind":"arranged","change":change}).to_string()).execute(&mut **tx).await.map_err(|e| e.to_string())?;
+        }
+        Ok(())
+    }
     pub async fn habit_command(&self, c: &HabitCommand) -> StoreResult<()> {
         validate_operation(&c.operation_id, &c.occurred_at)?;
         let payload = serde_json::to_string(c).map_err(|e| e.to_string())?;
@@ -358,7 +403,7 @@ impl Store {
                     .map_err(|_| "Invalid workspace timezone")?,
             )
             .date_naive();
-        let habits:Vec<Habit>=sqlx::query_as("SELECT id,name,start_date,trigger_context,normal_version,minimum_version,notes,project_id,version FROM habits WHERE owner_id=? AND deleted_at IS NULL ORDER BY created_at,id").bind(&self.owner_id).fetch_all(&mut *tx).await.map_err(|e|e.to_string())?;
+        let habits:Vec<Habit>=sqlx::query_as("SELECT id,name,start_date,trigger_context,normal_version,minimum_version,notes,project_id,version,created_at FROM habits WHERE owner_id=? AND deleted_at IS NULL ORDER BY created_at,id").bind(&self.owner_id).fetch_all(&mut *tx).await.map_err(|e|e.to_string())?;
         let rules: Vec<Schedule> = sqlx::query_as(
             "SELECT s.* FROM habit_schedules s JOIN habits h ON h.id=s.habit_id WHERE h.owner_id=?",
         )
@@ -367,6 +412,8 @@ impl Store {
         .await
         .map_err(|e| e.to_string())?;
         let entries:Vec<Entry>=sqlx::query_as("SELECT e.* FROM habit_entries e JOIN habits h ON h.id=e.habit_id WHERE h.owner_id=? AND e.local_date BETWEEN ? AND ?").bind(&self.owner_id).bind(monday.to_string()).bind(sunday.to_string()).fetch_all(&mut *tx).await.map_err(|e|e.to_string())?;
+        let placements: Vec<(String,String,String,i64,i64)> = sqlx::query_as("SELECT p.habit_id,p.local_date,p.day_period,p.day_rank,p.version FROM habit_daily_plans p JOIN habits h ON h.id=p.habit_id WHERE h.owner_id=? AND p.local_date<=? ORDER BY p.local_date DESC")
+            .bind(&self.owner_id).bind(date).fetch_all(&mut *tx).await.map_err(|e| e.to_string())?;
         let mut result = Vec::new();
         for h in &habits {
             let selected_rule = rule_at(&rules, &h.id, selected);
@@ -410,7 +457,10 @@ impl Store {
                 .iter()
                 .find(|e| e.habit_id == h.id && e.local_date == date);
             let applicable = selected_rule.is_some_and(|r| applies(r, selected));
+            let placement = placements.iter().find(|p| p.0 == h.id);
+            let exact = placement.filter(|p| p.1 == date);
             result.push(json!({"habit":h,"rules":rules.iter().filter(|r|r.habit_id==h.id).collect::<Vec<_>>(),"schedule":selected_rule,"entry":entry,"applicable":applicable,"collapsed":collapsed,
+                "placement":{"dayPeriod":placement.map_or("morning",|p|p.2.as_str()),"dayRank":exact.map_or(0,|p|p.3),"version":exact.map(|p|p.4)},
                 "week":{"from":monday.to_string(),"until":sunday.to_string(),"done":done,"target":target,"skipped":skipped,"remainingDates":remaining,"incomplete":incomplete,"state":if today<=sunday && today>=monday {"进行中"} else if incomplete {"不完整周"} else if today<monday {"尚未开始"} else if done>=target {"已达标"} else {"已结束"}}}));
         }
         tx.commit().await.map_err(|e| e.to_string())?;

@@ -1,6 +1,5 @@
-import { useEffect, useState } from "react";
-import { executeNativeView } from "./native-view-query";
-import type { WorkspaceChange, WorkspaceEntity } from "@praxis/storage-mobile";
+import { useState } from "react";
+import type { WorkspaceEntity } from "@praxis/storage-mobile";
 import {
   emptyFilter,
   searchEntities,
@@ -12,63 +11,25 @@ import {
 export function SearchPanel({
   entities,
   today,
-  save,
+  initialQuery = "",
 }: {
   entities: WorkspaceEntity[];
   today: string;
-  save: (changes: WorkspaceChange[], done?: () => void) => Promise<void>;
+  initialQuery?: string;
 }) {
-  const [filter, setFilter] = useState<SearchFilter>(emptyFilter),
-    [name, setName] = useState("");
-  const [loadedView, setLoadedView] = useState<WorkspaceEntity | null>(null);
-  const [viewMessage, setViewMessage] = useState("");
-  const activeView = loadedView
-    ? (entities.find((e) => e.id === loadedView.id && !e.deleted) ?? null)
-    : null;
-  const nativeQuery =
-    activeView?.data.nativeQuery ??
-    (typeof activeView?.data.query === "object" ? activeView.data.query : null);
-  const nativeResult = nativeQuery
-    ? executeNativeView(entities, nativeQuery, today)
-    : null;
-  const live = entities.filter((e) => !e.deleted),
-    results = viewMessage
-      ? []
-      : (nativeResult?.results ?? searchEntities(entities, filter, today));
+  const [filter, setFilter] = useState<SearchFilter>(() => ({
+    ...emptyFilter,
+    query: initialQuery,
+  }));
+  const live = entities.filter((e) => !e.deleted);
+  const results = searchEntities(entities, filter, today);
   const set = (key: keyof SearchFilter, value: string | boolean) => {
-    setLoadedView(null);
-    setViewMessage("");
-    setFilter({ ...filter, [key]: value });
+    setFilter((previous) => ({ ...previous, [key]: value }));
   };
-  useEffect(() => {
-    if (!loadedView) return;
-    if (!activeView) {
-      setLoadedView(null);
-      setViewMessage("当前视图已在另一端删除，请选择其他视图或重新筛选。");
-      return;
-    }
-    if (
-      !activeView.data.nativeQuery &&
-      typeof activeView.data.query !== "object"
-    )
-      setFilter({
-        ...emptyFilter,
-        ...Object.fromEntries(
-          Object.keys(emptyFilter).map((k) => [
-            k,
-            typeof activeView.data[k] ===
-            typeof emptyFilter[k as keyof SearchFilter]
-              ? activeView.data[k]
-              : emptyFilter[k as keyof SearchFilter],
-          ]),
-        ),
-      });
-  }, [activeView, loadedView]);
   const groups = new Map<string, WorkspaceEntity[]>();
   for (const e of results) {
-    const key = nativeResult
-      ? nativeResult.group(e)
-      : filter.group === "project"
+    const key =
+      filter.group === "project"
         ? (live.find((p) => p.id === e.data.projectId)?.data.title as string) ||
           "独立内容"
         : filter.group === "status"
@@ -110,27 +71,7 @@ export function SearchPanel({
   return (
     <>
       <div className="mx-form">
-        {viewMessage && <p role="alert">{viewMessage}</p>}
-        {nativeQuery && (
-          <div>
-            <p>
-              正在使用同步的桌面筛选视图，完整保留其 AND / OR 条件、排序和分组。
-            </p>
-            <details>
-              <summary>查看完整筛选条件</summary>
-              <pre>{JSON.stringify(nativeQuery, null, 2)}</pre>
-            </details>
-            <button
-              onClick={() => {
-                setLoadedView(null);
-                setFilter(emptyFilter);
-              }}
-            >
-              返回手机自定义筛选
-            </button>
-          </div>
-        )}
-        <fieldset disabled={!!nativeQuery}>
+        <fieldset>
           <label>
             搜索标题或正文
             <input
@@ -213,85 +154,10 @@ export function SearchPanel({
             包含归档项目
           </label>
         </fieldset>
-        <label>
-          视图名称
-          <input value={name} onChange={(e) => setName(e.target.value)} />
-        </label>
-        <button
-          disabled={!name.trim()}
-          onClick={() =>
-            void save(
-              [
-                {
-                  id: crypto.randomUUID(),
-                  kind: "view",
-                  expectedVersion: null,
-                  data: nativeQuery
-                    ? { ...activeView?.data, title: name.trim(), nativeQuery }
-                    : { ...filter, title: name.trim() },
-                },
-              ],
-              () => setName(""),
-            )
-          }
-        >
-          保存视图
-        </button>
       </div>
-      <div className="mx-actions">
-        {live
-          .filter((e) => e.kind === "view")
-          .map((e) => (
-            <span key={e.id}>
-              <button
-                onClick={() => {
-                  setLoadedView(e);
-                  setViewMessage("");
-                  setFilter({
-                    ...emptyFilter,
-                    ...Object.fromEntries(
-                      Object.keys(emptyFilter).map((k) => [
-                        k,
-                        typeof e.data[k] ===
-                        typeof emptyFilter[k as keyof SearchFilter]
-                          ? e.data[k]
-                          : emptyFilter[k as keyof SearchFilter],
-                      ]),
-                    ),
-                  });
-                }}
-              >
-                {entityTitle(e)}
-              </button>
-              <button
-                aria-label={"删除视图 " + entityTitle(e)}
-                onClick={() =>
-                  void save([
-                    {
-                      id: e.id,
-                      kind: e.kind,
-                      expectedVersion: e.version,
-                      data: e.data,
-                      deleted: true,
-                    },
-                  ])
-                }
-              >
-                ×
-              </button>
-            </span>
-          ))}
-      </div>
-      {nativeResult?.warnings.map((w) => (
-        <p role="alert" key={w}>
-          {w}
-        </p>
-      ))}
-      {!nativeQuery &&
-        filter.projectId &&
-        !live.some((e) => e.id === filter.projectId) && (
-          <p role="alert">视图引用的项目已删除，请重新选择。</p>
-        )}
+      {filter.projectId && !live.some((e) => e.id === filter.projectId) && (
+        <p role="alert">所选项目已删除，请重新选择。</p>
+      )}
       <p>{results.length} 条结果</p>
       {[...groups].map(([group, items]) => (
         <section key={group}>

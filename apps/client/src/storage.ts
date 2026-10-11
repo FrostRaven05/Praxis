@@ -2,6 +2,7 @@ import { ProjectWorkspace } from "@praxis/application";
 import { Capacitor } from "@capacitor/core";
 import { mobileStorage } from "../../../packages/storage-mobile/src/native";
 import { invoke, isTauri } from "@tauri-apps/api/core";
+import { prepareDailyTasks } from "./daily-preparation";
 import type {
   CaptureCommand,
   DailyTask,
@@ -22,6 +23,7 @@ export const desktopStorage: TaskStorage = {
   async listDay(date: string): Promise<DailyTask[]> {
     if (!desktopAvailable)
       throw new Error("当前为浏览器预览。请打开桌面应用查看本机任务。");
+    await prepareDailyTasks();
     return invoke<DailyTask[]>("list_day", { date });
   },
 };
@@ -52,6 +54,7 @@ export const planningStorage: import("@praxis/application").PlanningStorage = {
   captureInbox: (command) => invoke("capture_inbox", { command }),
   listInbox: () => invoke("list_inbox"),
   scheduleTask: (command) => invoke("schedule_task", { command }),
+  acceptSuggestion: (command) => invoke("accept_suggestion", { command }),
 };
 
 export const projectStorage: import("@praxis/application").ProjectStorage = {

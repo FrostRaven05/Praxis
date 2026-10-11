@@ -1,6 +1,6 @@
 .mobile-extras {
   padding: 18px 18px 100px;
-  color: var(--text-primary, #24352f);
+  color: var(--text-primary);
 }
 .mobile-extras h2 {
   font-size: 23px;
@@ -17,7 +17,7 @@
 }
 .mobile-extras article {
   padding: 16px 0;
-  border-bottom: 1px solid #dbe3df;
+  border-bottom: 1px solid var(--line);
 }
 .mobile-extras input:not([type="checkbox"]),
 .mobile-extras textarea,
@@ -27,9 +27,9 @@
   width: 100%;
   min-height: 44px;
   padding: 10px;
-  border: 1px solid #c4d2ca;
+  border: 1px solid var(--line);
   border-radius: 10px;
-  background: var(--surface, #fff);
+  background: var(--surface);
   color: inherit;
   font: inherit;
   margin-top: 6px;
@@ -43,9 +43,9 @@
   min-height: 44px;
   padding: 10px 15px;
   border-radius: 12px;
-  border: 1px solid #c7d7cc;
-  background: #edf4ed;
-  color: #254b36;
+  border: 1px solid var(--line);
+  background: var(--selected);
+  color: var(--primary-text);
   font: inherit;
   cursor: pointer;
 }
@@ -53,8 +53,8 @@
   opacity: 0.5;
 }
 .mx-form {
-  background: var(--surface, #fff);
-  border: 1px solid #e1e7e2;
+  background: var(--surface-card);
+  border: 1px solid var(--line);
   border-radius: 18px;
   padding: 16px;
   margin-bottom: 20px;
@@ -78,14 +78,14 @@
 }
 .mx-muted {
   font-size: 13px;
-  color: #69776c;
+  color: var(--text-secondary);
   line-height: 1.5;
 }
 .mx-error {
   padding: 12px;
   border-radius: 12px;
-  background: #fff0ec;
-  color: #942e1e;
+  background: var(--danger-surface);
+  color: var(--danger-text);
   margin-bottom: 12px;
 }
 .mx-metrics {
@@ -95,14 +95,14 @@
   font-size: 12px;
 }
 .mx-metrics > div {
-  background: #edf4ed;
+  background: var(--selected);
   border-radius: 16px;
   padding: 18px 10px;
 }
 .mx-metrics strong {
   display: block;
   font-size: 28px;
-  color: #345b43;
+  color: var(--primary-text);
   margin-bottom: 7px;
 }
 .mx-bar {
@@ -121,19 +121,16 @@
   font-variant-numeric: tabular-nums;
   padding: 30px 0;
 }
-.mx-json {
-  font-family: monospace !important;
-  font-size: 12px !important;
-}
 .mobile-extras summary {
   cursor: pointer;
   min-height: 44px;
   line-height: 1.5;
 }
 .mobile-extras small {
-  color: #748477;
+  color: var(--text-secondary);
 }
 .mobile-extras input[type="checkbox"] {
+  accent-color: var(--primary-text);
   width: 20px;
   height: 20px;
   vertical-align: middle;

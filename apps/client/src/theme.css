@@ -3,17 +3,24 @@
   color-scheme: light;
   --font-ui: "HarmonyOS Sans SC", "Segoe UI", "Microsoft YaHei", sans-serif;
   --font-data: ui-monospace, "Cascadia Code", Consolas, monospace;
-  --primary: #d1453b;
-  --primary-hover: #b8382f;
-  --primary-dark: #f28d82;
-  --primary-dark-hover: #ffa399;
-  --on-primary: #ffffff;
+  --primary-light: #bde7ee;
+  --primary: var(--primary-light);
+  --primary-light-hover: #a8cdd3;
+  --primary-hover: var(--primary-light-hover);
+  --primary-dark: #bde7ee;
+  --primary-dark-hover: #c5eaf0;
+  --primary-text: var(--primary-light-text);
+  --primary-light-text: #287f91;
+  --primary-dark-text: #bde7ee;
+  --on-primary: var(--on-primary-light);
+  --on-primary-light: #111111;
   --on-primary-inverse: #111111;
   --surface: #ffffff;
   --surface-secondary: #f9f9f9;
   --surface-tertiary: #f0f0f0;
   --surface-hover: #ececec;
-  --surface-card: #f7f7f8;
+  --surface-card: #ffffff;
+  --surface-canvas: #f6f7f9;
   --text-primary: #0d0d0d;
   --text-secondary: #6e6e80;
   --text-tertiary: #8e8ea0;
@@ -21,7 +28,7 @@
   --warning: #f59e0b;
   --danger: #ef4444;
   --info: #3b82f6;
-  --sidebar-surface: #fcfaf8;
+  --sidebar-surface: #fbfbfc;
   --line: color-mix(in srgb, var(--text-secondary) 24%, var(--surface));
   --selected: color-mix(in srgb, var(--primary) 12%, var(--surface));
   --focus-ring: color-mix(in srgb, var(--primary) 25%, transparent);
@@ -30,27 +37,34 @@
   --success-text: color-mix(in srgb, var(--success) 52%, var(--text-primary));
   --warning-text: color-mix(in srgb, var(--warning) 45%, var(--text-primary));
   --danger-text: color-mix(in srgb, var(--danger) 70%, var(--text-primary));
-  --shadow-color: color-mix(in srgb, var(--text-primary) 12%, transparent);
+  --shadow-color: color-mix(in srgb, var(--text-primary) 5%, transparent);
+  --shadow-card:
+    0 2px 8px var(--shadow-color),
+    0 12px 32px color-mix(in srgb, var(--text-primary) 2%, transparent);
   --backdrop: color-mix(in srgb, var(--text-primary) 35%, transparent);
-  --radius-control: 8px;
-  --radius-card: 12px;
-  --radius-dialog: 16px;
+  --radius-control: 10px;
+  --radius-card: 18px;
+  --radius-dialog: 22px;
 }
 @media (prefers-color-scheme: dark) {
   :root {
     color-scheme: dark;
     --primary: var(--primary-dark);
     --primary-hover: var(--primary-dark-hover);
+    --primary-text: var(--primary-dark-text);
     --on-primary: var(--on-primary-inverse);
     --surface: #212121;
     --surface-secondary: #2f2f2f;
     --surface-tertiary: #383838;
     --surface-hover: #383838;
     --surface-card: #2f2f2f;
+    --surface-canvas: #242426;
     --sidebar-surface: #171717;
     --text-primary: #ececec;
     --text-secondary: #b4b4b4;
     --text-tertiary: #676767;
+    --shadow-color: rgb(0 0 0 / 12%);
+    --shadow-card: 0 2px 8px var(--shadow-color);
   }
 }
 

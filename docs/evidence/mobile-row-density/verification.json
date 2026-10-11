@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "before": 72.76190948486328,
+  "after": 56.76190185546875,
+  "buttons": [
+    {
+      "width": 44,
+      "height": 44
+    },
+    {
+      "width": 273.0476379394531,
+      "height": 44
+    },
+    {
+      "width": 44,
+      "height": 44
+    }
+  ],
+  "checks": [
+    "Single rows substantially shorter",
+    "Controls retain 44px touch targets",
+    "Long titles wrap and no 320px horizontal overflow",
+    "Preview DOM only; no persisted task changes"
+  ]
+}

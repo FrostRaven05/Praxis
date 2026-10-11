@@ -227,16 +227,14 @@ try {
   });
   await page.getByRole("button", { name: "设置", exact: true }).click();
   await page.getByRole("button", { name: "立即备份" }).click();
-  await expect(
-    page.getByText("本机备份已保存：", { exact: false }),
-  ).toBeVisible();
+  await expect(page.getByText("备份已创建", { exact: true })).toBeVisible();
   await page
-    .getByRole("button", { name: "选择恢复", exact: true })
+    .getByRole("button", { name: "恢复", exact: true })
     .first()
     .click();
-  await page.getByRole("button", { name: "确认恢复到新文件" }).click();
+  await page.getByRole("button", { name: "确认恢复", exact: true }).click();
   await expect(
-    page.getByText("恢复副本已验证：", { exact: false }),
+    page.getByText("恢复副本已验证", { exact: false }),
   ).toBeVisible();
   await page.screenshot({
     path: join(evidence, "backup-restore.png"),

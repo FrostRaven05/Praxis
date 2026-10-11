@@ -18,6 +18,7 @@ import { editStorage, taskDetailsStorage } from "./storage";
 import { ProjectAssignment } from "./ProjectAssignment";
 import { TaskPanelIcon } from "./TaskPanelIcon";
 import { DatePicker } from "./DatePicker";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 const scheduleEditor = new EditTask(editStorage);
 const detailsEditor = new TaskDetailEditor(taskDetailsStorage);
@@ -33,20 +34,24 @@ export function TaskDetailPanel({
   task,
   onSaved,
   onUpdated,
+  onPersisted,
   onClose,
   onComplete,
   onProject,
   onBusyChange,
   onDirtyChange,
+  scheduleTimeZone,
 }: {
   task: DailyTask;
   onSaved: (receipt: EditReceipt) => Promise<void>;
   onUpdated: () => Promise<void>;
+  onPersisted: () => Promise<void>;
   onClose: () => void;
   onComplete: () => Promise<void>;
   onProject: (id: string) => void;
   onBusyChange: (busy: boolean) => void;
   onDirtyChange: (dirty: boolean) => void;
+  scheduleTimeZone?: string;
 }) {
   const [base, setBase] = useState<TaskDetails | null>(null);
   const [scheduleBase, setScheduleBase] = useState(task);
@@ -61,13 +66,26 @@ export function TaskDetailPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const [composing, setComposing] = useState(false);
+  const immediate = useRef(false);
+  const inFlight = useRef<Promise<boolean> | null>(null);
+  const baseRef = useRef(base);
+  const scheduleRef = useRef(scheduleBase);
+  const draft = { title, date, notes, criteria, important, deadline, estimate };
+  const draftRef = useRef(draft);
+  const pendingDraft = useRef<typeof draft | null>(null);
+  draftRef.current = draft;
+  const composingRef = useRef(composing);
+  composingRef.current = composing;
+  const saveRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
+  const flushRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
   const pendingReceipt = useRef<EditReceipt | null>(null);
   const metadataSaved = useRef(false);
   const initialTask = useRef(task);
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const today = calendarDate(new Date(), zone);
+  const today = calendarDate(new Date(), scheduleTimeZone ?? zone);
   useLayoutEffect(() => {
     for (const input of [titleRef.current, notesRef.current]) {
       if (input) {
@@ -87,6 +105,7 @@ export function TaskDetailPanel({
         if (value.version !== (initialTask.current.version ?? 0))
           throw new Error("任务已更新，请重新加载后再编辑。");
         setBase(value);
+        baseRef.current = value;
         setTitle(value.title);
         setNotes(value.notes);
         setCriteria(value.completionCriteria);
@@ -108,42 +127,73 @@ export function TaskDetailPanel({
     onBusyChange(busy);
     return () => onBusyChange(false);
   }, [busy, onBusyChange]);
-  const dirty = Boolean(
-    base &&
-    (title.trim() !== base.title ||
-      date !== scheduleBase.executionDate ||
-      notes !== base.notes ||
-      criteria !== base.completionCriteria ||
-      important !== base.important ||
-      deadline !== deadlineToLocal(base.deadline) ||
-      estimate.trim() !== (base.estimatedMinutes?.toString() ?? "")),
-  );
+  function hasChanges() {
+    const saved = baseRef.current;
+    if (!saved) return false;
+    const current = draftRef.current;
+    let minutes: number | null;
+    try {
+      minutes = parseMinutes(current.estimate);
+    } catch {
+      return true;
+    }
+    return (
+      current.title.trim() !== saved.title ||
+      current.date !== scheduleRef.current.executionDate ||
+      current.notes !== saved.notes ||
+      current.criteria !== saved.completionCriteria ||
+      current.important !== saved.important ||
+      current.deadline !== deadlineToLocal(saved.deadline) ||
+      minutes !== saved.estimatedMinutes
+    );
+  }
+  const dirty = hasChanges();
   useEffect(() => {
     onDirtyChange(dirty);
     return () => onDirtyChange(false);
   }, [dirty, onDirtyChange]);
-  async function save() {
-    if (!base || busy || !dirty) return;
+  function save(): Promise<boolean> {
+    if (inFlight.current) return inFlight.current;
+    if (!baseRef.current) return Promise.resolve(false);
+    if (
+      !hasChanges() &&
+      !pendingDraft.current &&
+      !pendingReceipt.current &&
+      !metadataSaved.current
+    )
+      return Promise.resolve(true);
+    immediate.current = false;
+    const operation = persist();
+    inFlight.current = operation;
+    void operation.then(() => {
+      inFlight.current = null;
+    });
+    return operation;
+  }
+  async function persist(): Promise<boolean> {
+    const captured = pendingDraft.current ?? draftRef.current;
+    const { title, date, notes, criteria, important, deadline, estimate } =
+      captured;
     setBusy(true);
     setError("");
     setNotice("");
-    let currentBase = base;
-    let currentSchedule = scheduleBase;
+    let currentBase = baseRef.current!;
+    let currentSchedule = scheduleRef.current;
     try {
       // Keep title/date last so their existing undo event remains the latest task version.
       if (!title.trim()) throw new Error("请填写任务标题");
       if (!validCalendarDate(date)) throw new Error("请选择有效的安排日期");
-      if (task.status === "completed" && date !== scheduleBase.executionDate)
+      if (task.status === "completed" && date !== currentSchedule.executionDate)
         throw new Error("已完成任务不能改期，请先撤销完成");
-      if (base.version !== (scheduleBase.version ?? 0))
+      if (currentBase.version !== (currentSchedule.version ?? 0))
         throw new Error("任务已更新，请重新加载后再编辑。");
       const minutes = parseMinutes(estimate);
       const deadlineValue =
-        deadline === deadlineToLocal(base.deadline)
-          ? base.deadline
+        deadline === deadlineToLocal(currentBase.deadline)
+          ? currentBase.deadline
           : deadlineFromLocal(deadline);
       const fields = {
-        title: base.title,
+        title: currentBase.title,
         notes,
         completionCriteria: criteria,
         important,
@@ -151,11 +201,13 @@ export function TaskDetailPanel({
         deadlineTimeZone:
           deadlineValue === null
             ? null
-            : deadline === deadlineToLocal(base.deadline)
-              ? base.deadlineTimeZone
+            : deadline === deadlineToLocal(currentBase.deadline)
+              ? currentBase.deadlineTimeZone
               : zone,
         estimatedMinutes: minutes,
       };
+      // Retain the exact submitted draft for an unacknowledged write retry.
+      pendingDraft.current = captured;
       if (
         fields.notes !== currentBase.notes ||
         fields.completionCriteria !== currentBase.completionCriteria ||
@@ -166,6 +218,7 @@ export function TaskDetailPanel({
         const saved = await detailsEditor.save(currentBase, fields);
         metadataSaved.current = true;
         currentBase = saved;
+        baseRef.current = saved;
         setBase(saved);
         currentSchedule = {
           ...currentSchedule,
@@ -175,6 +228,7 @@ export function TaskDetailPanel({
           deadline: saved.deadline,
         };
         setScheduleBase(currentSchedule);
+        scheduleRef.current = currentSchedule;
       }
       if (
         title.trim() !== currentBase.title ||
@@ -184,35 +238,115 @@ export function TaskDetailPanel({
           currentSchedule,
           title,
           date,
-          zone,
+          scheduleTimeZone ?? zone,
         );
         pendingReceipt.current = receipt;
         currentSchedule = receipt.after;
         setScheduleBase(currentSchedule);
-        setBase({
+        currentBase = {
           ...currentBase,
           title: receipt.after.title,
           version: receipt.after.version ?? 0,
-        });
+        };
+        baseRef.current = currentBase;
+        scheduleRef.current = currentSchedule;
+        setBase(currentBase);
       }
       if (pendingReceipt.current) {
         await onSaved({ ...pendingReceipt.current, after: currentSchedule });
         pendingReceipt.current = null;
       } else {
-        await onUpdated();
+        await onPersisted();
       }
       metadataSaved.current = false;
+      pendingDraft.current = null;
       setNotice("已保存到本机");
+      return true;
     } catch (error) {
       setError(
         metadataSaved.current
-          ? `任务详情已保存；标题或日期尚未确认保存：${errorText(error)}。可重试保存。`
+          ? `部分修改已保存，仍有修改尚未确认：${errorText(error)}。`
           : errorText(error),
       );
+      return false;
     } finally {
       setBusy(false);
     }
   }
+  saveRef.current = save;
+  async function flush() {
+    if (composingRef.current) return false;
+    // A save acknowledges only its captured draft. New input stays queued.
+    do {
+      if (!(await saveRef.current())) return false;
+    } while (hasChanges());
+    return true;
+  }
+  flushRef.current = flush;
+  async function close() {
+    if (!baseRef.current || (await flushRef.current())) onClose();
+  }
+  function changed<T>(setter: (value: T) => void, value: T, discrete = false) {
+    immediate.current = discrete;
+    setError("");
+    setNotice("");
+    setter(value);
+  }
+  useEffect(() => {
+    if (
+      (!dirty && !pendingDraft.current) ||
+      loading ||
+      busy ||
+      error ||
+      composing
+    )
+      return;
+    const timer = setTimeout(
+      () => void saveRef.current(),
+      immediate.current ? 0 : 500,
+    );
+    return () => clearTimeout(timer);
+  }, [
+    dirty,
+    loading,
+    busy,
+    error,
+    composing,
+    title,
+    date,
+    notes,
+    criteria,
+    important,
+    deadline,
+    estimate,
+  ]);
+  useEffect(() => {
+    let active = true;
+    let off: (() => void) | undefined;
+    const nativeWindow = getCurrentWindow();
+    void nativeWindow
+      .onCloseRequested(async (event) => {
+        if (
+          !hasChanges() &&
+          !inFlight.current &&
+          !pendingDraft.current &&
+          !pendingReceipt.current &&
+          !metadataSaved.current
+        )
+          return;
+        // Tauri waits for this handler before destroying the window.
+        if (!(await flushRef.current())) event.preventDefault();
+      })
+      .then((unlisten) => {
+        if (active) off = unlisten;
+        else unlisten();
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+      off?.();
+    };
+  }, []);
   return (
     <aside
       className="task-detail reference-task-panel"
@@ -232,11 +366,10 @@ export function TaskDetailPanel({
           event.key === "Enter"
         ) {
           event.preventDefault();
-          void save();
+          void saveRef.current();
         } else if (event.key === "Escape" && !busy) {
           event.preventDefault();
-          if (dirty) setNotice("修改尚未保存，可保存或取消修改。");
-          else onClose();
+          void close();
         }
       }}
     >
@@ -261,7 +394,7 @@ export function TaskDetailPanel({
             aria-label="关闭任务详情"
             title="收起详情"
             disabled={busy}
-            onClick={onClose}
+            onClick={() => void close()}
           >
             <TaskPanelIcon name="close" />
           </button>
@@ -274,10 +407,12 @@ export function TaskDetailPanel({
           aria-label="编辑任务"
           onSubmit={(event) => {
             event.preventDefault();
-            void save();
+            void saveRef.current();
           }}
+          onCompositionStart={() => setComposing(true)}
+          onCompositionEnd={() => setComposing(false)}
         >
-          <fieldset disabled={busy || loading || !base}>
+          <fieldset disabled={loading || !base}>
             <div className="task-panel-intro">
               <label className="sr-only" htmlFor="panel-title">
                 任务标题
@@ -289,7 +424,7 @@ export function TaskDetailPanel({
                 className="task-panel-title"
                 rows={1}
                 value={title}
-                onChange={(event) => setTitle(event.target.value)}
+                onChange={(event) => changed(setTitle, event.target.value)}
               />
               <label className="sr-only" htmlFor="panel-notes">
                 任务描述
@@ -301,14 +436,14 @@ export function TaskDetailPanel({
                 rows={1}
                 placeholder="添加描述"
                 value={notes}
-                onChange={(event) => setNotes(event.target.value)}
+                onChange={(event) => changed(setNotes, event.target.value)}
               />
               <div className="task-date-options" aria-label="安排日期快捷选项">
                 <button
                   type="button"
                   aria-pressed={date === today}
                   disabled={task.status === "completed"}
-                  onClick={() => setDate(today)}
+                  onClick={() => changed(setDate, today, true)}
                 >
                   今天
                 </button>
@@ -316,17 +451,15 @@ export function TaskDetailPanel({
                   type="button"
                   aria-pressed={date === tomorrow(today)}
                   disabled={task.status === "completed"}
-                  onClick={() => setDate(tomorrow(today))}
+                  onClick={() => changed(setDate, tomorrow(today), true)}
                 >
                   明天
                 </button>
                 <DatePicker
                   value={date}
-                  onChange={setDate}
+                  onChange={(value) => changed(setDate, value, true)}
                   label="安排日期"
-                  disabled={
-                    busy || loading || !base || task.status === "completed"
-                  }
+                  disabled={loading || !base || task.status === "completed"}
                   className={
                     date !== today && date !== tomorrow(today) ? "selected" : ""
                   }
@@ -352,8 +485,8 @@ export function TaskDetailPanel({
                   clearable
                   className="date-picker-field"
                   value={deadline}
-                  disabled={busy || loading || !base}
-                  onChange={setDeadline}
+                  disabled={loading || !base}
+                  onChange={(value) => changed(setDeadline, value, true)}
                 />
               </div>
             </div>
@@ -368,7 +501,9 @@ export function TaskDetailPanel({
                         key={minutes}
                         type="button"
                         aria-pressed={estimate === String(minutes)}
-                        onClick={() => setEstimate(String(minutes))}
+                        onClick={() =>
+                          changed(setEstimate, String(minutes), true)
+                        }
                       >
                         {minutes} 分钟
                       </button>
@@ -383,7 +518,9 @@ export function TaskDetailPanel({
                     value={estimate}
                     placeholder="分钟"
                     title="自定义分钟，留空表示未知"
-                    onChange={(event) => setEstimate(event.target.value)}
+                    onChange={(event) =>
+                      changed(setEstimate, event.target.value)
+                    }
                   />
                 </div>
               </div>
@@ -397,7 +534,7 @@ export function TaskDetailPanel({
                   rows={2}
                   value={criteria}
                   placeholder="怎样算完成这项任务？"
-                  onChange={(event) => setCriteria(event.target.value)}
+                  onChange={(event) => changed(setCriteria, event.target.value)}
                 />
               </div>
             </div>
@@ -407,7 +544,9 @@ export function TaskDetailPanel({
                 <input
                   type="checkbox"
                   checked={important}
-                  onChange={(event) => setImportant(event.target.checked)}
+                  onChange={(event) =>
+                    changed(setImportant, event.target.checked, true)
+                  }
                 />
                 重要任务
               </label>
@@ -444,46 +583,38 @@ export function TaskDetailPanel({
         {error && (
           <div className="task-panel-feedback error" role="alert">
             {error}
+            {base && (
+              <button disabled={busy} onClick={() => void saveRef.current()}>
+                重试自动保存
+              </button>
+            )}
             <button disabled={busy} onClick={() => void onUpdated()}>
               重新加载
             </button>
           </div>
         )}
-        <p className="task-panel-feedback" role="status">
-          {notice}
-        </p>
+        <div className="task-panel-secondary">
+          <RelatedRecords targetType="task" targetId={task.taskId} />
+          <TaskTimeLink
+            taskId={task.taskId}
+            disabled={busy || dirty}
+            showSummary
+          />
+        </div>
       </div>
-      <RelatedRecords targetType="task" targetId={task.taskId} />
-      <TaskTimeLink taskId={task.taskId} disabled={busy || dirty} showSummary />
-      <footer className="task-panel-footer">
+      <footer className="task-panel-footer" role="status" aria-live="polite">
         <span>
           <span className="status-dot" />
-          {dirty ? "有未保存的修改" : "本机保存"}
+          {busy
+            ? "正在保存…"
+            : error
+              ? "保存未完成，修改已保留"
+              : dirty
+                ? "等待自动保存…"
+                : notice
+                  ? "已自动保存"
+                  : "自动保存到本机"}
         </span>
-        {dirty && (
-          <button
-            className="task-panel-cancel"
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              setBusy(true);
-              void onUpdated()
-                .catch((error) => setError(errorText(error)))
-                .finally(() => setBusy(false));
-            }}
-          >
-            取消修改
-          </button>
-        )}
-        <button
-          type="submit"
-          form="task-panel-editor"
-          disabled={busy || loading || !base || !dirty}
-          title="保存修改（Ctrl+Enter）"
-          aria-keyshortcuts="Control+Enter Meta+Enter"
-        >
-          {busy ? "保存中…" : "保存修改"}
-        </button>
       </footer>
     </aside>
   );

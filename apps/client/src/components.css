@@ -86,7 +86,7 @@ select {
   place-items: center;
 }
 .workspace .plan-controls > button[aria-pressed="true"] {
-  color: var(--primary);
+  color: var(--primary-text);
   background: var(--selected);
 }
 .workspace input:not([type="checkbox"]),
@@ -218,7 +218,7 @@ input[type="checkbox"] {
   padding: 2px 8px;
 }
 .task-important {
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .focus-section .list-heading {
   color: var(--text-primary);
@@ -439,3 +439,4 @@ input[type="checkbox"] {
 .desktop-shell .sidebar {
   padding-top: 32px;
 }
+

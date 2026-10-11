@@ -1,0 +1,585 @@
+.pm-app .pm-bottom svg {
+  width: 24px;
+  height: 24px;
+}
+.pm-app .pm-bottom button {
+  gap: 5px;
+}
+.pm-month-calendar {
+  background: var(--surface);
+  border-radius: 20px;
+  overflow: hidden;
+  margin: 4px 12px 14px;
+  box-shadow: 0 3px 14px rgb(0 0 0 / 3%);
+}
+.pm-month-toolbar {
+  display: flex;
+  align-items: center;
+  padding: 10px 8px;
+  gap: 4px;
+}
+.pm-month-toolbar > label {
+  position: relative;
+  flex: 1;
+  font-weight: 600;
+  font-size: 16px;
+  min-width: 0;
+}
+.pm-month-toolbar input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  cursor: pointer;
+}
+.pm-month-toolbar label:focus-within {
+  outline: 2px solid var(--primary-text);
+  outline-offset: 4px;
+  border-radius: 6px;
+}
+.pm-app .pm-month-toolbar button {
+  padding: 0 10px;
+  color: var(--text-secondary);
+}
+.pm-month-weekdays,
+.pm-month-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+}
+.pm-month-weekdays span {
+  text-align: center;
+  padding: 10px 0;
+  font-size: 11px;
+  color: var(--primary-text);
+  background: var(--surface-secondary);
+}
+.pm-app .pm-month-day {
+  min-width: 0;
+  height: 104px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 5px 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border-radius: 0;
+}
+.pm-month-day:nth-child(7n) {
+  border-right: 0;
+}
+.pm-app .pm-month-day.selected {
+  background: var(--selected);
+  box-shadow: inset 0 0 0 1.5px var(--primary-text);
+}
+.pm-month-day.outside {
+  color: var(--text-secondary);
+  background: var(--surface-secondary);
+}
+.pm-month-number {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.pm-month-number.today {
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 700;
+}
+.pm-month-snippets {
+  width: 100%;
+  display: grid;
+  gap: 3px;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: left;
+  min-width: 0;
+}
+.pm-month-snippets > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: var(--surface-secondary);
+  padding: 0 2px;
+  border-radius: 3px;
+  color: var(--text-secondary);
+}
+.pm-month-snippets .done {
+  text-decoration: line-through;
+  opacity: 0.65;
+}
+.pm-month-snippets small {
+  font-size: 9px;
+  color: var(--text-secondary);
+}
+.pm-app .mobile-extras.pm-dashboard {
+  padding: 8px 16px 30px;
+}
+.pm-main:has(> .pm-dashboard) {
+  padding-bottom: 10px;
+}
+.pm-dashboard > h2 {
+  display: none;
+}
+.pm-dashboard svg {
+  width: 23px;
+  height: 23px;
+  flex-shrink: 0;
+}
+.pm-app .pm-stat-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  padding: 8px 0 16px;
+  gap: 4px;
+}
+.pm-app .pm-stat-tabs button {
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 0;
+  font-size: 12px;
+}
+.pm-app .pm-stat-tabs button[aria-selected="true"] {
+  color: var(--primary-text);
+  background: var(--selected);
+}
+.pm-stat-period {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin: 0 0 14px;
+}
+.pm-stat-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.pm-app .pm-stat-cards article {
+  padding: 18px 16px;
+  background: var(--primary);
+  color: var(--on-primary);
+  border: 0;
+  border-radius: 18px;
+  min-width: 0;
+}
+.pm-app .pm-stat-cards article + article {
+  background: var(--surface);
+  color: var(--text-primary);
+}
+.pm-stat-cards article > span {
+  font-size: 13px;
+}
+.pm-stat-cards strong {
+  display: block;
+  margin: 23px 0 8px;
+  font-size: 32px;
+  font-weight: 650;
+  line-height: 1;
+}
+.pm-stat-cards small {
+  font-size: 11px;
+  font-weight: 400;
+  margin-left: 5px;
+}
+.pm-stat-cards p {
+  font-size: 11px;
+  margin: 0;
+  line-height: 1.5;
+}
+.pm-app .pm-stat-insight {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 18px;
+  margin: 14px 0;
+  border: 0;
+  background: var(--surface);
+  border-radius: 18px;
+}
+.pm-stat-insight svg {
+  color: var(--primary-text);
+}
+.pm-stat-insight p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.pm-app .pm-chart-card,
+.pm-app .pm-stat-list {
+  padding: 20px 16px;
+  margin: 14px 0;
+  background: var(--surface);
+  border: 0;
+  border-radius: 18px;
+}
+.pm-chart-card h3,
+.pm-stat-list h3 {
+  margin: 0 0 6px;
+  font-size: 16px;
+}
+.pm-chart-card > p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.pm-chart-card .pm-stat-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 15px;
+}
+.pm-stat-chart text {
+  fill: var(--text-secondary);
+  font-size: 9px;
+}
+.pm-stat-list > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  border-top: 1px solid var(--line);
+  padding: 12px 0;
+  font-size: 13px;
+}
+.pm-stat-list > div:first-of-type {
+  margin-top: 14px;
+}
+.pm-stat-list > div span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.pm-stat-list small {
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--primary-text);
+}
+.pm-stat-note {
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--text-secondary);
+}
+.pm-app .pm-review-link {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  background: var(--selected);
+  color: var(--primary-text);
+  border: 0;
+}
+.pm-focus-view {
+  text-align: center;
+}
+.pm-focus-select {
+  background: var(--selected);
+  border-radius: 20px;
+  padding: 20px;
+  text-align: left;
+}
+.pm-focus-eyebrow {
+  color: var(--primary-text);
+  font-size: 12px;
+}
+.pm-app .pm-focus-select label {
+  margin: 17px 0 10px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.pm-focus-select h2 {
+  margin: 20px 0 5px;
+  font-size: 20px;
+  overflow-wrap: anywhere;
+}
+.pm-app .pm-focus-select input,
+.pm-app .pm-focus-select select {
+  border: 0;
+  background: var(--surface);
+  font-size: 14px;
+}
+.pm-focus-clock {
+  width: min(100%, 300px);
+  aspect-ratio: 1;
+  margin: 26px auto 20px;
+  position: relative;
+}
+.pm-focus-clock svg {
+  width: 100%;
+  height: 100%;
+}
+.pm-focus-clock > div {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.pm-focus-clock strong {
+  font-size: clamp(44px, 14vw, 62px);
+  letter-spacing: -2px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.pm-focus-clock span {
+  font-size: 11px;
+  color: var(--text-secondary);
+  max-width: 210px;
+  line-height: 1.5;
+}
+.pm-app .pm-focus-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin: auto;
+  padding: 12px 30px;
+  background: var(--primary);
+  color: var(--on-primary);
+  border: 0;
+  border-radius: 30px;
+  font-size: 16px;
+  min-height: 52px;
+}
+.pm-focus-primary svg {
+  width: 20px;
+  height: 20px;
+}
+.pm-focus-help {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin: 14px 0 26px;
+}
+.pm-focus-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--surface);
+  border-radius: 18px;
+  padding: 18px;
+  gap: 14px;
+}
+.pm-focus-summary > div + div {
+  border-left: 1px solid var(--line);
+}
+.pm-focus-summary strong {
+  display: block;
+  font-size: 25px;
+  color: var(--primary-text);
+  margin-bottom: 7px;
+}
+.pm-focus-summary small {
+  font-size: 11px;
+  font-weight: 400;
+  margin-left: 4px;
+}
+.pm-focus-summary span {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.pm-app .pm-focus-history-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  border: 0;
+  background: var(--surface);
+  color: var(--text-primary);
+  padding: 14px;
+}
+.pm-focus-history-toggle > span {
+  margin-left: auto;
+}
+.pm-focus-history {
+  text-align: left;
+}
+.pm-focus-history article {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.pm-focus-history article span {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+.pm-focus-history article {
+  position: relative;
+  padding-right: 50px;
+}
+.pm-app .pm-focus-record-delete {
+  position: absolute;
+  right: 0;
+  top: 6px;
+  border: 0;
+  background: transparent;
+  font-size: 11px;
+  padding: 8px;
+  color: var(--text-secondary);
+}
+.pm-focus-record-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.pm-app .pm-focus-record-actions button {
+  border: 0;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.pm-settings-group {
+  border-radius: 18px;
+  margin: 12px 0;
+  background: var(--surface);
+  overflow: hidden;
+}
+.pm-settings-group > summary {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  list-style: none;
+  min-height: 26px;
+}
+.pm-settings-group > summary::-webkit-details-marker {
+  display: none;
+}
+.pm-settings-group > summary:after {
+  content: "›";
+  margin-left: auto;
+  color: var(--text-secondary);
+  font-size: 20px;
+}
+.pm-settings-group[open] > summary:after {
+  transform: rotate(90deg);
+}
+.pm-settings-group > summary svg {
+  color: var(--primary-text);
+}
+.pm-settings-group > .mx-form,
+.pm-settings-group > section {
+  border: 0;
+  margin: 0;
+  padding: 0 18px 18px;
+  border-radius: 0;
+  background: transparent;
+}
+.pm-app .pm-profile.account-panel {
+  background: var(--surface);
+  border: 0;
+  border-radius: 20px;
+  padding: 22px 18px;
+  margin-bottom: 18px;
+}
+.pm-profile .settings-card-heading {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.pm-profile .account-avatar {
+  width: 52px;
+  height: 52px;
+  font-size: 22px;
+}
+.pm-app .pm-profile .settings-card-heading h2 {
+  font-size: 20px;
+  margin: 0 0 5px;
+}
+.pm-profile .settings-card-heading p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.pm-profile .pm-profile-controls {
+  border-top: 1px solid var(--line);
+  margin-top: 18px;
+  padding-top: 5px;
+}
+.pm-profile-controls > summary {
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--primary-text);
+  padding: 10px 0;
+}
+.pm-app .pm-dashboard .theme-color-options {
+  gap: 8px;
+}
+.pm-app .pm-dashboard .theme-color-options button {
+  padding: 8px 4px;
+  min-width: 0;
+}
+.pm-app .pm-dashboard .pm-settings-group > .theme-settings {
+  margin: 0;
+  padding: 0 18px 18px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--surface);
+}
+.pm-app .pm-dashboard .theme-settings .settings-card-heading {
+  display: none;
+}
+.pm-app .pm-dashboard .theme-settings .theme-color-options {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 0;
+  gap: 6px;
+}
+.pm-app .pm-dashboard .theme-settings .theme-color-options button {
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 2px;
+  font-size: 11px;
+  position: relative;
+  border-color: transparent;
+  background: transparent;
+}
+.pm-app
+  .pm-dashboard
+  .theme-settings
+  .theme-color-options
+  button[aria-checked="true"] {
+  background: var(--selected);
+}
+.pm-app .pm-dashboard .theme-settings .theme-swatch {
+  width: 35px;
+  height: 35px;
+  border: 0;
+}
+.pm-app .pm-dashboard .theme-settings .theme-choice-check {
+  position: absolute;
+  right: 5px;
+  top: 7px;
+  margin: 0;
+}
+.pm-app .pm-profile-controls > summary {
+  min-height: 24px;
+}
+@media (max-width: 350px) {
+  .pm-month-calendar {
+    margin-inline: 8px;
+  }
+  .pm-app .pm-month-day {
+    height: 92px;
+  }
+  .pm-stat-cards {
+    gap: 8px;
+  }
+  .pm-app .pm-stat-cards article {
+    padding: 16px 12px;
+  }
+  .pm-stat-tabs {
+    gap: 2px;
+  }
+}

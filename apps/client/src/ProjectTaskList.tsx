@@ -321,7 +321,6 @@ export function ProjectTaskList({
               <div className="project-task-heading">
                 <TaskDetailsButton
                   taskId={task.taskId}
-                  onSaved={onSaved}
                   disabled={busy}
                   label={task.title}
                   className="project-task-title"
@@ -377,11 +376,7 @@ export function ProjectTaskList({
               disabled={busy}
             >
               <div className="project-task-action-menu">
-                <TaskDetailsButton
-                  taskId={task.taskId}
-                  onSaved={onSaved}
-                  disabled={busy}
-                />
+                <TaskDetailsButton taskId={task.taskId} disabled={busy} />
                 {!task.hasChildren &&
                   (task.executionDate ? (
                     <button

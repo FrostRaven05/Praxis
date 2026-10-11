@@ -1,0 +1,16 @@
+{
+  "widths": [
+    {
+      "window": 1440,
+      "today": 560,
+      "upcoming": 560
+    },
+    {
+      "window": 1920,
+      "today": 560,
+      "upcoming": 560
+    }
+  ],
+  "errors": [],
+  "narrowWindowOverflow": false
+}

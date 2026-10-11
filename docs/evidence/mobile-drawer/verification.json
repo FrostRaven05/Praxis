@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "checks": [
+    "Full height modal drawer; focus restored, Escape, backdrop and Android back close it.",
+    "Search transfers its query; project creation opens the existing editor without task writes; all navigation remains usable.",
+    "Real 12-week completion heatmap, 320px internal scroll, pinned footer, dark colors and no horizontal overflow."
+  ],
+  "errors": []
+}

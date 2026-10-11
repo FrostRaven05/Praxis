@@ -12,20 +12,27 @@ import { Capacitor } from "@capacitor/core";
 import { mobileStorage } from "../../../../packages/storage-mobile/src/native";
 import { Inbox } from "./Inbox";
 import { Extras, type ExtraSection } from "./Extras";
+import { MobileDrawer } from "./MobileDrawer";
+import { QuickInbox } from "./QuickInbox";
+import { unplannedTasks } from "./mobile-inbox-model";
+import { TaskPanelIcon } from "../TaskPanelIcon";
+import { MonthCalendar } from "./MonthCalendar";
+import { MobileNavIcon, type MobileIconName } from "./MobileNavIcon";
 import "./mobile.css";
+import "./mobile-polish.css";
 
 const labels: Record<string, string> = {
   tasks: "任务清单",
   calendar: "日历",
   projects: "项目",
-  stats: "完成统计",
+  stats: "数据复盘",
   settings: "我的",
   inbox: "收件箱",
   habits: "习惯",
   repeat: "重复任务",
   records: "记录",
   review: "回顾",
-  search: "搜索与视图",
+  search: "搜索与筛选",
   trash: "回收站",
   focus: "专注",
   templates: "策略与决策",
@@ -53,8 +60,15 @@ export function MobileApp() {
     [childBusy, setChildBusy] = useState(false);
   const [editing, setEditing] = useState<WorkspaceEntity | null>(null),
     [expanded, setExpanded] = useState<string[]>([]),
-    [projectFilter, setProjectFilter] = useState("");
+    [projectFilter, setProjectFilter] = useState(""),
+    [searchQuery, setSearchQuery] = useState(""),
+    [quickInbox, setQuickInbox] = useState(false);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [section, projectFilter]);
   const saving = useRef(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const inboxButton = useRef<HTMLButtonElement>(null);
   const pending = useRef<WorkspaceCommand | null>(null);
   const initializedDate = useRef(false),
     lastToday = useRef("");
@@ -68,6 +82,7 @@ export function MobileApp() {
       Intl.DateTimeFormat().resolvedOptions().timeZone,
   );
   const today = calendarDate(new Date(), timeZone);
+  const quickInboxCount = unplannedTasks(snapshot.entities).length;
   const draftActive = useRef(false);
   draftActive.current = !!(
     editing ||
@@ -127,6 +142,10 @@ export function MobileApp() {
       dialog.dispatchEvent(new Event("cancel", { cancelable: true }));
       return;
     }
+    if (quickInbox) {
+      closeQuickInbox();
+      return;
+    }
     if (childBusy) {
       setError("请先保存或取消当前编辑，再返回。");
       return;
@@ -183,8 +202,16 @@ export function MobileApp() {
   function chooseDate(next: string) {
     if (canNavigate()) setDate(next);
   }
+  function closeQuickInbox() {
+    if (saving.current || pending.current) {
+      setError("保存尚未确认，请先重试保存。");
+      return;
+    }
+    setQuickInbox(false);
+  }
   function navigate(next: string) {
     if (!canNavigate()) return;
+    if (next === "search") setSearchQuery("");
     setSection(next);
     setMenu(false);
     setProjectFilter("");
@@ -196,6 +223,7 @@ export function MobileApp() {
   ) {
     if (saving.current) return;
     saving.current = true;
+    setError("");
     setBusy(true);
     try {
       const command: WorkspaceCommand = {
@@ -341,6 +369,7 @@ export function MobileApp() {
   async function retryPending() {
     if (saving.current || !pending.current) return;
     saving.current = true;
+    setError("");
     setBusy(true);
     try {
       await mobileStorage.workspaceCommand(pending.current);
@@ -401,13 +430,6 @@ export function MobileApp() {
         ? text(t, "projectId") === projectFilter
         : text(t, "executionDate") === date || text(t, "dueDate") === date) &&
       text(t, "status") !== "cancelled",
-  );
-  const overdue = tasks.filter(
-    (t) =>
-      !["completed", "cancelled"].includes(text(t, "status")) &&
-      ((text(t, "executionDate") && text(t, "executionDate") < date) ||
-        (text(t, "dueDate") && text(t, "dueDate") < date)) &&
-      !visible.some((v) => v.id === t.id),
   );
   function taskRow(t: WorkspaceEntity, depth = 0): React.ReactNode {
     const children = tasks.filter((c) => text(c, "parentId") === t.id),
@@ -489,13 +511,24 @@ export function MobileApp() {
   }
   return (
     <div className="pm-app">
-      <LanSyncPanel refresh={() => refresh(true)} />
       <header className="pm-header">
         <div className="pm-top">
           <button
+            ref={menuButton}
             aria-label="打开菜单"
+            aria-expanded={menu}
+            disabled={
+              loading ||
+              busy ||
+              !!pending.current ||
+              !!editing ||
+              childBusy ||
+              !!organizing
+            }
             className="pm-icon"
-            onClick={() => setMenu(!menu)}
+            onClick={() => {
+              if (menu || canNavigate()) setMenu(!menu);
+            }}
           >
             ☰
           </button>
@@ -504,14 +537,34 @@ export function MobileApp() {
             <h1>{labels[section]}</h1>
           </div>
           <button
-            className="pm-icon"
+            ref={inboxButton}
+            className="pm-icon pm-inbox-trigger"
             aria-label="打开收件箱"
-            onClick={() => navigate("inbox")}
+            aria-expanded={quickInbox}
+            disabled={
+              loading ||
+              busy ||
+              !!pending.current ||
+              !!editing ||
+              childBusy ||
+              !!organizing
+            }
+            onClick={() => {
+              if (canNavigate()) {
+                setError("");
+                setQuickInbox(true);
+              }
+            }}
           >
-            ▤
+            <TaskPanelIcon name="inbox" />
+            {quickInboxCount > 0 && (
+              <span className="pm-inbox-count" aria-hidden="true">
+                {quickInboxCount}
+              </span>
+            )}
           </button>
         </div>
-        {["tasks", "calendar"].includes(section) && (
+        {section === "tasks" && (
           <>
             <div className="pm-week-title">
               <button
@@ -576,13 +629,67 @@ export function MobileApp() {
         )}
       </header>
       {menu && (
-        <nav className="pm-menu" aria-label="功能菜单">
-          {Object.keys(labels).map((key) => (
-            <button key={key} onClick={() => navigate(key)}>
-              {labels[key]}
-            </button>
-          ))}
-        </nav>
+        <MobileDrawer
+          triggerRef={menuButton}
+          section={section}
+          projectId={projectFilter}
+          entities={snapshot.entities}
+          today={today}
+          timeZone={timeZone}
+          onClose={() => setMenu(false)}
+          onNavigate={navigate}
+          onSearch={(query) => {
+            if (!canNavigate()) return;
+            setSearchQuery(query);
+            setSection("search");
+            setProjectFilter("");
+            setMenu(false);
+          }}
+          onProject={(id) => {
+            if (!canNavigate()) return;
+            setSection("projects");
+            setProjectFilter(id);
+            setMenu(false);
+          }}
+          onCreateProject={() => {
+            if (!canNavigate()) return;
+            setMenu(false);
+            setSection("projects");
+            setProjectFilter("");
+            create("project");
+          }}
+        />
+      )}
+      {quickInbox && (
+        <QuickInbox
+          triggerRef={inboxButton}
+          entities={snapshot.entities}
+          today={today}
+          tomorrow={shifted(today, 1)}
+          busy={busy}
+          pending={!!pending.current}
+          error={error}
+          onClose={closeQuickInbox}
+          onSchedule={(task, nextDate) =>
+            save(task, { ...task.data, executionDate: nextDate })
+          }
+          onProject={(task, id) =>
+            save(task, { ...task.data, projectId: id || null, sectionId: null })
+          }
+          onEdit={(task) => {
+            if (!canNavigate()) return;
+            setQuickInbox(false);
+            setError("");
+            setEditing(task);
+          }}
+          onNavigate={(next) => {
+            if (!canNavigate()) return;
+            setQuickInbox(false);
+            navigate(next);
+          }}
+          onRetry={retryPending}
+          onRefresh={refresh}
+        />
       )}
       {error && (
         <div className="pm-error" role="alert">
@@ -603,49 +710,37 @@ export function MobileApp() {
             {["tasks", "calendar"].includes(section) && (
               <>
                 {section === "calendar" && (
-                  <label className="pm-date-picker">
-                    跳转日期
-                    <input
-                      type="date"
-                      value={date}
-                      onChange={(e) => chooseDate(e.target.value || today)}
-                    />
-                  </label>
+                  <MonthCalendar
+                    date={date}
+                    today={today}
+                    entities={entities}
+                    onChoose={chooseDate}
+                  />
                 )}
-                <div className="pm-list-heading">
-                  <h2>
-                    {date === day() ? "今天" : date}{" "}
-                    <small>{visible.length} 项</small>
-                  </h2>
-                  <button onClick={() => setOrganizing("plan")}>
-                    每日安排
-                  </button>
-                </div>
-                {visible.length ? (
-                  visible
-                    .filter(
-                      (t) => !visible.some((p) => p.id === t.data.parentId),
-                    )
-                    .map((t) => taskRow(t))
-                ) : (
-                  <div className="pm-empty">
-                    <span>○</span>
-                    <h2>给今天留一个明确的下一步</h2>
-                    <p>点击右下角，添加任务或待办。</p>
-                  </div>
-                )}
-                {section === "tasks" && overdue.length > 0 && (
+                {section === "tasks" && (
                   <>
                     <div className="pm-list-heading">
                       <h2>
-                        待重排 <small>{overdue.length} 项</small>
+                        {date === day() ? "今天" : date}{" "}
+                        <small>{visible.length} 项</small>
                       </h2>
+                      <button onClick={() => setOrganizing("plan")}>
+                        每日安排
+                      </button>
                     </div>
-                    {overdue
-                      .filter(
-                        (t) => !overdue.some((p) => p.id === t.data.parentId),
-                      )
-                      .map((t) => taskRow(t))}
+                    {visible.length ? (
+                      visible
+                        .filter(
+                          (t) => !visible.some((p) => p.id === t.data.parentId),
+                        )
+                        .map((t) => taskRow(t))
+                    ) : (
+                      <div className="pm-empty">
+                        <span>○</span>
+                        <h2>给今天留一个明确的下一步</h2>
+                        <p>点击右下角，添加任务或待办。</p>
+                      </div>
+                    )}
                   </>
                 )}
               </>
@@ -757,13 +852,19 @@ export function MobileApp() {
             {!["tasks", "calendar", "projects", "inbox"].includes(section) && (
               <Extras
                 section={section as ExtraSection}
+                searchQuery={searchQuery}
                 snapshot={snapshot}
                 refresh={refresh}
                 onBusyChange={setChildBusy}
+                onNavigate={navigate}
               />
             )}
           </>
         )}
+        <LanSyncPanel
+          refresh={() => refresh(true)}
+          visible={section === "settings"}
+        />
       </main>
       {["tasks", "calendar", "projects"].includes(section) && !editing && (
         <button
@@ -782,19 +883,19 @@ export function MobileApp() {
       )}
       <nav className="pm-bottom" aria-label="主导航">
         {[
-          ["tasks", "☷", "清单"],
-          ["calendar", "▦", "日历"],
-          ["projects", "▱", "项目"],
-          ["stats", "▥", "统计"],
-          ["settings", "○", "我的"],
-        ].map(([key, icon, label]) => (
+          ["tasks", "清单"],
+          ["calendar", "日历"],
+          ["focus", "专注"],
+          ["stats", "统计"],
+          ["settings", "我的"],
+        ].map(([key, label]) => (
           <button
             key={key}
             className={section === key ? "active" : ""}
             aria-current={section === key ? "page" : undefined}
             onClick={() => navigate(key!)}
           >
-            <span aria-hidden="true">{icon}</span>
+            <MobileNavIcon name={key as MobileIconName} />
             {label}
           </button>
         ))}

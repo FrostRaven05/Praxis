@@ -1,0 +1,11 @@
+{
+  "checkedAt": "2026-10-11T07:09:05.064Z",
+  "dataDirectory": "C:\\Project\\01Project\\Praxis\\.tools\\p1-qa-MMTmRk",
+  "results": [
+    "Native quick-input preview, IME guard, independent dates/conflict, tags, daily result/focus deduplication and waiting",
+    "Native reusable label rename, zone preview, section assignment, project cancel/archive and atomic reopen",
+    "Native subtree split, explicit batch completion preview, child reopen reopens parent",
+    "Abrupt native restart preserves identities, dates, day notes, sections and zone; compact/dark screenshot; no page errors"
+  ],
+  "errors": []
+}

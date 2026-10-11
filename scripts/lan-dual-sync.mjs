@@ -48,6 +48,7 @@ async function mobileInbox() {
     await mobile
       .getByRole("button", { name: "打开收件箱", exact: true })
       .click();
+    await mobile.getByRole("button", { name: "整理收件箱原文", exact: false }).click();
   }
   await expect(mobile.getByLabel("记下原文", { exact: true })).toBeVisible();
 }
@@ -146,6 +147,7 @@ try {
       );
       if (wifi === "1") adb("shell", "svc", "wifi", "enable");
       if (data === "1") adb("shell", "svc", "data", "enable");
+      await mobile.getByRole("navigation", { name: "主导航" }).getByRole("button", { name: "我的", exact: true }).click();
       await expect(mobile.getByTestId("lan-sync-status")).toContainText(
         /[1-9][0-9]* 项原文冲突/,
         { timeout: 60000 },

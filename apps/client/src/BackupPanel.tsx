@@ -6,12 +6,37 @@ interface Backup {
   path: string;
   bytes: number;
 }
+const VISIBLE = 5;
+const kinds: Record<string, string> = {
+  manual: "手动备份",
+  "before-upgrade": "升级前自动备份",
+};
+// File names look like 20261011T140911-<kind>-<uuid>.db (UTC timestamp).
+function describe(b: Backup) {
+  const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})-(.+)-[0-9a-f-]{36}\.db$/i.exec(
+    b.name,
+  );
+  if (!m) return { when: b.name, kind: "" };
+  const [, y, mo, d, h, mi, s, kind] = m;
+  const date = new Date(Date.UTC(+y!, +mo! - 1, +d!, +h!, +mi!, +s!));
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return {
+    when: `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`,
+    kind: kinds[kind!] ?? kind!,
+  };
+}
+function size(bytes: number) {
+  return bytes >= 1048576
+    ? `${(bytes / 1048576).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+}
 export function BackupPanel() {
   const [items, setItems] = useState<Backup[]>([]),
     [loading, setLoading] = useState(true),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
+    [showAll, setShowAll] = useState(false),
     [selected, setSelected] = useState<Backup | null>(null);
   async function reload() {
     setLoading(true);
@@ -29,9 +54,10 @@ export function BackupPanel() {
   }, []);
   async function create() {
     setBusy(true);
+    setNotice("");
     try {
-      const path = await invoke<string>("backup_create");
-      setNotice(`本机备份已保存：${path}`);
+      await invoke<string>("backup_create");
+      setNotice("备份已创建");
       await reload();
     } catch (e) {
       setError(contentError(e));
@@ -42,13 +68,10 @@ export function BackupPanel() {
   async function restore() {
     if (!selected) return;
     setBusy(true);
+    setNotice("");
     try {
-      const path = await invoke<string>("backup_restore", {
-        name: selected.name,
-      });
-      setNotice(
-        `恢复副本已验证：${path}。请退出并重新打开应用以切换。当前数据库仍保留；重启前的新修改不会自动进入恢复副本。`,
-      );
+      await invoke<string>("backup_restore", { name: selected.name });
+      setNotice("恢复副本已验证，重新打开应用后生效；当前数据不会被覆盖。");
       setSelected(null);
     } catch (e) {
       setError(contentError(e));
@@ -56,51 +79,77 @@ export function BackupPanel() {
       setBusy(false);
     }
   }
+  const shown = showAll ? items : items.slice(0, VISIBLE);
   return (
-    <section className="content-card">
-      <h2>本地备份与恢复</h2>
-      <p>
-        包含当前任务、项目、记录、历史和未同步操作。升级迁移前自动建立一致性备份；恢复写入新文件，保留原数据库。
-      </p>
-      <button disabled={busy} onClick={() => void create()}>
-        立即备份
-      </button>
-      <button disabled={busy} onClick={() => void reload()}>
-        刷新备份列表
-      </button>
+    <section className="content-card backup-panel">
+      <div className="backup-head">
+        <div>
+          <h2>本地备份</h2>
+          <p>升级前会自动备份。恢复不会覆盖当前数据，重新打开应用后生效。</p>
+        </div>
+        <button
+          className="backup-create"
+          disabled={busy}
+          onClick={() => void create()}
+        >
+          立即备份
+        </button>
+      </div>
       {loading && <p role="status">正在读取备份…</p>}
-      {!loading && !error && items.length === 0 && <p>尚无本地备份。</p>}
-      {items.map((b) => (
-        <div key={b.name}>
-          <p>
-            {b.name} · {b.bytes} 字节
-          </p>
-          <small>{b.path}</small>
-          <button disabled={busy} onClick={() => setSelected(b)}>
-            选择恢复
-          </button>
-        </div>
-      ))}
-      {selected && (
-        <div role="group" aria-label="恢复确认">
-          <h3>恢复 {selected.name}</h3>
-          <p>
-            将检查备份完整性并创建新数据库。下次启动切换，原数据库不覆盖。请先备份当前最新修改。
-          </p>
-          <button disabled={busy} onClick={() => void restore()}>
-            确认恢复到新文件
-          </button>
-          <button disabled={busy} onClick={() => setSelected(null)}>
-            取消
-          </button>
-        </div>
+      {!loading && !error && items.length === 0 && (
+        <p className="backup-empty">还没有备份。</p>
+      )}
+      {shown.length > 0 && (
+        <ul className="backup-list">
+          {shown.map((b) => {
+            const info = describe(b);
+            const confirming = selected?.name === b.name;
+            return (
+              <li key={b.name} title={b.path}>
+                <span className="backup-when">{info.when}</span>
+                <span className="backup-meta">
+                  {[info.kind, size(b.bytes)].filter(Boolean).join(" · ")}
+                </span>
+                {confirming ? (
+                  <span
+                    className="backup-confirm"
+                    role="group"
+                    aria-label="恢复确认"
+                  >
+                    <button disabled={busy} onClick={() => void restore()}>
+                      确认恢复
+                    </button>
+                    <button disabled={busy} onClick={() => setSelected(null)}>
+                      取消
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    disabled={busy}
+                    onClick={() => {
+                      setNotice("");
+                      setSelected(b);
+                    }}
+                  >
+                    恢复
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {items.length > VISIBLE && (
+        <button className="backup-more" onClick={() => setShowAll(!showAll)}>
+          {showAll ? "收起" : `显示全部 ${items.length} 条`}
+        </button>
       )}
       {error && (
         <p className="error" role="alert">
           {error}
         </p>
       )}
-      <p role="status">{notice}</p>
+      {notice && <p role="status">{notice}</p>}
     </section>
   );
 }

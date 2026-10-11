@@ -1,0 +1,14 @@
+{
+  "checks": [
+    "Today/Upcoming tabs and date cards share one row at 1440px and 1920px; the date strip stays 560px and small windows do not overflow.",
+    "Inbox edits persist automatically without assigning a date or remounting the editor.",
+    "Inbox queues input during writes, pauses IME composition and resumes after correcting invalid titles.",
+    "Inbox opens directly to tasks with capture/record controls removed; existing capture and record data survive reopening unchanged.",
+    "Closing inbox details flushes pending edits; choosing a date schedules the same task immediately.",
+    "Project details refresh the task list live, keep input enabled while saving and recover unacknowledged writes without duplicate versions.",
+    "Project list and board share the same autosave behavior, task identity and values; closing details flushes edits.",
+    "A single non-modal side panel switches tasks and persists across list, board and Gantt; background status changes refresh its version safely.",
+    "Native window close flushes project edits; reopening restores inbox and project details from SQLite."
+  ],
+  "errors": []
+}

@@ -1,0 +1,8 @@
+{
+  "checks": [
+    "Physical dragging moves habits into empty periods and mixes both kinds of row before/after each other; keyboard arrows share the same persistent ordering.",
+    "Each date saves its own override, future occurrences inherit the recent period, and stale placement versions recover after rereading without changing habit checks.",
+    "Completing and undoing preserve the assigned period; native restart restores both today's mixed ordering and tomorrow's independent arrangement."
+  ],
+  "errors": []
+}

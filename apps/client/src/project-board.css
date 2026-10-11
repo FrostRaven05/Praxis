@@ -111,7 +111,7 @@
 }
 .workspace .project-board .kanban-completion-toggle:hover:not(:disabled),
 .workspace .project-board .kanban-completion-toggle[aria-pressed="true"] {
-  color: var(--primary);
+  color: var(--primary-text);
   background: var(--selected);
 }
 .project-board .kanban-cancelled-mark {
@@ -147,7 +147,7 @@
   white-space: nowrap;
 }
 .project-board .kanban-important {
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .project-board .kanban-card-reason {
   margin: 5px 6px 0 31px;
@@ -234,3 +234,4 @@
     transition: none;
   }
 }
+

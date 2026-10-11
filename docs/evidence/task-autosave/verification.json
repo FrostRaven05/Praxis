@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "Title, description, criteria, estimate and importance persist automatically; focus and editor identity stay stable.",
+    "Invalid minutes and empty titles preserve stored values; correcting input resumes autosave.",
+    "Input during a delayed write is queued with committed versions; writes remain serial.",
+    "IME composition does not persist unfinished Chinese input.",
+    "Unacknowledged writes stop retrying automatically, preserve input and retry the same operation without duplicate changes.",
+    "Date and deadline changes apply automatically; rescheduling retains one task and a stable inspector.",
+    "Closing the inspector immediately flushes pending edits, which survive reopening.",
+    "Closing the native window flushes pending edits; restarting restores them from SQLite."
+  ],
+  "errors": []
+}

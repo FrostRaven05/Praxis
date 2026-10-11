@@ -52,7 +52,7 @@
   .date-strip-label
   .date-picker-trigger[aria-expanded="true"] {
   background: var(--selected);
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .workspace.todoist-workspace .task-date-options .date-picker-trigger {
   border: 0;
@@ -145,7 +145,7 @@
 }
 .calendar-months button[aria-pressed="true"] {
   background: var(--selected);
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .calendar-grid {
   width: 100%;
@@ -176,7 +176,7 @@
   color: var(--text-tertiary);
 }
 .calendar-grid .calendar-today {
-  color: var(--primary);
+  color: var(--primary-text);
   border-color: var(--primary);
 }
 .calendar-grid .selected,
@@ -290,3 +290,4 @@
   text-align: left;
   border-radius: 5px;
 }
+

@@ -16,6 +16,13 @@ export interface PlanCommand {
   date: string;
   occurredAt: string;
   changes: PlanChange[];
+  habitChanges?: HabitPlanChange[];
+}
+export interface HabitPlanChange {
+  habitId: string;
+  expectedVersion: number | null;
+  dayPeriod: import("./day-schedule").DayPeriod;
+  dayRank: number;
 }
 export interface DayLoad {
   capacityMinutes: number | null;
@@ -60,6 +67,7 @@ export interface PlanningStorage {
   captureInbox(c: InboxCommand): Promise<void>;
   listInbox(): Promise<InboxTask[]>;
   scheduleTask(c: ScheduleCommand): Promise<void>;
+  acceptSuggestion?(c: ScheduleCommand): Promise<void>;
 }
 export function planChange(task: DailyTask): PlanChange {
   if (!["todo", "in_progress", "blocked"].includes(task.status))
@@ -91,11 +99,18 @@ export class Planning {
   private capacities = new RetriableCommands<CapacityCommand>();
   private captures = new RetriableCommands<InboxCommand>();
   private schedules = new RetriableCommands<ScheduleCommand>();
+  private suggestions = new RetriableCommands<ScheduleCommand>();
   constructor(private readonly storage: PlanningStorage) {}
-  async update(date: string, changes: PlanChange[]) {
+  async update(
+    date: string,
+    changes: PlanChange[],
+    habitChanges: HabitPlanChange[] = [],
+  ) {
     if (
       !validCalendarDate(date) ||
-      !changes.length ||
+      (!changes.length && !habitChanges.length) ||
+      new Set(habitChanges.map((c) => c.habitId)).size !==
+        habitChanges.length ||
       new Set(changes.map((c) => c.planId)).size !== changes.length
     )
       throw new Error("安排数据无效");
@@ -114,14 +129,25 @@ export class Planning {
         throw new Error("时段无效");
       if (c.estimatedMinutes !== null) parseMinutes(String(c.estimatedMinutes));
     }
+    for (const c of habitChanges) {
+      if (
+        !Number.isSafeInteger(c.dayRank) ||
+        c.dayRank < 1 ||
+        !["morning", "afternoon", "evening"].includes(c.dayPeriod)
+      )
+        throw new Error("习惯安排无效");
+    }
     await this.plans.execute(
       date,
-      (c) => JSON.stringify(c.changes) === JSON.stringify(changes),
+      (c) =>
+        JSON.stringify(c.changes) === JSON.stringify(changes) &&
+        JSON.stringify(c.habitChanges ?? []) === JSON.stringify(habitChanges),
       () => ({
         operationId: crypto.randomUUID(),
         date,
         occurredAt: new Date().toISOString(),
         changes,
+        ...(habitChanges.length ? { habitChanges } : {}),
       }),
       (c) => this.storage.updatePlan(c),
     );
@@ -172,6 +198,28 @@ export class Planning {
         occurredAt: new Date().toISOString(),
       }),
       (c) => this.storage.scheduleTask(c),
+    );
+  }
+  async acceptSuggestion(task: InboxTask, date: string, timeZone: string) {
+    if (!validCalendarDate(date)) throw new Error("请选择安排日期");
+    if (!this.storage.acceptSuggestion)
+      throw new Error("当前设备暂不支持转换建议任务");
+    await this.suggestions.execute(
+      task.taskId,
+      (c) =>
+        c.executionDate === date &&
+        c.expectedVersion === task.version &&
+        c.timeZone === timeZone,
+      () => ({
+        operationId: crypto.randomUUID(),
+        taskId: task.taskId,
+        planId: crypto.randomUUID(),
+        expectedVersion: task.version,
+        executionDate: date,
+        timeZone,
+        occurredAt: new Date().toISOString(),
+      }),
+      (c) => this.storage.acceptSuggestion!(c),
     );
   }
 }

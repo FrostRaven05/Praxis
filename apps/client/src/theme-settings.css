@@ -1,0 +1,119 @@
+:is(.workspace.modern-workspace, .pm-app) .theme-settings {
+  margin-bottom: 24px;
+}
+:is(.workspace.modern-workspace, .pm-app) .theme-color-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+:is(.workspace.modern-workspace, .pm-app) .theme-color-options button {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: left;
+}
+:is(.workspace.modern-workspace, .pm-app)
+  .theme-color-options
+  button[aria-checked="true"] {
+  border-color: var(--primary-text);
+  background: var(--selected);
+}
+:is(.workspace.modern-workspace, .pm-app) .theme-swatch {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--swatch-color);
+}
+:is(.workspace.modern-workspace, .pm-app) .theme-choice-check {
+  margin-left: auto;
+  color: var(--primary-text);
+}
+:is(.workspace.modern-workspace, .pm-app) .theme-custom-color {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 20px;
+  font-size: 13px;
+}
+:is(.workspace.modern-workspace, .pm-app) .theme-custom-color input {
+  width: 42px;
+  height: 36px;
+  padding: 3px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface-card);
+  cursor: pointer;
+}
+:is(.workspace.modern-workspace, .pm-app) .theme-color-value,
+:is(.workspace.modern-workspace, .pm-app) .theme-status {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+:is(.workspace.modern-workspace, .pm-app) .theme-status {
+  margin: 16px 0 0;
+}
+.pm-app .theme-settings {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-card);
+}
+.pm-app .theme-settings .settings-card-heading {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+.pm-app .theme-settings h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+.pm-app .theme-settings .settings-card-heading p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.pm-app .theme-settings .theme-color-options {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.pm-app .theme-settings .theme-color-options button {
+  gap: 8px;
+  padding: 10px;
+}
+.pm-app .theme-settings .theme-swatch {
+  width: 20px;
+  height: 20px;
+}
+.pm-app .theme-settings .theme-custom-color label {
+  margin: 0;
+}
+.pm-app .theme-settings .theme-custom-color input {
+  display: inline-block;
+  min-height: 36px;
+  margin: 0;
+}
+@media (max-width: 340px) {
+  .pm-app .theme-settings {
+    padding: 14px;
+  }
+  .pm-app .theme-settings .theme-color-options button {
+    padding: 10px 8px;
+    gap: 6px;
+    font-size: 12px;
+  }
+  .pm-app .theme-settings .theme-custom-color {
+    gap: 8px;
+  }
+}

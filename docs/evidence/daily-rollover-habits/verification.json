@@ -1,0 +1,9 @@
+{
+  "checks": [
+    "Unfinished old plans move to today's original periods with stable identity, unchanged deadlines and no duplicate versions; suggestions replace Need Attention and support sections are absent.",
+    "Habit rows share the daily task list; completing and undoing persist native habit check-ins across reloads, including weekly targets.",
+    "Calendar browsing follows daily and weekday schedules, suppresses fulfilled weekly targets and prevents future check-ins.",
+    "Native restart preserves the postponed plans and independent daily habit completion history."
+  ],
+  "errors": []
+}

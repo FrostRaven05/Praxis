@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "checks": [
+    "Month navigation, date selection, deadline snippets and new-task date preserved",
+    "Four statistics tabs, accessible keyboard switching and weekly review entry",
+    "25-minute focus persists across navigation and reload; lost-commit retry creates one session and clears draft; actual duration saved and own fixture recycled",
+    "Compact account disclosure, four theme colors, timezone and readonly history; removed workspace/export UI stays absent",
+    "320px light/dark layouts have no overflow; task list unchanged; projects remain accessible in drawer"
+  ],
+  "errors": []
+}

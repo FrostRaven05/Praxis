@@ -50,6 +50,10 @@ pub struct ProductivityCommand {
     deny_unknown_fields
 )]
 pub enum ProductivityAction {
+    Rollover {
+        date: String,
+        time_zone: String,
+    },
     Zone {
         time_zone: String,
         expected_version: Option<i64>,
@@ -187,6 +191,16 @@ impl Store {
         }
         let entity: String;
         match &c.action {
+            ProductivityAction::Rollover { date, time_zone } => {
+                if self
+                    .apply_rollover(&mut tx, date, time_zone, &c.occurred_at)
+                    .await?
+                    == 0
+                {
+                    return tx.commit().await.map_err(|e| e.to_string());
+                }
+                entity = self.owner_id.clone();
+            }
             ProductivityAction::Zone {
                 time_zone,
                 expected_version,

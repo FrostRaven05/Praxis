@@ -56,7 +56,7 @@ export function CommandHistory({ timeZone }: { timeZone: string }) {
     <section>
       <h3>本机操作历史</h3>
       <p className="mx-muted">
-        只读查看最近 100 次已保存操作；完整历史包含在导出文件中。
+        只读查看最近 100 次已保存操作。
       </p>
       <button
         disabled={busy}

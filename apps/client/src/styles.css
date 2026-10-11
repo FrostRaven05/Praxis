@@ -54,7 +54,7 @@ a {
   font-size: 23px;
 }
 .brand-dot {
-  color: var(--primary);
+  color: var(--primary-text);
   margin-left: -10px;
 }
 .tagline {
@@ -535,7 +535,7 @@ a:focus-visible {
   margin-left: 10px;
   border: 0;
   background: transparent;
-  color: var(--primary);
+  color: var(--primary-text);
   text-decoration: underline;
 }
 
@@ -599,7 +599,7 @@ a:focus-visible {
   height: 32px;
   flex-shrink: 0;
   background: transparent;
-  color: var(--primary);
+  color: var(--primary-text);
   cursor: pointer;
   font-size: 22px;
 }
@@ -652,7 +652,7 @@ button:disabled {
 .edit-notice button {
   border: 1px solid var(--line);
   background: var(--surface-secondary);
-  color: var(--primary);
+  color: var(--primary-text);
   border-radius: 6px;
   padding: 9px 13px;
   cursor: pointer;
@@ -736,7 +736,7 @@ button:disabled {
   color: var(--text-primary);
 }
 .plan-controls button[aria-pressed="true"] {
-  color: var(--primary);
+  color: var(--primary-text);
   background: var(--selected);
 }
 .planning-panel {
@@ -1524,3 +1524,4 @@ button:disabled {
     max-height: 240px;
   }
 }
+

@@ -10,6 +10,139 @@ fn command(action: Value) -> ProductivityCommand {
     )
     .unwrap()
 }
+
+#[tokio::test]
+async fn automatic_postponement_preserves_deadlines_times_and_future_choices() {
+    let (d, s) = fixture().await;
+    let dated = id();
+    let timed = id();
+    let future = id();
+    let finished = id();
+    for (t, plan) in [
+        (&dated, json!({"kind":"date","date":"2026-10-06"})),
+        (
+            &timed,
+            json!({"kind":"instant","atUtc":"2026-10-06T07:30:00Z","displayTimezone":"Asia/Hong_Kong"}),
+        ),
+        (&future, json!({"kind":"date","date":"2026-10-12"})),
+        (&finished, json!({"kind":"date","date":"2026-10-06"})),
+    ] {
+        let mut a = task(t, None);
+        a["plan"] = plan;
+        a["deadline"] = json!({"kind":"date","date":"2026-10-07"});
+        a["followUp"] = json!({"kind":"date","date":"2026-10-09"});
+        save(&s, a).await;
+    }
+    save(&s, status(&s, &finished, "completed", false).await).await;
+    let before = item(&s, &finished).await;
+    s.prepare_daily_tasks("2026-10-07T16:30:00Z").await.unwrap();
+    assert_eq!(item(&s, &dated).await["plan"]["date"], "2026-10-08");
+    assert_eq!(
+        item(&s, &timed).await["plan"]["atUtc"],
+        "2026-10-08T07:30:00Z"
+    );
+    assert_eq!(item(&s, &timed).await["deadline"]["date"], "2026-10-07");
+    assert_eq!(item(&s, &timed).await["followUp"]["date"], "2026-10-09");
+    assert_eq!(item(&s, &future).await["plan"]["date"], "2026-10-12");
+    assert_eq!(item(&s, &finished).await, before);
+    let operations = s.pending_operations().await.unwrap().len();
+    let version = item(&s, &timed).await["version"].clone();
+    s.prepare_daily_tasks("2026-10-08T04:00:00Z").await.unwrap();
+    assert_eq!(s.pending_operations().await.unwrap().len(), operations);
+    assert_eq!(item(&s, &timed).await["version"], version);
+    s.close().await;
+    let reopened = Store::open(&d.path().join("praxis.db")).await.unwrap();
+    reopened
+        .prepare_daily_tasks("2026-10-10T02:00:00Z")
+        .await
+        .unwrap();
+    assert_eq!(item(&reopened, &dated).await["plan"]["date"], "2026-10-10");
+    assert_eq!(
+        item(&reopened, &timed).await["plan"]["atUtc"],
+        "2026-10-10T07:30:00Z"
+    );
+    assert_eq!(item(&reopened, &timed).await["notes"], "原文保留");
+}
+
+#[tokio::test]
+async fn automatic_postponement_keeps_arrangement_identity_and_merges_date_collisions() {
+    let (_d, s) = fixture().await;
+    let mut captures = Vec::new();
+    for title in ["晚间任务", "当天已有安排"] {
+        let c = CaptureCommand {
+            operation_id: id(),
+            task_id: id(),
+            plan_id: id(),
+            title: title.into(),
+            execution_date: "2026-10-06".into(),
+            time_zone: "Asia/Hong_Kong".into(),
+            occurred_at: "2026-10-06T03:00:00Z".into(),
+        };
+        s.capture(&c).await.unwrap();
+        captures.push(c);
+    }
+    s.update_plan(&PlanCommand {
+        habit_changes: vec![],
+        operation_id: id(),
+        date: "2026-10-06".into(),
+        occurred_at: "2026-10-06T03:01:00Z".into(),
+        changes: vec![PlanChange {
+            task_id: captures[0].task_id.clone(),
+            plan_id: captures[0].plan_id.clone(),
+            expected_version: 0,
+            is_focus: true,
+            estimated_minutes: Some(30),
+            focus_rank: 0,
+            day_period: Some("evening".into()),
+            day_rank: Some(2),
+        }],
+    })
+    .await
+    .unwrap();
+    // A removed arrangement still occupies the unique task/date key.
+    let mut db = sqlx::SqliteConnection::connect(&format!(
+        "sqlite:{}",
+        _d.path().join("praxis.db").display()
+    ))
+    .await
+    .unwrap();
+    let target_id = id();
+    sqlx::query("INSERT INTO daily_plan_items(id,owner_id,task_id,execution_date,time_zone,created_at,removed) SELECT ?,owner_id,task_id,'2026-10-08',time_zone,created_at,1 FROM daily_plan_items WHERE id=?")
+        .bind(&target_id).bind(&captures[1].plan_id).execute(&mut db).await.unwrap();
+    s.prepare_daily_tasks("2026-10-08T03:00:00Z").await.unwrap();
+    let rows = s.list_day("2026-10-08").await.unwrap();
+    assert_eq!(rows.len(), 2);
+    let first = rows
+        .iter()
+        .find(|r| r.task_id == captures[0].task_id)
+        .unwrap();
+    assert_eq!(first.plan_id, captures[0].plan_id);
+    assert_eq!(first.day_period, "evening");
+    assert_eq!(first.estimated_minutes, Some(30));
+    assert!(first.is_focus);
+    assert_eq!(
+        rows.iter()
+            .find(|r| r.task_id == captures[1].task_id)
+            .unwrap()
+            .plan_id,
+        target_id
+    );
+    assert!(s.list_day("2026-10-06").await.unwrap().is_empty());
+    s.prepare_daily_tasks("2026-10-08T06:00:00Z").await.unwrap();
+    assert_eq!(s.list_day("2026-10-08").await.unwrap(), rows);
+}
+
+#[tokio::test]
+async fn automatic_postponement_handles_a_skipped_dst_hour() {
+    let (_d, s) = fixture().await;
+    save(&s, json!({"type":"zone","timeZone":"America/New_York","expectedVersion":0,"expectedTemplates":[]})).await;
+    let t = id();
+    let mut a = task(&t, None);
+    a["plan"] = json!({"kind":"instant","atUtc":"2026-03-07T07:30:00Z","displayTimezone":"America/New_York"});
+    save(&s, a).await;
+    s.prepare_daily_tasks("2026-03-08T15:00:00Z").await.unwrap();
+    assert_eq!(item(&s, &t).await["plan"]["atUtc"], "2026-03-08T07:00:00Z");
+}
 async fn save(s: &Store, a: Value) {
     s.productivity_command(&command(a)).await.unwrap()
 }

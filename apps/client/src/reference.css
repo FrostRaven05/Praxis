@@ -25,7 +25,7 @@
   box-shadow: none;
 }
 .nav-item > .task-panel-icon {
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .reference-workspace .reference-day .today-content {
   padding: 44px 24px 24px;
@@ -78,7 +78,7 @@
 .capture-circle {
   width: 19px;
   height: 19px;
-  border: 1.6px solid var(--primary);
+  border: 1.6px solid var(--primary-text);
   border-radius: 50%;
   flex-shrink: 0;
 }
@@ -91,7 +91,7 @@
   font-size: 12px;
   padding: 4px 9px;
   background: transparent;
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .reference-day .task-item {
   min-height: 54px;
@@ -236,7 +236,7 @@
   color: var(--text-tertiary);
 }
 .workspace .task-panel-toolbar-actions button[aria-pressed="true"] {
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .task-panel-scroll {
   flex: 1;
@@ -396,7 +396,7 @@
 }
 .workspace .task-effort-options button[aria-pressed="true"] {
   background: var(--selected);
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .task-panel-importance {
   display: flex;
@@ -481,7 +481,7 @@
   font-weight: 500;
 }
 .inbox-toolbar h1 .task-panel-icon {
-  color: var(--primary);
+  color: var(--primary-text);
   width: 22px;
   height: 22px;
 }
@@ -626,3 +626,4 @@
     padding-left: 12px;
   }
 }
+

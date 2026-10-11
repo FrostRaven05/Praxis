@@ -18,6 +18,7 @@ export {
 } from "./planning";
 export type {
   PlanChange,
+  HabitPlanChange,
   PlanningStorage,
   DayLoad,
   InboxTask,

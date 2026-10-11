@@ -11,6 +11,8 @@ import { TaskActionMenu } from "./TaskActionMenu";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Projects, type Project, type ProjectTask } from "@praxis/application";
 import { projectStorage } from "./storage";
+import { ProjectTaskPanel } from "./ProjectTaskPanel";
+import { ProjectTaskPanelContext } from "./project-task-panel-context";
 export const projects = new Projects(projectStorage);
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
@@ -40,6 +42,14 @@ export function ProjectsView({
   const [showCompleted, setShowCompleted] = useState(false);
   const [viewBusy, setViewBusy] = useState(false);
   const [contextBusy, setContextBusy] = useState(false);
+  const [panelTaskId, setPanelTaskId] = useState<string | null>(null);
+  const [panelLocked, setPanelLocked] = useState(false);
+  const [panelRevision, setPanelRevision] = useState(0);
+  const panelFlush = useRef<() => Promise<boolean>>(() =>
+    Promise.resolve(true),
+  );
+  const panelTrigger = useRef<HTMLButtonElement | null>(null);
+  const panelRequest = useRef(0);
   const [items, setItems] = useState<Project[]>([]),
     [tasks, setTasks] = useState<ProjectTask[]>([]);
   const [titles, setTitles] = useState(""),
@@ -48,7 +58,13 @@ export function ProjectsView({
   const taskInput = useRef<HTMLInputElement>(null);
   const focusAfterCapture = useRef(false);
   const [error, setError] = useState("");
-  const locked = busy || viewBusy || contextBusy;
+  const locked = busy || viewBusy || contextBusy || panelLocked;
+  useEffect(() => {
+    panelRequest.current++;
+    setPanelTaskId(null);
+    setPanelLocked(false);
+    panelFlush.current = () => Promise.resolve(true);
+  }, [selectedId, navigationRevision, form]);
   useLanRefresh(
     () =>
       Promise.all([
@@ -79,6 +95,24 @@ export function ProjectsView({
   }, [busy]);
   const query = useRef(0);
   const selected = items.find((p) => p.id === selectedId);
+  const panelTask = tasks.find((task) => task.taskId === panelTaskId);
+  async function openTask(taskId: string, trigger: HTMLButtonElement) {
+    if (busy || viewBusy || contextBusy || loading) return;
+    const request = ++panelRequest.current;
+    if (!(await panelFlush.current()) || request !== panelRequest.current)
+      return;
+    panelTrigger.current = trigger;
+    setPanelTaskId((current) => (current === taskId ? null : taskId));
+    setPanelLocked(false);
+  }
+  function closeTask() {
+    panelRequest.current++;
+    setPanelTaskId(null);
+    setPanelLocked(false);
+    panelFlush.current = () => Promise.resolve(true);
+    if (panelTrigger.current?.isConnected) panelTrigger.current.focus();
+    else taskInput.current?.focus();
+  }
   const tree = projectTree(tasks);
   const roots = tree.filter((t) => t.depth === 0);
   const total = roots.reduce((n, t) => n + t.leafTotal, 0);
@@ -130,292 +164,315 @@ export function ProjectsView({
     }
   }
   return (
-    <section
-      className="today projects-view simple-project-workspace"
-      aria-labelledby="projects-heading"
+    <ProjectTaskPanelContext.Provider
+      value={{
+        selectedTaskId: panelTaskId,
+        disabled: locked || loading,
+        open: openTask,
+      }}
     >
-      <div className="today-content">
-        <h1 id="projects-heading" className="sr-only">
-          项目
-        </h1>
-        {error && (
-          <p role="alert" className="error">
-            {error}{" "}
-            <button disabled={busy} onClick={() => void refresh(selectedId)}>
-              重新读取项目
-            </button>
-          </p>
-        )}
-        <div className="project-body">
-          {form && (
-            <ProjectForm
-              key={form === "new" ? "new" : selected?.id}
-              base={form === "edit" ? (selected ?? null) : null}
-              disabled={busy}
-              onCancel={() => setForm(null)}
-              onSave={(base, fields) =>
-                run(async () => {
-                  const id = await projects.save(base, fields);
-                  setSelectedId(id);
-                  setForm(null);
-                  await refresh(id);
-                })
-              }
-            />
+      <section
+        className="today projects-view simple-project-workspace"
+        aria-labelledby="projects-heading"
+      >
+        <div className="today-content">
+          <h1 id="projects-heading" className="sr-only">
+            项目
+          </h1>
+          {error && (
+            <p role="alert" className="error">
+              {error}{" "}
+              <button disabled={busy} onClick={() => void refresh(selectedId)}>
+                重新读取项目
+              </button>
+            </p>
           )}
-          {form === "edit" && selected && (
-            <div className="project-settings-section">
-              <h3>项目状态</h3>
-              <ProjectLifecycle
-                key={"lifecycle:" + selected.id}
-                project={selected}
-                onSaved={() => refresh(selected.id)}
+          <div className="project-body">
+            {form && (
+              <ProjectForm
+                key={form === "new" ? "new" : selected?.id}
+                base={form === "edit" ? (selected ?? null) : null}
+                disabled={busy}
+                onCancel={() => setForm(null)}
+                onSave={(base, fields) =>
+                  run(async () => {
+                    const id = await projects.save(base, fields);
+                    setSelectedId(id);
+                    setForm(null);
+                    await refresh(id);
+                  })
+                }
               />
-            </div>
-          )}
-          {!form && selected && (
-            <>
-              {(selected.status === "archived" || !!selected.archivedAt) && (
-                <button className="project-back-button" onClick={onSettings}>
-                  <ProjectIcon name="arrow" />
-                  返回归档项目
-                </button>
-              )}
-              <header className="project-summary">
-                <div className="project-summary-main">
-                  <div className="project-heading">
-                    <span className="project-summary-icon">
-                      <ProjectIcon name="folder" />
-                    </span>
-                    <h2>{selected.name}</h2>
-                    {selected.status && selected.status !== "active" && (
-                      <span
-                        className="state-badge"
-                        data-state={selected.status ?? "active"}
-                      >
-                        {projectStates[selected.status ?? "active"]}
+            )}
+            {form === "edit" && selected && (
+              <div className="project-settings-section">
+                <h3>项目状态</h3>
+                <ProjectLifecycle
+                  key={"lifecycle:" + selected.id}
+                  project={selected}
+                  onSaved={() => refresh(selected.id)}
+                />
+              </div>
+            )}
+            {!form && selected && (
+              <>
+                {(selected.status === "archived" || !!selected.archivedAt) && (
+                  <button className="project-back-button" onClick={onSettings}>
+                    <ProjectIcon name="arrow" />
+                    返回归档项目
+                  </button>
+                )}
+                <header className="project-summary">
+                  <div className="project-summary-main">
+                    <div className="project-heading">
+                      <span className="project-summary-icon">
+                        <ProjectIcon name="folder" />
                       </span>
+                      <h2>{selected.name}</h2>
+                      {selected.status && selected.status !== "active" && (
+                        <span
+                          className="state-badge"
+                          data-state={selected.status ?? "active"}
+                        >
+                          {projectStates[selected.status ?? "active"]}
+                        </span>
+                      )}
+                    </div>
+                    {selected.outcome && (
+                      <p className="project-outcome">{selected.outcome}</p>
+                    )}
+                    {total > 0 && (
+                      <p className="project-progress" aria-label="项目任务进度">
+                        {done} / {total} 已完成
+                      </p>
                     )}
                   </div>
-                  {selected.outcome && (
-                    <p className="project-outcome">{selected.outcome}</p>
-                  )}
-                  {total > 0 && (
-                    <p className="project-progress" aria-label="项目任务进度">
-                      {done} / {total} 已完成
-                    </p>
-                  )}
-                </div>
-              </header>
-              <ProjectContextPanel
-                key={selected.id}
-                projectId={selected.id}
-                tasks={tasks}
-                onBusyChange={setContextBusy}
-                onSaved={() => refresh(selected.id, true)}
-              />
-              <div className="project-view-toolbar">
-                <span className="project-section-label">任务</span>
-                <div className="project-view-controls">
-                  <div
-                    className="project-view-tabs"
-                    role="tablist"
-                    aria-label="项目视图"
-                  >
-                    {(
-                      [
-                        ["tasks", "任务视图"],
-                        ["gantt", "甘特图"],
-                        ["board", "看板"],
-                      ] as const
-                    ).map(([key, label]) => (
-                      <button
-                        role="tab"
-                        aria-label={label}
-                        title={label}
-                        key={key}
-                        id={"project-view-" + key}
-                        aria-controls="project-view-content"
-                        disabled={locked}
-                        tabIndex={mode === key ? 0 : -1}
-                        aria-selected={mode === key}
-                        onClick={() => setMode(key)}
-                        onKeyDown={(event) => {
-                          if (
-                            locked ||
-                            ![
-                              "ArrowLeft",
-                              "ArrowRight",
-                              "Home",
-                              "End",
-                            ].includes(event.key)
-                          )
-                            return;
-                          event.preventDefault();
-                          const keys = ["tasks", "gantt", "board"] as const;
-                          const index =
-                            event.key === "Home"
-                              ? 0
-                              : event.key === "End"
-                                ? 2
-                                : (keys.indexOf(key) +
-                                    (event.key === "ArrowRight" ? 1 : 2)) %
-                                  3;
-                          const next = keys[index]!;
-                          setMode(next);
-                          document
-                            .getElementById("project-view-" + next)
-                            ?.focus();
-                        }}
-                      >
-                        <ProjectIcon name={key} />
-                        <span>{key === "tasks" ? "列表" : label}</span>
-                      </button>
-                    ))}
-                  </div>
-                  <TaskActionMenu label="项目选项" disabled={locked}>
-                    {(close) => (
-                      <>
-                        {mode === "tasks" &&
-                          tasks.some((task) => task.status === "completed") && (
+                </header>
+                <ProjectContextPanel
+                  key={selected.id}
+                  projectId={selected.id}
+                  tasks={tasks}
+                  onBusyChange={setContextBusy}
+                />
+                <div className="project-view-toolbar">
+                  <span className="project-section-label">任务</span>
+                  <div className="project-view-controls">
+                    <div
+                      className="project-view-tabs"
+                      role="tablist"
+                      aria-label="项目视图"
+                    >
+                      {(
+                        [
+                          ["tasks", "任务视图"],
+                          ["gantt", "甘特图"],
+                          ["board", "看板"],
+                        ] as const
+                      ).map(([key, label]) => (
+                        <button
+                          role="tab"
+                          aria-label={label}
+                          title={label}
+                          key={key}
+                          id={"project-view-" + key}
+                          aria-controls="project-view-content"
+                          disabled={locked}
+                          tabIndex={mode === key ? 0 : -1}
+                          aria-selected={mode === key}
+                          onClick={() => setMode(key)}
+                          onKeyDown={(event) => {
+                            if (
+                              locked ||
+                              ![
+                                "ArrowLeft",
+                                "ArrowRight",
+                                "Home",
+                                "End",
+                              ].includes(event.key)
+                            )
+                              return;
+                            event.preventDefault();
+                            const keys = ["tasks", "gantt", "board"] as const;
+                            const index =
+                              event.key === "Home"
+                                ? 0
+                                : event.key === "End"
+                                  ? 2
+                                  : (keys.indexOf(key) +
+                                      (event.key === "ArrowRight" ? 1 : 2)) %
+                                    3;
+                            const next = keys[index]!;
+                            setMode(next);
+                            document
+                              .getElementById("project-view-" + next)
+                              ?.focus();
+                          }}
+                        >
+                          <ProjectIcon name={key} />
+                          <span>{key === "tasks" ? "列表" : label}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <TaskActionMenu label="项目选项" disabled={locked}>
+                      {(close) => (
+                        <>
+                          {mode === "tasks" &&
+                            tasks.some(
+                              (task) => task.status === "completed",
+                            ) && (
+                              <button
+                                aria-pressed={showCompleted}
+                                onClick={() => {
+                                  setShowCompleted(!showCompleted);
+                                  close();
+                                }}
+                              >
+                                {showCompleted
+                                  ? "隐藏已完成任务"
+                                  : "显示已完成任务"}
+                              </button>
+                            )}
+                          {tasks.some(
+                            (task) => task.status === "cancelled",
+                          ) && (
                             <button
-                              aria-pressed={showCompleted}
+                              aria-pressed={showCancelled}
                               onClick={() => {
-                                setShowCompleted(!showCompleted);
+                                setShowCancelled(!showCancelled);
                                 close();
                               }}
                             >
-                              {showCompleted
-                                ? "隐藏已完成任务"
-                                : "显示已完成任务"}
+                              {showCancelled
+                                ? "隐藏已取消任务"
+                                : "显示已取消任务"}
                             </button>
                           )}
-                        {tasks.some((task) => task.status === "cancelled") && (
                           <button
-                            aria-pressed={showCancelled}
                             onClick={() => {
-                              setShowCancelled(!showCancelled);
+                              setForm("edit");
                               close();
                             }}
                           >
-                            {showCancelled
-                              ? "隐藏已取消任务"
-                              : "显示已取消任务"}
+                            编辑项目
                           </button>
-                        )}
-                        <button
-                          onClick={() => {
-                            setForm("edit");
-                            close();
-                          }}
-                        >
-                          编辑项目
-                        </button>
-                      </>
-                    )}
-                  </TaskActionMenu>
+                        </>
+                      )}
+                    </TaskActionMenu>
+                  </div>
                 </div>
-              </div>
-              <form
-                className="project-task-form capture-form"
-                aria-label="添加项目任务"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (locked || loading) return;
-                  focusAfterCapture.current = true;
-                  void run(async () => {
-                    if (!titles.trim()) throw new Error("请填写任务标题");
-                    await projects.add(selected.id, titles);
-                    setTitles("");
-                    await refresh(selected.id);
-                  });
-                }}
-              >
-                <span className="capture-circle" aria-hidden="true" />
-                <label className="sr-only" htmlFor="project-tasks">
-                  项目任务标题
-                </label>
-                <input
-                  ref={taskInput}
-                  id="project-tasks"
-                  autoComplete="off"
-                  value={titles}
-                  disabled={locked || loading}
-                  onChange={(event) => {
-                    setTitles(event.target.value);
-                    setError("");
+                <form
+                  className="project-task-form capture-form"
+                  aria-label="添加项目任务"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    if (locked || loading) return;
+                    focusAfterCapture.current = true;
+                    void run(async () => {
+                      if (!titles.trim()) throw new Error("请填写任务标题");
+                      await projects.add(selected.id, titles);
+                      setTitles("");
+                      await refresh(selected.id);
+                    });
                   }}
-                  placeholder="添加项目任务，按回车保存"
-                />
-                {busy && (
-                  <span className="capture-status" role="status">
-                    保存中…
-                  </span>
-                )}
-              </form>
-              {loading && (
-                <p className="project-loading" role="status">
-                  正在读取任务…
-                </p>
-              )}
-              <div
-                id="project-view-content"
-                role="tabpanel"
-                aria-labelledby={"project-view-" + mode}
-              >
-                {mode === "gantt" && (
-                  <GanttView
-                    key={"gantt:" + selected.id}
-                    project={selected}
-                    tasks={tasks}
-                    showCancelled={showCancelled}
-                    disabled={busy || loading}
-                    onBusyChange={setViewBusy}
-                    onSaved={() => refresh(selected.id, true)}
-                    onDay={onDay}
+                >
+                  <span className="capture-circle" aria-hidden="true" />
+                  <label className="sr-only" htmlFor="project-tasks">
+                    项目任务标题
+                  </label>
+                  <input
+                    ref={taskInput}
+                    id="project-tasks"
+                    autoComplete="off"
+                    value={titles}
+                    disabled={locked || loading}
+                    onChange={(event) => {
+                      setTitles(event.target.value);
+                      setError("");
+                    }}
+                    placeholder="添加项目任务，按回车保存"
                   />
+                  {busy && (
+                    <span className="capture-status" role="status">
+                      保存中…
+                    </span>
+                  )}
+                </form>
+                {loading && (
+                  <p className="project-loading" role="status">
+                    正在读取任务…
+                  </p>
                 )}
-                {mode === "board" && (
-                  <KanbanView
-                    key={"board:" + selected.id}
-                    tasks={tasks}
-                    showCancelled={showCancelled}
-                    disabled={busy || loading}
-                    onBusyChange={setViewBusy}
-                    onSaved={() => refresh(selected.id, true)}
-                  />
+                <div
+                  id="project-view-content"
+                  role="tabpanel"
+                  aria-labelledby={"project-view-" + mode}
+                >
+                  {mode === "gantt" && (
+                    <GanttView
+                      key={"gantt:" + selected.id}
+                      project={selected}
+                      tasks={tasks}
+                      showCancelled={showCancelled}
+                      disabled={busy || loading || panelLocked}
+                      onBusyChange={setViewBusy}
+                      onSaved={() => refresh(selected.id, true)}
+                      onDay={onDay}
+                    />
+                  )}
+                  {mode === "board" && (
+                    <KanbanView
+                      key={"board:" + selected.id}
+                      tasks={tasks}
+                      showCancelled={showCancelled}
+                      disabled={busy || loading || panelLocked}
+                      onBusyChange={setViewBusy}
+                      onSaved={() => refresh(selected.id, true)}
+                    />
+                  )}
+                  {mode === "tasks" && (
+                    <ProjectTaskList
+                      key={selected.id}
+                      project={selected}
+                      tasks={tasks}
+                      busy={locked}
+                      showCancelled={showCancelled}
+                      showCompleted={showCompleted}
+                      onRun={run}
+                      onSaved={() => refresh(selected.id, true)}
+                      onDay={onDay}
+                    />
+                  )}
+                </div>
+                {mode === "tasks" && !loading && !tasks.length && (
+                  <p className="project-list-empty">
+                    添加第一个任务，开始这个项目。
+                  </p>
                 )}
-                {mode === "tasks" && (
-                  <ProjectTaskList
-                    key={selected.id}
-                    project={selected}
-                    tasks={tasks}
-                    busy={locked}
-                    showCancelled={showCancelled}
-                    showCompleted={showCompleted}
-                    onRun={run}
-                    onSaved={() => refresh(selected.id, true)}
-                    onDay={onDay}
-                  />
-                )}
-              </div>
-              {mode === "tasks" && !loading && !tasks.length && (
-                <p className="project-list-empty">
-                  添加第一个任务，开始这个项目。
-                </p>
-              )}
-            </>
-          )}
-          {!form && !selected && !loading && (
-            <p className="empty-state">
-              {items.length > 0
-                ? "从左侧选择项目，查看下一步行动。"
-                : "从左侧新建第一个项目。"}
-            </p>
-          )}
+              </>
+            )}
+            {!form && !selected && !loading && (
+              <p className="empty-state">
+                {items.length > 0
+                  ? "从左侧选择项目，查看下一步行动。"
+                  : "从左侧新建第一个项目。"}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
-    </section>
+      </section>
+      {!form && selected && panelTask && (
+        <ProjectTaskPanel
+          key={panelTask.taskId + ":" + panelRevision}
+          task={panelTask}
+          projectName={selected.name}
+          flush={panelFlush}
+          onSaved={() => refresh(selected.id, true)}
+          onClose={closeTask}
+          onLockedChange={setPanelLocked}
+          onReload={() => setPanelRevision((revision) => revision + 1)}
+        />
+      )}
+    </ProjectTaskPanelContext.Provider>
   );
 }
 function ProjectForm({

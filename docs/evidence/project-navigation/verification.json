@@ -1,0 +1,12 @@
+{
+  "checks": {
+    "projectVisibleWithoutScrolling": true,
+    "savedViewsHaveHeading": true,
+    "savedViewClickWorks": true,
+    "searchProjectOpensOriginalViews": true,
+    "projectListBoardGanttWork": true,
+    "savedViewsPreserved": true,
+    "narrowViewportNavigationWorks": true
+  },
+  "errors": []
+}

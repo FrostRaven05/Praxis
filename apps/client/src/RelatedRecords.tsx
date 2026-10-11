@@ -44,7 +44,7 @@ export function RelatedRecords({
               r.links.some(
                 (l) => l.targetType === targetType && l.targetId === targetId,
               ),
-            ) && <p>暂无关联记录。可在“收件箱与记录”中编辑关联。</p>}
+            ) && <p>暂无关联记录。</p>}
             {data.records
               .filter((r) =>
                 r.links.some(

@@ -130,6 +130,7 @@ async fn editing_completed_details_keeps_completion_facts_and_arrangement_estima
     .await
     .unwrap();
     s.update_plan(&PlanCommand {
+        habit_changes: vec![],
         operation_id: id(),
         date: "2026-09-19".into(),
         occurred_at: at.clone(),

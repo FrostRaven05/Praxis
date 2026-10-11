@@ -74,6 +74,7 @@ const TABLES: &[(&str, &str)] = &[
     ("project_context", "desktop_row"),
     ("habit_schedules", "desktop_row"),
     ("habit_entries", "desktop_row"),
+    ("habit_daily_plans", "desktop_row"),
     ("recurrence_rules", "desktop_row"),
     ("weekly_reviews", "desktop_row"),
     ("review_settings", "desktop_row"),

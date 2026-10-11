@@ -1,0 +1,409 @@
+/* Desktop visual polish. Loads last; only uses DESIGN.md semantic tokens. */
+.workspace.modern-workspace {
+  --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --accent-soft: color-mix(in srgb, var(--primary) 22%, var(--surface));
+  --accent-line: color-mix(in srgb, var(--primary-text) 38%, var(--surface));
+  --row-hover: color-mix(in srgb, var(--text-secondary) 6%, var(--surface));
+  --shadow-soft:
+    0 1px 2px color-mix(in srgb, var(--text-primary) 6%, transparent),
+    0 6px 18px color-mix(in srgb, var(--text-primary) 4%, transparent);
+  accent-color: var(--primary-text);
+}
+.workspace.modern-workspace ::selection {
+  background: color-mix(in srgb, var(--primary) 45%, transparent);
+}
+
+/* Sidebar */
+.workspace.modern-workspace .brand-mark {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-text) 20%, transparent);
+}
+.workspace.modern-workspace .brand-dot {
+  color: var(--primary-text);
+}
+.workspace.modern-workspace .sidebar .nav-item {
+  position: relative;
+  min-height: 44px;
+  transition:
+    background 160ms var(--ease-out),
+    color 160ms var(--ease-out);
+}
+.workspace.modern-workspace .sidebar .nav-item:hover {
+  background: var(--row-hover);
+}
+.workspace.modern-workspace .sidebar .nav-item.active {
+  background: var(--accent-soft);
+}
+.workspace.modern-workspace .sidebar .nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 11px;
+  bottom: 11px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--primary-text);
+}
+.workspace.modern-workspace .nav-shortcut {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--text-secondary) 9%, transparent);
+  font-family: var(--font-data);
+  font-size: 10px;
+  letter-spacing: 0;
+}
+.workspace.modern-workspace .sidebar-project-heading h2 {
+  text-transform: none;
+  color: var(--text-tertiary);
+}
+.workspace.modern-workspace .sidebar-project-count {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--surface-tertiary);
+}
+.workspace.modern-workspace .sidebar-bottom {
+  border-top: 1px solid var(--line);
+  margin-top: auto;
+}
+.workspace.modern-workspace .sidebar-bottom .sidebar-settings {
+  transition: background 160ms var(--ease-out);
+}
+.workspace.modern-workspace .sidebar-bottom .sidebar-settings:hover {
+  background: var(--row-hover);
+}
+
+.workspace.modern-workspace .lan-sync .lan-sync-icon {
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text-secondary);
+  transition:
+    background 160ms var(--ease-out),
+    color 160ms var(--ease-out);
+}
+.workspace.modern-workspace .lan-sync button.lan-sync-icon:hover {
+  background: var(--row-hover);
+  color: var(--text-primary);
+}
+
+/* Today / upcoming switcher as a segmented control */
+.workspace.modern-workspace .timeline-switcher {
+  gap: 2px;
+  padding: 3px;
+  border-radius: 14px;
+  background: var(--surface-tertiary);
+}
+.workspace.modern-workspace .timeline-switcher button {
+  min-width: 64px;
+  min-height: 34px;
+  padding: 6px 16px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  box-shadow: none;
+  font-weight: 500;
+  transition:
+    background 160ms var(--ease-out),
+    color 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out);
+}
+.workspace.modern-workspace .timeline-switcher button:hover:not([aria-pressed="true"]) {
+  color: var(--text-primary);
+}
+.workspace.modern-workspace .timeline-switcher button[aria-pressed="true"] {
+  background: var(--surface-card);
+  color: var(--primary-text);
+  font-weight: 600;
+  box-shadow: var(--shadow-soft);
+}
+
+/* Quick capture */
+.workspace.modern-workspace .reference-day .capture-form {
+  background: var(--surface-card);
+  border-color: var(--line);
+  box-shadow: var(--shadow-soft);
+  transition:
+    border-color 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out);
+}
+.workspace.modern-workspace .reference-day .capture-form:hover {
+  border-color: var(--accent-line);
+}
+.workspace.modern-workspace .reference-day .capture-form:focus-within {
+  border-color: var(--primary-text);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+/* Period cards */
+.workspace.modern-workspace .reference-day .day-period {
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-soft);
+}
+.workspace.modern-workspace .reference-day .list-heading {
+  min-height: 44px;
+  background: color-mix(in srgb, var(--surface-secondary) 55%, var(--surface-card));
+}
+.workspace.modern-workspace .reference-day .list-heading h2 {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+.workspace.modern-workspace .reference-day .list-heading h2 span {
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--primary-text);
+  font-weight: 600;
+}
+.workspace.modern-workspace .reference-day .task-item {
+  transition: background 140ms var(--ease-out);
+}
+.workspace.modern-workspace .reference-day .task-item:hover {
+  background: var(--row-hover);
+}
+.workspace.modern-workspace .reference-day .task-item.completed .task-title {
+  color: var(--text-tertiary);
+}
+.workspace.modern-workspace .task-drag-handle {
+  opacity: 0;
+  transition: opacity 140ms var(--ease-out);
+}
+.workspace.modern-workspace .task-item:hover .task-drag-handle,
+.workspace.modern-workspace .task-drag-handle:focus-visible {
+  opacity: 1;
+}
+.workspace.modern-workspace .reference-day .plan-controls,
+.workspace.modern-workspace .reference-day .task-action-trigger {
+  opacity: 0.55;
+  transition: opacity 140ms var(--ease-out);
+}
+.workspace.modern-workspace .reference-day .task-item:hover .plan-controls,
+.workspace.modern-workspace .reference-day .task-item:hover .task-action-trigger,
+.workspace.modern-workspace .reference-day .task-item:focus-within .plan-controls,
+.workspace.modern-workspace .reference-day .task-item:focus-within .task-action-trigger {
+  opacity: 1;
+}
+.workspace.modern-workspace .reference-day .period-empty {
+  display: flex;
+  align-items: center;
+  min-height: 56px;
+  padding: 16px 32px;
+  border-bottom: 0;
+  color: var(--text-tertiary);
+}
+.workspace.modern-workspace .reference-day .completed-heading {
+  transition: background 140ms var(--ease-out);
+}
+
+/* Upcoming view */
+.workspace.modern-workspace .timeline-upcoming {
+  padding: 0 28px 32px;
+}
+.workspace.modern-workspace .upcoming-range {
+  margin: 0 0 4px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.workspace.modern-workspace .upcoming-day {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+.workspace.modern-workspace .upcoming-day .list-heading {
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 24px;
+  background: color-mix(in srgb, var(--surface-secondary) 55%, var(--surface-card));
+  border-bottom: 1px solid var(--line);
+}
+.workspace.modern-workspace .upcoming-day .list-heading h2 {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  font-variant-numeric: tabular-nums;
+}
+.workspace.modern-workspace .upcoming-day .list-heading h2 span {
+  min-width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--primary-text);
+}
+.workspace.modern-workspace .upcoming-day .period-empty {
+  min-height: 52px;
+  padding: 14px 24px;
+  color: var(--text-tertiary);
+}
+.workspace.modern-workspace .upcoming-day .work-row {
+  margin: 0;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--line);
+  transition: background 140ms var(--ease-out);
+}
+.workspace.modern-workspace .upcoming-day .work-row:last-child {
+  border-bottom: 0;
+}
+.workspace.modern-workspace .upcoming-day .work-row:hover {
+  background: var(--row-hover);
+}
+.workspace.modern-workspace .work-row-icon {
+  color: var(--primary-text);
+}
+.workspace.modern-workspace .work-badges span {
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-tertiary);
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+/* Backup panel */
+.workspace.modern-workspace .backup-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.workspace.modern-workspace .backup-head h2 {
+  margin: 0 0 4px;
+}
+.workspace.modern-workspace .backup-head p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.workspace.modern-workspace .backup-create {
+  flex-shrink: 0;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
+}
+.workspace.modern-workspace .backup-empty {
+  margin: 16px 0 0;
+  color: var(--text-tertiary);
+  font-size: 13px;
+}
+.workspace.modern-workspace .backup-list {
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  overflow: hidden;
+}
+.workspace.modern-workspace .backup-list li {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 52px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--line);
+  transition: background 140ms var(--ease-out);
+}
+.workspace.modern-workspace .backup-list li:last-child {
+  border-bottom: 0;
+}
+.workspace.modern-workspace .backup-list li:hover {
+  background: var(--row-hover);
+}
+.workspace.modern-workspace .backup-when {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+.workspace.modern-workspace .backup-meta {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.workspace.modern-workspace .backup-confirm {
+  display: flex;
+  gap: 8px;
+}
+.workspace.modern-workspace .backup-confirm button:first-child {
+  background: var(--danger-surface);
+  color: var(--danger-text);
+}
+.workspace.modern-workspace .backup-more {
+  margin-top: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* Shared controls */
+.workspace.modern-workspace select {
+  border-radius: var(--radius-control);
+  transition:
+    border-color 160ms var(--ease-out),
+    box-shadow 160ms var(--ease-out);
+}
+.workspace.modern-workspace select:hover {
+  border-color: var(--accent-line);
+}
+.workspace.modern-workspace select:focus-visible {
+  border-color: var(--primary-text);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+  outline: none;
+}
+.workspace.modern-workspace button:focus-visible {
+  outline: 2px solid var(--primary-text);
+  outline-offset: 2px;
+}
+.workspace.modern-workspace * {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--text-secondary) 35%, transparent) transparent;
+}
+.workspace.modern-workspace *::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+.workspace.modern-workspace *::-webkit-scrollbar-thumb {
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-secondary) 30%, transparent);
+  background-clip: content-box;
+}
+.workspace.modern-workspace *::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--text-secondary) 50%, transparent);
+  background-clip: content-box;
+}
+.workspace.modern-workspace *::-webkit-scrollbar-track {
+  background: transparent;
+}
+.workspace.modern-workspace .date-strip {
+  box-shadow: var(--shadow-soft);
+}
+.workspace.modern-workspace .timeline-more > summary {
+  border-radius: var(--radius-control);
+  transition: background 160ms var(--ease-out);
+}
+.workspace.modern-workspace .timeline-more > summary:hover {
+  background: var(--row-hover);
+  color: var(--text-primary);
+}
+.workspace.modern-workspace .timeline-more > nav {
+  box-shadow:
+    0 4px 12px color-mix(in srgb, var(--text-primary) 8%, transparent),
+    0 16px 40px color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+.workspace.modern-workspace .timeline-more > nav button {
+  border-radius: 8px;
+  transition: background 140ms var(--ease-out);
+}
+@media (prefers-reduced-motion: reduce) {
+  .workspace.modern-workspace *,
+  .workspace.modern-workspace *::before,
+  .workspace.modern-workspace *::after {
+    transition: none !important;
+  }
+}

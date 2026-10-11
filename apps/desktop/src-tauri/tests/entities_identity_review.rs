@@ -693,6 +693,7 @@ async fn native_daily_plan_collision_preserves_existing_arrangement_and_accepts_
     .await
     .unwrap();
     s.update_plan(&PlanCommand {
+        habit_changes: vec![],
         operation_id: id(),
         date: "2026-10-11".into(),
         occurred_at: AT.into(),

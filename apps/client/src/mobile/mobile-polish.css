@@ -1,0 +1,182 @@
+/* Mobile visual polish. Loads after other mobile styles; semantic tokens only. */
+.pm-app {
+  --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --accent-soft: color-mix(in srgb, var(--primary) 32%, var(--surface));
+  --row-press: color-mix(in srgb, var(--text-secondary) 8%, var(--surface));
+  --shadow-soft:
+    0 1px 2px color-mix(in srgb, var(--text-primary) 6%, transparent),
+    0 8px 20px -6px color-mix(in srgb, var(--text-primary) 10%, transparent);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Header */
+.pm-app .pm-header {
+  box-shadow: 0 1px 0 var(--line), 0 8px 24px -12px color-mix(in srgb, var(--text-primary) 14%, transparent);
+}
+.pm-app .pm-top small {
+  text-transform: uppercase;
+}
+.pm-app .pm-icon {
+  transition: background 160ms var(--ease-out);
+}
+.pm-app .pm-icon:active {
+  background: var(--row-press);
+}
+
+/* Section heading */
+.pm-app .pm-list-heading {
+  padding: 14px 22px 10px;
+}
+.pm-app .pm-list-heading h2 {
+  font-size: 18px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+.pm-app .pm-list-heading > button {
+  min-height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--primary-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Task rows become one grouped card */
+.pm-app .pm-main > .pm-task {
+  /* depth-0 rows carry an inline margin-left: 0 */
+  margin-left: 14px !important;
+  margin-right: 14px;
+  padding: 4px 6px 4px 4px;
+  border: 1px solid var(--line);
+  border-top-width: 0;
+  background: var(--surface-card);
+  transition: background 140ms var(--ease-out);
+}
+.pm-app .pm-main > .pm-task:not(.pm-task + .pm-task) {
+  border-top-width: 1px;
+  border-radius: 18px 18px 0 0;
+}
+.pm-app .pm-main > .pm-task:not(:has(+ .pm-task)) {
+  border-radius: 0 0 18px 18px;
+  box-shadow: var(--shadow-soft);
+}
+.pm-app .pm-main > .pm-task:not(.pm-task + .pm-task):not(:has(+ .pm-task)) {
+  border-radius: 18px;
+}
+.pm-app .pm-task-title:active {
+  background: var(--row-press);
+  border-radius: 10px;
+}
+.pm-app .pm-task-title strong {
+  font-weight: 500;
+  line-height: 1.4;
+}
+.pm-app .pm-task-title span {
+  font-size: 12px;
+}
+
+/* Round completion control, matches desktop */
+.pm-app .pm-check:before {
+  inset: 11px;
+  border-width: 2px;
+  border-radius: 50%;
+  transition:
+    background 160ms var(--ease-out),
+    border-color 160ms var(--ease-out);
+}
+.pm-app .pm-check:active:before {
+  background: var(--accent-soft);
+}
+.pm-app .is-complete > .pm-task-line .pm-check:before {
+  border-color: var(--primary-text);
+}
+.pm-app .is-complete > .pm-task-line .pm-check {
+  font-size: 14px !important;
+  color: var(--primary-text);
+}
+.pm-app .is-complete > .pm-task-line .pm-check:before {
+  background: var(--accent-soft);
+}
+
+/* Quiet secondary action on each row */
+.pm-app .pm-task-line > .pm-icon {
+  min-width: 40px;
+  font-size: 20px !important;
+  font-weight: 300;
+  color: var(--text-tertiary);
+}
+.pm-app .pm-expand {
+  margin-left: 52px;
+  border-radius: 999px;
+}
+/* Bottom navigation: pill indicator behind the active icon */
+.pm-app .pm-bottom {
+  border-top: 0;
+  box-shadow: 0 -1px 0 var(--line), 0 -10px 28px -14px color-mix(in srgb, var(--text-primary) 16%, transparent);
+}
+.pm-app .pm-bottom button {
+  gap: 3px;
+  font-weight: 500;
+}
+.pm-app .pm-bottom svg {
+  box-sizing: border-box;
+  width: 58px;
+  height: 32px;
+  padding: 4px 17px;
+  border-radius: 999px;
+  transition: background 200ms var(--ease-out);
+}
+.pm-app .pm-bottom .active svg {
+  background: color-mix(in srgb, var(--primary) 50%, var(--surface));
+}
+.pm-app .pm-bottom button:active svg {
+  background: var(--row-press);
+}
+
+/* Floating action button */
+.pm-app .pm-fab {
+  border-radius: 20px;
+  box-shadow:
+    0 2px 6px color-mix(in srgb, var(--text-primary) 10%, transparent),
+    0 10px 24px color-mix(in srgb, var(--primary-text) 30%, transparent);
+  transition: transform 160ms var(--ease-out);
+}
+.pm-app .pm-fab:active {
+  transform: scale(0.94);
+}
+
+/* Cards on dashboard / settings pages */
+.pm-app .pm-chart-card,
+.pm-app .pm-stat-insight,
+.pm-app .pm-stat-cards article,
+.pm-app .pm-project {
+  box-shadow: var(--shadow-soft);
+}
+.pm-app .pm-project {
+  border-radius: 18px;
+}
+.pm-app .pm-month-calendar {
+  box-shadow: var(--shadow-soft);
+}
+.pm-app .pm-empty {
+  padding: 64px 28px;
+}
+.pm-app .pm-empty > span {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  margin: 0 auto 8px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--primary-text);
+  font-size: 32px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pm-app *,
+  .pm-app *::before,
+  .pm-app *::after {
+    transition: none !important;
+  }
+}

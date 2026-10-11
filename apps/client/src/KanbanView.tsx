@@ -179,7 +179,6 @@ export function KanbanView({
           )}
           <TaskDetailsButton
             taskId={task.taskId}
-            onSaved={onSaved}
             disabled={locked}
             label={task.title}
             className="kanban-task-title"

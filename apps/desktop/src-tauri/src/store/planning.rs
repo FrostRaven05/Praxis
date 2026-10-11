@@ -20,6 +20,16 @@ pub struct PlanCommand {
     pub date: String,
     pub occurred_at: String,
     pub changes: Vec<PlanChange>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub habit_changes: Vec<HabitPlanChange>,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct HabitPlanChange {
+    pub habit_id: String,
+    pub expected_version: Option<i64>,
+    pub day_period: String,
+    pub day_rank: i64,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -79,7 +89,7 @@ impl Store {
     pub async fn update_plan(&self, command: &PlanCommand) -> StoreResult<()> {
         validate_operation(&command.operation_id, &command.occurred_at)?;
         validate_date(&command.date)?;
-        if command.changes.is_empty() {
+        if command.changes.is_empty() && command.habit_changes.is_empty() {
             return Err("Invalid plan changes".into());
         }
         let mut seen = std::collections::HashSet::new();
@@ -88,7 +98,9 @@ impl Store {
                 || c.expected_version < 0
                 || c.focus_rank < 0
                 || c.day_rank.is_some_and(|rank| rank < 0)
-                || c.day_period.as_ref().is_some_and(|period| !["morning", "afternoon", "evening"].contains(&period.as_str()))
+                || c.day_period.as_ref().is_some_and(|period| {
+                    !["morning", "afternoon", "evening"].contains(&period.as_str())
+                })
                 || c.estimated_minutes
                     .is_some_and(|m| !(1..=1440).contains(&m))
             {
@@ -141,6 +153,7 @@ impl Store {
                     .await
                     .map_err(|e| e.to_string())?;
             }
+            self.apply_habit_arrangements(&mut tx, command).await?;
             self.queue_operation(
                 &mut tx,
                 &command.operation_id,

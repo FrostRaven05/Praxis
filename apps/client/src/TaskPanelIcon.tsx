@@ -11,6 +11,8 @@ export function TaskPanelIcon({
     | "close"
     | "inbox"
     | "sun"
+    | "sync"
+    | "search"
     | "branch";
 }) {
   return (
@@ -33,6 +35,15 @@ export function TaskPanelIcon({
         <>
           <circle cx="12" cy="12" r="9" />
           <path d="M12 7v6M12 17h.01" />
+        </>
+      ) : name === "search" ? (
+        <>
+          <circle cx="10.5" cy="10.5" r="6.5" />
+          <path d="m16 16 5 5" />
+        </>
+      ) : name === "sync" ? (
+        <>
+          <path d="M20 7a9 9 0 0 0-15-2L3 7m0-5v5h5M4 17a9 9 0 0 0 15 2l2-2m0 5v-5h-5" />
         </>
       ) : name === "box" ? (
         <rect x="4" y="4" width="16" height="16" rx="3" />

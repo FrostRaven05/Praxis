@@ -208,23 +208,17 @@ try {
   results.push(
     "T19: Future rule preview preserves today's occurrence; workspace time-zone confirmation updates template atomically",
   );
-  await tab("搜索与视图");
+  await tab("搜索与筛选");
   await page.getByRole("combobox", { name: /^类型/ }).selectOption("task");
   await page.getByLabel("搜索文字").fill("回收站中文测试");
   await tab("搜索 / 应用筛选");
   await expect(page.locator(".search-views article")).toHaveCount(1);
-  await page.getByLabel("视图名称").fill("关注中文视图");
-  await page.getByLabel("关注到侧栏").check();
-  await tab("保存新视图");
-  const sidebarView = page
-    .getByRole("navigation", { name: "关注的工作视图" })
-    .getByRole("button", { name: "关注中文视图" });
-  await expect(sidebarView).toBeVisible();
-  await tab("今日");
-  await sidebarView.click();
-  await expect(page.getByLabel("搜索文字")).toHaveValue("回收站中文测试");
+  await expect(page.getByLabel("视图名称")).toHaveCount(0);
+  await expect(
+    page.getByRole("navigation", { name: "关注的工作视图" }),
+  ).toHaveCount(0);
   results.push(
-    "T16: Offline search saves a followed stable view and sidebar restores its filters",
+    "T16: Offline search supports temporary filters without saved-view controls",
   );
   await tab("习惯");
   await tab("创建习惯");

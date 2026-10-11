@@ -1,0 +1,8 @@
+{
+  "checks": [
+    "Suggestions show only a title and one reason, with no editor, status control, modal or task mutation.",
+    "Habit titles open one readonly right inspector; switching, closing and Escape perform no writes.",
+    "Task editing and habit inspection are mutually exclusive; the inspector refreshes after check-in, undo and dragging, and closes on date or view changes."
+  ],
+  "errors": []
+}

@@ -48,6 +48,10 @@ try {
   await mobile.getByRole("button", { name: "打开菜单", exact: true }).waitFor();
   await nav("我的");
   await mobile
+    .locator(".pm-settings-group > summary")
+    .filter({ hasText: "时间与日期" })
+    .click();
+  await mobile
     .getByLabel("工作空间时区", { exact: true })
     .fill("Asia/Hong_Kong");
   await mobile.getByRole("button", { name: "保存时区", exact: true }).click();

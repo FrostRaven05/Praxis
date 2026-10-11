@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "checks": [
+    "Today, tomorrow and picked-date scheduling persist without altering real deadlines; project assignment persists.",
+    "Lost commit response freezes controls and retries the same operation successfully.",
+    "Project filters and sorting, templates, raw inbox access, dismissal, 320px and dark layout work.",
+    "Only three marked test tasks created, then moved to trash; existing tasks untouched."
+  ],
+  "errors": [],
+  "diagnosis": "The failing automated back-key check was caused by native Android confirmation UI remaining after CDP accepted window.confirm. The final harness dismisses only its own fixture confirmations. Unnecessary listener changes were reverted; the original stable App back handler remains. Full native workflow passes."
+}

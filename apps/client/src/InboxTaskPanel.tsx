@@ -16,6 +16,7 @@ import { planning } from "./PlanningPanel";
 import { DatePicker } from "./DatePicker";
 import { TaskPanelIcon } from "./TaskPanelIcon";
 import { shiftCalendarDate } from "./calendar-controls";
+import { useAutosave } from "./useAutosave";
 const editor = new TaskDetailEditor(taskDetailsStorage);
 const message = (error: unknown) =>
   error instanceof Error ? error.message : String(error);
@@ -50,11 +51,14 @@ export function InboxTaskPanel({
   const [deadline, setDeadline] = useState("");
   const [estimate, setEstimate] = useState("");
   const [loading, setLoading] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
-  const [pending, setPending] = useState<Pending | null>(null);
-  const saving = useRef(false);
+  const [readError, setReadError] = useState("");
+  const [scheduling, setScheduling] = useState(false);
+  const baseRef = useRef<TaskDetails | null>(null);
+  const pending = useRef<Pending | null>(null);
+  const appliedDate = useRef("");
+  const draft = { title, notes, date, criteria, important, deadline, estimate };
+  const latestDraft = useRef(draft);
+  latestDraft.current = draft;
   const titleRef = useRef<HTMLTextAreaElement>(null);
   const notesRef = useRef<HTMLTextAreaElement>(null);
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -67,8 +71,7 @@ export function InboxTaskPanel({
     setDeadline(deadlineToLocal(value.deadline));
     setEstimate(value.estimatedMinutes?.toString() ?? "");
     setDate("");
-    setNotice("");
-    setError("");
+    setReadError("");
   }
   useEffect(() => {
     let active = true;
@@ -77,11 +80,12 @@ export function InboxTaskPanel({
       .then((value) => {
         if (active) {
           setBase(value);
+          baseRef.current = value;
           reset(value);
         }
       })
       .catch((error) => {
-        if (active) setError(message(error));
+        if (active) setReadError(message(error));
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -94,100 +98,134 @@ export function InboxTaskPanel({
     for (const input of [titleRef.current, notesRef.current]) {
       if (input) {
         input.style.height = "auto";
-        input.style.height = Math.min(input.scrollHeight + 2, 160) + "px";
+        const contentHeight = input.scrollHeight + 2;
+        input.style.height = Math.min(contentHeight, 160) + "px";
+        input.style.overflowY = contentHeight > 160 ? "auto" : "hidden";
       }
     }
   }, [title, notes]);
-  const dirty =
-    !!pending ||
-    !!(
-      base &&
-      (title.trim() !== base.title ||
-        notes !== base.notes ||
-        criteria !== base.completionCriteria ||
-        important !== base.important ||
-        deadline !== deadlineToLocal(base.deadline) ||
-        estimate.trim() !== (base.estimatedMinutes?.toString() ?? "") ||
-        date)
-    );
-  const locked = busy || loading || !base || !!pending;
+  const autosave = useAutosave({
+    draft,
+    enabled: !!base && !loading,
+    hasChanges: (value) => {
+      const current = baseRef.current;
+      if (!current) return false;
+      try {
+        return (
+          value.title.trim() !== current.title ||
+          value.notes !== current.notes ||
+          value.criteria !== current.completionCriteria ||
+          value.important !== current.important ||
+          value.deadline !== deadlineToLocal(current.deadline) ||
+          parseMinutes(value.estimate) !== current.estimatedMinutes ||
+          value.date !== appliedDate.current
+        );
+      } catch {
+        return true;
+      }
+    },
+    validate: (value) => {
+      if (!value.title.trim()) throw new Error("请填写任务标题");
+      if (value.date && !validCalendarDate(value.date))
+        throw new Error("请选择有效的安排日期");
+      parseMinutes(value.estimate);
+      if (value.deadline !== deadlineToLocal(baseRef.current!.deadline))
+        deadlineFromLocal(value.deadline);
+    },
+    persist: async (value) => {
+      try {
+        let operation = pending.current;
+        if (!operation) {
+          const base = baseRef.current!;
+          const {
+            title,
+            notes,
+            date,
+            criteria,
+            important,
+            deadline,
+            estimate,
+          } = value;
+          const deadlineValue =
+            deadline === deadlineToLocal(base.deadline)
+              ? base.deadline
+              : deadlineFromLocal(deadline);
+          const fields = {
+            title: title.trim(),
+            notes,
+            completionCriteria: criteria,
+            important,
+            deadline: deadlineValue,
+            deadlineTimeZone:
+              deadlineValue === null
+                ? null
+                : deadline === deadlineToLocal(base.deadline)
+                  ? base.deadlineTimeZone
+                  : zone,
+            estimatedMinutes: parseMinutes(estimate),
+          };
+          const unchanged = Object.keys(fields).every(
+            (key) =>
+              fields[key as keyof TaskDetailFields] ===
+              base[key as keyof TaskDetailFields],
+          );
+          operation = {
+            base,
+            fields,
+            date,
+            saved: unchanged ? base : null,
+            scheduled: false,
+          };
+          pending.current = operation;
+        }
+        if (!operation.saved)
+          operation.saved = await editor.save(operation.base, operation.fields);
+        baseRef.current = operation.saved;
+        setBase(operation.saved);
+        if (operation.date && !operation.scheduled) {
+          // Finish newer text edits before leaving the inbox to show the schedule.
+          if (JSON.stringify(latestDraft.current) !== JSON.stringify(value)) {
+            pending.current = null;
+            await onSaved("");
+            return;
+          }
+          setScheduling(true);
+          await planning.schedule(
+            {
+              ...task,
+              version: operation.saved.version,
+              title: operation.saved.title,
+            },
+            operation.date,
+            zone,
+          );
+          operation.scheduled = true;
+          appliedDate.current = operation.date;
+        }
+        await onSaved(operation.date);
+        pending.current = null;
+      } finally {
+        setScheduling(false);
+      }
+    },
+  });
+  const { busy, dirty } = autosave;
+  const error = readError || autosave.error;
+  const locked =
+    loading ||
+    !base ||
+    scheduling ||
+    !!(pending.current?.date && autosave.error);
   useEffect(() => {
-    onLockedChange(busy || dirty || loading);
+    onLockedChange(busy || dirty || loading || autosave.pending);
     return () => onLockedChange(false);
-  }, [busy, dirty, loading, onLockedChange]);
-  function close() {
-    if (busy) return;
-    if (dirty) setNotice("修改尚未保存，可保存或取消修改。");
-    else onClose();
+  }, [busy, dirty, loading, autosave.pending, onLockedChange]);
+  async function close() {
+    if (!baseRef.current || (await autosave.flush())) onClose();
   }
-  async function save() {
-    if (!base || saving.current || !dirty) return;
-    saving.current = true;
-    setBusy(true);
-    setError("");
-    setNotice("");
-    try {
-      let operation = pending;
-      if (!operation) {
-        if (!title.trim()) throw new Error("请填写任务标题");
-        if (date && !validCalendarDate(date))
-          throw new Error("请选择有效的安排日期");
-        const deadlineValue =
-          deadline === deadlineToLocal(base.deadline)
-            ? base.deadline
-            : deadlineFromLocal(deadline);
-        const fields = {
-          title: title.trim(),
-          notes,
-          completionCriteria: criteria,
-          important,
-          deadline: deadlineValue,
-          deadlineTimeZone:
-            deadlineValue === null
-              ? null
-              : deadline === deadlineToLocal(base.deadline)
-                ? base.deadlineTimeZone
-                : zone,
-          estimatedMinutes: parseMinutes(estimate),
-        };
-        const unchanged = Object.keys(fields).every(
-          (key) =>
-            fields[key as keyof TaskDetailFields] ===
-            base[key as keyof TaskDetailFields],
-        );
-        operation = {
-          base,
-          fields,
-          date,
-          saved: unchanged ? base : null,
-          scheduled: false,
-        };
-        setPending(operation);
-      }
-      if (!operation.saved)
-        operation.saved = await editor.save(operation.base, operation.fields);
-      if (operation.date && !operation.scheduled) {
-        await planning.schedule(
-          {
-            ...task,
-            version: operation.saved.version,
-            title: operation.saved.title,
-          },
-          operation.date,
-          zone,
-        );
-        operation.scheduled = true;
-      }
-      await onSaved(operation.date);
-      setBase(operation.saved);
-      reset(operation.saved);
-      setPending(null);
-    } catch (error) {
-      setError(message(error));
-    } finally {
-      saving.current = false;
-      setBusy(false);
-    }
+  function changed<T>(setter: (value: T) => void, value: T, discrete = false) {
+    autosave.changed(discrete);
+    setter(value);
   }
   return (
     <aside
@@ -203,10 +241,10 @@ export function InboxTaskPanel({
           return;
         if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
           event.preventDefault();
-          void save();
+          void autosave.save();
         } else if (event.key === "Escape") {
           event.preventDefault();
-          close();
+          void close();
         }
       }}
     >
@@ -218,7 +256,7 @@ export function InboxTaskPanel({
             type="button"
             aria-label="关闭任务详情"
             disabled={busy}
-            onClick={close}
+            onClick={() => void close()}
           >
             <TaskPanelIcon name="close" />
           </button>
@@ -231,8 +269,10 @@ export function InboxTaskPanel({
           aria-label="编辑收件箱任务"
           onSubmit={(event) => {
             event.preventDefault();
-            void save();
+            void autosave.save();
           }}
+          onCompositionStart={autosave.onCompositionStart}
+          onCompositionEnd={autosave.onCompositionEnd}
         >
           <fieldset disabled={locked}>
             <div className="task-panel-intro">
@@ -246,7 +286,7 @@ export function InboxTaskPanel({
                 className="task-panel-title"
                 rows={1}
                 value={title}
-                onChange={(event) => setTitle(event.target.value)}
+                onChange={(event) => changed(setTitle, event.target.value)}
               />
               <label className="sr-only" htmlFor="panel-notes">
                 任务描述
@@ -258,14 +298,14 @@ export function InboxTaskPanel({
                 rows={1}
                 placeholder="添加描述"
                 value={notes}
-                onChange={(event) => setNotes(event.target.value)}
+                onChange={(event) => changed(setNotes, event.target.value)}
               />
               <div className="task-date-options" aria-label="安排日期快捷选项">
                 <button
                   type="button"
                   aria-pressed={date === today}
                   disabled={locked}
-                  onClick={() => setDate(today)}
+                  onClick={() => changed(setDate, today, true)}
                 >
                   今天
                 </button>
@@ -273,13 +313,13 @@ export function InboxTaskPanel({
                   type="button"
                   aria-pressed={date === tomorrow(today)}
                   disabled={locked}
-                  onClick={() => setDate(tomorrow(today))}
+                  onClick={() => changed(setDate, tomorrow(today), true)}
                 >
                   明天
                 </button>
                 <DatePicker
                   value={date}
-                  onChange={setDate}
+                  onChange={(value) => changed(setDate, value, true)}
                   label="安排日期"
                   disabled={locked}
                   className={
@@ -296,7 +336,7 @@ export function InboxTaskPanel({
                 <button
                   type="button"
                   aria-pressed={!date}
-                  onClick={() => setDate("")}
+                  onClick={() => changed(setDate, "", true)}
                 >
                   没有日期
                 </button>
@@ -314,7 +354,7 @@ export function InboxTaskPanel({
                   className="date-picker-field"
                   value={deadline}
                   disabled={locked}
-                  onChange={setDeadline}
+                  onChange={(value) => changed(setDeadline, value, true)}
                 />
               </div>
             </div>
@@ -329,7 +369,9 @@ export function InboxTaskPanel({
                         key={minutes}
                         type="button"
                         aria-pressed={estimate === String(minutes)}
-                        onClick={() => setEstimate(String(minutes))}
+                        onClick={() =>
+                          changed(setEstimate, String(minutes), true)
+                        }
                       >
                         {minutes} 分钟
                       </button>
@@ -344,7 +386,9 @@ export function InboxTaskPanel({
                     value={estimate}
                     placeholder="分钟"
                     title="自定义分钟，留空表示未知"
-                    onChange={(event) => setEstimate(event.target.value)}
+                    onChange={(event) =>
+                      changed(setEstimate, event.target.value)
+                    }
                   />
                 </div>
               </div>
@@ -358,7 +402,7 @@ export function InboxTaskPanel({
                   rows={2}
                   value={criteria}
                   placeholder="怎样算完成这项任务？"
-                  onChange={(event) => setCriteria(event.target.value)}
+                  onChange={(event) => changed(setCriteria, event.target.value)}
                 />
               </div>
             </div>
@@ -368,7 +412,9 @@ export function InboxTaskPanel({
                 <input
                   type="checkbox"
                   checked={important}
-                  onChange={(event) => setImportant(event.target.checked)}
+                  onChange={(event) =>
+                    changed(setImportant, event.target.checked, true)
+                  }
                 />
                 重要任务
               </label>
@@ -383,47 +429,28 @@ export function InboxTaskPanel({
         {error && (
           <div className="task-panel-feedback error" role="alert">
             {error}
+            {base && (
+              <button disabled={busy} onClick={() => void autosave.save()}>
+                重试自动保存
+              </button>
+            )}
             <button
               disabled={busy}
               onClick={() => {
-                setBusy(true);
-                void onReload()
-                  .catch((error) => setError(message(error)))
-                  .finally(() => setBusy(false));
+                void onReload().catch((error) => setReadError(message(error)));
               }}
             >
               重新加载
             </button>
           </div>
         )}
-        <p className="task-panel-feedback" role="status">
-          {notice}
-        </p>
       </div>
       <RelatedRecords targetType="task" targetId={task.taskId} />
-      <footer className="task-panel-footer">
+      <footer className="task-panel-footer" role="status" aria-live="polite">
         <span>
           <span className="status-dot" />
-          {dirty ? "有未保存的修改" : "本机保存"}
+          {autosave.status}
         </span>
-        {dirty && !pending && (
-          <button
-            type="button"
-            className="task-panel-cancel"
-            disabled={busy}
-            onClick={() => base && reset(base)}
-          >
-            取消修改
-          </button>
-        )}
-        <button
-          type="submit"
-          form="inbox-panel-editor"
-          disabled={busy || loading || !base || !dirty}
-          aria-keyshortcuts="Control+Enter Meta+Enter"
-        >
-          {busy ? "保存中…" : pending ? "重试保存" : "保存修改"}
-        </button>
       </footer>
     </aside>
   );

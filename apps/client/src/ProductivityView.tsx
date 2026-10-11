@@ -1,4 +1,5 @@
 import { useLanRefresh } from "./useLanRefresh";
+import { prepareDailyTasks } from "./daily-preparation";
 import { SyncedNotes } from "./SyncedNotes";
 import { SubtaskComposer } from "./SubtaskComposer";
 import { TrashView } from "./TrashView";
@@ -6,15 +7,22 @@ import { SearchViews } from "./SearchViews";
 import { ReviewView } from "./ReviewView";
 import { RepeatView } from "./RepeatView";
 import { HabitsView } from "./HabitsView";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { DateStrip } from "./DateStrip";
+import { upcomingDayRows } from "./day-timeline";
+import { TaskPanelIcon } from "./TaskPanelIcon";
 import { invoke } from "@tauri-apps/api/core";
 import {
   calendarDate,
   dateAfter,
   dayRows,
-  rescheduleTasks,
   timeLabel,
-  timeDay,
   planConflict,
   subtree,
   terminal,
@@ -22,7 +30,6 @@ import {
   type WorkTask,
   type WorkProject,
   type TimeValue,
-  type DayNote,
 } from "@praxis/application";
 import { RetriableCommands } from "../../../packages/application/src/retriable-commands";
 import { RelatedRecords } from "./RelatedRecords";
@@ -30,7 +37,10 @@ import "./productivity.css";
 type Action = Record<string, unknown> & { type: string };
 type Command = { operationId: string; occurredAt: string; action: Action };
 const retry = new RetriableCommands<Command>();
-export const readWork = () => invoke<WorkSnapshot>("productivity_snapshot");
+export const readWork = async () => {
+  await prepareDailyTasks();
+  return invoke<WorkSnapshot>("productivity_snapshot");
+};
 async function send(action: Action) {
   await retry.execute(
     action.type,
@@ -97,22 +107,42 @@ function useGuardedDraft<T>(
 export function openWorkTask(id: string) {
   window.dispatchEvent(new CustomEvent("praxis-work-task", { detail: id }));
 }
+export interface TodayContent {
+  data: WorkSnapshot;
+  now: Date;
+  zone: string;
+  renderTask: (task: WorkTask, reasons?: string[]) => ReactNode;
+}
 export function ProductivityView({
+  initialTab = "today",
   initialTaskId,
   initialProjectId,
-  initialViewId,
   initialReviewId,
-  viewRevision,
+  searchRevision,
   onChanged,
   onBusyChange,
+  renderToday,
+  dailyNavigation,
+  dailyDate,
+  externalBusy = false,
+  onTabChange,
+  dailyRevision,
+  onZoneChange,
 }: {
+  initialTab?: "today" | "search";
   initialTaskId?: string | null;
   initialProjectId?: string | null;
-  initialViewId?: string | null;
   initialReviewId?: string | null;
-  viewRevision?: number;
+  searchRevision?: number;
   onChanged: () => void;
   onBusyChange: (v: boolean) => void;
+  renderToday?: (content: TodayContent) => ReactNode;
+  dailyNavigation?: ReactNode;
+  dailyDate?: string;
+  externalBusy?: boolean;
+  onTabChange?: (tab: string) => void;
+  dailyRevision?: string;
+  onZoneChange?: (zone: string) => void;
 }) {
   const [data, setData] = useState<WorkSnapshot | null>(null),
     [error, setError] = useState(""),
@@ -145,22 +175,29 @@ export function ProductivityView({
       setDate((old) => old || scope.slice(4));
   }, []);
   const hasDraft = dirtyEditors.size > 0;
+  const locked =
+    busy || childBusy || !!edit || !!confirm || hasDraft || externalBusy;
+  useEffect(() => {
+    onTabChange?.(tab);
+  }, [tab, onTabChange]);
   const automaticBlocked = useRef(false);
-  automaticBlocked.current =
-    busy || childBusy || edit !== null || confirm !== null || hasDraft;
+  automaticBlocked.current = locked;
   const readGeneration = useRef(0);
-  useLanRefresh(
-    readWork,
-    setData,
-    busy || childBusy || edit !== null || confirm !== null || hasDraft,
-  );
+  useLanRefresh(readWork, setData, locked);
   const openedId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!initialTaskId && !initialProjectId && !initialReviewId)
+      setTab(initialTab);
+  }, [
+    initialTab,
+    searchRevision,
+    initialTaskId,
+    initialProjectId,
+    initialReviewId,
+  ]);
   useEffect(() => {
     if (initialReviewId) setTab("review");
   }, [initialReviewId]);
-  useEffect(() => {
-    if (initialViewId) setTab("search");
-  }, [initialViewId, viewRevision]);
   useEffect(() => {
     if (initialProjectId) {
       setProject(initialProjectId);
@@ -181,9 +218,21 @@ export function ProductivityView({
     void refresh(true).catch((e) => setError(errorText(e)));
   }, [tab]);
   useEffect(() => {
+    if (dailyRevision !== undefined && !automaticBlocked.current)
+      void refresh(true).catch((e) => setError(errorText(e)));
+  }, [dailyRevision, externalBusy]);
+  useEffect(() => {
     void refresh(true).catch((e) => setError(errorText(e)));
     const timer = setInterval(() => setClock(new Date()), 15000);
-    return () => clearInterval(timer);
+    const onFocus = () => {
+      if (!automaticBlocked.current)
+        void refresh(true).catch((e) => setError(errorText(e)));
+    };
+    window.addEventListener("focus", onFocus);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
   useEffect(() => {
     onBusyChange(
@@ -215,11 +264,16 @@ export function ProductivityView({
       setBusy(false);
     }
   }
-  const zone = data?.settings[0]?.timeZone ?? "UTC",
+  const zone =
+      data?.settings[0]?.timeZone ??
+      Intl.DateTimeFormat().resolvedOptions().timeZone,
     today = calendarDate(clock, zone),
-    date = selectedDate || today;
+    date = tab === "today" && dailyDate ? dailyDate : selectedDate || today;
+  useEffect(() => {
+    onZoneChange?.(zone);
+  }, [zone, onZoneChange]);
   function changeStatus(t: WorkTask, status: string) {
-    if (!data || busy || confirm || edit || childBusy || hasDraft) return;
+    if (!data || locked) return;
     const related = subtree(data.tasks, t.id).filter((t) => !terminal(t));
     const parents: WorkTask[] = [];
     let p = data.tasks.find((x) => x.id === t.parentId);
@@ -258,10 +312,15 @@ export function ProductivityView({
     const p = data?.projects.find((p) => p.id === t.projectId);
     return (
       <article className="work-row" key={t.id}>
+        {renderToday && (
+          <span className="work-row-icon">
+            <TaskPanelIcon name={t.plan ? "clock" : "work"} />
+          </span>
+        )}
         <div>
           <button
             className="work-title"
-            disabled={busy || !!confirm || !!edit || childBusy || hasDraft}
+            disabled={locked}
             onClick={() => setEdit(t)}
           >
             {t.title}
@@ -284,10 +343,13 @@ export function ProductivityView({
               </span>
             ))}
           </div>
-          <small>
-            计划 {timeLabel(t.plan, zone)} · 截止 {timeLabel(t.deadline, zone)}{" "}
-            · 跟进 {timeLabel(t.followUp, zone)}
-          </small>
+          {(t.plan || t.deadline || t.followUp) && (
+            <small className="work-times">
+              {t.plan && <span>计划 {timeLabel(t.plan, zone)}</span>}
+              {t.deadline && <span>截止 {timeLabel(t.deadline, zone)}</span>}
+              {t.followUp && <span>跟进 {timeLabel(t.followUp, zone)}</span>}
+            </small>
+          )}
           {t.status === "waiting" && (
             <p>
               等待 {t.waitingFor || "未指定对象"}：
@@ -296,7 +358,7 @@ export function ProductivityView({
           )}
         </div>
         <select
-          disabled={busy || !!confirm || !!edit || childBusy || hasDraft}
+          disabled={locked}
           aria-label={`${t.title} 状态`}
           value={t.status}
           onChange={(e) => changeStatus(t, e.target.value)}
@@ -321,42 +383,126 @@ export function ProductivityView({
         </button>
       </section>
     );
-  const dayNote = data.days.find((d) => d.date === date);
   return (
-    <section className="work-view">
-      <header>
-        <h1>今日与近期</h1>
-        <p>本地保存 · 工作空间时区 {data.settings[0]?.timeZone ?? "待确认"}</p>
+    <section
+      className={
+        renderToday && (tab === "today" || tab === "upcoming")
+          ? "today reference-day unified-timeline"
+          : "work-view"
+      }
+    >
+      <header className="page-heading">
+        <h1
+          className={
+            renderToday && (tab === "today" || tab === "upcoming")
+              ? "sr-only"
+              : undefined
+          }
+        >
+          {{
+            all: "全部任务",
+            projects: "项目与分区",
+            settings: "时区与标签",
+            repeat: "重复任务",
+            habits: "习惯",
+            trash: "回收站",
+            search: "搜索与筛选",
+            review: "项目回顾",
+            notes: "策略与专注",
+          }[tab] ?? "今日与近期"}
+        </h1>
+        {!renderToday && (
+          <p className="page-description">
+            聚焦重要的事，让每一步更清晰。
+            <span className="workspace-zone">
+              {data.settings[0]?.timeZone ?? "待确认"}
+            </span>
+          </p>
+        )}
       </header>
       {error && <p role="alert">{error}</p>}
-      <fieldset disabled={busy || childBusy || !!edit || !!confirm || hasDraft}>
-        <nav className="work-tabs">
-          {[
-            ["today", "今日"],
-            ["upcoming", "近期"],
-            ["all", "全部任务"],
-            ["projects", "项目与分区"],
-            ["settings", "时区与标签"],
-            ["repeat", "重复任务"],
-            ["habits", "习惯"],
-            ["trash", "回收站"],
-            ["search", "搜索与视图"],
-            ["review", "项目检查与周回顾"],
-            ["notes", "策略决策与专注"],
-          ].map(([k, v]) => (
-            <button key={k} aria-pressed={tab === k} onClick={() => setTab(k!)}>
-              {v}
+      <fieldset
+        className={renderToday ? "timeline-header" : undefined}
+        disabled={locked}
+      >
+        <div className={renderToday ? "timeline-navigation" : undefined}>
+          <nav
+            className={renderToday ? "timeline-switcher" : "work-tabs"}
+            aria-label="时间视图"
+          >
+            {[
+              ["today", "今日"],
+              ["upcoming", "近期"],
+            ].map(([k, v]) => (
+              <button
+                key={k}
+                aria-pressed={tab === k}
+                onClick={() => setTab(k!)}
+              >
+                {v}
+              </button>
+            ))}
+          </nav>
+          {renderToday && tab === "today" && dailyNavigation}
+          {renderToday && tab === "upcoming" && (
+            <DateStrip
+              date={date}
+              today={today}
+              onSelect={setDate}
+              disabled={locked}
+            />
+          )}
+        </div>
+        <details className="timeline-more">
+          <summary
+            aria-disabled={locked}
+            onClick={(event) => {
+              if (locked) event.preventDefault();
+            }}
+          >
+            更多
+          </summary>
+          <nav aria-label="工作空间工具">
+            {[
+              ["all", "全部任务"],
+              ["projects", "项目与分区"],
+              ["settings", "时区与标签"],
+              ["repeat", "重复任务"],
+              ["habits", "习惯"],
+              ["trash", "回收站"],
+              ["search", "搜索与筛选"],
+              ["review", "项目检查与周回顾"],
+              ["notes", "策略决策与专注"],
+            ].map(([k, v]) => (
+              <button
+                key={k}
+                aria-pressed={tab === k}
+                onClick={(event) => {
+                  setTab(k!);
+                  event.currentTarget
+                    .closest("details")
+                    ?.removeAttribute("open");
+                }}
+              >
+                {v}
+              </button>
+            ))}
+            <button
+              className="work-create-button"
+              onClick={() => setEdit("new")}
+            >
+              快速任务
             </button>
-          ))}
-          <button onClick={() => setEdit("new")}>快速任务</button>
-        </nav>
+          </nav>
+        </details>
       </fieldset>
-      {!data.settings.length ? (
+      {!data.settings.length &&
+      !(renderToday && (tab === "today" || tab === "upcoming")) ? (
         <ZoneEditor data={data} save={save} onDirtyChange={setEditorDirty} />
       ) : (
         <>
-          {(tab === "today" || tab === "upcoming") && (
-            <label>
+          {!renderToday && (tab === "today" || tab === "upcoming") && (
+            <label className="work-date-control">
               所选日期{" "}
               <input
                 aria-label="所选日期"
@@ -373,43 +519,41 @@ export function ProductivityView({
               </button>
             </label>
           )}
-          {tab === "today" && (
+          {tab === "today" &&
+            renderToday &&
+            renderToday({
+              data,
+              now: clock,
+              zone,
+              renderTask: row,
+            })}
+          {tab === "today" && !renderToday && (
             <>
-              <HabitsView date={date} compact />
-              <DailyEditor
-                key={date}
-                date={date}
-                data={data}
-                note={dayNote}
-                save={save}
-                zone={zone}
-                onDirtyChange={setEditorDirty}
-              />
-              {[0, 1, 2, 3].map((g) => (
-                <section key={g}>
-                  <h2>{["截止事项", "每日重点", "当日安排", "到期跟进"][g]}</h2>
-                  {dayRows(data, date, clock, zone)
-                    .filter((r) => r.group === g)
-                    .map((r) => row(r.task, r.reasons))}
-                </section>
-              ))}
+              <div className="work-groups">
+                {[0, 1, 2, 3].map((g) => {
+                  const rows = dayRows(data, date, clock, zone).filter(
+                    (r) => r.group === g,
+                  );
+                  return (
+                    <section className="work-group" key={g}>
+                      <div className="list-heading">
+                        <h2>
+                          {["截止事项", "每日重点", "当日安排", "到期跟进"][g]}{" "}
+                          <span>{rows.length}</span>
+                        </h2>
+                      </div>
+                      {rows.map((r) => row(r.task, r.reasons))}
+                      {!rows.length && <p className="period-empty">暂无事项</p>}
+                    </section>
+                  );
+                })}
+              </div>
               {dayRows(data, date, clock, zone).length === 0 && (
                 <p>这个日期暂无待处理事项。</p>
               )}
-              {date === today && (
-                <details>
-                  <summary>
-                    待重排（{rescheduleTasks(data, clock, zone).length}）
-                  </summary>
-                  <p>过去计划不会自动延期。打开任务可改期、移除计划或拆分。</p>
-                  {rescheduleTasks(data, clock, zone).map((t) =>
-                    row(t, ["过去计划"]),
-                  )}
-                </details>
-              )}
             </>
           )}
-          {tab === "upcoming" && (
+          {tab === "upcoming" && !renderToday && (
             <>
               <button onClick={() => setTab("repeat")}>
                 管理重复规则与补齐实例
@@ -425,13 +569,7 @@ export function ProductivityView({
               onBusyChange={setChildBusy}
             />
           )}
-          {tab === "search" && (
-            <SearchViews
-              key={viewRevision}
-              initialViewId={initialViewId ?? null}
-              onChanged={onChanged}
-            />
-          )}
+          {tab === "search" && <SearchViews key={searchRevision} />}
           {tab === "habits" && <HabitsView />}
           {tab === "trash" && (
             <TrashView
@@ -442,11 +580,13 @@ export function ProductivityView({
             />
           )}
           {tab === "upcoming" && (
-            <>
-              <label>
-                范围{" "}
+            <div className="timeline-upcoming">
+              <label className="upcoming-range">
+                查看未来{" "}
                 <select
+                  aria-label="近期范围"
                   value={days}
+                  disabled={locked}
                   onChange={(e) => setDays(Number(e.target.value))}
                 >
                   <option value={7}>7 天</option>
@@ -455,29 +595,22 @@ export function ProductivityView({
                 </select>
               </label>
               {Array.from({ length: days }, (_, i) => dateAfter(date, i)).map(
-                (d) => (
-                  <section key={d}>
-                    <h2>{d}</h2>
-                    {data.tasks
-                      .filter((t) => !terminal(t))
-                      .map((t) => ({
-                        t,
-                        reasons: (
-                          [
-                            ["plan", "计划"],
-                            ["deadline", "截止"],
-                            ["followUp", "跟进"],
-                          ] as const
-                        )
-                          .filter(([key]) => timeDay(t[key], zone) === d)
-                          .map(([, label]) => label),
-                      }))
-                      .filter((x) => x.reasons.length)
-                      .map(({ t, reasons }) => row(t, reasons))}
-                  </section>
-                ),
+                (d) => {
+                  const rows = upcomingDayRows(data, d, zone);
+                  return (
+                    <section className="upcoming-day" data-date={d} key={d}>
+                      <div className="list-heading">
+                        <h2>
+                          {d} <span>{rows.length}</span>
+                        </h2>
+                      </div>
+                      {rows.map(({ task, reasons }) => row(task, reasons))}
+                      {!rows.length && <p className="period-empty">暂无事项</p>}
+                    </section>
+                  );
+                },
               )}
-            </>
+            </div>
           )}
           {tab === "all" && (
             <>
@@ -1031,141 +1164,6 @@ function TaskEditor({
         </>
       )}
     </div>
-  );
-}
-function DailyEditor({
-  date,
-  data,
-  note,
-  save,
-  zone,
-  onDirtyChange,
-}: {
-  date: string;
-  data: WorkSnapshot;
-  note: DayNote | undefined;
-  save: (a: Action) => Promise<boolean>;
-  zone: string;
-  onDirtyChange: EditorGuard;
-}) {
-  const form = useGuardedDraft(
-    {
-      outcome: note?.outcome ?? "",
-      closing: note?.closing ?? "",
-      focus:
-        note?.focusIds ??
-        data.legacyPlans
-          .filter((p) => p.date === date && p.focus)
-          .sort((a, b) => a.rank - b.rank)
-          .map((p) => p.taskId),
-      version: note?.version ?? null,
-    },
-    "day:" + date,
-    onDirtyChange,
-  );
-  const { outcome, closing, focus } = form.draft;
-  const setOutcome = (outcome: string) =>
-    form.setDraft((d) => ({ ...d, outcome }));
-  const setClosing = (closing: string) =>
-    form.setDraft((d) => ({ ...d, closing }));
-  const setFocus = (focus: string[] | ((f: string[]) => string[])) =>
-    form.setDraft((d) => ({
-      ...d,
-      focus: typeof focus === "function" ? focus(d.focus) : focus,
-    }));
-  const [notice, setNotice] = useState("");
-  return (
-    <details className="work-daily" open>
-      <summary>{date} 的结果与重点</summary>
-      <label>
-        主要推进结果{" "}
-        <textarea
-          aria-label="主要推进结果"
-          value={outcome}
-          onChange={(e) => setOutcome(e.target.value)}
-        />
-      </label>
-      <label>
-        收尾备注{" "}
-        <textarea
-          aria-label="收尾备注"
-          value={closing}
-          onChange={(e) => setClosing(e.target.value)}
-        />
-      </label>
-      <details>
-        <summary>选择重点（{focus.length}）</summary>
-        {focus.length > 3 && (
-          <p>重点已超过三个，可以保存；建议减少以保持专注。</p>
-        )}
-        {data.tasks.map((t) => (
-          <label key={t.id}>
-            <input
-              type="checkbox"
-              checked={focus.includes(t.id)}
-              onChange={(e) =>
-                setFocus(
-                  e.target.checked
-                    ? [...focus, t.id]
-                    : focus.filter((id) => id !== t.id),
-                )
-              }
-            />
-            {t.title} · 原计划 {timeLabel(t.plan, zone)}
-            {timeDay(t.plan, zone) !== date ? "（加入重点不会改期）" : ""}
-          </label>
-        ))}
-        <ol>
-          {focus.map((id, i) => (
-            <li key={id}>
-              {data.tasks.find((t) => t.id === id)?.title ?? "失效引用"}{" "}
-              <button
-                disabled={i === 0}
-                onClick={() =>
-                  setFocus((f) => {
-                    const n = [...f];
-                    [n[i - 1], n[i]] = [n[i]!, n[i - 1]!];
-                    return n;
-                  })
-                }
-              >
-                上移
-              </button>
-            </li>
-          ))}
-        </ol>
-      </details>
-      <button
-        onClick={async () => {
-          if (
-            await save({
-              type: "day",
-              date,
-              outcome,
-              closing,
-              focusIds: focus,
-              expectedVersion: form.base.version,
-            })
-          ) {
-            form.accept();
-            setNotice("已保存");
-          }
-        }}
-      >
-        保存每日结果
-      </button>
-      {form.dirty && (
-        <button
-          onClick={() => {
-            form.discard();
-            setNotice("");
-          }}
-        >
-          放弃每日修改
-        </button>
-      )}
-      <span role="status">{notice}</span>
-    </details>
   );
 }
 function ZoneEditor({

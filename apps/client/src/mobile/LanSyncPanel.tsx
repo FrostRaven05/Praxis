@@ -1,7 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { registerPlugin } from "@capacitor/core";
 import { App } from "@capacitor/app";
-import { mobileStorage } from "../../../../packages/storage-mobile/src/native";
+import {
+  mobileStorage,
+  mobileDatabaseName,
+} from "../../../../packages/storage-mobile/src/native";
 import {
   WorkspaceRejectedError,
   type EntityCommand,
@@ -15,15 +18,28 @@ const native = registerPlugin<{
     baseUrl: string;
     ownerId: string;
     deviceId: string;
+    databaseName: string;
   }>;
   request(options: {
     method: string;
     path: string;
     body?: unknown;
+    databaseName: string;
   }): Promise<{ status: number; body: unknown }>;
 }>("LanSync");
+const accountRequest = async (options: {
+  method: string;
+  path: string;
+  body?: unknown;
+}) => native.request({ ...options, databaseName: await mobileDatabaseName() });
 type State = Awaited<ReturnType<typeof mobileStorage.entityState>>;
-export function LanSyncPanel({ refresh }: { refresh: () => Promise<void> }) {
+export function LanSyncPanel({
+  refresh,
+  visible,
+}: {
+  refresh: () => Promise<void>;
+  visible: boolean;
+}) {
   const [message, setMessage] = useState("正在检查局域网配对"),
     [state, setState] = useState<State | null>(null),
     [expanded, setExpanded] = useState(false);
@@ -49,7 +65,7 @@ export function LanSyncPanel({ refresh }: { refresh: () => Promise<void> }) {
         cursor === undefined
           ? ""
           : `&at=${cursor}&afterId=${afterId}&generation=${generation}`;
-      const r = await native.request({
+      const r = await accountRequest({
         method: "GET",
         path: `/v1/entities/snapshot?limit=100${suffix}`,
       });
@@ -81,7 +97,7 @@ export function LanSyncPanel({ refresh }: { refresh: () => Promise<void> }) {
   async function pull() {
     for (let i = 0; i < 50; i++) {
       const current = await mobileStorage.entityState();
-      const r = await native.request({
+      const r = await accountRequest({
         method: "GET",
         path: `/v1/entities/changes?after=${current.cursor}&limit=25`,
       });
@@ -108,6 +124,10 @@ export function LanSyncPanel({ refresh }: { refresh: () => Promise<void> }) {
     busy.current = true;
     try {
       const config = await native.status();
+      if (config.databaseName !== (await mobileDatabaseName())) {
+        setMessage("账号已切换，正在重新打开工作空间");
+        return;
+      }
       if (!config.configured) {
         setMessage("局域网未配对");
         return;
@@ -124,7 +144,7 @@ export function LanSyncPanel({ refresh }: { refresh: () => Promise<void> }) {
       for (let i = 0; i < 10; i++) {
         const command = await mobileStorage.entityPrepare();
         if (!command) break;
-        const r = await native.request({
+        const r = await accountRequest({
           method: "POST",
           path: `/v1/entities/commands?generation=${(await mobileStorage.entityState()).generation}`,
           body: command,
@@ -268,6 +288,7 @@ export function LanSyncPanel({ refresh }: { refresh: () => Promise<void> }) {
       if (e instanceof WorkspaceRejectedError) repairPending.current = null;
     }
   }
+  if (!visible) return null;
   return (
     <aside className="pm-lan-sync">
       <button

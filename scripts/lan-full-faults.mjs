@@ -166,6 +166,7 @@ try {
   adb("shell", "svc", "wifi", "enable");
   adb("shell", "svc", "data", "enable");
   offline = false;
+  await mobile.getByRole("navigation", { name: "主导航" }).getByRole("button", { name: "我的", exact: true }).click();
   const panel = mobile.locator(".pm-lan-sync");
   if ((await panel.getByText(/最近成功：/).count()) === 0)
     await mobile.getByTestId("lan-sync-status").click();

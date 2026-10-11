@@ -1,13 +1,45 @@
 mod lan_sync;
 pub mod store;
 #[tauri::command]
-async fn lan_entity_snapshot(database: State<'_, LocalDatabase>) -> Result<Vec<store::entities::Entity>, String> { database.get(None).await?.entities_snapshot().await }
+async fn lan_entity_snapshot(
+    database: State<'_, LocalDatabase>,
+) -> Result<Vec<store::entities::Entity>, String> {
+    database.get(None).await?.entities_snapshot().await
+}
 #[tauri::command]
-async fn lan_entity_conflicts(database: State<'_, LocalDatabase>) -> Result<serde_json::Value, String> { database.get(None).await?.entities_conflicts().await }
+async fn lan_entity_conflicts(
+    database: State<'_, LocalDatabase>,
+) -> Result<serde_json::Value, String> {
+    database.get(None).await?.entities_conflicts().await
+}
 #[tauri::command]
-async fn lan_entity_resolve(operation_id:String,resolution_id:String,decision:String,token:String,merged:Option<Vec<store::entities::Entity>>,database: State<'_, LocalDatabase>) -> Result<(), String> { database.get(None).await?.entities_resolve(&operation_id,&resolution_id,&decision,&token,merged).await }
+async fn lan_entity_resolve(
+    operation_id: String,
+    resolution_id: String,
+    decision: String,
+    token: String,
+    merged: Option<Vec<store::entities::Entity>>,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(None)
+        .await?
+        .entities_resolve(&operation_id, &resolution_id, &decision, &token, merged)
+        .await
+}
 #[tauri::command]
-async fn lan_entity_edit(operation_id:String,entity:store::entities::Entity,expected:Option<store::entities::Entity>,database: State<'_, LocalDatabase>) -> Result<(), String> { database.get(None).await?.entities_edit(&operation_id,entity,expected).await }
+async fn lan_entity_edit(
+    operation_id: String,
+    entity: store::entities::Entity,
+    expected: Option<store::entities::Entity>,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(None)
+        .await?
+        .entities_edit(&operation_id, entity, expected)
+        .await
+}
 
 #[tauri::command]
 async fn lan_sync_conflicts(
@@ -310,6 +342,10 @@ struct LocalDatabase {
     store: OnceCell<Store>,
 }
 
+mod theme_preferences;
+mod accounts;
+use theme_preferences::{read_theme_color, save_theme_color};
+
 impl LocalDatabase {
     async fn get(&self, operation_id: Option<&str>) -> Result<&Store, String> {
         self.store
@@ -402,6 +438,16 @@ async fn list_day(
             database.record_error("list", None, &error);
             "无法读取本机任务，请重试。".to_owned()
         })
+}
+
+#[tauri::command]
+async fn prepare_daily_tasks(database: State<'_, LocalDatabase>) -> Result<(), String> {
+    database
+        .get(None)
+        .await?
+        .prepare_daily_tasks(&chrono::Utc::now().to_rfc3339())
+        .await
+        .map_err(|e| planning_error(&database, "daily-rollover", None, e))
 }
 
 #[tauri::command]
@@ -528,6 +574,11 @@ async fn schedule_task(
         .schedule_task(&command)
         .await
         .map_err(|e| planning_error(&database, "schedule", Some(&command.operation_id), e))
+}
+
+#[tauri::command]
+async fn accept_suggestion(command: store::ScheduleCommand, database: State<'_, LocalDatabase>) -> Result<(), String> {
+    database.get(Some(&command.operation_id)).await?.accept_suggestion(&command).await
 }
 
 #[tauri::command]
@@ -750,8 +801,15 @@ pub fn run() {
                 }
                 None => (data_dir, log_dir),
             };
+            app.manage(theme_preferences::ThemePreferences {
+                path: data_dir.join("appearance.json"),
+                lock: std::sync::Mutex::new(()),
+            });
+            let active = accounts::selected(&data_dir)?;
+            let workspace_dir = match &active { Some(account) => accounts::account_dir(&data_dir, account)?, None => data_dir.clone() };
+            app.manage(accounts::Accounts { root: data_dir.clone(), active, lock: tokio::sync::Mutex::new(()) });
             app.manage(LocalDatabase {
-                path: store::backup::selected_database(&data_dir),
+                path: store::backup::selected_database(&workspace_dir),
                 diagnostics_path: log_dir.join("storage-errors.jsonl"),
                 diagnostics_lock: std::sync::Mutex::new(()),
                 store: OnceCell::new(),
@@ -759,10 +817,16 @@ pub fn run() {
             app.manage(lan_sync::LanRuntime {
                 status: tokio::sync::RwLock::new(serde_json::json!({"state":"starting"})),
             });
-            lan_sync::start(app.handle().clone(), data_dir.join("lan-sync.dpapi"));
+            lan_sync::start(app.handle().clone(), workspace_dir.join("lan-sync.dpapi"));
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            read_theme_color,
+            save_theme_color,
+            accounts::account_status,
+            accounts::account_authenticate,
+            accounts::account_logout,
+            accounts::account_restart,
             lan_entity_snapshot,
             lan_entity_conflicts,
             lan_entity_resolve,
@@ -796,6 +860,7 @@ pub fn run() {
             save_task_details,
             capture_task,
             list_day,
+            prepare_daily_tasks,
             change_completion,
             edit_task,
             update_plan,
@@ -804,6 +869,7 @@ pub fn run() {
             capture_inbox,
             list_inbox,
             schedule_task,
+            accept_suggestion,
             save_project,
             add_project_tasks,
             assign_project,

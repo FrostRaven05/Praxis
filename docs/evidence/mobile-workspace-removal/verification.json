@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "checks": [
+    "Workspace heading, switch selector and description removed",
+    "Theme, timezone and history remain available",
+    "No horizontal overflow"
+  ]
+}

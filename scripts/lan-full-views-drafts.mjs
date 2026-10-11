@@ -10,7 +10,7 @@ const prior = JSON.parse(
     await readFile("docs/evidence/lan-full-sync/result.json", "utf8"),
   ),
   stamp = prior.stamp,
-  tag = stamp + " 视图 " + Date.now(),
+  tag = stamp + " 筛选 " + Date.now(),
   checks = [],
   errors = [];
 const ipc = (cmd, args = {}) =>
@@ -46,118 +46,19 @@ try {
     .getByRole("button", { name: "今日与近期", exact: true })
     .waitFor();
   await mobile.getByRole("button", { name: "打开菜单", exact: true }).waitFor();
-  const id = crypto.randomUUID(),
-    query = {
-      text: stamp,
-      entityType: "task",
-      projectId: project.id,
-      status: null,
-      includeArchived: false,
-      groups: [[{ field: "priority", op: "eq", value: "4" }]],
-      sort: "title",
-      groupBy: "project",
-    };
-  await command("view_command", {
-    type: "save",
-    id,
-    expectedVersion: null,
-    name: tag + " 桌面筛选",
-    query,
-    followed: true,
-  });
-  await nav("搜索与视图");
-  await expect(
-    mobile.getByRole("button", { name: tag + " 桌面筛选", exact: true }),
-  ).toBeVisible({ timeout: 60000 });
-  await mobile
-    .getByRole("button", { name: tag + " 桌面筛选", exact: true })
-    .click();
+  await nav("搜索与筛选");
+  await mobile.getByLabel(/^搜索标题或正文/).fill(stamp);
+  await mobile.getByLabel(/^类型/).selectOption("task");
+  await mobile.getByLabel(/^项目/).selectOption(project.id);
   await expect(
     mobile.locator("article").filter({ hasText: task.data.title }),
   ).toHaveCount(1);
-  checks.push(
-    "Desktop saved view with project and priority conditions synchronizes and executes in Android",
-  );
-  await nav("搜索与视图");
-  if (
-    await mobile
-      .getByRole("button", { name: "返回手机自定义筛选", exact: true })
-      .count()
-  )
-    await mobile
-      .getByRole("button", { name: "返回手机自定义筛选", exact: true })
-      .click();
-  await mobile.getByLabel(/^搜索标题或正文/).fill(stamp);
-  await mobile.getByLabel("视图名称", { exact: true }).fill(tag + " 手机筛选");
-  await mobile.getByRole("button", { name: "保存视图", exact: true }).click();
-  await expect
-    .poll(
-      async () =>
-        (await ipc("view_snapshot")).views.find(
-          (v) => v.name === tag + " 手机筛选",
-        ),
-      { timeout: 60000 },
-    )
-    .toBeTruthy();
-  const imported = (await ipc("view_snapshot")).views.find(
-    (v) => v.name === tag + " 手机筛选",
-  );
-  const result = await ipc("view_query", { query: imported.query });
-  expect(result.rows.some((r) => r.id === task.id)).toBe(true);
-  checks.push(
-    "Android flat saved view arrives as executable native filter, preserving its original semantics",
-  );
-  const instantTaskId = crypto.randomUUID();
-  const instantTitle = tag + " 跨午夜任务";
-  await command("productivity_command", {
-    type: "task",
-    id: instantTaskId,
-    expectedVersion: null,
-    title: instantTitle,
-    notes: "",
-    projectId: null,
-    plan: null,
-    deadline: {
-      kind: "instant",
-      atUtc: "2026-10-10T23:30:00Z",
-      displayTimezone: "UTC",
-    },
-    followUp: null,
-    priority: 4,
-    waitingFor: "",
-    waitingNote: "",
-    labels: [],
-  });
-  const instantQuery = {
-    ...query,
-    text: instantTitle,
-    projectId: null,
-    groups: [[{ field: "deadline", op: "eq", value: "2026-10-11" }]],
-  };
-  expect(
-    (await ipc("view_query", { query: instantQuery })).rows.some(
-      (r) => r.id === instantTaskId,
-    ),
-  ).toBe(true);
-  await command("view_command", {
-    type: "save",
-    id: crypto.randomUUID(),
-    expectedVersion: null,
-    name: tag + " 跨午夜筛选",
-    query: instantQuery,
-    followed: false,
-  });
+  await expect(mobile.getByLabel("视图名称", { exact: true })).toHaveCount(0);
   await expect(
-    mobile.getByRole("button", { name: tag + " 跨午夜筛选", exact: true }),
-  ).toBeVisible({ timeout: 60000 });
-  await mobile
-    .getByRole("button", { name: tag + " 跨午夜筛选", exact: true })
-    .click();
-  await expect(
-    mobile.locator("article").filter({ hasText: instantTitle }),
-  ).toHaveCount(1);
+    mobile.getByRole("button", { name: "保存视图", exact: true }),
+  ).toHaveCount(0);
   checks.push(
-    "Both native clients execute the same saved-view deadline predicate for an instant crossing midnight between display and workspace timezones",
+    "Android temporary task filters find synchronized tasks without saved-view controls",
   );
   await nav("回顾");
   await mobile.getByRole("button", { name: "新建回顾", exact: true }).click();

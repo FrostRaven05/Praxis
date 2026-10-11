@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { invoke, isTauri } from "@tauri-apps/api/core";
+import { TaskPanelIcon } from "./TaskPanelIcon";
 import "./lan-sync.css";
 type Status = {
   state?: string;
@@ -75,6 +76,11 @@ export function LanSyncStatus({ onRefresh }: { onRefresh: () => void }) {
     [open, setOpen] = useState(false);
   const [mergeDraft, setMergeDraft] = useState<Record<string, string>>({});
   const [mergeTokens, setMergeTokens] = useState<Record<string, string>>({});
+  const trigger = useRef<HTMLButtonElement>(null);
+  function close() {
+    setOpen(false);
+    trigger.current?.focus();
+  }
   useEffect(() => {
     if (!isTauri()) return;
     let active = true;
@@ -164,33 +170,76 @@ export function LanSyncStatus({ onRefresh }: { onRefresh: () => void }) {
       merged,
     });
   }
+  const stateLabel =
+    status.state === "online"
+      ? "已连接"
+      : status.state === "unpaired"
+        ? "尚未配对"
+        : status.state === "starting"
+          ? "正在连接"
+          : "离线";
+  const pendingCount = status.entityPending ?? 0;
+  const conflictCount = status.entityConflicts ?? 0;
+  const statusLabel = `同步：${stateLabel}；待上传 ${pendingCount}；冲突 ${conflictCount}`;
+  // The detail view only exists to resolve conflicts; otherwise the icon is a
+  // plain status indicator and never opens a popup.
+  const hasConflicts = conflictCount > 0 || conflicts.length > 0;
+  const iconState = hasConflicts ? "conflict" : (status.state ?? "offline");
+  const iconContent = (
+    <>
+      <TaskPanelIcon name="sync" />
+      <span className="lan-sync-indicator" aria-hidden="true" />
+    </>
+  );
   return (
     <aside className="lan-sync" aria-label="局域网同步">
-      <button
-        data-testid="lan-sync-status"
-        className="lan-sync-summary"
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-      >
-        局域网：
-        {status.state === "online"
-          ? "已连接"
-          : status.state === "unpaired"
-            ? "尚未配对"
-            : status.state === "starting"
-              ? "正在连接"
-              : "离线"}
-        <small>
-          待上传 {status.entityPending ?? 0} · 冲突{" "}
-          {status.entityConflicts ?? 0}
-        </small>
-      </button>
-      {open && (
-        <section className="lan-sync-detail">
-          <button className="lan-sync-close" onClick={() => setOpen(false)}>
+      {hasConflicts ? (
+        <button
+          data-testid="lan-sync-status"
+          ref={trigger}
+          className="lan-sync-icon"
+          data-state={iconState}
+          title={`${statusLabel}，点击处理冲突`}
+          aria-label={statusLabel}
+          aria-haspopup="dialog"
+          aria-controls="lan-sync-detail"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+        >
+          {iconContent}
+        </button>
+      ) : (
+        <span
+          data-testid="lan-sync-status"
+          className="lan-sync-icon"
+          role="img"
+          data-state={iconState}
+          title={statusLabel}
+          aria-label={statusLabel}
+        >
+          {iconContent}
+        </span>
+      )}
+      {open && hasConflicts && (
+        <section
+          id="lan-sync-detail"
+          className="lan-sync-detail"
+          role="dialog"
+          aria-label="工作空间同步"
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.stopPropagation();
+              close();
+            }
+          }}
+        >
+          <button className="lan-sync-close" autoFocus onClick={close}>
             关闭同步详情
           </button>
           <h2>工作空间同步</h2>
+          <p role="status">
+            {stateLabel} · 待上传 {pendingCount} · 冲突 {conflictCount}
+          </p>
           <p>
             任务、项目、安排、记录、习惯等内容自动同步。修改先保存在本机，连接恢复后继续上传。
           </p>

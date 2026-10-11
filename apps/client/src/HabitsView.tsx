@@ -5,6 +5,7 @@ import { RetriableCommands } from "../../../packages/application/src/retriable-c
 import "./habits.css";
 
 type Habit = {
+  createdAt: string;
   version: number;
   id: string;
   name: string;
@@ -32,7 +33,12 @@ type Rule = {
   weekdays: string;
   paused: boolean;
 };
-type Row = {
+export type Row = {
+  placement: {
+    dayPeriod: import("@praxis/application").DayPeriod;
+    dayRank: number;
+    version: number | null;
+  };
   rules: Rule[];
   habit: Habit;
   entry: Entry | null;
@@ -56,7 +62,7 @@ type Row = {
     incomplete: boolean;
   };
 };
-type Snapshot = {
+export type Snapshot = {
   date: string;
   today: string;
   timeZone: string;
@@ -147,6 +153,7 @@ export function HabitsView({
     try {
       await send(action);
       await refresh();
+      window.dispatchEvent(new Event("praxis-lan-sync"));
       return true;
     } catch (e) {
       setError(

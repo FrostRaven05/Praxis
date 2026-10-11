@@ -124,7 +124,7 @@ export function InboxView({
         <header className="inbox-toolbar">
           <h1 id="inbox-heading">
             <TaskPanelIcon name="inbox" />
-            独立任务
+            收件箱
           </h1>
           <label className="inbox-sort">
             <span>按创建日期</span>

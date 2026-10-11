@@ -20,8 +20,7 @@ try {
     typeof c.databasePath !== "string" ||
     typeof c.keyPath !== "string" ||
     typeof c.certPath !== "string" ||
-    !Array.isArray(c.devices) ||
-    !c.devices.length
+    !Array.isArray(c.devices)
   )
     throw new Error("invalid_config");
   const devices = c.devices.map((entry: unknown) => {

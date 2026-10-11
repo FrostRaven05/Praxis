@@ -1,0 +1,84 @@
+.account-panel fieldset {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.account-panel form {
+  max-width: 460px;
+}
+.account-panel label {
+  display: grid;
+  gap: 7px;
+  margin: 16px 0;
+  font-size: 13px;
+}
+.account-panel input,
+.account-panel textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px 12px;
+  background: var(--surface);
+  color: var(--text-primary);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+}
+.account-panel textarea {
+  min-height: 90px;
+}
+.account-panel button {
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.account-panel button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.account-panel button[type="submit"],
+.account-tabs button[aria-pressed="true"] {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: transparent;
+}
+.account-tabs {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+.account-avatar {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 600;
+}
+.account-current {
+  display: grid;
+  gap: 8px;
+  margin-top: 20px;
+  justify-items: start;
+}
+.account-current > span,
+.account-note {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.7;
+}
+.account-current > span,
+.account-current > strong {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.account-panel summary {
+  font-size: 13px;
+  cursor: pointer;
+}

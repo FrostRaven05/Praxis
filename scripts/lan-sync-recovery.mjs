@@ -34,6 +34,7 @@ let stopped = false;
 try {
   await desktop.getByRole("button", { name: "随手记", exact: false }).click();
   await mobile.getByRole("button", { name: "打开收件箱", exact: true }).click();
+  await mobile.getByRole("button", { name: "整理收件箱原文", exact: false }).click();
   const previous = JSON.parse(
     await readFile(
       resolve(root, "docs/evidence/lan-dual-sync/result.json"),
@@ -42,6 +43,7 @@ try {
   );
   const local = previous.stamp + " 冲突手机保留值",
     remote = previous.stamp + " 冲突桌面保留值";
+  await mobile.getByRole("navigation", { name: "主导航" }).getByRole("button", { name: "我的", exact: true }).click();
   const conflict = mobile
     .locator(".pm-lan-sync > div > div")
     .filter({ has: mobile.getByText(local, { exact: true }) });

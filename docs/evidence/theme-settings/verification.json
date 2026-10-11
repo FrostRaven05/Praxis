@@ -1,0 +1,9 @@
+{
+  "checks": [
+    "Every preset shares one stronger accent across the Today tab, capture outline, project icons and selected navigation while retaining neutral surfaces and pastel fills.",
+    "Default ice blue and all presets change only accent colors; custom colors save immediately and leave tasks, backgrounds and normal text unchanged.",
+    "The preference survives a native restart with a new WebView cache; invalid values cannot overwrite it, and reset restores #BDE7EE.",
+    "Dark mode retains its original neutral surfaces and readable accent foregrounds."
+  ],
+  "errors": []
+}

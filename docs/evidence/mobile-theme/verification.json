@@ -1,0 +1,9 @@
+{
+  "passed": true,
+  "checks": [
+    "All four presets and custom colors update mobile navigation, task outlines, project icons and settings without task changes.",
+    "Neutral backgrounds, readable dark mode and 320px layout verified.",
+    "The selected theme survives a native Android restart; restored ice blue afterwards."
+  ],
+  "errors": []
+}

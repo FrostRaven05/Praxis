@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "taskCount": 20,
+  "checks": [
+    "Export and restore block fully removed",
+    "Theme, timezone and history still available",
+    "Existing tasks unchanged after update",
+    "No horizontal overflow"
+  ]
+}

@@ -1,12 +1,10 @@
 import { useLanRefresh } from "./useLanRefresh";
 import { useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { RetriableCommands } from "../../../packages/application/src/retriable-commands";
 import "./search-views.css";
 
 type Condition = { field: string; op: string; value: string };
 type Query = {
-  mobileFilter?: Record<string, unknown>;
   text: string;
   entityType: string;
   projectId: string | null;
@@ -16,15 +14,7 @@ type Query = {
   sort: string;
   groupBy: string;
 };
-type Saved = {
-  id: string;
-  name: string;
-  query: Query;
-  followed: boolean;
-  version: number;
-};
 type Snapshot = {
-  views: Saved[];
   projects: { id: string; name: string }[];
   labels: { id: string; name: string }[];
   presets: { name: string; query: Query }[];
@@ -45,12 +35,6 @@ type Result = {
   timeZone: string;
   today: string;
 };
-type Command = {
-  operationId: string;
-  occurredAt: string;
-  action: Record<string, unknown>;
-};
-const retries = new RetriableCommands<Command>();
 const empty: Query = {
   text: "",
   entityType: "all",
@@ -120,103 +104,24 @@ function defaultCondition(field = "status"): Condition {
               : "",
   };
 }
-export function FollowedViews({
-  onOpen,
-  disabled = false,
-  revision = 0,
-}: {
-  onOpen: (id: string) => void;
-  disabled?: boolean;
-  revision?: number;
-}) {
-  const [views, setViews] = useState<Saved[]>([]);
-  useLanRefresh(
-    () => invoke<Snapshot>("view_snapshot"),
-    (s) => setViews(s.views.filter((v) => v.followed)),
-  );
-  const [error, setError] = useState("");
-  useEffect(() => {
-    let alive = true;
-    invoke<Snapshot>("view_snapshot")
-      .then((s) => {
-        if (alive) {
-          setViews(s.views.filter((v) => v.followed));
-          setError("");
-        }
-      })
-      .catch((e) => {
-        if (alive) setError(String(e));
-      });
-    return () => {
-      alive = false;
-    };
-  }, [revision]);
-  return (
-    <nav aria-label="关注的工作视图">
-      {views.map((v) => (
-        <button key={v.id} disabled={disabled} onClick={() => onOpen(v.id)}>
-          {v.name}
-        </button>
-      ))}
-      {error && <small role="status">工作视图暂时无法加载</small>}
-    </nav>
-  );
-}
-export function SearchViews({
-  initialViewId,
-  onChanged,
-}: {
-  initialViewId?: string | null;
-  onChanged?: () => void;
-}) {
+export function SearchViews() {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
   const [query, setQuery] = useState<Query>(empty);
   const [result, setResult] = useState<Result | null>(null);
-  const [saved, setSaved] = useState<Saved | null>(null);
-  const [name, setName] = useState("");
-  const [followed, setFollowed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const [detail, setDetail] = useState<Row | null>(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const lock = useRef(false);
   const request = useRef(0);
-  const loadedId = useRef<string | null>(null);
-  const newId = useRef(crypto.randomUUID());
-  const savedDirty =
-    !!saved &&
-    (name !== saved.name ||
-      followed !== saved.followed ||
-      JSON.stringify(query) !== JSON.stringify(saved.query));
   useLanRefresh(
-    async () => {
-      const s = await invoke<Snapshot>("view_snapshot");
-      const fresh =
-        saved && !savedDirty
-          ? s.views.find((v) => v.id === saved.id)
-          : undefined;
-      const removed = !!saved && !fresh && !savedDirty;
-      const r = removed
-        ? null
-        : await invoke<Result>("view_query", { query: fresh?.query ?? query });
-      return { s, r, fresh, removed };
+    async () => ({
+      snapshot: await invoke<Snapshot>("view_snapshot"),
+      result: await invoke<Result>("view_query", { query }),
+    }),
+    (data) => {
+      setSnapshot(data.snapshot);
+      setResult(data.result);
     },
-    ({ s, r, fresh, removed }) => {
-      setSnapshot(s);
-      setResult(r);
-      if (fresh) {
-        setSaved(fresh);
-        setQuery(fresh.query);
-        setName(fresh.name);
-        setFollowed(fresh.followed);
-      }
-      if (removed) {
-        setSaved(null);
-        setError("此视图已被另一端删除。筛选输入仍保留，可另存为新视图。");
-      }
-    },
-    busy || deleteConfirm || savedDirty,
+    busy,
     JSON.stringify(query),
   );
   async function refresh() {
@@ -237,15 +142,9 @@ export function SearchViews({
       if (generation === request.current) setBusy(false);
     }
   }
-  function choose(v: { query: Query; name: string } & Partial<Saved>) {
-    setQuery(v.query);
-    setSaved(v.id ? (v as Saved) : null);
-    setName(v.name);
-    setFollowed(v.followed ?? false);
-    setNotice("");
-    setDeleteConfirm(false);
-    newId.current = crypto.randomUUID();
-    void search(v.query);
+  function choose(q: Query) {
+    setQuery(q);
+    void search(q);
   }
   useEffect(() => {
     let alive = true;
@@ -261,70 +160,6 @@ export function SearchViews({
       request.current++;
     };
   }, []);
-  useEffect(() => {
-    if (snapshot && initialViewId && loadedId.current !== initialViewId) {
-      const v = snapshot.views.find((v) => v.id === initialViewId);
-      if (v) {
-        loadedId.current = initialViewId;
-        choose(v);
-      } else {
-        loadedId.current = initialViewId;
-        setError("这个视图已删除或不可用。");
-      }
-    }
-  }, [initialViewId, snapshot]);
-  async function command(action: Record<string, unknown>) {
-    if (lock.current) return false;
-    lock.current = true;
-    setBusy(true);
-    setError("");
-    setNotice("");
-    try {
-      await retries.execute(
-        String(action.id),
-        (c) => JSON.stringify(c.action) === JSON.stringify(action),
-        () => ({
-          operationId: crypto.randomUUID(),
-          occurredAt: new Date().toISOString(),
-          action,
-        }),
-        (c) => invoke("view_command", { command: c }),
-      );
-      await refresh().catch((e) =>
-        setError(`保存成功，但列表刷新失败：${String(e)}`),
-      );
-      onChanged?.();
-      return true;
-    } catch (e) {
-      setError(
-        String(e).includes("STATE_CONFLICT")
-          ? "视图已改变。输入已保留；请重新载入视图后再保存，或另存副本。"
-          : String(e),
-      );
-      return false;
-    } finally {
-      lock.current = false;
-      setBusy(false);
-    }
-  }
-  async function save(copy: boolean) {
-    const id = copy || !saved ? newId.current : saved.id;
-    if (
-      await command({
-        type: "save",
-        id,
-        expectedVersion: copy ? null : (saved?.version ?? null),
-        name,
-        query,
-        followed,
-      })
-    ) {
-      const version = copy || !saved ? 0 : saved.version + 1;
-      setSaved({ id, name, query, followed, version });
-      newId.current = crypto.randomUUID();
-      setNotice("已保存到本机。排序、分组及关注设置已保留。");
-    }
-  }
   function updateGroup(gi: number, ci: number, c: Condition) {
     setQuery((q) => ({
       ...q,
@@ -444,14 +279,13 @@ export function SearchViews({
     groups.set(label, [...(groups.get(label) ?? []), row]);
   }
   return (
-    <section className="search-views" aria-label="搜索与视图">
-      <h2>搜索与工作视图</h2>
-      <p>本机离线搜索。回收站内容不参与结果；手机保存的视图保留原筛选条件。</p>
+    <section className="search-views" aria-label="搜索与筛选">
+      <h2>搜索与筛选</h2>
+      <p>本机离线搜索。回收站内容不参与结果。</p>
       {error && <p role="alert">{error}</p>}
-      {notice && <p role="status">{notice}</p>}
       {!snapshot ? (
         <p>
-          正在加载视图…{" "}
+          正在加载搜索…{" "}
           <button
             onClick={() => void refresh().catch((e) => setError(String(e)))}
           >
@@ -461,34 +295,15 @@ export function SearchViews({
       ) : (
         <>
           <div className="view-shortcuts">
-            <label>
-              载入视图
-              <select
-                aria-label="载入视图"
-                value={saved?.id ?? ""}
-                disabled={busy}
-                onChange={(e) => {
-                  const v = snapshot.views.find((v) => v.id === e.target.value);
-                  if (v) choose(v);
-                }}
-              >
-                <option value="">选择已保存视图</option>
-                {snapshot.views.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.followed ? "★ " : ""}
-                    {v.name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button
-              disabled={busy}
-              onClick={() => choose({ name: "", query: empty })}
-            >
+            <button disabled={busy} onClick={() => choose(empty)}>
               新搜索
             </button>
             {snapshot.presets.map((p) => (
-              <button key={p.name} disabled={busy} onClick={() => choose(p)}>
+              <button
+                key={p.name}
+                disabled={busy}
+                onClick={() => choose(p.query)}
+              >
                 {p.name}
               </button>
             ))}
@@ -499,48 +314,7 @@ export function SearchViews({
               void search(query);
             }}
           >
-            {query.mobileFilter && (
-              <section aria-label="手机视图筛选条件">
-                <h3>手机保存的筛选条件</h3>
-                <dl>
-                  {Object.entries(query.mobileFilter)
-                    .filter(([, value]) => value !== "" && value != null)
-                    .map(([key, value]) => (
-                      <div key={key}>
-                        <dt>
-                          {(
-                            {
-                              query: "文字",
-                              kind: "类型",
-                              projectId: "项目",
-                              status: "状态",
-                              priority: "优先级",
-                              due: "期限范围",
-                              preset: "预设",
-                              operator: "条件关系",
-                              sort: "排序",
-                              group: "分组",
-                              includeArchived: "包含归档",
-                            } as Record<string, string>
-                          )[key] ?? key}
-                        </dt>
-                        <dd>{String(value)}</dd>
-                      </div>
-                    ))}
-                </dl>
-                <p>
-                  筛选条件保持手机原有语义，可在手机修改；这里可重命名、关注或保存副本。
-                </p>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void search(query)}
-                >
-                  重新执行手机视图
-                </button>
-              </section>
-            )}
-            <fieldset disabled={busy || !!query.mobileFilter}>
+            <fieldset disabled={busy}>
               <legend>搜索范围</legend>
               <label>
                 文字
@@ -621,7 +395,7 @@ export function SearchViews({
               </label>
             </fieldset>
             {query.entityType === "task" && (
-              <fieldset disabled={busy || !!query.mobileFilter}>
+              <fieldset disabled={busy}>
                 <legend>
                   条件组：组内全部符合（AND），组间任一符合（OR，最多 3 组）
                 </legend>
@@ -662,7 +436,7 @@ export function SearchViews({
                 </p>
               </fieldset>
             )}
-            <fieldset disabled={busy || !!query.mobileFilter}>
+            <fieldset disabled={busy}>
               <legend>展示</legend>
               <label>
                 排序
@@ -710,69 +484,6 @@ export function SearchViews({
               </button>
             </fieldset>
           </form>
-          {(query.entityType === "task" || !!query.mobileFilter) && (
-            <fieldset disabled={busy}>
-              <legend>保存任务视图</legend>
-              <label>
-                视图名称
-                <input
-                  aria-label="视图名称"
-                  maxLength={120}
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                />
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={followed}
-                  onChange={(e) => setFollowed(e.target.checked)}
-                />
-                关注到侧栏
-              </label>
-              <button disabled={!name.trim()} onClick={() => void save(false)}>
-                {saved ? "保存视图修改" : "保存新视图"}
-              </button>
-              {saved && (
-                <>
-                  <button
-                    disabled={!name.trim()}
-                    onClick={() => void save(true)}
-                  >
-                    另存副本
-                  </button>
-                  <button onClick={() => setDeleteConfirm(true)}>
-                    删除视图
-                  </button>
-                  {deleteConfirm && (
-                    <span>
-                      仅删除视图，保留任务。
-                      <button
-                        onClick={() => {
-                          void command({
-                            type: "delete",
-                            id: saved.id,
-                            expectedVersion: saved.version,
-                          }).then((ok) => {
-                            if (ok) {
-                              setSaved(null);
-                              setDeleteConfirm(false);
-                              setNotice("视图已删除，任务保留。");
-                            }
-                          });
-                        }}
-                      >
-                        确认删除视图
-                      </button>
-                      <button onClick={() => setDeleteConfirm(false)}>
-                        返回
-                      </button>
-                    </span>
-                  )}
-                </>
-              )}
-            </fieldset>
-          )}
           {result ? (
             <div aria-live="polite">
               {result.warnings.map((w) => (

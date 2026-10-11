@@ -1,6 +1,12 @@
 import { expect, it } from "vitest";
 import type { DailyTask } from "./capture-today";
-import { moveDayTaskChanges, orderedDayTasks } from "./day-schedule";
+import {
+  moveDayTaskChanges,
+  orderedDayTasks,
+  moveDayItems,
+  orderedDayItems,
+  type DayArrangementItem,
+} from "./day-schedule";
 
 const task = (planId: string, fields: Partial<DailyTask> = {}): DailyTask => ({
   taskId: `task-${planId}`,
@@ -12,6 +18,63 @@ const task = (planId: string, fields: Partial<DailyTask> = {}): DailyTask => ({
   status: "todo",
   source: "temporary",
   ...fields,
+});
+it("shares one order for habit occurrences and ordinary tasks across all periods", () => {
+  const rows: DayArrangementItem[] = [
+    {
+      key: "task-a",
+      dayPeriod: "morning",
+      dayRank: 1,
+      createdAt: "2026-10-11",
+    },
+    {
+      key: "habit:h",
+      dayPeriod: "morning",
+      dayRank: 2,
+      createdAt: "2026-10-11",
+    },
+    {
+      key: "task-b",
+      dayPeriod: "morning",
+      dayRank: 3,
+      createdAt: "2026-10-11",
+    },
+  ];
+  const move = (
+    key: string,
+    period: "morning" | "afternoon" | "evening",
+    anchor?: string,
+  ) => {
+    const changes = moveDayItems(rows, key, period, anchor);
+    for (const change of changes)
+      Object.assign(
+        rows.find((r) => r.key === change.key)!,
+        change,
+      );
+    return changes;
+  };
+  move("habit:h", "afternoon");
+  expect(
+    orderedDayItems(rows, "morning").map((r) => [r.key, r.dayRank]),
+  ).toEqual([
+    ["task-a", 1],
+    ["task-b", 2],
+  ]);
+  move("habit:h", "evening");
+  move("habit:h", "morning", "task-b");
+  expect(orderedDayItems(rows, "morning").map((r) => r.key)).toEqual([
+    "task-a",
+    "habit:h",
+    "task-b",
+  ]);
+  move("task-b", "morning", "habit:h");
+  expect(orderedDayItems(rows, "morning").map((r) => r.key)).toEqual([
+    "task-a",
+    "task-b",
+    "habit:h",
+  ]);
+  expect(moveDayItems(rows, "habit:h", "morning", "missing")).toEqual([]);
+  expect(moveDayItems(rows, "habit:h", "morning")).toEqual([]);
 });
 it("keeps starred and ordinary tasks together, and appends new tasks after manually ordered ones", () => {
   const items = [

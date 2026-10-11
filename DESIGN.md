@@ -3,18 +3,21 @@ version: alpha
 name: Adaptive Desktop Interface
 description: A general-purpose, theme-aware design system for clear and consistent product interfaces.
 colors:
-  primary: "#D1453B"
-  primary-hover: "#B8382F"
-  primary-dark: "#F28D82"
-  primary-dark-hover: "#FFA399"
-  on-primary: "#FFFFFF"
+  primary: "#BDE7EE"
+  primary-hover: "#A8CDD3"
+  primary-dark: "#BDE7EE"
+  primary-dark-hover: "#C5EAF0"
+  primary-light-text: "#287F91"
+  primary-dark-text: "#BDE7EE"
+  on-primary: "#111111"
   on-primary-inverse: "#111111"
   surface: "#FFFFFF"
   surface-secondary: "#F9F9F9"
   surface-tertiary: "#F0F0F0"
   surface-hover: "#ECECEC"
-  surface-card: "#F7F7F8"
-  sidebar-surface: "#FCFAF8"
+  surface-card: "#FFFFFF"
+  surface-canvas: "#F6F7F9"
+  sidebar-surface: "#FBFBFC"
   text-primary: "#0D0D0D"
   text-secondary: "#6E6E80"
   text-tertiary: "#8E8EA0"
@@ -23,6 +26,8 @@ colors:
   dark-surface-tertiary: "#383838"
   dark-surface-hover: "#383838"
   dark-surface-sidebar: "#171717"
+  dark-surface-card: "#2F2F2F"
+  dark-surface-canvas: "#242426"
   dark-text-primary: "#ECECEC"
   dark-text-secondary: "#B4B4B4"
   dark-text-tertiary: "#676767"
@@ -30,6 +35,14 @@ colors:
   warning: "#F59E0B"
   danger: "#EF4444"
   info: "#3B82F6"
+theme:
+  defaultAccent: "#BDE7EE"
+  presets: ["#BDE7EE", "#D1453B", "#ADD8C6", "#C8BDE8"]
+  customColor: true
+  settingsEntry: Desktop Settings and mobile My page share the same theme selector and tokens.
+  persistence: Per-device appearance.json on desktop, localStorage elsewhere.
+  accentText: Preset foregrounds preserve their hue with stronger contrast, shared by text, icons and outline controls. Custom colors use contrast-adjusted foregrounds; neutral surfaces and text stay unchanged.
+  presetForegrounds: ["#287F91", "#D1453B", "#397B61", "#7B60AE"]
 typography:
   display:
     fontFamily: HarmonyOS Sans SC
@@ -38,7 +51,7 @@ typography:
     lineHeight: 1.2
   headline-lg:
     fontFamily: HarmonyOS Sans SC
-    fontSize: 24px
+    fontSize: 28px
     fontWeight: 700
     lineHeight: 1.3
   headline-md:
@@ -90,10 +103,10 @@ rounded:
   none: 0px
   xs: 4px
   sm: 6px
-  md: 8px
-  lg: 12px
-  xl: 16px
-  modal: 20px
+  md: 10px
+  lg: 18px
+  xl: 22px
+  modal: 22px
   full: 9999px
 spacing:
   none: 0px
@@ -192,7 +205,7 @@ components:
 界面首选 HarmonyOS Sans SC，并回退到系统无衬线字体。字号层级应以语义角色选择，避免为单个元素创建临时尺寸。
 
 - 14px 是正文和控件基准；13px 用于辅助信息；11–12px 用于时间、计数、标签和元数据。
-- 16–24px 用于页面及分区标题；48px display 只用于低密度的焦点场景。
+- 16–28px 用于页面及分区标题；48px display 只用于低密度的焦点场景。
 - 400 用于阅读，500 用于标签和控件，600 用于标题与选中状态，700 用于展示标题和关键数字。
 - 路径、ID、端口、日志、代码和需要对齐的数字使用 `data` 等宽样式。
 - 正文行高保持 1.5–1.6；标题使用 1.2–1.4。长文本使用自然换行，数据和标识符按语义决定截断或断行。
@@ -209,7 +222,11 @@ components:
 
 ## Elevation & Depth
 
-基础界面保持浅层，通过表面色差、1px 低对比度边框和留白建立层级。普通卡片不依赖明显阴影。
+每日安排采用连续工作台：左侧导航、中部任务列表、右侧详情面板。顶部今日／近期切换、固定宽度日期导航和上午／下午／晚上分组使用轻量圆角卡片、细微阴影与充足留白；任务使用整行选中状态、轻分隔线与清晰行距。详情字段按图标、标签、控件对齐，长内容在面板内滚动。日程、收件箱和项目的任务详情统一自动保存：文字输入停顿 500 毫秒后提交，日期、工作量快捷选项与重要标记直接提交，底部仅显示轻量保存状态。保存期间保留输入焦点并排队处理新修改；中文输入法组合期间不提交。失败保留输入并提供重试；收起详情或关闭窗口前先完成保存。该布局继续使用现有语义配色。
+
+桌面时间工作台统一为“今日与近期”一个入口。顶部只展示“今日 / 近期”和“更多”：今日按上午、下午、晚上列出任务；未安排到当天的截止、跟进与重点事项保留在“需要关注”。近期支持未来 7 / 14 / 30 天，按日期汇总计划、每日安排、截止与跟进，同一天同一任务只显示一次。每日结果、习惯与待重排使用轻量折叠区；其他管理功能放在“更多”。有未保存的编辑时禁用切换，日期导航使用工作空间时区。
+
+基础界面保持浅层，通过浅灰画布、白色模块卡片、1px 低对比度边框和留白建立层级。普通卡片使用细微柔和阴影，避免厚重投影。
 
 - 下拉菜单、浮动工具和提示使用小范围柔和阴影。
 - 模态窗口使用半透明遮罩、轻度背景模糊和中等阴影。
@@ -239,12 +256,13 @@ components:
 任务控件参考 Todoist 的[任务详情](https://www.todoist.com/help/todoist/features/use-the-task-view-to-manage-tasks-in-todoist-eDeRDO0C)、[快速添加](https://www.todoist.com/help/todoist/product-updates/a-cleaner-simpler-quick-add-june-29-PuIpiLmLh)和[快捷键](https://www.todoist.com/help/todoist/features/use-keyboard-shortcuts-in-todoist-Wyovn2)，按 Praxis 现有任务模型实现：
 
 - 录入保持单行与回车保存；`Q` 定位当前视图的录入框。常用操作直接显示，层级移动、子任务等操作收进更多菜单。
-- 日期与截止时间统一使用简洁月历：圆形选中日期、今天描边、相邻月份淡化；点击年月展开月份选择，箭头切换月份或年份，点击日期直接选中并收起。移除弹层底部的日期输入、确认、提示和今天区域。截止时间仅增加时分选择，并保留清除入口。选择安排日期只修改表单草稿，保存或安排任务才写入本机；安排日期与截止时间分别保存。
+- 日期与截止时间统一使用简洁月历：圆形选中日期、今天描边、相邻月份淡化；点击年月展开月份选择，箭头切换月份或年份，点击日期直接选中并收起。移除弹层底部的日期输入、确认、提示和今天区域。截止时间仅增加时分选择，并保留清除入口。日程任务详情选择日期后直接写入本机；其他需确认的表单沿用保存或安排操作。安排日期与截止时间分别保存。
 - 更多菜单支持上下方向键、Home、End；表单字段保留自身的编辑按键。月历使用单个 Tab 入口，方向键移动日期，Page Up/Down 移动月份，Shift+Page Up/Down 移动年份，月末不足时停在当月最后一天。
-- 弹层靠近触发控件，适配窗口边界；点击外部、移出焦点或按 Esc 收起。详情中的 Ctrl+Enter 保存，Esc 收起已保存的详情；有草稿时显示保存与取消修改入口。
+- 弹层靠近触发控件，适配窗口边界；点击外部、移出焦点或按 Esc 收起。日程、收件箱和项目任务详情中的 Ctrl+Enter 立即提交待保存修改，Esc 完成保存后收起详情；移除常驻的保存与取消修改按钮。项目列表和看板在详情自动保存后直接同步显示最新字段。
+- 项目任务详情使用与今日、收件箱一致的右侧面板，不使用详情弹窗或背景遮罩。项目页统一维护一个选中任务，列表、看板、下一步与更多菜单共用该面板；切换项目视图保留当前详情，切换任务或收起前完成保存。桌面宽屏为面板预留宽度，任务列表与看板保持可见；窄屏沿用其他详情面板的侧边展示。正文、截止时间、预估工作量、完成标准、重要标记与保存状态使用相同控件和层级。
 - 圆形完成控件切换任务完成状态；重点标记与拖动排序分别处理，不改变上午、下午、晚上分组。
-- 收件箱点击任务直接打开右侧编辑栏，列表保持可见；不再展开行内操作或打开详情模态。默认没有日期，编辑保存后仍留在收件箱；选择日期并保存后进入对应日程。草稿阻止切换任务，支持取消修改和 Ctrl+Enter 保存。
-- 日程页通过固定宽度的扁平日期条或月历切换日期，标题仅供辅助技术读取；保存后直接更新任务列表，详情有未保存修改时日期导航暂时禁用。页面不显示额外的保存成功提示、当前查看日期说明、返回今日横幅或标题与日期修改回执。
+- 桌面收件箱直接展示未安排的任务，移除“待澄清原文”“记录”分类、原文录入表单和收集项活动记录。点击任务打开右侧编辑栏，列表保持可见；默认没有日期，编辑自动保存后仍留在收件箱，选择日期即安排到对应日程。待保存的修改阻止切换任务和页面；收起详情前立即保存。已有原文与记录保留在数据层。
+- 日程页通过固定宽度的圆角日期卡片或月历切换日期，标题仅供辅助技术读取；保存后直接更新任务列表，详情有未保存修改时日期导航暂时禁用。页面不显示额外的保存成功提示、当前查看日期说明、返回今日横幅或标题与日期修改回执。
 
 项目的列表与看板参考 [Todoist 入门说明](https://www.todoist.com/zh-CN/help/todoist/get-started/get-started-with-todoist-OgNNJR)及[看板布局](https://www.todoist.com/help/todoist/features/use-the-board-layout-in-todoist-AiAVsyEI)。列表、甘特图和看板共用项目标题、视图切换、任务录入及更多选项：
 

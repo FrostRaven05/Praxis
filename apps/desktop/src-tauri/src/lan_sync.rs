@@ -6,22 +6,40 @@ use crate::{
     },
     LocalDatabase,
 };
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::{
     path::{Path, PathBuf},
     time::Duration,
 };
 use tauri::{Emitter, Manager};
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
-struct Pairing {
-    base_url: String,
-    owner_id: String,
-    device_id: String,
-    token: String,
-    ca_pem: String,
+pub(crate) struct Pairing {
+    pub base_url: String,
+    pub owner_id: String,
+    pub device_id: String,
+    pub token: String,
+    pub ca_pem: String,
 }
+#[cfg(windows)]
+pub(crate) fn encrypt(bytes: &[u8]) -> Result<Vec<u8>, String> {
+    #[repr(C)] struct Blob { len: u32, data: *mut u8 }
+    #[link(name = "crypt32")]
+    extern "system" { fn CryptProtectData(input: *const Blob, description: *const u16, entropy: *const Blob, reserved: *mut std::ffi::c_void, prompt: *mut std::ffi::c_void, flags: u32, output: *mut Blob) -> i32; }
+    #[link(name = "kernel32")]
+    extern "system" { fn LocalFree(mem: *mut std::ffi::c_void) -> *mut std::ffi::c_void; }
+    let input = Blob { len: bytes.len() as u32, data: bytes.as_ptr() as *mut u8 };
+    let mut output = Blob { len: 0, data: std::ptr::null_mut() };
+    unsafe {
+        if CryptProtectData(&input, std::ptr::null(), std::ptr::null(), std::ptr::null_mut(), std::ptr::null_mut(), 1, &mut output) == 0 { return Err("无法安全保存账号凭据。".into()); }
+        let result = std::slice::from_raw_parts(output.data, output.len as usize).to_vec();
+        LocalFree(output.data.cast());
+        Ok(result)
+    }
+}
+#[cfg(not(windows))]
+pub(crate) fn encrypt(_: &[u8]) -> Result<Vec<u8>, String> { Err("此账号凭据存储方式仅支持 Windows。".into()) }
 #[cfg(windows)]
 fn decrypt(bytes: &mut [u8]) -> Result<Vec<u8>, String> {
     #[repr(C)]
@@ -76,7 +94,7 @@ fn decrypt(bytes: &mut [u8]) -> Result<Vec<u8>, String> {
 fn decrypt(_: &mut [u8]) -> Result<Vec<u8>, String> {
     Err("此配对方式仅支持 Windows".into())
 }
-fn pairing(path: &Path) -> Result<Pairing, String> {
+pub(crate) fn pairing(path: &Path) -> Result<Pairing, String> {
     let mut encrypted = std::fs::read(path).map_err(|_| "尚未配置局域网同步")?;
     if encrypted.len() > 100000 {
         return Err("配对文件无效".into());
@@ -136,10 +154,12 @@ async fn cycle(db: &LocalDatabase, path: &Path) -> Result<Value, String> {
     let store = db.get(None).await?;
     let base = p.base_url.trim_end_matches('/');
     store.lan_bind(base, &p.owner_id, &p.device_id).await?;
-    let cert = reqwest::Certificate::from_pem(p.ca_pem.as_bytes()).map_err(|_| "CA 证书无效")?;
-    let client = reqwest::Client::builder()
-        .tls_built_in_root_certs(false)
-        .add_root_certificate(cert)
+    let mut builder = reqwest::Client::builder();
+    if !p.ca_pem.is_empty() {
+        let cert = reqwest::Certificate::from_pem(p.ca_pem.as_bytes()).map_err(|_| "CA 证书无效")?;
+        builder = builder.tls_built_in_root_certs(false).add_root_certificate(cert);
+    }
+    let client = builder
         .redirect(reqwest::redirect::Policy::none())
         .timeout(Duration::from_secs(10))
         .build()

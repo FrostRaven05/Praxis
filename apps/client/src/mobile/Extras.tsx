@@ -1,4 +1,5 @@
 import { scheduleId, workspaceSettingsId } from "./sync-identity";
+import { AccountPanel } from "../AccountPanel";
 import { editRecordLinks, firstRecordLink } from "./record-links";
 import { habitCheckCommand } from "./habit-check-command";
 import {
@@ -8,10 +9,7 @@ import {
   type StructuredReview,
 } from "@praxis/storage-mobile";
 import { useEffect, useRef, useState } from "react";
-import {
-  WorkspaceRejectedError,
-  previewWorkspaceImport,
-} from "@praxis/storage-mobile";
+import { WorkspaceRejectedError } from "@praxis/storage-mobile";
 import type {
   WorkspaceEntity,
   WorkspaceSnapshot,
@@ -22,8 +20,11 @@ import type {
 import { mobileStorage } from "../../../../packages/storage-mobile/src/native";
 import "./extras.css";
 import { SearchPanel } from "./SearchPanel";
+import { FocusView } from "./FocusView";
+import { StatisticsView } from "./StatisticsView";
+import { MobileNavIcon } from "./MobileNavIcon";
+import { ThemeSettings } from "../ThemeSettings";
 import { ProjectChecks, CommandHistory } from "./ReviewHistory";
-import { exportMobileJson } from "./export-file";
 import {
   ruleAt,
   matchesRule,
@@ -44,9 +45,11 @@ export type ExtraSection =
   | "focus";
 type Props = {
   section: ExtraSection;
+  searchQuery?: string;
   snapshot: WorkspaceSnapshot;
   refresh: () => Promise<void>;
   onBusyChange?: (busy: boolean) => void;
+  onNavigate?: (section: string) => void;
 };
 const str = (v: unknown) => (typeof v === "string" ? v : "");
 const title = (e: WorkspaceEntity) => str(e.data.title) || "未命名";
@@ -113,7 +116,14 @@ const labels: Record<string, string> = {
   habit_check: "打卡",
   settings: "设置",
 };
-export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
+export function Extras({
+  section,
+  searchQuery = "",
+  snapshot,
+  refresh,
+  onBusyChange,
+  onNavigate,
+}: Props) {
   const live = snapshot.entities.filter((e) => !e.deleted),
     settings = live.find((e) => e.kind === "settings");
   const timeZone = str(settings?.data.timeZone) || "Asia/Hong_Kong";
@@ -134,11 +144,11 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
     [minimumVersion, setMinimumVersion] = useState("");
   const [projectId, setProjectId] = useState(""),
     [taskId, setTaskId] = useState("");
-  const importOperation = useRef<string | null>(null);
   const [spaces, setSpaces] = useState<
     { id: string; title: string; active: boolean }[]
   >([]);
   const [pending, setPending] = useState<WorkspaceCommand | null>(null);
+  const pendingDone = useRef<(() => void) | undefined>(undefined);
   const [name, setName] = useState(""),
     [body, setBody] = useState(""),
     [selected, setSelected] = useState<WorkspaceEntity | null>(null),
@@ -149,9 +159,6 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
     [target, setTarget] = useState(3),
     [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
   const [zone, setZone] = useState("Asia/Hong_Kong"),
-    [json, setJson] = useState(""),
-    [preview, setPreview] = useState(""),
-    [confirmImport, setConfirmImport] = useState(false),
     [tick, setTick] = useState(Date.now());
   useEffect(() => {
     setZone(timeZone);
@@ -179,15 +186,13 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
     setFrequency("daily");
     setError("");
     setMessage("");
-    setPreview("");
-    setConfirmImport(false);
   }, [section]);
   const dirty =
     (["records", "templates", "review", "habits", "repeat", "focus"].includes(
       section,
     ) &&
       !!(name || body || selected)) ||
-    (section === "settings" && (zone !== timeZone || !!json || !!preview));
+    (section === "settings" && zone !== timeZone);
   useEffect(() => {
     onBusyChange?.(busy || !!pending || dirty);
   }, [busy, pending, dirty, onBusyChange]);
@@ -199,6 +204,7 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
     return () => clearInterval(timer);
   }, []);
   async function run(changes: WorkspaceChange[], done?: () => void) {
+    if (!pending) pendingDone.current = done;
     const cmd = pending ?? {
       operationId: crypto.randomUUID(),
       occurredAt: iso(),
@@ -214,27 +220,17 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
       setPending(null);
       await refresh();
       setMessage("已保存到本机");
-      done?.();
+      pendingDone.current?.();
+      pendingDone.current = undefined;
     } catch (e) {
-      if (e instanceof WorkspaceRejectedError) setPending(null);
-      else uncertain = true;
+      if (e instanceof WorkspaceRejectedError) {
+        setPending(null);
+        pendingDone.current = undefined;
+      } else uncertain = true;
       setError(e instanceof Error ? e.message : "保存失败，请重试");
     } finally {
       setBusy(false);
       onBusyChange?.(uncertain);
-    }
-  }
-  async function action(fn: () => Promise<void>) {
-    setBusy(true);
-    onBusyChange?.(true);
-    setError("");
-    try {
-      await fn();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "操作失败");
-    } finally {
-      setBusy(false);
-      onBusyChange?.(false);
     }
   }
   function reset() {
@@ -380,126 +376,48 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
   );
   let content;
   if (section === "stats") {
-    const tasks = live.filter((e) => e.kind === "task"),
-      done = tasks.filter((e) => e.data.status === "completed");
     content = (
-      <>
-        <div className="mx-metrics">
-          <div>
-            <strong>{done.length}</strong>已完成任务
-          </div>
-          <div>
-            <strong>
-              {
-                tasks.filter(
-                  (e) =>
-                    !["completed", "cancelled"].includes(str(e.data.status)),
-                ).length
-              }
-            </strong>
-            待推进任务
-          </div>
-          <div>
-            <strong>
-              {
-                live.filter(
-                  (e) => e.kind === "project" && e.data.status === "active",
-                ).length
-              }
-            </strong>
-            活跃项目
-          </div>
-        </div>
-        <h3>近七天完成记录</h3>
-        {Array.from({ length: 7 }, (_, i) => addDay(day(), i - 6)).map((d) => {
-          const n = done.filter(
-            (e) => day(new Date(str(e.data.completedAt || e.updatedAt))) === d,
-          ).length;
-          return (
-            <div className="mx-bar" key={d}>
-              <span>{d.slice(5)}</span>
-              <meter min={0} max={Math.max(done.length, 1)} value={n} />
-              <b>{n}</b>
-            </div>
-          );
-        })}
-        <p className="mx-muted">
-          基于本工作空间已保存的数据；撤销完成后统计随之更新。
-        </p>
-      </>
+      <StatisticsView
+        entities={live}
+        today={day()}
+        timeZone={timeZone}
+        onReview={() => onNavigate?.("review")}
+      />
     );
   } else if (section === "focus") {
-    const sessions = live.filter((e) => e.kind === "focus"),
-      active = sessions.find((e) => !e.data.endedAt),
-      elapsed = active
-        ? Math.max(
-            0,
-            Math.floor((tick - Date.parse(str(active.data.startedAt))) / 1000),
-          )
-        : 0;
     content = (
-      <>
-        <div className="mx-clock">
-          {String(Math.floor(elapsed / 60)).padStart(2, "0")}:
-          {String(elapsed % 60).padStart(2, "0")}
-        </div>
-        {active ? (
-          <>
-            <p>{title(active)}</p>
-            {button(
-              "结束并保存",
-              () =>
-                void run([
-                  change(active, {
-                    ...active.data,
-                    endedAt: iso(),
-                    durationSeconds: elapsed,
-                  }),
-                ]),
-            )}
-          </>
-        ) : (
-          <form
-            className="mx-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void run([
-                fresh("focus", {
-                  title: name.trim() || "自由专注",
-                  startedAt: iso(),
-                  endedAt: null,
-                }),
-              ]);
-            }}
-          >
-            <label>
-              本次专注
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="例如：阅读项目资料"
-              />
-            </label>
-            <button disabled={busy}>开始专注</button>
-          </form>
-        )}
-        <h3>专注历史</h3>
-        {sessions
-          .filter((e) => e.data.endedAt)
-          .reverse()
-          .map((e) => (
-            <article key={e.id}>
-              <b>{title(e)}</b>
-              <p>
-                {Math.floor(Number(e.data.durationSeconds) / 60)} 分钟 ·{" "}
-                {day(new Date(str(e.data.startedAt)))}
-              </p>
-            </article>
-          ))}
-        <p className="mx-muted">
-          时间会跨页面和应用重启继续累计；不包含系统后台提醒。
-        </p>
-      </>
+      <FocusView
+        entities={live}
+        now={tick}
+        today={day()}
+        timeZone={timeZone}
+        name={name}
+        onName={setName}
+        onStart={(title, taskId) =>
+          void run(
+            [
+              fresh("focus", {
+                title,
+                taskId,
+                startedAt: iso(),
+                endedAt: null,
+                targetSeconds: 1500,
+              }),
+            ],
+            reset,
+          )
+        }
+        onFinish={(session, elapsed) =>
+          void run([
+            change(session, {
+              ...session.data,
+              endedAt: iso(),
+              durationSeconds: elapsed,
+            }),
+          ])
+        }
+        onDelete={(session) => void run([change(session, session.data, true)])}
+      />
     );
   } else if (
     section === "records" ||
@@ -1028,7 +946,12 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
     );
   } else if (section === "search") {
     content = (
-      <SearchPanel entities={snapshot.entities} today={day()} save={run} />
+      <SearchPanel
+        key={searchQuery}
+        initialQuery={searchQuery}
+        entities={snapshot.entities}
+        today={day()}
+      />
     );
   } else if (section === "trash") {
     content = (
@@ -1050,165 +973,61 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
   } else {
     content = (
       <>
-        <h3>工作空间</h3>
-        <label>
-          切换工作空间
-          <select
-            value={spaces.find((w) => w.active)?.id ?? ""}
-            onChange={(e) =>
-              void action(async () => {
-                await mobileStorage.workspaceSwitch(e.target.value);
-                await refresh();
-              })
-            }
+        <AccountPanel compact />
+        <details className="pm-settings-group" open>
+          <summary>
+            <MobileNavIcon name="theme" />
+            主题颜色
+          </summary>
+          <ThemeSettings />
+        </details>
+        <details className="pm-settings-group">
+          <summary>
+            <MobileNavIcon name="zone" />
+            时间与日期
+          </summary>
+          <form
+            className="mx-form"
+            onSubmit={(e) => {
+              e.preventDefault();
+              void run([
+                settings
+                  ? change(settings, { ...settings.data, timeZone: zone })
+                  : fresh("settings", { timeZone: zone }),
+              ]);
+            }}
           >
-            {spaces.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.title}
-              </option>
-            ))}
-          </select>
-        </label>
-        <p>本机离线保存 · 配对后自动同步工作空间</p>
-        <form
-          className="mx-form"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void run([
-              settings
-                ? change(settings, { ...settings.data, timeZone: zone })
-                : fresh("settings", { timeZone: zone }),
-            ]);
-          }}
-        >
-          <label>
-            工作空间时区
-            <input
-              value={zone}
-              onChange={(e) => setZone(e.target.value)}
-              placeholder="Asia/Hong_Kong"
-            />
-          </label>
-          <p className="mx-muted">既有任务日期、重复模板与打卡历史保持原值。</p>
-          <button disabled={busy}>保存时区</button>
-        </form>
-        <CommandHistory
-          key={spaces.find((w) => w.active)?.id}
-          timeZone={timeZone}
-        />
-        <h3>数据导出与恢复</h3>
-        {button(
-          "生成完整本机 JSON",
-          () =>
-            void action(async () => {
-              setJson(await mobileStorage.workspaceExport());
-              setPreview("");
-              setMessage("已生成导出内容，可复制或下载保存");
-            }),
-        )}
-        <label>
-          导出内容 / 待恢复文件
-          <textarea
-            className="mx-json"
-            rows={7}
-            value={json}
-            onChange={(e) => {
-              setJson(e.target.value);
-              importOperation.current = null;
-              setPreview("");
-              setConfirmImport(false);
-            }}
-          />
-        </label>
-        <div className="mx-actions">
-          {button(
-            "复制 JSON",
-            () =>
-              void action(async () => {
-                await navigator.clipboard.writeText(json);
-                setMessage("已复制");
-              }),
-          )}
-          {button(
-            "保存或分享 JSON",
-            () =>
-              void action(async () => {
-                if (!json) throw new Error("请先生成导出内容");
-                await exportMobileJson(json);
-                setMessage("已打开系统分享，请在目标应用中完成保存");
-              }),
-          )}
-        </div>
-        <label>
-          选择 JSON 文件
-          <input
-            type="file"
-            accept="application/json,.json"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file)
-                void action(async () => {
-                  if (file.size > 25_000_000) throw new Error("文件大于 25 MB");
-                  setJson(await file.text());
-                  importOperation.current = null;
-                  setPreview("");
-                  setConfirmImport(false);
-                });
-            }}
-          />
-        </label>
-        {button("预览恢复", () => {
-          try {
-            const result = previewWorkspaceImport(json);
-            setPreview(
-              `已校验 ${result.count} 项内容：${Object.entries(result.counts)
-                .map(([kind, count]) => `${labels[kind] ?? kind} ${count}`)
-                .join("，")}。将创建新工作空间。`,
-            );
-            setConfirmImport(false);
-          } catch (e) {
-            setError(e instanceof Error ? e.message : "JSON 无效");
-          }
-        })}
-        {preview && (
-          <>
-            <p>{preview}</p>
             <label>
+              工作空间时区
               <input
-                type="checkbox"
-                checked={confirmImport}
-                onChange={(e) => setConfirmImport(e.target.checked)}
+                value={zone}
+                onChange={(e) => setZone(e.target.value)}
+                placeholder="Asia/Hong_Kong"
               />
-              确认恢复到新工作空间，保留当前数据
             </label>
-            <button
-              disabled={busy || !confirmImport}
-              onClick={() =>
-                void action(async () => {
-                  importOperation.current ??= crypto.randomUUID();
-                  await mobileStorage.workspaceImport(
-                    json,
-                    importOperation.current,
-                  );
-                  importOperation.current = null;
-                  await refresh();
-                  setMessage("恢复完成");
-                  setPreview("");
-                })
-              }
-            >
-              恢复到新工作空间
-            </button>
-          </>
-        )}
-        <p className="mx-muted">
-          仅导出本机已有内容。未接入云同步；导出不包含账户密钥。
-        </p>
+            <p className="mx-muted">
+              既有任务日期、重复模板与打卡历史保持原值。
+            </p>
+            <button disabled={busy}>保存时区</button>
+          </form>
+        </details>
+        <details className="pm-settings-group">
+          <summary>
+            <MobileNavIcon name="history" />
+            本机操作历史
+          </summary>
+          <CommandHistory
+            key={spaces.find((w) => w.active)?.id}
+            timeZone={timeZone}
+          />
+        </details>
       </>
     );
   }
   return (
-    <section className="mobile-extras">
+    <section
+      className={`mobile-extras${["stats", "focus", "settings"].includes(section) ? " pm-dashboard" : ""}`}
+    >
       <h2>
         {
           {
@@ -1217,7 +1036,7 @@ export function Extras({ section, snapshot, refresh, onBusyChange }: Props) {
             records: "记录",
             templates: "策略与决策",
             review: "每周回顾",
-            search: "搜索与视图",
+            search: "搜索与筛选",
             trash: "回收站",
             settings: "设置",
             stats: "进度统计",

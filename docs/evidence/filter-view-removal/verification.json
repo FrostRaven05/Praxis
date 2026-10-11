@@ -1,0 +1,12 @@
+{
+  "checks": {
+    "projectVisibleWithoutScrolling": true,
+    "savedViewSidebarRemoved": true,
+    "temporaryFiltersWorkWithoutSavedViews": true,
+    "searchProjectOpensOriginalViews": true,
+    "projectListBoardGanttWork": true,
+    "savedViewsPreserved": true,
+    "narrowViewportNavigationWorks": true
+  },
+  "errors": []
+}

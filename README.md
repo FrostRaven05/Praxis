@@ -1,5 +1,7 @@
 # Praxis
 
+2026-10-11：建议任务可直接转入普通清单；Windows / Android 新增邮箱注册、登录、退出及用户数据隔离，接入现有 HTTPS 后端。新版程序与验证范围见 [用户账号与建议任务转换](docs/implementation-accounts-suggestions.md)。
+
 2026-10-11：已建立可运行的 [局域网开发后端](docs/backend-lan.md)，Windows / Android 已接入 [非 AI 全域自动同步](docs/implementation-full-sync.md)，覆盖任务、项目、安排、记录、视图、重复和习惯等对象。实际双端验收使用 Windows WebView2 与 Android 17 模拟器；最终验收状态见该记录。手机端界面见 [手机端记录](docs/implementation-mobile-reference.md)。
 
 T15–T21 的桌面本地能力和 T22 手机离线收集适配见 [本轮实施与验证](docs/implementation-p1-followups.md)。Android 真机、云登录、统一完整导出与发布/规模验收仍按 [当前工单](ticket.md) 推进；AI 相关 T32–T34 暂缓。Android 当前在前台及恢复前台/网络后同步，系统停止 App 期间不承诺持续后台工作。

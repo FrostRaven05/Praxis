@@ -21,11 +21,11 @@
   stroke-linejoin: round;
 }
 .workspace .completion-toggle:hover:not(:disabled) {
-  color: var(--primary);
+  color: var(--primary-text);
   background: var(--selected);
 }
 .workspace .completed .completion-toggle {
-  color: var(--primary);
+  color: var(--primary-text);
   background: transparent;
 }
 .completed .completion-toggle circle {
@@ -313,7 +313,7 @@
   font-size: 12px;
   background: var(--selected);
   border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
-  color: var(--primary);
+  color: var(--primary-text);
   white-space: nowrap;
 }
 .workspace .sidebar-project-heading .new-project-button:hover:not(:disabled) {
@@ -374,7 +374,7 @@
   height: 28px;
   border-radius: 7px;
   background: var(--surface);
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .workspace .sidebar-project-list .selected .sidebar-project-icon {
   background: color-mix(in srgb, var(--primary) 14%, var(--surface));
@@ -394,7 +394,7 @@
   flex-shrink: 0;
 }
 .project-card .project-icon {
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .sidebar-project-list .project-card strong {
   min-width: 0;
@@ -447,7 +447,7 @@
   color: var(--text-secondary);
 }
 .workspace .projects-view .project-view-tabs button[aria-selected="true"] {
-  color: var(--primary);
+  color: var(--primary-text);
   background: var(--selected);
 }
 .project-heading h2 {
@@ -482,7 +482,7 @@
 }
 .workspace .projects-view button.project-task-title:hover,
 .workspace .projects-view button.kanban-task-title:hover {
-  color: var(--primary);
+  color: var(--primary-text);
   background: transparent;
 }
 .project-task-actions {
@@ -504,7 +504,7 @@
 .project-task-actions > summary:hover,
 .project-task-actions[open] > summary {
   background: var(--selected);
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .project-task-action-menu {
   position: absolute;
@@ -683,7 +683,7 @@
 }
 .workspace .sidebar-settings.active {
   background: var(--selected);
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .project-summary {
   display: flex;
@@ -724,7 +724,7 @@
   height: 36px;
   border-radius: 10px;
   background: var(--selected);
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .project-summary-icon .project-icon {
   width: 21px;
@@ -742,7 +742,7 @@
 .project-summary .state-badge[data-state="active"] {
   background: var(--selected);
   border-color: transparent;
-  color: var(--primary);
+  color: var(--primary-text);
 }
 .project-summary .state-badge[data-state="completed"] {
   color: var(--success-text);
@@ -922,7 +922,7 @@
   height: 36px;
   border: 1px solid var(--line);
   background: var(--surface);
-  color: var(--primary);
+  color: var(--primary-text);
   border-radius: var(--radius-control);
   flex-shrink: 0;
 }
@@ -977,3 +977,4 @@
     flex-basis: 100%;
   }
 }
+

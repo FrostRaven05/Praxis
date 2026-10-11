@@ -31,6 +31,9 @@ try {
     page.getByRole("heading", { name: "任务清单", exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "打开收件箱", exact: true }).click();
+  await page
+    .getByRole("button", { name: "整理收件箱原文", exact: false })
+    .click();
   await expect(
     page.getByText("【安装验证】Praxis 模拟器测试", { exact: false }),
   ).toBeVisible();
@@ -115,14 +118,15 @@ try {
     .getByRole("button", { name: "完成", exact: true })
     .click();
   await route("我的");
-  await page
-    .getByRole("button", { name: "生成完整本机 JSON", exact: true })
-    .click();
-  await expect(page.locator(".mx-json")).toHaveValue(/praxis-mobile-workspace/);
-  const exported = await page.locator(".mx-json").inputValue();
-  const data = JSON.parse(exported);
-  if (!data.entities.some((e) => e.kind === "task" && e.data.title === task))
-    throw new Error("Export omitted task");
+  await expect(
+    page.getByRole("radiogroup", { name: "主题颜色", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "数据导出与恢复", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.locator('.mobile-extras input[type="file"], .mx-json'),
+  ).toHaveCount(0);
   await writeFile(
     new URL("smoke.json", evidence),
     JSON.stringify(
@@ -137,11 +141,10 @@ try {
           "complete child and parent",
           "today list",
           "habit check",
-          "JSON export",
+          "settings keeps theme controls without JSON export/restore controls",
           "no horizontal overflow",
         ],
         errors,
-        entityCount: data.entities.length,
       },
       null,
       2,
@@ -152,7 +155,6 @@ try {
     stamp,
     project,
     task,
-    entityCount: data.entities.length,
   });
 } catch (error) {
   await page.screenshot({

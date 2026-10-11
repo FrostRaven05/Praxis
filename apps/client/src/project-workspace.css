@@ -68,7 +68,7 @@
   .simple-project-workspace
   .project-view-tabs
   button[aria-selected="true"] {
-  color: var(--primary);
+  color: var(--primary-text);
   background: var(--selected);
 }
 .simple-project-workspace .project-view-tabs .project-icon {
@@ -207,7 +207,7 @@
 }
 .simple-project-workspace .tree-task.drop-inside::after {
   content: "移为子任务";
-  color: var(--primary);
+  color: var(--primary-text);
   font-size: 11px;
   margin-right: 8px;
 }
@@ -251,3 +251,4 @@
     gap: 3px;
   }
 }
+

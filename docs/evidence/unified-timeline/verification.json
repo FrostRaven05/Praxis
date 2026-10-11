@@ -1,0 +1,14 @@
+{
+  "checks": [
+    "One navigation entry, Today/Upcoming switch and three day periods combine scheduled and independent plans without duplicate tasks.",
+    "Upcoming supports 7/14/30 days and retains plans, deadlines and follow-ups once per task per date.",
+    "Native capture, period keyboard move, task edit, completion and undo work; unsaved detail edits block switching.",
+    "Independent planned tasks remain editable and use the existing confirmed status workflow.",
+    "Daily results, habits, secondary tools and search remain reachable without separate daily navigation.",
+    "Both tabs fit 1160/1024/768/390-pixel windows without horizontal overflow.",
+    "Reload restores identities, saved period placement, independent plan edits and daily results.",
+    "The unified Today date follows workspace timezone, including a date boundary differing from the device timezone."
+  ],
+  "errors": [],
+  "previewDataDirectory": "C:\\Project\\01Project\\Praxis\\.tools\\modern-ui-OH0i7J"
+}

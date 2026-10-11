@@ -13,12 +13,10 @@ export function ProjectContextPanel({
   projectId,
   tasks,
   onBusyChange,
-  onSaved,
 }: {
   projectId: string;
   tasks: ProjectTask[];
   onBusyChange: (busy: boolean) => void;
-  onSaved: () => Promise<unknown>;
 }) {
   const [editVersion, setEditVersion] = useState<number | null>(null);
   const [data, setData] = useState<ContentSnapshot>(emptyContent),
@@ -115,28 +113,47 @@ export function ProjectContextPanel({
             <p role="status">原下一步已失效，请重新指定。</p>
           )}
           {next ? (
-            <p>
+            <div className="project-next-action">
               当前下一步：
               <TaskDetailsButton
                 taskId={next.taskId}
-                onSaved={onSaved}
                 label={next.title}
                 disabled={busy || editing}
               />
-            </p>
+            </div>
           ) : (
             <p>尚未指定下一步。</p>
           )}
           {!editing ? (
             <>
-              <p>完成标准：{base?.definitionOfDone || "待补充"}</p>
-              <p>主要阻塞：{base?.blockerText || "未记录"}</p>
-              {base?.reviewDate && <p>下次复查：{base.reviewDate}</p>}
-              <p>
-                上次停在：{base?.lastContext || "写一句上下文，方便下次继续。"}
-              </p>
-              <p>下次从这里开始：{base?.restartHint || "未填写"}</p>
-              <p>仍在等待：{base?.waitingNote || "未记录"}</p>
+              <div className="project-context-facts">
+                <p>
+                  <span>完成标准：</span>
+                  {base?.definitionOfDone || "待补充"}
+                </p>
+                <p>
+                  <span>主要阻塞：</span>
+                  {base?.blockerText || "未记录"}
+                </p>
+                {base?.reviewDate && (
+                  <p>
+                    <span>下次复查：</span>
+                    {base.reviewDate}
+                  </p>
+                )}
+                <p>
+                  <span>上次停在：</span>
+                  {base?.lastContext || "写一句上下文，方便下次继续。"}
+                </p>
+                <p>
+                  <span>下次从这里开始：</span>
+                  {base?.restartHint || "未填写"}
+                </p>
+                <p>
+                  <span>仍在等待：</span>
+                  {base?.waitingNote || "未记录"}
+                </p>
+              </div>
               {base?.updatedAt && <small>更新于 {base.updatedAt}</small>}
               <button disabled={busy} onClick={start}>
                 编辑恢复卡与下一步

@@ -9,6 +9,7 @@ pub use recurrence::{RecurrenceAction, RecurrenceCommand};
 mod habits;
 pub use habits::{HabitAction, HabitCommand};
 mod productivity;
+mod rollover;
 pub use productivity::{ProductivityAction, ProductivityCommand, TimeValue};
 pub mod backup;
 mod content;
@@ -27,7 +28,7 @@ pub use projects::{
 mod inbox;
 pub use inbox::{InboxCommand, InboxTask, ScheduleCommand};
 mod planning;
-pub use planning::{CapacityCommand, DayLoad, PlanChange, PlanCommand};
+pub use planning::{CapacityCommand, DayLoad, HabitPlanChange, PlanChange, PlanCommand};
 mod edit;
 pub use edit::EditTaskCommand;
 use std::{path::Path, time::Duration};

@@ -9,6 +9,17 @@ import "./theme.css";
 import "./styles.css";
 import "./compact.css";
 import "./components.css";
+import "./interface.css";
+import "./reference.css";
+import "./todoist.css";
+import "./date-picker.css";
+import "./project-workspace.css";
+import "./project-board.css";
+import "./project-gantt.css";
+import "./content.css";
+import "./modern.css";
+import "./polish.css";
+import { initializeTheme } from "./theme-preferences";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("Missing application root");
@@ -17,28 +28,21 @@ const MobileApp = lazy(() =>
     default: module.MobileApp,
   })),
 );
-createRoot(root).render(
-  <StrictMode>
-    {isTauri() ? (
-      <div className="desktop-shell">
-        <TitleBar />
+void initializeTheme().then(() =>
+  createRoot(root).render(
+    <StrictMode>
+      {isTauri() ? (
+        <div className="desktop-shell">
+          <TitleBar />
+          <App />
+        </div>
+      ) : Capacitor.isNativePlatform() ? (
+        <Suspense fallback={<p role="status">正在打开本机工作空间…</p>}>
+          <MobileApp />
+        </Suspense>
+      ) : (
         <App />
-      </div>
-    ) : Capacitor.isNativePlatform() ? (
-      <Suspense fallback={<p role="status">正在打开本机工作空间…</p>}>
-        <MobileApp />
-      </Suspense>
-    ) : (
-      <App />
-    )}
-  </StrictMode>,
+      )}
+    </StrictMode>,
+  ),
 );
-import "./interface.css";
-import "./reference.css";
-import "./todoist.css";
-import "./date-picker.css";
-import "./project-workspace.css";
-import "./project-board.css";
-import "./project-gantt.css";
-
-import "./content.css";

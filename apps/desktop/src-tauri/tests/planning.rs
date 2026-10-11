@@ -16,6 +16,7 @@ async fn focus_and_estimate_persist_without_duplicating_tasks() {
     };
     store.capture(&c).await.unwrap();
     let cmd = PlanCommand {
+        habit_changes: vec![],
         operation_id: Uuid::new_v4().to_string(),
         date: c.execution_date.clone(),
         occurred_at: c.occurred_at.clone(),
@@ -104,6 +105,7 @@ async fn load_keeps_unknown_estimates_and_capacity_zero_distinct() {
     assert_eq!(before.capacity_minutes, None);
     let rows = store.list_day("2026-09-17").await.unwrap();
     let cmd = PlanCommand {
+        habit_changes: vec![],
         operation_id: Uuid::new_v4().to_string(),
         date: "2026-09-17".into(),
         occurred_at: "2026-09-17T01:00:00Z".into(),
@@ -182,6 +184,7 @@ async fn batch_focus_reorder_rolls_back_all_changes_if_one_version_is_stale() {
         .collect();
     changes[1].expected_version = 99;
     let mut cmd = PlanCommand {
+        habit_changes: vec![],
         operation_id: Uuid::new_v4().to_string(),
         date: "2026-09-17".into(),
         occurred_at: "2026-09-17T01:00:00Z".into(),
@@ -194,7 +197,12 @@ async fn batch_focus_reorder_rolls_back_all_changes_if_one_version_is_stale() {
         .unwrap()
         .iter()
         .all(|r| !r.is_focus && r.version == 0));
-    assert!(store.list_day(&cmd.date).await.unwrap().iter().all(|r| r.day_period == "morning" && r.day_rank == 0));
+    assert!(store
+        .list_day(&cmd.date)
+        .await
+        .unwrap()
+        .iter()
+        .all(|r| r.day_period == "morning" && r.day_rank == 0));
     assert_eq!(store.pending_operations().await.unwrap().len(), 2);
     cmd.changes[1].expected_version = 0;
     store.update_plan(&cmd).await.unwrap();
@@ -204,7 +212,12 @@ async fn batch_focus_reorder_rolls_back_all_changes_if_one_version_is_stale() {
         .unwrap()
         .iter()
         .all(|r| r.is_focus && r.version == 1));
-    assert!(store.list_day(&cmd.date).await.unwrap().iter().all(|r| r.day_period == "evening" && r.day_rank > 0));
+    assert!(store
+        .list_day(&cmd.date)
+        .await
+        .unwrap()
+        .iter()
+        .all(|r| r.day_period == "evening" && r.day_rank > 0));
     store.close().await;
 }
 #[tokio::test]

@@ -393,6 +393,7 @@ async fn default_estimate_is_only_inherited_on_first_plan_and_failed_completion_
         .await
         .unwrap();
     s.update_plan(&PlanCommand {
+        habit_changes: vec![],
         operation_id: id(),
         date: "2026-09-19".into(),
         occurred_at: AT.into(),

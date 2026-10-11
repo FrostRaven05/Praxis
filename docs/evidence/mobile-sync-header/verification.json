@@ -1,0 +1,8 @@
+{
+  "passed": true,
+  "checks": [
+    "No sync strip precedes app header or appears in task list",
+    "Background sync polling remains active while panel hidden",
+    "Sync controls available inside My content, header clear on all pages"
+  ]
+}

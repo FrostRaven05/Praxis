@@ -2,6 +2,7 @@ import { createHash, timingSafeEqual } from "node:crypto";
 import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import { EntityStore, entityKinds, type EntityCommand } from "./entities.js";
 import { CaptureStore, StoreError, type CaptureCommand } from "./store.js";
+import { AccountStore, AccountError } from "./accounts.js";
 
 export interface DeviceCredential {
   ownerId: string;
@@ -67,13 +68,30 @@ export function createServer(options: ServerOptions): FastifyInstance {
   }) as unknown as FastifyInstance;
   const store = new CaptureStore(options.databasePath);
   const entities = new EntityStore(options.databasePath);
+  const accounts = new AccountStore(options.databasePath);
   const identities = new WeakMap<FastifyRequest, DeviceCredential>();
   const windows = new Map<string, { start: number; count: number }>();
   app.addHook("onClose", async () => {
     entities.close();
     store.close();
+    accounts.close();
   });
   app.addHook("onRequest", async (request, reply) => {
+    const path = request.url.split("?")[0];
+    if (path === "/auth/register" || path === "/auth/login") {
+      const now = Date.now();
+      for (const [key, window] of windows)
+        if (now - window.start >= 900000) windows.delete(key);
+      const key = `auth:${request.ip}`,
+        window = windows.get(key);
+      if (!window) windows.set(key, { start: now, count: 1 });
+      else if (++window.count > 20)
+        return reply
+          .code(429)
+          .header("Retry-After", "900")
+          .send({ error: "RATE_LIMITED" });
+      return;
+    }
     if (!request.url.split("?")[0]?.startsWith("/v1/")) return;
     const header = request.headers.authorization;
     const token =
@@ -87,6 +105,7 @@ export function createServer(options: ServerOptions): FastifyInstance {
       if (timingSafeEqual(digest, credential.hash) && token)
         identity = credential;
     }
+    identity ??= token ? accounts.identify(token) : undefined;
     if (!identity) return reply.code(401).send({ error: "UNAUTHORIZED" });
     identities.set(request, identity);
     const key = `${identity.ownerId}:${identity.deviceId}`;
@@ -101,6 +120,10 @@ export function createServer(options: ServerOptions): FastifyInstance {
         .send({ error: "RATE_LIMITED" });
   });
   app.setErrorHandler((error, _request, reply) => {
+    if (error instanceof AccountError)
+      return reply
+        .code(error.message === "EMAIL_EXISTS" ? 409 : 401)
+        .send({ error: error.message });
     if (error instanceof StoreError)
       return reply
         .code(
@@ -132,6 +155,75 @@ export function createServer(options: ServerOptions): FastifyInstance {
     protocolVersion: 2,
     generation: entities.generation,
   }));
+  const authBody = {
+    type: "object",
+    additionalProperties: false,
+    required: ["email", "password", "deviceId"],
+    properties: {
+      email: {
+        type: "string",
+        minLength: 3,
+        maxLength: 254,
+        pattern: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
+      },
+      password: { type: "string", minLength: 15, maxLength: 128 },
+      deviceId: { type: "string", pattern: uuid },
+      displayName: { type: "string", minLength: 1, maxLength: 60 },
+    },
+  };
+  app.post<{
+    Body: {
+      email: string;
+      password: string;
+      deviceId: string;
+      displayName: string;
+    };
+  }>(
+    "/auth/register",
+    {
+      schema: {
+        body: { ...authBody, required: [...authBody.required, "displayName"] },
+      },
+      bodyLimit: 4096,
+    },
+    async (request, reply) => {
+      if (!request.body.displayName.trim())
+        return reply.code(400).send({ error: "INVALID_REQUEST" });
+      const session = await accounts.register(
+        request.body.email,
+        request.body.password,
+        request.body.displayName,
+        request.body.deviceId,
+      );
+      return reply.code(201).header("Cache-Control", "no-store").send(session);
+    },
+  );
+  app.post<{ Body: { email: string; password: string; deviceId: string } }>(
+    "/auth/login",
+    { schema: { body: authBody }, bodyLimit: 4096 },
+    async (request, reply) =>
+      reply
+        .header("Cache-Control", "no-store")
+        .send(
+          await accounts.login(
+            request.body.email,
+            request.body.password,
+            request.body.deviceId,
+          ),
+        ),
+  );
+  app.get("/v1/account", async (request, reply) => {
+    const account = accounts.identify(request.headers.authorization!.slice(7));
+    return account
+      ? reply
+          .header("Cache-Control", "no-store")
+          .send({ user: account.user, expiresAt: account.expiresAt })
+      : reply.code(401).send({ error: "UNAUTHORIZED" });
+  });
+  app.post("/v1/account/logout", async (request, reply) => {
+    accounts.logout(request.headers.authorization!.slice(7));
+    return reply.code(204).send();
+  });
   app.post<{ Body: CaptureCommand }>(
     "/v1/captures/commands",
     { schema: { body: commandSchema } },

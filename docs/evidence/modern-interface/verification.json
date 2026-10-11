@@ -1,0 +1,20 @@
+{
+  "checks": [
+    "Native daily schedule renders three modular cards with all five seeded tasks.",
+    "Daily input, opening/closing task inspector and completion still work in native SQLite.",
+    "Project task list, board and Gantt tabs render without errors.",
+    "No horizontal page overflow at 1024, 768 and 390 pixels."
+  ],
+  "errors": [],
+  "style": {
+    "radius": "18px",
+    "background": "rgb(255, 255, 255)",
+    "shadow": "color(srgb 0.0509804 0.0509804 0.0509804 / 0.05) 0px 2px 8px 0px, color(srgb 0.0509804 0.0509804 0.0509804 / 0.02) 0px 12px 32px 0px"
+  },
+  "darkStyle": {
+    "background": "color(srgb 0.227765 0.180235 0.175059)",
+    "color": "rgb(242, 141, 130)"
+  },
+  "typography": "\"HarmonyOS Sans SC\", \"Segoe UI\", \"Microsoft YaHei\", sans-serif",
+  "previewDataDirectory": "C:\\Project\\01Project\\Praxis\\.tools\\modern-ui-2EGwDk"
+}

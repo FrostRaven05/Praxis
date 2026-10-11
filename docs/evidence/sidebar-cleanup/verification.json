@@ -1,0 +1,13 @@
+{
+  "checks": {
+    "projectVisibleWithoutScrolling": true,
+    "savedViewSidebarRemoved": true,
+    "sidebarSimplifiedAndSyncIconWorks": true,
+    "temporaryFiltersWorkWithoutSavedViews": true,
+    "searchProjectOpensOriginalViews": true,
+    "projectListBoardGanttWork": true,
+    "savedViewsPreserved": true,
+    "narrowViewportNavigationWorks": true
+  },
+  "errors": []
+}

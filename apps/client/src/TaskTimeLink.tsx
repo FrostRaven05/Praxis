@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { timeLabel, type WorkTask } from "@praxis/application";
 import { openWorkTask, readWork } from "./ProductivityView";
+import { TaskPanelIcon } from "./TaskPanelIcon";
 export function TaskTimeLink({
   taskId,
   disabled = false,
@@ -28,17 +29,24 @@ export function TaskTimeLink({
     };
   }, [taskId, showSummary]);
   return (
-    <section>
+    <section className="task-time-link">
       {task && (
-        <p>
-          P{task.priority} · {task.status === "waiting" ? "等待 · " : ""}计划{" "}
-          {timeLabel(task.plan, zone)} · 真实截止{" "}
-          {timeLabel(task.deadline, zone)} · 跟进{" "}
-          {timeLabel(task.followUp, zone)}
+        <p className="task-time-summary">
+          <span>P{task.priority}</span>
+          {task.status === "waiting" && <span>等待</span>}
+          {task.plan && <span>计划 {timeLabel(task.plan, zone)}</span>}
+          {task.deadline && <span>截止 {timeLabel(task.deadline, zone)}</span>}
+          {task.followUp && <span>跟进 {timeLabel(task.followUp, zone)}</span>}
         </p>
       )}
-      <button disabled={disabled} onClick={() => openWorkTask(taskId)}>
-        编辑时间、优先级与标签
+      <button
+        aria-label="编辑时间、优先级与标签"
+        title="编辑时间、优先级与标签"
+        disabled={disabled}
+        onClick={() => openWorkTask(taskId)}
+      >
+        <TaskPanelIcon name="clock" />
+        <span>时间与标签</span>
       </button>
     </section>
   );
