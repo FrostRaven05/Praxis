@@ -363,7 +363,7 @@
 **What to build:** 同一用户手机录入的原文能在桌面出现，且重复发送不会重复生成。
 
 **Blocked by:** T22。  
-**Status:** blocked — 独立子 agent 已核查；T22 未验收，身份/同步服务及资源条件未就绪。见 docs/implementation-t23.md。  
+**Status:** partial — 2026-10-11 已建立局域网 HTTPS 开发后端、设备令牌隔离及收集项幂等上传/分页接口，实际服务验证通过；尚无 App 安全配对、客户端 outbox/游标接入及双端验收，不能关闭。云端登录服务仍未部署。见 docs/backend-lan.md；docs/implementation-t23.md 为先前核查记录。  
 **对应需求:** DEV-11；SYNC-001/002/003/006；SEC-001–003；AT-01/28/35。
 
 - [ ] 落地已确认身份与服务方案，使用受保护传输和安全凭据存储；服务端按认证身份校验归属。

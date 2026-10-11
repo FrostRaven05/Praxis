@@ -1,0 +1,14 @@
+{
+  "testedAt": "2026-10-11T04:41:42.371Z",
+  "baseUrl": "https://192.168.5.56:4318",
+  "certificateVerified": true,
+  "captureId": "6e3ff1b3-3d6c-4eeb-86dd-5b7992d93929",
+  "finalCursor": 6,
+  "checks": [
+    "two configured device identities exchange a capture over HTTPS",
+    "lost-response retry returns identical receipt",
+    "stale update is rejected",
+    "deleted capture cannot be resurrected"
+  ],
+  "clientAppConnected": false
+}

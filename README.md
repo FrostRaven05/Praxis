@@ -1,5 +1,7 @@
 # Praxis
 
+2026-10-11：已建立可运行的 [局域网开发后端](docs/backend-lan.md)，支持 HTTPS 收集项接口与本地设备令牌；App 自动同步尚未接入。手机端实现与模拟器验证见 [手机端记录](docs/implementation-mobile-reference.md)。
+
 T15–T21 的桌面本地能力和 T22 手机离线收集适配见 [本轮实施与验证](docs/implementation-p1-followups.md)。Android 真机、同步、完整导出与发布验收仍按 [当前工单](ticket.md) 的依赖推进；AI 相关 T32–T34 暂缓。
 
 T08–T14 已完成 Windows 本地实现：今日与近期、独立时间与工作空间时区、优先级/标签/等待、每日结果、分区和安全项目终结。见 [实施与验收记录](docs/implementation-p1-core.md)。
