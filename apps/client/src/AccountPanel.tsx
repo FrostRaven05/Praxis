@@ -160,9 +160,9 @@ export function AccountPanel({ compact = false }: { compact?: boolean }) {
               <input
                 type="password"
                 required
-                minLength={15}
+                minLength={6}
                 maxLength={128}
-                placeholder="15–128 个字符"
+                placeholder="6–128 个字符"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete={

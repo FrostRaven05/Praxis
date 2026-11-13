@@ -59,7 +59,7 @@ import javax.net.ssl.*;
       URL url=new URL(base);
       if(!url.getProtocol().equals("https")||url.getHost().isEmpty()||url.getUserInfo()!=null||!(url.getPath().isEmpty()||url.getPath().equals("/"))||url.getQuery()!=null||url.getRef()!=null)throw new Exception("Endpoint");
       if(!mode.equals("login")&&!mode.equals("register"))throw new Exception("Mode");
-      if(password.length()<15||password.length()>128||email.length()>254||name.length()>60||ca.length()>65536)throw new Exception("Fields");
+      if(password.length()<6||password.length()>128||email.length()>254||name.length()>60||ca.length()>65536)throw new Exception("Fields");
       base=base.replaceAll("/+$","");
       SharedPreferences prefs=getContext().getSharedPreferences("lan-secure",Context.MODE_PRIVATE);
       JSONObject previous=config();

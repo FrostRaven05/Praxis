@@ -166,7 +166,7 @@ export function createServer(options: ServerOptions): FastifyInstance {
         maxLength: 254,
         pattern: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$",
       },
-      password: { type: "string", minLength: 15, maxLength: 128 },
+      password: { type: "string", minLength: 6, maxLength: 128 },
       deviceId: { type: "string", pattern: uuid },
       displayName: { type: "string", minLength: 1, maxLength: 60 },
     },

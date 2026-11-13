@@ -105,13 +105,13 @@ pub async fn account_authenticate(
 ) -> Result<(), String> {
     let _guard = accounts.lock.lock().await;
     if !["login", "register"].contains(&login.mode.as_str())
-        || login.password.chars().count() < 15
+        || login.password.chars().count() < 6
         || login.password.chars().count() > 128
         || login.email.len() > 254
         || login.display_name.chars().count() > 60
         || login.ca_pem.len() > 65536
     {
-        return Err("请填写有效账号信息；密码需为 15–128 个字符。".into());
+        return Err("请填写有效账号信息；密码需为 6–128 个字符。".into());
     }
     let url = reqwest::Url::parse(login.base_url.trim()).map_err(|_| "请填写 HTTPS 服务地址。")?;
     if url.scheme() != "https"
@@ -170,7 +170,7 @@ pub async fn account_authenticate(
             401 => "邮箱或密码不正确。",
             409 => "该邮箱已注册，请登录。",
             429 => "尝试次数过多，请稍后重试。",
-            400 => "账号信息无效，密码需为 15–128 个字符。",
+            400 => "账号信息无效，密码需为 6–128 个字符。",
             _ => "账号服务暂不可用，请稍后重试。",
         }
         .into());
