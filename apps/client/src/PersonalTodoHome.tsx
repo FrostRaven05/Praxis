@@ -15,6 +15,7 @@ import { TaskCompletionTitle } from "./TaskCompletionTitle";
 import { animateTaskCompletion } from "./task-completion-motion";
 import { TaskActionMenu } from "./TaskActionMenu";
 import { PersonalTaskDetails } from "./PersonalTaskDetails";
+import { noteCardText } from "./task-note";
 import { desktopAvailable } from "./storage";
 import type {
   PersonalTaskDraft,
@@ -398,6 +399,7 @@ export function PersonalTodoHome({
   }
   function row(task: NonNullable<typeof query>["tasks"][number]) {
     const project = base?.work.projects.find((p) => p.id === task.projectId);
+    const description = noteCardText(task.notes);
     return (
       <li className={`personal-todo-row${useDailyActions ? " uses-daily-actions" : ""}${task.status === "completed" ? " completed" : ""}${selectedId === task.id ? " selected" : ""}`} key={task.id} data-task-id={task.id} data-completion-row="">
         {useDailyActions ? (
@@ -441,6 +443,7 @@ export function PersonalTodoHome({
           >
             <TaskCompletionTitle taskId={task.id}>{task.title}</TaskCompletionTitle>
           </button>
+          {description && <span className="task-card-note">{description}</span>}
           <div className="personal-todo-meta">
             {task.status !== "todo" && (
               <span className="personal-todo-status" data-state={task.status}>

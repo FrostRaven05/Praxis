@@ -24,7 +24,6 @@ export function PersonalProjectForm({
   const [isEdit] = useState(initial !== null);
   const [name, setName] = useState(initial?.name ?? "");
   const [outcome, setOutcome] = useState(initial?.outcome ?? "");
-  const [date, setDate] = useState(initial?.targetDate ?? "");
   const [busy, setBusy] = useState(false),
     [unknown, setUnknown] = useState(false);
   const [error, setError] = useState("");
@@ -64,7 +63,7 @@ export function PersonalProjectForm({
             saved.current = await save({
               name,
               outcome,
-              targetDate: date || null,
+              targetDate: initial?.targetDate ?? null,
             });
           setUnknown(false);
           await onSaved(saved.current);
@@ -96,14 +95,6 @@ export function PersonalProjectForm({
         value={outcome}
         disabled={busy || unknown || !!saved.current}
         onChange={(e) => setOutcome(e.target.value)}
-      />
-      <label htmlFor="personal-project-date">目标日期（可选）</label>
-      <input
-        id="personal-project-date"
-        type="date"
-        value={date}
-        disabled={busy || unknown || !!saved.current}
-        onChange={(e) => setDate(e.target.value)}
       />
       {error && (
         <p role="alert">

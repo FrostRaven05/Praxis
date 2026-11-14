@@ -20,6 +20,9 @@ import { TaskCompletionButton } from "./TaskCompletionButton";
 import { TaskCompletionTitle } from "./TaskCompletionTitle";
 import { animateTaskCompletion } from "./task-completion-motion";
 import { ActionNotice } from "./ActionNotice";
+import { PomodoroDock } from "./PomodoroDock";
+import { personalTasks } from "./personal-task-storage";
+import { noteCardText } from "./task-note";
 import { ProjectsView } from "./ProjectsView";
 import { InboxView } from "./InboxView";
 import { MobileCaptureView } from "./MobileCaptureView";
@@ -64,16 +67,24 @@ import {
 } from "./storage";
 
 const todayTasks = new CaptureToday(taskStorage);
+async function listedDay(date: string) {
+  const [tasks, personal] = await Promise.all([
+    todayTasks.list(date),
+    personalTasks.read().catch(() => null),
+  ]);
+  const notes = new Map(
+    personal?.work.tasks.map((task) => [task.id, task.notes]) ?? [],
+  );
+  return tasks.map((task) => ({
+    ...task,
+    notes: notes.get(task.taskId) ?? "",
+  }));
+}
 const completion = new ChangeCompletion(completionStorage);
 const periodTitles: Record<(typeof dayPeriods)[number], string> = {
   morning: "早上",
   afternoon: "中午",
   evening: "晚上",
-};
-const periodIcons: Record<(typeof dayPeriods)[number], string> = {
-  morning: "🌅",
-  afternoon: "☀️",
-  evening: "🌙",
 };
 function localDay(timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone) {
   const instant = new Date();
@@ -229,7 +240,7 @@ export function App() {
     const version = ++queryVersion.current;
     setLoading(true);
     try {
-      const tasks = await todayTasks.list(date);
+      const tasks = await listedDay(date);
       if (version === queryVersion.current) {
         setItems(tasks);
         setLoadError("");
@@ -242,7 +253,7 @@ export function App() {
     }
   }, []);
   useLanRefresh(
-    () => todayTasks.list(displayedDate),
+    () => listedDay(displayedDate),
     setItems,
     planLocked || view !== "day",
     displayedDate,
@@ -755,6 +766,7 @@ export function App() {
     );
   }
   function taskRow(item: DailyTask, reasons: string[] = []) {
+    const description = noteCardText(item.notes ?? "");
     const canArrange =
       desktopAvailable &&
       ["todo", "in_progress", "blocked"].includes(item.status);
@@ -822,6 +834,7 @@ export function App() {
               )}
               <TaskCompletionTitle taskId={item.taskId}>{item.title}</TaskCompletionTitle>
             </span>
+            {description && <span className="task-card-note">{description}</span>}
             <span className="task-meta">
               {reasons
                 .filter((reason) => reason !== "当日安排")
@@ -1031,7 +1044,6 @@ export function App() {
                 >
                   <div className="list-heading">
                     <h2>
-                      <i aria-hidden="true">{periodIcons[period]}</i>
                       {periodTitles[period]}{" "}
                       <span>{arrangements.length + independent.length}</span>
                     </h2>
@@ -1349,6 +1361,7 @@ export function App() {
           onBusyChange={setDetailBusy}
         />
       )}
+      <PomodoroDock />
       {view !== "inbox" && (
         <ActionNotice
           message={notice.message}

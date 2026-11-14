@@ -15,6 +15,7 @@ import {
   type AiGenerateRequest,
   type AiRun,
 } from "../../api/src/ai-contract";
+import { notePlainText } from "./task-note";
 
 export type PersonalAgentMode = "decompose" | "next";
 export interface PersonalAgentSnapshot {
@@ -60,7 +61,7 @@ export function personalAgentSnapshot(
       parentId: t.parentId,
       dependencies: [...meta.dependencies],
       estimatedMinutes: null,
-      completionCriteria: (t.completionCriteria || t.notes).slice(0, 400),
+      completionCriteria: (t.completionCriteria || notePlainText(t.notes)).slice(0, 400),
       statusReason: (t.statusReason ?? "").slice(0, 600),
       plannedStart: meta.plannedStart ?? null,
       plannedEnd: meta.plannedEnd ?? null,

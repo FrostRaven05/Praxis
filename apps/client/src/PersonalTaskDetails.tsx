@@ -100,7 +100,8 @@ export function PersonalTaskDetails({
     <InboxTaskPanel
       key={`${task.id}:${revision}`}
       contextLabel={task.projectId ? "项目" : "杂事"}
-      projectName={project?.name}
+      projectId={task.projectId}
+      projectName={project?.name ?? null}
       canSchedule={canSchedule}
       task={{taskId: task.id, title: task.title, version: task.version, createdAt: task.createdAt, status: task.status}}
       onSaved={async () => { await onRefresh(); }}

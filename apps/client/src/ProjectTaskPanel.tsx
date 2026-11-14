@@ -10,7 +10,6 @@ import {
   deadlineFromLocal,
   deadlineToLocal,
   parseMinutes,
-  taskStates,
   type ProjectTask,
   type TaskDetails,
 } from "@praxis/application";
@@ -18,14 +17,16 @@ import { taskDetailsStorage } from "./storage";
 import { useAutosave } from "./useAutosave";
 import { DatePicker } from "./DatePicker";
 import { TaskPanelIcon } from "./TaskPanelIcon";
-import { RelatedRecords } from "./RelatedRecords";
-import { WorkTaskProperties } from "./WorkTaskProperties";
+import { TaskWorkload, reminderLabel } from "./TaskPanelFields";
+import { TaskDescription, TaskSubtitle } from "./TaskDescription";
+import { TaskProjectControl } from "./TaskProjectControl";
 
 const editor = new TaskDetailEditor(taskDetailsStorage);
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 export function ProjectTaskPanel({
   task,
+  projectId,
   projectName,
   flush,
   onSaved,
@@ -35,6 +36,7 @@ export function ProjectTaskPanel({
 }: {
   task: ProjectTask;
   projectName: string;
+  projectId: string;
   flush: { current: () => Promise<boolean> };
   onSaved: () => Promise<unknown>;
   onClose: () => void;
@@ -52,13 +54,11 @@ export function ProjectTaskPanel({
     estimate: "",
   });
   const [loading, setLoading] = useState(true);
-  const [propertiesBusy, setPropertiesBusy] = useState(false);
   const [readError, setReadError] = useState("");
   const acknowledged = useRef<TaskDetails | null>(null);
   const generation = useRef(0);
   const observedVersion = useRef(task.version);
   const titleInput = useRef<HTMLTextAreaElement>(null);
-  const notesInput = useRef<HTMLTextAreaElement>(null);
   const focused = useRef(false);
   const read = useCallback(async () => {
     const request = ++generation.current;
@@ -145,16 +145,11 @@ export function ProjectTaskPanel({
     baseRef.current ? autosave.flush() : Promise.resolve(true);
   useEffect(() => {
     onLockedChange(
-      loading ||
-        propertiesBusy ||
-        autosave.busy ||
-        autosave.dirty ||
-        autosave.pending,
+      loading || autosave.busy || autosave.dirty || autosave.pending,
     );
     return () => onLockedChange(false);
   }, [
     loading,
-    propertiesBusy,
     autosave.busy,
     autosave.dirty,
     autosave.pending,
@@ -174,14 +169,13 @@ export function ProjectTaskPanel({
       void read();
   }, [task.version, autosave.busy, autosave.dirty, autosave.pending, read]);
   useLayoutEffect(() => {
-    for (const input of [titleInput.current, notesInput.current]) {
-      if (!input) continue;
-      input.style.height = "auto";
-      const height = input.scrollHeight + 2;
-      input.style.height = Math.min(height, 160) + "px";
-      input.style.overflowY = height > 160 ? "auto" : "hidden";
-    }
-  }, [draft.title, draft.notes, loading]);
+    const input = titleInput.current;
+    if (!input) return;
+    input.style.height = "auto";
+    const height = input.scrollHeight + 2;
+    input.style.height = Math.min(height, 160) + "px";
+    input.style.overflowY = height > 160 ? "auto" : "hidden";
+  }, [draft.title, loading]);
   useEffect(() => {
     if (!loading && base && !focused.current) {
       focused.current = true;
@@ -197,7 +191,6 @@ export function ProjectTaskPanel({
     setDraft((old) => ({ ...old, [field]: value }));
   }
   async function close() {
-    if (propertiesBusy) return;
     if (await flush.current()) onClose();
   }
   const error = readError || autosave.error;
@@ -223,10 +216,14 @@ export function ProjectTaskPanel({
       }}
     >
       <header className="task-panel-toolbar">
-        <span className="task-status-pill">
-          {taskStates[base?.status ?? task.status]}
-        </span>
-        <span className="task-status-pill">项目任务</span>
+        <TaskProjectControl
+          taskId={task.taskId}
+          projectId={projectId}
+          projectName={projectName}
+          disabled={loading || !base || autosave.busy}
+          onChanging={() => flush.current()}
+          onChanged={() => onReload()}
+        />
         <div className="task-panel-toolbar-actions">
           <button
             type="button"
@@ -250,7 +247,7 @@ export function ProjectTaskPanel({
           onCompositionStart={autosave.onCompositionStart}
           onCompositionEnd={autosave.onCompositionEnd}
         >
-          <fieldset disabled={loading || !base || propertiesBusy}>
+          <fieldset disabled={loading || !base}>
             <div className="task-panel-intro">
               <label className="sr-only" htmlFor="project-panel-title">
                 任务标题
@@ -264,118 +261,38 @@ export function ProjectTaskPanel({
                 value={draft.title}
                 onChange={(e) => changed("title", e.target.value)}
               />
-              <label className="sr-only" htmlFor="project-panel-notes">
-                任务描述
-              </label>
-              <textarea
-                ref={notesInput}
-                id="project-panel-notes"
-                aria-label="任务描述"
-                className="task-panel-notes"
-                rows={1}
-                placeholder="添加描述"
+              <TaskSubtitle
                 value={draft.notes}
-                onChange={(e) => changed("notes", e.target.value)}
+                disabled={loading || !base}
+                onChange={(value) => changed("notes", value)}
               />
             </div>
-            <div className="task-panel-field">
+            <div className="task-panel-field task-reminder">
               <TaskPanelIcon name="clock" />
-              <div className="task-panel-field-body">
-                <label htmlFor="project-panel-deadline">截止时间</label>
-                <DatePicker
-                  id="project-panel-deadline"
-                  label="截止时间（本地时间）"
-                  mode="datetime"
-                  clearable
-                  className="date-picker-field"
-                  value={draft.deadline}
-                  disabled={loading || !base}
-                  onChange={(value) => changed("deadline", value, true)}
-                />
-              </div>
+              <DatePicker
+                id="project-panel-deadline"
+                label="提醒"
+                mode="datetime"
+                clearable
+                className="date-picker-field"
+                value={draft.deadline}
+                disabled={loading || !base}
+                display={reminderLabel(draft.deadline)}
+                onChange={(value) => changed("deadline", value, true)}
+              />
             </div>
-            <details className="task-panel-extra">
-              <summary>工作量、完成标准与重要标记</summary>
-              <div className="task-panel-field">
-                <TaskPanelIcon name="work" />
-                <div className="task-panel-field-body">
-                  <label htmlFor="project-panel-estimate">预估工作量</label>
-                  <div className="task-effort-editor">
-                    <div className="task-effort-options">
-                      {[15, 30, 60].map((minutes) => (
-                        <button
-                          key={minutes}
-                          type="button"
-                          aria-pressed={draft.estimate === String(minutes)}
-                          onClick={() =>
-                            changed("estimate", String(minutes), true)
-                          }
-                        >
-                          {minutes} 分钟
-                        </button>
-                      ))}
-                    </div>
-                    <input
-                      id="project-panel-estimate"
-                      aria-label="预估工作量（分钟）"
-                      type="number"
-                      min={1}
-                      max={1440}
-                      placeholder="分钟"
-                      value={draft.estimate}
-                      onChange={(e) => changed("estimate", e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="task-panel-field">
-                <TaskPanelIcon name="criteria" />
-                <div className="task-panel-field-body">
-                  <label htmlFor="project-panel-criteria">完成标准</label>
-                  <textarea
-                    id="project-panel-criteria"
-                    rows={2}
-                    placeholder="怎样算完成这项任务？"
-                    value={draft.criteria}
-                    onChange={(e) => changed("criteria", e.target.value)}
-                  />
-                </div>
-              </div>
-              <div className="task-panel-field">
-                <TaskPanelIcon name="check" />
-                <label className="task-panel-importance">
-                  <input
-                    type="checkbox"
-                    checked={draft.important}
-                    onChange={(e) =>
-                      changed("important", e.target.checked, true)
-                    }
-                  />
-                  重要任务
-                </label>
-              </div>
-            </details>
+            <TaskWorkload
+              estimate={draft.estimate}
+              disabled={loading || !base}
+              onChange={(minutes) => changed("estimate", minutes, true)}
+            />
+            <TaskDescription
+              value={draft.notes}
+              disabled={loading || !base}
+              onChange={(value) => changed("notes", value)}
+            />
           </fieldset>
         </form>
-        <WorkTaskProperties
-          taskId={task.taskId}
-          version={base?.version ?? task.version}
-          disabled={
-            loading || autosave.busy || autosave.dirty || autosave.pending
-          }
-          onSaved={async () => {
-            await onSaved();
-            await read();
-          }}
-          onBusyChange={setPropertiesBusy}
-        />
-        <div className="task-panel-field">
-          <TaskPanelIcon name="folder" />
-          <div className="task-panel-field-body">
-            <span className="task-panel-field-label">所属项目</span>
-            <span>{projectName}</span>
-          </div>
-        </div>
         {loading && (
           <p className="task-panel-feedback" role="status">
             正在读取任务详情…
@@ -397,16 +314,15 @@ export function ProjectTaskPanel({
             </button>
           </div>
         )}
-        <div className="task-panel-secondary">
-          <RelatedRecords targetType="task" targetId={task.taskId} />
-        </div>
       </div>
-      <footer className="task-panel-footer" role="status" aria-live="polite">
-        <span>
-          <span className="status-dot" />
-          {autosave.status}
-        </span>
-      </footer>
+      {(autosave.busy || autosave.error || autosave.dirty) && (
+        <footer className="task-panel-footer" role="status" aria-live="polite">
+          <span>
+            <span className="status-dot" />
+            {autosave.status}
+          </span>
+        </footer>
+      )}
     </aside>
   );
 }

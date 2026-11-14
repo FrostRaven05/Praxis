@@ -17,6 +17,7 @@ export interface DailyTask {
   taskId: string;
   planId: string;
   title: string;
+  notes?: string;
   executionDate: string;
   createdAt: string;
   projectId: string | null;

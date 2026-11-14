@@ -1,5 +1,3 @@
-import { RelatedRecords } from "./RelatedRecords";
-import { WorkTaskProperties } from "./WorkTaskProperties";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   TaskDetailEditor,
@@ -8,7 +6,6 @@ import {
   deadlineToLocal,
   parseMinutes,
   validCalendarDate,
-  taskStates,
   type InboxTask,
   type TaskDetails,
   type TaskDetailFields,
@@ -19,6 +16,13 @@ import { DatePicker } from "./DatePicker";
 import { TaskPanelIcon } from "./TaskPanelIcon";
 import { shiftCalendarDate } from "./calendar-controls";
 import { useAutosave } from "./useAutosave";
+import {
+  TaskWorkload,
+  reminderLabel,
+  specificDateLabel,
+} from "./TaskPanelFields";
+import { TaskDescription, TaskSubtitle } from "./TaskDescription";
+import { TaskProjectControl } from "./TaskProjectControl";
 const editor = new TaskDetailEditor(taskDetailsStorage);
 const message = (error: unknown) =>
   error instanceof Error ? error.message : String(error);
@@ -37,14 +41,14 @@ export function InboxTaskPanel({
   onReload,
   onClose,
   onLockedChange,
-  onComplete,
   contextLabel = "收件箱",
-  projectName,
   canSchedule = true,
+  projectId = null,
 }: {
   task: InboxTask & { status?: string };
   contextLabel?: string;
-  projectName?: string | undefined;
+  projectName?: string | null;
+  projectId?: string | null;
   canSchedule?: boolean;
   onSaved: (date: string) => Promise<void>;
   onReload: () => Promise<void>;
@@ -61,7 +65,6 @@ export function InboxTaskPanel({
   const [deadline, setDeadline] = useState("");
   const [estimate, setEstimate] = useState("");
   const [loading, setLoading] = useState(true);
-  const [propertiesBusy, setPropertiesBusy] = useState(false);
   const [readError, setReadError] = useState("");
   const [scheduling, setScheduling] = useState(false);
   const baseRef = useRef<TaskDetails | null>(null);
@@ -71,7 +74,6 @@ export function InboxTaskPanel({
   const latestDraft = useRef(draft);
   latestDraft.current = draft;
   const titleRef = useRef<HTMLTextAreaElement>(null);
-  const notesRef = useRef<HTMLTextAreaElement>(null);
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const today = calendarDate(new Date(), zone);
   function reset(value: TaskDetails) {
@@ -106,15 +108,13 @@ export function InboxTaskPanel({
     };
   }, [task.taskId]);
   useLayoutEffect(() => {
-    for (const input of [titleRef.current, notesRef.current]) {
-      if (input) {
-        input.style.height = "auto";
-        const contentHeight = input.scrollHeight + 2;
-        input.style.height = Math.min(contentHeight, 160) + "px";
-        input.style.overflowY = contentHeight > 160 ? "auto" : "hidden";
-      }
-    }
-  }, [title, notes]);
+    const input = titleRef.current;
+    if (!input) return;
+    input.style.height = "auto";
+    const contentHeight = input.scrollHeight + 2;
+    input.style.height = Math.min(contentHeight, 160) + "px";
+    input.style.overflowY = contentHeight > 160 ? "auto" : "hidden";
+  }, [title]);
   const autosave = useAutosave({
     draft,
     enabled: !!base && !loading,
@@ -225,19 +225,12 @@ export function InboxTaskPanel({
   const { busy, dirty } = autosave;
   const error = readError || autosave.error;
   const locked =
-    loading ||
-    propertiesBusy ||
-    !base ||
-    scheduling ||
-    !!(pending.current?.date && autosave.error);
+    loading || !base || scheduling || !!(pending.current?.date && autosave.error);
   useEffect(() => {
-    onLockedChange(
-      busy || dirty || loading || propertiesBusy || autosave.pending,
-    );
+    onLockedChange(busy || dirty || loading || autosave.pending);
     return () => onLockedChange(false);
-  }, [busy, dirty, loading, propertiesBusy, autosave.pending, onLockedChange]);
+  }, [busy, dirty, loading, autosave.pending, onLockedChange]);
   async function close() {
-    if (propertiesBusy) return;
     if (!baseRef.current || (await autosave.flush())) onClose();
   }
   function changed<T>(setter: (value: T) => void, value: T, discrete = false) {
@@ -266,18 +259,14 @@ export function InboxTaskPanel({
       }}
     >
       <header className="task-panel-toolbar">
-        <span className="task-status-pill">{taskStates[task.status ?? "todo"] ?? task.status}</span>
-        <span className="task-status-pill">{contextLabel}</span>
+        <TaskProjectControl
+          taskId={task.taskId}
+          projectId={projectId}
+          disabled={locked || busy}
+          onChanging={() => autosave.flush()}
+          onChanged={() => onReload()}
+        />
         <div className="task-panel-toolbar-actions">
-          <button
-            type="button"
-            aria-label={task.status === "completed" ? "撤销完成" : "标为完成"}
-            title={task.status === "completed" ? "撤销完成" : "标为完成"}
-            disabled={locked || busy || dirty}
-            onClick={() => void onComplete()}
-          >
-            <TaskPanelIcon name="check" />
-          </button>
           <button
             type="button"
             aria-label="关闭任务详情"
@@ -314,17 +303,10 @@ export function InboxTaskPanel({
                 value={title}
                 onChange={(event) => changed(setTitle, event.target.value)}
               />
-              <label className="sr-only" htmlFor="panel-notes">
-                任务描述
-              </label>
-              <textarea
-                ref={notesRef}
-                id="panel-notes"
-                className="task-panel-notes"
-                rows={1}
-                placeholder="添加描述"
+              <TaskSubtitle
                 value={notes}
-                onChange={(event) => changed(setNotes, event.target.value)}
+                disabled={locked}
+                onChange={(value) => changed(setNotes, value)}
               />
               <div className="task-date-options" aria-label="安排日期快捷选项">
                 <button
@@ -350,13 +332,13 @@ export function InboxTaskPanel({
                   disabled={locked || !canSchedule || task.status === "completed"}
                   className={
                     !!date && date !== today && date !== tomorrow(today)
-                      ? "selected"
-                      : ""
+                      ? "selected task-date-chip"
+                      : "task-date-chip"
                   }
                   display={
-                    date === today || date === tomorrow(today)
+                    !date || date === today || date === tomorrow(today)
                       ? "选择日期"
-                      : undefined
+                      : specificDateLabel(date)
                   }
                 />
                 <button
@@ -369,106 +351,32 @@ export function InboxTaskPanel({
               </div>
               {!canSchedule && <p className="field-help">含子任务的父任务请安排具体子任务。</p>}
             </div>
-            <div className="task-panel-field">
+            <div className="task-panel-field task-reminder">
               <TaskPanelIcon name="clock" />
-              <div className="task-panel-field-body">
-                <label htmlFor="panel-deadline">截止时间</label>
-                <DatePicker
-                  id="panel-deadline"
-                  label="截止时间（本地时间）"
-                  mode="datetime"
-                  clearable
-                  className="date-picker-field"
-                  value={deadline}
-                  disabled={locked}
-                  onChange={(value) => changed(setDeadline, value, true)}
-                />
-              </div>
+              <DatePicker
+                id="panel-deadline"
+                label="提醒"
+                mode="datetime"
+                clearable
+                className="date-picker-field"
+                value={deadline}
+                disabled={locked}
+                display={reminderLabel(deadline)}
+                onChange={(value) => changed(setDeadline, value, true)}
+              />
             </div>
-            <details className="task-panel-extra">
-              <summary>工作量、完成标准与重要标记</summary>
-              <div className="task-panel-field">
-                <TaskPanelIcon name="work" />
-                <div className="task-panel-field-body">
-                  <label htmlFor="panel-estimate">预估工作量</label>
-                  <div className="task-effort-editor">
-                    <div className="task-effort-options">
-                      {[15, 30, 60].map((minutes) => (
-                        <button
-                          key={minutes}
-                          type="button"
-                          aria-pressed={estimate === String(minutes)}
-                          onClick={() =>
-                            changed(setEstimate, String(minutes), true)
-                          }
-                        >
-                          {minutes} 分钟
-                        </button>
-                      ))}
-                    </div>
-                    <input
-                      id="panel-estimate"
-                      aria-label="预估工作量（分钟）"
-                      type="number"
-                      min={1}
-                      max={1440}
-                      value={estimate}
-                      placeholder="分钟"
-                      title="自定义分钟，留空表示未知"
-                      onChange={(event) =>
-                        changed(setEstimate, event.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="task-panel-field">
-                <TaskPanelIcon name="criteria" />
-                <div className="task-panel-field-body">
-                  <label htmlFor="panel-criteria">完成标准</label>
-                  <textarea
-                    id="panel-criteria"
-                    rows={2}
-                    value={criteria}
-                    placeholder="怎样算完成这项任务？"
-                    onChange={(event) =>
-                      changed(setCriteria, event.target.value)
-                    }
-                  />
-                </div>
-              </div>
-              <div className="task-panel-field">
-                <TaskPanelIcon name="check" />
-                <label className="task-panel-importance">
-                  <input
-                    type="checkbox"
-                    checked={important}
-                    onChange={(event) =>
-                      changed(setImportant, event.target.checked, true)
-                    }
-                  />
-                  重要任务
-                </label>
-              </div>
-            </details>
+            <TaskWorkload
+              estimate={estimate}
+              disabled={locked}
+              onChange={(minutes) => changed(setEstimate, minutes, true)}
+            />
+            <TaskDescription
+              value={notes}
+              disabled={locked}
+              onChange={(value) => changed(setNotes, value)}
+            />
           </fieldset>
         </form>
-        <WorkTaskProperties
-          taskId={task.taskId}
-          version={base?.version ?? task.version}
-          disabled={loading || busy || dirty || autosave.pending}
-          onSaved={onReload}
-          onBusyChange={setPropertiesBusy}
-        />
-        {projectName && (
-          <div className="task-panel-field">
-            <TaskPanelIcon name="folder" />
-            <div className="task-panel-field-body">
-              <span className="task-panel-field-label">所属项目</span>
-              <span>{projectName}</span>
-            </div>
-          </div>
-        )}
         {loading && (
           <p className="task-panel-feedback" role="status">
             正在读取任务详情…
@@ -493,14 +401,14 @@ export function InboxTaskPanel({
           </div>
         )}
       </div>
-
-      <RelatedRecords targetType="task" targetId={task.taskId} />
-      <footer className="task-panel-footer" role="status" aria-live="polite">
-        <span>
-          <span className="status-dot" />
-          {autosave.status}
-        </span>
-      </footer>
+      {(autosave.busy || autosave.error || autosave.dirty) && (
+        <footer className="task-panel-footer" role="status" aria-live="polite">
+          <span>
+            <span className="status-dot" />
+            {autosave.status}
+          </span>
+        </footer>
+      )}
     </aside>
   );
 }

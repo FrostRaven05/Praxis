@@ -189,11 +189,11 @@ export function ProjectsView({
                 )}
                 <button className="project-back-button" disabled={locked} onClick={() => setSelectedId(null)}>← 全部项目</button>
                 <header className="project-summary">
+                  <span className="project-summary-icon">
+                    <ProjectIcon name="folder" />
+                  </span>
                   <div className="project-summary-main">
                     <div className="project-heading">
-                      <span className="project-summary-icon">
-                        <ProjectIcon name="folder" />
-                      </span>
                       <h2>{selected.name}</h2>
                       {selected.status && selected.status !== "active" && (
                         <span
@@ -203,13 +203,23 @@ export function ProjectsView({
                           {projectStates[selected.status ?? "active"]}
                         </span>
                       )}
+                      <button
+                        type="button"
+                        className="project-settings-button"
+                        aria-label="项目设置"
+                        disabled={locked || loading}
+                        onClick={() => setForm("edit")}
+                      >
+                        <ProjectIcon name="settings" />
+                        设置
+                      </button>
                     </div>
                     {selected.outcome && (
                       <p className="project-outcome">{selected.outcome}</p>
                     )}
                     {selected.targetDate && <small>目标日期 {selected.targetDate}</small>}
-                    {work && <PersonalProjectProgress work={work} projectId={selected.id} />}
                   </div>
+                  {work && <PersonalProjectProgress work={work} projectId={selected.id} />}
                 </header>
                 {onOpenPersonalAgent && (
                   <div className="ai-planner-launch-group">
@@ -275,16 +285,6 @@ export function ProjectsView({
                         </button>
                       ))}
                     </div>
-                    <button
-                      type="button"
-                      className="project-settings-button"
-                      aria-label="项目设置"
-                      disabled={locked || loading}
-                      onClick={() => setForm("edit")}
-                    >
-                      <ProjectIcon name="settings" />
-                      设置
-                    </button>
                     {mode === "board" && tasks.some((task) => task.status === "cancelled") && (
                       <TaskActionMenu label="任务筛选" disabled={locked}>
                         {(close) => (
@@ -344,6 +344,7 @@ export function ProjectsView({
           key={panelTask.taskId + ":" + panelRevision}
           task={panelTask}
           projectName={selected.name}
+          projectId={selected.id}
           flush={panelFlush}
           onSaved={() => refresh(selected.id, true)}
           onClose={closeTask}

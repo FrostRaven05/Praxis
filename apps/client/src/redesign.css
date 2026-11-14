@@ -462,6 +462,24 @@
   font-size: 15px;
   font-weight: 500;
 }
+.workspace.modern-workspace .reference-day .task-text {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+.workspace.modern-workspace .task-card-note {
+  display: block;
+  max-width: 100%;
+  margin-top: 2px;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.4;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
 .workspace.modern-workspace .reference-day .task-item.completed .task-title {
   color: var(--text-tertiary);
   text-decoration: line-through;
@@ -547,7 +565,8 @@
   }
 }
 .workspace.modern-workspace .task-panel-toolbar {
-  padding: 8px 20px 12px;
+  gap: 10px;
+  padding: 14px 16px 6px 20px;
 }
 .workspace.modern-workspace .task-status-pill {
   padding: 3px 10px;
@@ -558,16 +577,23 @@
   font-size: 12px;
   font-weight: 500;
 }
-.workspace.modern-workspace .task-panel-toolbar-actions button {
+.workspace.modern-workspace .task-panel-toolbar-actions button,
+.workspace.modern-workspace .task-panel-toolbar-actions button:hover:not(:disabled),
+.workspace.modern-workspace .task-panel-toolbar-actions button:focus-visible {
   width: 32px;
   height: 32px;
-  border-radius: 8px;
-  color: var(--text-secondary);
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-tertiary);
+  box-shadow: none;
   transition:
     background 140ms var(--ease-out),
     color 140ms var(--ease-out);
 }
-.workspace.modern-workspace .task-panel-toolbar-actions button:hover {
+.workspace.modern-workspace .task-panel-toolbar-actions button:hover:not(:disabled) {
   background: var(--row-hover);
   color: var(--text-primary);
 }
@@ -1144,4 +1170,427 @@
 .workspace.modern-workspace .inbox-row.completed .inbox-task-title {
   text-decoration: line-through;
   color: var(--text-secondary);
+}
+.workspace.modern-workspace .task-description-field {
+  position: relative;
+  margin: 2px 0 14px;
+}
+.workspace.modern-workspace .task-description {
+  position: relative;
+  min-height: 48px;
+  max-height: 220px;
+  overflow: auto;
+  padding: 4px 32px 4px 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  outline: none;
+}
+.workspace.modern-workspace .task-description p {
+  margin: 0;
+}
+.workspace.modern-workspace .task-description img {
+  display: block;
+  max-width: 100%;
+  margin: 8px 0;
+  border-radius: 8px;
+}
+.workspace.modern-workspace .task-description[data-empty="true"]::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+.workspace.modern-workspace .task-description-image {
+  position: absolute;
+  top: 4px;
+  right: 0;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.workspace.modern-workspace .task-description-image:hover:not(:disabled) {
+  background: var(--row-hover);
+  color: var(--text-primary);
+}
+.workspace.modern-workspace .task-description-image svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.workspace.modern-workspace .task-description-error {
+  margin: 4px 0 0;
+  color: var(--danger, #b8432f);
+  font-size: 12px;
+}
+.workspace.modern-workspace .reference-task-panel :is(.task-panel-title, .task-panel-notes),
+.workspace.modern-workspace .reference-task-panel :is(.task-panel-title, .task-panel-notes):hover,
+.workspace.modern-workspace .reference-task-panel :is(.task-panel-title, .task-panel-notes):focus,
+.workspace.modern-workspace .reference-task-panel :is(.task-panel-title, .task-panel-notes):focus-visible {
+  min-height: 0;
+  padding: 2px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+}
+.workspace.modern-workspace .task-date-options {
+  flex-wrap: wrap;
+  width: auto;
+  max-width: 100%;
+  border-radius: 18px;
+}
+.workspace.modern-workspace .task-panel-project {
+  min-width: 0;
+}
+.workspace.modern-workspace .task-panel-project label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  padding: 2px 8px 2px 12px;
+  border-radius: 999px;
+  background: var(--surface-tertiary);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.workspace.modern-workspace .task-panel-project label > span {
+  flex: 0 0 auto;
+}
+.workspace.modern-workspace .task-panel-toolbar .task-panel-project select,
+.workspace.modern-workspace .task-panel-toolbar .task-panel-project select:hover:not(:disabled),
+.workspace.modern-workspace .task-panel-toolbar .task-panel-project select:focus,
+.workspace.modern-workspace .task-panel-toolbar .task-panel-project select:focus-visible {
+  width: auto;
+  max-width: 160px;
+  min-height: 28px;
+  padding: 2px 18px 2px 2px;
+  border: 0;
+  border-radius: 999px;
+  background-color: transparent;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%236e6e80' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: right 1px center;
+  background-size: 12px 12px;
+  background-repeat: no-repeat;
+  box-shadow: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+.workspace.modern-workspace .task-panel-project-error {
+  margin: 2px 0 0;
+  color: var(--danger, #b8432f);
+  font-size: 12px;
+}
+.workspace.modern-workspace .task-panel-toolbar > .task-panel-complete {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.workspace.modern-workspace .task-panel-toolbar > .task-panel-complete:hover {
+  background: var(--row-hover);
+  color: var(--text-primary);
+}
+.workspace.modern-workspace .task-panel-toolbar > .task-panel-complete[aria-pressed="true"] {
+  color: var(--primary-text);
+}
+.workspace.modern-workspace .task-date-options .date-picker-trigger > svg:first-child {
+  display: none;
+}
+.workspace.modern-workspace .task-reminder {
+  align-items: center;
+  min-height: 52px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.workspace.modern-workspace .task-reminder .date-picker {
+  flex: 1;
+  min-width: 0;
+}
+.workspace.modern-workspace .task-reminder .date-picker-trigger {
+  width: 100%;
+  justify-content: flex-start;
+  min-height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 450;
+}
+.workspace.modern-workspace .task-reminder .date-picker-trigger svg {
+  display: none;
+}
+.workspace.modern-workspace .task-workload {
+  align-items: center;
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+.workspace.modern-workspace .task-workload > span {
+  color: var(--text-primary);
+  font-size: 14px;
+  white-space: nowrap;
+}
+.workspace.modern-workspace .task-workload .task-effort-options {
+  margin-left: auto;
+  gap: 0;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.workspace.modern-workspace .task-workload .task-effort-options button {
+  min-height: 28px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: none;
+}
+.workspace.modern-workspace .task-workload .task-effort-options button[aria-pressed="true"] {
+  background: var(--surface-tertiary);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+.workspace.modern-workspace .task-panel-scroll {
+  display: flex;
+  flex-direction: column;
+}
+.workspace.modern-workspace .reference-task-panel .task-panel-form,
+.workspace.modern-workspace .reference-task-panel .task-panel-form > fieldset {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 100%;
+}
+.workspace.modern-workspace .reference-task-panel input.task-panel-subtitle,
+.workspace.modern-workspace .reference-task-panel input.task-panel-subtitle:hover:not(:disabled),
+.workspace.modern-workspace .reference-task-panel input.task-panel-subtitle:focus,
+.workspace.modern-workspace .reference-task-panel input.task-panel-subtitle:focus-visible {
+  width: 100%;
+  min-height: 0;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.workspace.modern-workspace .reference-task-panel input.task-panel-subtitle::placeholder {
+  color: var(--text-secondary);
+}
+.workspace.modern-workspace .task-panel-form > fieldset > .task-description-field {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 240px;
+  margin: 12px 24px 24px;
+}
+.workspace.modern-workspace .task-panel-form > fieldset > .task-description-field .task-description {
+  flex: 1;
+  min-height: 220px;
+  max-height: none;
+}
+
+/* 项目页：标题旁是项目设置，任务区只切换列表和看板 */
+.workspace.modern-workspace .simple-project-workspace .project-summary {
+  display: grid;
+  grid-template-columns: 22px minmax(0, max-content);
+  column-gap: 10px;
+  row-gap: 2px;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  padding: 14px 16px;
+  margin: 0 0 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  background: var(--surface-card);
+  box-shadow: none;
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary-icon {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  width: 22px;
+  height: 22px;
+  border-radius: 0;
+  background: transparent;
+  color: var(--primary-text);
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary-icon .project-icon {
+  width: 20px;
+  height: 20px;
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary-main {
+  display: contents;
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary .project-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary .project-settings-button,
+.workspace.modern-workspace .simple-project-workspace .project-summary .project-settings-button:hover:not(:disabled),
+.workspace.modern-workspace .simple-project-workspace .project-summary .project-settings-button:focus-visible {
+  flex-shrink: 0;
+  width: auto;
+  height: 28px;
+  min-height: 28px;
+  margin-left: 2px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-tertiary);
+  box-shadow: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary .project-settings-button:hover:not(:disabled) {
+  background: var(--row-hover);
+  color: var(--text-primary);
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary h2 {
+  font-size: 20px;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: 0;
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary .project-outcome,
+.workspace.modern-workspace .simple-project-workspace .project-summary small {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary .project-heading,
+.workspace.modern-workspace .simple-project-workspace .project-summary .project-outcome,
+.workspace.modern-workspace .simple-project-workspace .project-summary small {
+  grid-column: 2;
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary .personal-project-progress {
+  display: flex;
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  align-items: center;
+  max-width: 100%;
+  margin: 6px 0 0;
+  padding: 0;
+  gap: 8px;
+  overflow: visible;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary progress {
+  width: 88px;
+  height: 6px;
+}
+.workspace.modern-workspace .simple-project-workspace .ai-planner-launch-group {
+  margin: 0 0 12px;
+}
+.workspace.modern-workspace .simple-project-workspace .ai-planner-launch,
+.workspace.modern-workspace .simple-project-workspace .ai-planner-launch:hover:not(:disabled),
+.workspace.modern-workspace .simple-project-workspace .ai-planner-launch:focus-visible {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  box-shadow: var(--shadow-soft);
+  transform: none;
+}
+.workspace.modern-workspace .simple-project-workspace .ai-planner-launch:hover:not(:disabled) {
+  background: var(--row-hover);
+}
+.workspace.modern-workspace .today.simple-project-workspace {
+  width: calc(100vw - var(--sidebar-width, 238px));
+  max-width: calc(100vw - var(--sidebar-width, 238px));
+}
+.workspace.modern-workspace:has(.task-detail) .today.simple-project-workspace {
+  width: calc(100vw - var(--sidebar-width, 238px) - var(--inspector-width, 360px));
+  max-width: calc(100vw - var(--sidebar-width, 238px) - var(--inspector-width, 360px));
+}
+.workspace.modern-workspace .simple-project-workspace .project-view-toolbar {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 0;
+  margin: 0 0 12px;
+  padding: 0;
+  border: 0;
+}
+.workspace.modern-workspace .simple-project-workspace .project-view-controls {
+  gap: 2px;
+  margin-left: 0;
+  max-width: 100%;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--surface-tertiary);
+}
+.workspace.modern-workspace .simple-project-workspace .project-view-tabs {
+  gap: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.workspace.modern-workspace .simple-project-workspace .project-view-tabs button,
+.workspace.modern-workspace .simple-project-workspace .project-view-tabs button:hover:not(:disabled) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: auto;
+  height: 32px;
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 500;
+}
+.workspace.modern-workspace .simple-project-workspace .project-view-tabs button:hover:not(:disabled):not([aria-selected="true"]) {
+  background: color-mix(in srgb, var(--text-secondary) 8%, transparent);
+  color: var(--text-primary);
+}
+.workspace.modern-workspace .simple-project-workspace .project-view-tabs button[aria-selected="true"] {
+  background: var(--surface-card);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-soft);
 }

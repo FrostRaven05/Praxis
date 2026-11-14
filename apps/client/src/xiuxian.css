@@ -10,7 +10,7 @@
   --game-lift: 0 1px 2px rgb(60 40 20 / 6%), 0 4px 14px rgb(60 40 20 / 5%);
 }
 
-/* Page titles in brush-style script */
+/* Page titles use the interface face, not brush script */
 .modern-workspace .personal-todo-header h1,
 .modern-workspace .personal-project-list header h1,
 .modern-workspace .personal-project-list header h2,
@@ -18,14 +18,14 @@
 .modern-workspace .project-summary h1,
 .modern-workspace .project-summary h2,
 .personal-agent-dialog h2 {
-  font-family: var(--font-title);
+  font-family: "DengXian", "等线", "Microsoft YaHei UI", var(--font-ui);
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   color: var(--ink);
-  -webkit-text-stroke: 0.6px currentColor;
+  -webkit-text-stroke: 0;
 }
 .modern-workspace .personal-todo-header h1 {
-  font-size: 34px;
+  font-size: 28px;
 }
 
 /* Sidebar */

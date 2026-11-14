@@ -1,5 +1,3 @@
-import { RelatedRecords } from "./RelatedRecords";
-import { WorkTaskProperties } from "./WorkTaskProperties";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   EditTask,
@@ -8,17 +6,22 @@ import {
   deadlineFromLocal,
   deadlineToLocal,
   parseMinutes,
-  taskStates,
   validCalendarDate,
   type DailyTask,
   type EditReceipt,
   type TaskDetails,
 } from "@praxis/application";
 import { editStorage, taskDetailsStorage } from "./storage";
-import { ProjectAssignment } from "./ProjectAssignment";
 import { TaskPanelIcon } from "./TaskPanelIcon";
 import { DatePicker } from "./DatePicker";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import {
+  TaskWorkload,
+  reminderLabel,
+  specificDateLabel,
+} from "./TaskPanelFields";
+import { TaskDescription, TaskSubtitle } from "./TaskDescription";
+import { TaskProjectControl } from "./TaskProjectControl";
 
 const scheduleEditor = new EditTask(editStorage);
 const detailsEditor = new TaskDetailEditor(taskDetailsStorage);
@@ -36,8 +39,6 @@ export function TaskDetailPanel({
   onUpdated,
   onPersisted,
   onClose,
-  onComplete,
-  onProject,
   onBusyChange,
   onDirtyChange,
   scheduleTimeZone,
@@ -64,9 +65,7 @@ export function TaskDetailPanel({
   const [estimate, setEstimate] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [propertiesBusy, setPropertiesBusy] = useState(false);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const [composing, setComposing] = useState(false);
   const immediate = useRef(false);
   const inFlight = useRef<Promise<boolean> | null>(null);
@@ -84,19 +83,16 @@ export function TaskDetailPanel({
   const metadataSaved = useRef(false);
   const initialTask = useRef(task);
   const titleRef = useRef<HTMLTextAreaElement>(null);
-  const notesRef = useRef<HTMLTextAreaElement>(null);
   const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const today = calendarDate(new Date(), scheduleTimeZone ?? zone);
   useLayoutEffect(() => {
-    for (const input of [titleRef.current, notesRef.current]) {
-      if (input) {
-        input.style.height = "auto";
-        const contentHeight = input.scrollHeight + 2;
-        input.style.height = Math.min(contentHeight, 160) + "px";
-        input.style.overflowY = contentHeight > 160 ? "auto" : "hidden";
-      }
-    }
-  }, [title, notes]);
+    const input = titleRef.current;
+    if (!input) return;
+    input.style.height = "auto";
+    const contentHeight = input.scrollHeight + 2;
+    input.style.height = Math.min(contentHeight, 160) + "px";
+    input.style.overflowY = contentHeight > 160 ? "auto" : "hidden";
+  }, [title]);
   useEffect(() => {
     let active = true;
     void taskDetailsStorage
@@ -125,9 +121,9 @@ export function TaskDetailPanel({
     };
   }, []);
   useEffect(() => {
-    onBusyChange(busy || propertiesBusy);
+    onBusyChange(busy);
     return () => onBusyChange(false);
-  }, [busy, propertiesBusy, onBusyChange]);
+  }, [busy, onBusyChange]);
   function hasChanges() {
     const saved = baseRef.current;
     if (!saved) return false;
@@ -177,7 +173,6 @@ export function TaskDetailPanel({
       captured;
     setBusy(true);
     setError("");
-    setNotice("");
     let currentBase = baseRef.current!;
     let currentSchedule = scheduleRef.current;
     try {
@@ -261,7 +256,6 @@ export function TaskDetailPanel({
       }
       metadataSaved.current = false;
       pendingDraft.current = null;
-      setNotice("已保存到本机");
       return true;
     } catch (error) {
       setError(
@@ -285,13 +279,11 @@ export function TaskDetailPanel({
   }
   flushRef.current = flush;
   async function close() {
-    if (propertiesBusy) return;
     if (!baseRef.current || (await flushRef.current())) onClose();
   }
   function changed<T>(setter: (value: T) => void, value: T, discrete = false) {
     immediate.current = discrete;
     setError("");
-    setNotice("");
     setter(value);
   }
   useEffect(() => {
@@ -376,22 +368,14 @@ export function TaskDetailPanel({
       }}
     >
       <header className="task-panel-toolbar">
-        <span className="task-status-pill">{taskStates[task.status]}</span>
-        <span className="task-status-pill">
-          {task.projectId ? "项目任务" : "临时任务"}
-        </span>
+        <TaskProjectControl
+          taskId={task.taskId}
+          projectId={task.projectId}
+          disabled={busy || loading || !base}
+          onChanging={() => flushRef.current()}
+          onChanged={() => onUpdated()}
+        />
         <div className="task-panel-toolbar-actions">
-          <button
-            aria-label={task.status === "completed" ? "撤销完成" : "标为完成"}
-            title={task.status === "completed" ? "撤销完成" : "标为完成"}
-            aria-pressed={task.status === "completed"}
-            disabled={busy || dirty || loading}
-            onClick={() => void onComplete()}
-          >
-            <TaskPanelIcon
-              name={task.status === "completed" ? "check" : "box"}
-            />
-          </button>
           <button
             aria-label="关闭任务详情"
             title="收起详情"
@@ -414,7 +398,7 @@ export function TaskDetailPanel({
           onCompositionStart={() => setComposing(true)}
           onCompositionEnd={() => setComposing(false)}
         >
-          <fieldset disabled={loading || !base || propertiesBusy}>
+          <fieldset disabled={loading || !base}>
             <div className="task-panel-intro">
               <label className="sr-only" htmlFor="panel-title">
                 任务标题
@@ -428,17 +412,10 @@ export function TaskDetailPanel({
                 value={title}
                 onChange={(event) => changed(setTitle, event.target.value)}
               />
-              <label className="sr-only" htmlFor="panel-notes">
-                任务描述
-              </label>
-              <textarea
-                ref={notesRef}
-                id="panel-notes"
-                className="task-panel-notes"
-                rows={1}
-                placeholder="添加描述"
+              <TaskSubtitle
                 value={notes}
-                onChange={(event) => changed(setNotes, event.target.value)}
+                disabled={loading || !base}
+                onChange={(value) => changed(setNotes, value)}
               />
               <div className="task-date-options" aria-label="安排日期快捷选项">
                 <button
@@ -463,12 +440,14 @@ export function TaskDetailPanel({
                   label="安排日期"
                   disabled={loading || !base || task.status === "completed"}
                   className={
-                    date !== today && date !== tomorrow(today) ? "selected" : ""
+                    date !== today && date !== tomorrow(today)
+                      ? "selected task-date-chip"
+                      : "task-date-chip"
                   }
                   display={
                     date === today || date === tomorrow(today)
                       ? "选择日期"
-                      : undefined
+                      : specificDateLabel(date)
                   }
                 />
               </div>
@@ -476,119 +455,32 @@ export function TaskDetailPanel({
                 <p className="field-help">已完成任务保留原安排日期。</p>
               )}
             </div>
-            <div className="task-panel-field">
+            <div className="task-panel-field task-reminder">
               <TaskPanelIcon name="clock" />
-              <div className="task-panel-field-body">
-                <label htmlFor="panel-deadline">截止时间</label>
-                <DatePicker
-                  id="panel-deadline"
-                  label="截止时间（本地时间）"
-                  mode="datetime"
-                  clearable
-                  className="date-picker-field"
-                  value={deadline}
-                  disabled={loading || !base}
-                  onChange={(value) => changed(setDeadline, value, true)}
-                />
-              </div>
+              <DatePicker
+                id="panel-deadline"
+                label="提醒"
+                mode="datetime"
+                clearable
+                className="date-picker-field"
+                value={deadline}
+                disabled={loading || !base}
+                display={reminderLabel(deadline)}
+                onChange={(value) => changed(setDeadline, value, true)}
+              />
             </div>
-            <details className="task-panel-extra">
-              <summary>工作量、完成标准与重要标记</summary>
-              <div className="task-panel-field">
-                <TaskPanelIcon name="work" />
-                <div className="task-panel-field-body">
-                  <label htmlFor="panel-estimate">预估工作量</label>
-                  <div className="task-effort-editor">
-                    <div className="task-effort-options">
-                      {[15, 30, 60].map((minutes) => (
-                        <button
-                          key={minutes}
-                          type="button"
-                          aria-pressed={estimate === String(minutes)}
-                          onClick={() =>
-                            changed(setEstimate, String(minutes), true)
-                          }
-                        >
-                          {minutes} 分钟
-                        </button>
-                      ))}
-                    </div>
-                    <input
-                      id="panel-estimate"
-                      aria-label="预估工作量（分钟）"
-                      type="number"
-                      min={1}
-                      max={1440}
-                      value={estimate}
-                      placeholder="分钟"
-                      title="自定义分钟，留空表示未知"
-                      onChange={(event) =>
-                        changed(setEstimate, event.target.value)
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
-              <div className="task-panel-field">
-                <TaskPanelIcon name="criteria" />
-                <div className="task-panel-field-body">
-                  <label htmlFor="panel-criteria">完成标准</label>
-                  <textarea
-                    id="panel-criteria"
-                    rows={2}
-                    value={criteria}
-                    placeholder="怎样算完成这项任务？"
-                    onChange={(event) =>
-                      changed(setCriteria, event.target.value)
-                    }
-                  />
-                </div>
-              </div>
-              <div className="task-panel-field">
-                <TaskPanelIcon name="check" />
-                <label className="task-panel-importance">
-                  <input
-                    type="checkbox"
-                    checked={important}
-                    onChange={(event) =>
-                      changed(setImportant, event.target.checked, true)
-                    }
-                  />
-                  重要任务
-                </label>
-              </div>
-            </details>
+            <TaskWorkload
+              estimate={estimate}
+              disabled={loading || !base}
+              onChange={(minutes) => changed(setEstimate, minutes, true)}
+            />
+            <TaskDescription
+              value={notes}
+              disabled={loading || !base}
+              onChange={(value) => changed(setNotes, value)}
+            />
           </fieldset>
         </form>
-        <WorkTaskProperties
-          taskId={task.taskId}
-          version={base?.version ?? task.version ?? 0}
-          disabled={busy || dirty || loading}
-          onSaved={onUpdated}
-          onBusyChange={setPropertiesBusy}
-        />
-        <fieldset
-          className="task-panel-project-field"
-          disabled={busy || dirty || loading || propertiesBusy}
-        >
-          <TaskPanelIcon name="folder" />
-          <div className="task-panel-field-body">
-            <span className="task-panel-field-label">所属项目</span>
-            <ProjectAssignment task={task} onAssigned={onUpdated} />
-          </div>
-        </fieldset>
-        {task.projectId && (
-          <div className="task-panel-field">
-            <TaskPanelIcon name="branch" />
-            <button
-              className="task-panel-project-link"
-              disabled={busy || dirty}
-              onClick={() => onProject(task.projectId!)}
-            >
-              在项目中管理子任务
-            </button>
-          </div>
-        )}
         {loading && (
           <p className="task-panel-feedback" role="status">
             正在读取任务详情…
@@ -607,24 +499,19 @@ export function TaskDetailPanel({
             </button>
           </div>
         )}
-        <div className="task-panel-secondary">
-          <RelatedRecords targetType="task" targetId={task.taskId} />
-        </div>
       </div>
-      <footer className="task-panel-footer" role="status" aria-live="polite">
-        <span>
-          <span className="status-dot" />
-          {busy
-            ? "正在保存…"
-            : error
-              ? "保存未完成，修改已保留"
-              : dirty
-                ? "等待自动保存…"
-                : notice
-                  ? "已自动保存"
-                  : "自动保存到本机"}
-        </span>
-      </footer>
+      {(busy || error || dirty) && (
+        <footer className="task-panel-footer" role="status" aria-live="polite">
+          <span>
+            <span className="status-dot" />
+            {busy
+              ? "正在保存…"
+              : error
+                ? "保存未完成，修改已保留"
+                : "等待自动保存…"}
+          </span>
+        </footer>
+      )}
     </aside>
   );
 }
