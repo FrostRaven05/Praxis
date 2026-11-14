@@ -832,8 +832,7 @@
     .work-dialog,
     .work-overlay,
     .simple-inbox,
-    .simple-project-workspace,
-    .settings-view
+    .simple-project-workspace
   )
   button:not(.nav-item):not([aria-pressed]):not(.primary):not(.danger):not(
     .icon-button
@@ -862,8 +861,7 @@
     .work-dialog,
     .work-overlay,
     .simple-inbox,
-    .simple-project-workspace,
-    .settings-view
+    .simple-project-workspace
   )
   button:not(.nav-item):not([aria-pressed]):not(.primary):not(.danger):not(
     .icon-button
@@ -1421,11 +1419,11 @@
 /* 项目页：标题旁是项目设置，任务区只切换列表和看板 */
 .workspace.modern-workspace .simple-project-workspace .project-summary {
   display: grid;
-  grid-template-columns: 22px minmax(0, max-content);
+  grid-template-columns: 22px minmax(0, 1fr) auto;
   column-gap: 10px;
   row-gap: 2px;
   align-items: center;
-  width: fit-content;
+  width: 100%;
   max-width: 100%;
   padding: 14px 16px;
   margin: 0 0 14px;
@@ -1498,7 +1496,7 @@
 }
 .workspace.modern-workspace .simple-project-workspace .project-summary .personal-project-progress {
   display: flex;
-  grid-column: 1 / -1;
+  grid-column: 1 / 3;
   flex-wrap: wrap;
   align-items: center;
   max-width: 100%;
@@ -1533,6 +1531,49 @@
 .workspace.modern-workspace .simple-project-workspace .ai-planner-launch:hover:not(:disabled) {
   background: var(--row-hover);
 }
+.workspace.modern-workspace .simple-project-workspace .project-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary-icon {
+  grid-column: auto;
+  grid-row: auto;
+  align-self: flex-start;
+  margin-top: 2px;
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary-main {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  gap: 2px;
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary .project-heading,
+.workspace.modern-workspace .simple-project-workspace .project-summary .project-outcome,
+.workspace.modern-workspace .simple-project-workspace .project-summary small,
+.workspace.modern-workspace .simple-project-workspace .project-summary .personal-project-progress {
+  grid-column: auto;
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary-aside {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  align-self: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary-aside .ai-planner-launch-group {
+  justify-content: flex-end;
+  margin: 0;
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary-aside .project-view-controls {
+  margin-left: 0;
+}
 .workspace.modern-workspace .today.simple-project-workspace {
   width: calc(100vw - var(--sidebar-width, 238px));
   max-width: calc(100vw - var(--sidebar-width, 238px));
@@ -1542,8 +1583,8 @@
   max-width: calc(100vw - var(--sidebar-width, 238px) - var(--inspector-width, 360px));
 }
 .workspace.modern-workspace .simple-project-workspace .project-view-toolbar {
-  justify-content: flex-start;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  flex-wrap: nowrap;
   gap: 10px;
   min-width: 0;
   max-width: 100%;
@@ -1554,7 +1595,7 @@
 }
 .workspace.modern-workspace .simple-project-workspace .project-view-controls {
   gap: 2px;
-  margin-left: 0;
+  margin-left: auto;
   max-width: 100%;
   padding: 3px;
   border-radius: 12px;
@@ -1572,11 +1613,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  width: auto;
+  gap: 0;
+  width: 32px;
   height: 32px;
   min-height: 32px;
-  padding: 0 12px;
+  padding: 0;
   border: 0;
   border-radius: 9px;
   background: transparent;
@@ -1593,4 +1634,81 @@
   background: var(--surface-card);
   color: var(--text-primary);
   box-shadow: var(--shadow-soft);
+}
+.workspace.modern-workspace .task-subtasks {
+  align-items: flex-start;
+}
+.workspace.modern-workspace .task-subtasks > .task-panel-icon {
+  margin-top: 8px;
+}
+.workspace.modern-workspace .task-subtask-list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.workspace.modern-workspace .task-subtask-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+}
+.workspace.modern-workspace .reference-task-panel .task-subtask-check,
+.workspace.modern-workspace .reference-task-panel .task-subtask-check:hover:not(:disabled),
+.workspace.modern-workspace .reference-task-panel .task-subtask-delete,
+.workspace.modern-workspace .reference-task-panel .task-subtask-delete:hover:not(:disabled) {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+.workspace.modern-workspace .reference-task-panel .task-subtask-check {
+  border: 1.5px solid var(--text-tertiary);
+}
+.workspace.modern-workspace .reference-task-panel .task-subtask-check[aria-pressed="true"] {
+  border-color: var(--primary-text);
+  background: var(--selected);
+  color: var(--primary-text);
+}
+.workspace.modern-workspace .task-subtask-title {
+  flex: 1;
+  min-width: 0;
+  color: var(--text-primary);
+  font-size: 14px;
+  line-height: 1.4;
+}
+.workspace.modern-workspace .task-subtask-title.completed {
+  color: var(--text-tertiary);
+  text-decoration: line-through;
+}
+.workspace.modern-workspace .reference-task-panel .task-subtask-input,
+.workspace.modern-workspace .reference-task-panel .task-subtask-input:hover:not(:disabled),
+.workspace.modern-workspace .reference-task-panel .task-subtask-input:focus,
+.workspace.modern-workspace .reference-task-panel .task-subtask-input:focus-visible {
+  width: 100%;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-primary);
+  font-size: 14px;
+}
+.workspace.modern-workspace .reference-task-panel .task-subtask-input::placeholder {
+  color: var(--text-secondary);
+}
+.workspace.modern-workspace .task-subtasks [role="alert"] {
+  margin: 0;
+  color: var(--danger-text);
+  font-size: 12px;
 }

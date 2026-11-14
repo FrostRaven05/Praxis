@@ -9,6 +9,7 @@ import {
   selectPomodoroMode,
   setPomodoroDuration,
   startPomodoro,
+  pomodoroChanged,
   stopPomodoro,
   tickPomodoro,
   type PomodoroMode,
@@ -123,6 +124,16 @@ export function PomodoroDock() {
       /* 隐私模式写不进本地记录时，这一轮仍可继续计时。 */
     }
   }, [state]);
+  useEffect(() => {
+    const sync = (event: Event) => {
+      const detail = (event as CustomEvent<PomodoroState>).detail;
+      if (!detail) return;
+      if (!detail.enabled) stopPomodoroAmbience();
+      setState(detail);
+    };
+    window.addEventListener(pomodoroChanged, sync);
+    return () => window.removeEventListener(pomodoroChanged, sync);
+  }, []);
 
   useEffect(() => {
     if (!expanded && !soundsOpen) return;
@@ -172,6 +183,8 @@ export function PomodoroDock() {
     setSound(next);
     void playPomodoroAmbience(next);
   }
+
+  if (!state.enabled) return null;
 
   return (
     <div

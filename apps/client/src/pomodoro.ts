@@ -34,6 +34,7 @@ export type PomodoroState = {
   phase: PomodoroPhase;
   completedDate: string;
   completedCount: number;
+  enabled: boolean;
 };
 
 export type PomodoroTick = {
@@ -62,6 +63,7 @@ export function createPomodoroState(now: number): PomodoroState {
     phase: { kind: "idle" },
     completedDate: pomodoroDay(now),
     completedCount: 0,
+    enabled: true,
   };
 }
 
@@ -207,6 +209,7 @@ export function restorePomodoroState(
       typeof value.completedCount === "number" && value.completedCount > 0
         ? Math.floor(value.completedCount)
         : 0,
+    enabled: value.enabled !== false,
   };
   if (value.phase && typeof value.phase === "object") {
     const phase = value.phase as Record<string, unknown>;
@@ -237,4 +240,27 @@ export function restorePomodoroState(
     }
   }
   return tickPomodoro(state, now);
+}
+
+export const pomodoroStorageKey = "praxis.pomodoro.v1";
+export const pomodoroChanged = "praxis-pomodoro";
+
+export function readPomodoroState(now = Date.now()): PomodoroState {
+  try {
+    return restorePomodoroState(
+      JSON.parse(localStorage.getItem(pomodoroStorageKey) || "null"),
+      now,
+    ).state;
+  } catch {
+    return createPomodoroState(now);
+  }
+}
+
+export function writePomodoroState(state: PomodoroState) {
+  try {
+    localStorage.setItem(pomodoroStorageKey, JSON.stringify(state));
+  } catch {
+    /* 隐私模式写不进本地记录时，设置仍留在当前页面。 */
+  }
+  window.dispatchEvent(new CustomEvent(pomodoroChanged, { detail: state }));
 }

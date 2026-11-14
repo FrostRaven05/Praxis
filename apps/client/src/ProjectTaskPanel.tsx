@@ -20,6 +20,7 @@ import { TaskPanelIcon } from "./TaskPanelIcon";
 import { TaskWorkload, reminderLabel } from "./TaskPanelFields";
 import { TaskDescription, TaskSubtitle } from "./TaskDescription";
 import { TaskProjectControl } from "./TaskProjectControl";
+import { TaskSubtasks } from "./TaskSubtasks";
 
 const editor = new TaskDetailEditor(taskDetailsStorage);
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -281,6 +282,11 @@ export function ProjectTaskPanel({
                 onChange={(value) => changed("deadline", value, true)}
               />
             </div>
+            <TaskSubtasks
+              taskId={task.taskId}
+              disabled={loading || !base}
+              onChanged={() => void onSaved()}
+            />
             <TaskWorkload
               estimate={draft.estimate}
               disabled={loading || !base}

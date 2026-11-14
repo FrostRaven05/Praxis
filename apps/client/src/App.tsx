@@ -1,5 +1,5 @@
 import "./personal-shell.css";
-import { AccountButton, AccountPage } from "./AccountPanel";
+import { AccountButton, AccountPage, type SettingsSection } from "./AccountPanel";
 import { PersonalAgentPanel } from "./PersonalAgentPanel";
 import { PersonalTodoHome } from "./PersonalTodoHome";
 import { LanSyncStatus } from "./LanSyncStatus";
@@ -11,7 +11,6 @@ import { HabitDetailPanel } from "./HabitDetailPanel";
 import type { Row as HabitRow } from "./HabitsView";
 import { DateStrip } from "./DateStrip";
 import { ProjectNavigation } from "./ProjectNavigation";
-import { SettingsView } from "./SettingsView";
 import { ProjectIcon } from "./ProjectIcon";
 import { projectStates, taskStates } from "@praxis/application";
 import { TaskDetailPanel } from "./TaskDetailPanel";
@@ -140,10 +139,11 @@ export function App() {
     () => setProjectRevision((n) => n + 1),
     [],
   );
-  const [view, setView] = useState<"todos" | "day" | "inbox" | "projects" | "settings">(
+  const [view, setView] = useState<"todos" | "day" | "inbox" | "projects">(
     "todos",
   );
   const [accountOpen, setAccountOpen] = useState(false);
+  const [settingsSection, setSettingsSection] = useState<SettingsSection>("account");
   useEffect(() => {
     workspaceRef.current?.scrollTo({ top: 0 });
   }, [view, projectId, projectNavigation]);
@@ -378,8 +378,8 @@ export function App() {
   }, [projectBusy, detailBusy, planningBusy, inboxBusy, detailDirty, view, planLocked]);
   function openSettings() {
     if (projectBusy || detailBusy || planningBusy || inboxBusy) return;
-    setSelectedId(null);
-    setView("settings");
+    setSettingsSection("account");
+    setAccountOpen(true);
   }
   function openTodos() {
     if(projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty || (view==="day" && planLocked)) return;
@@ -1156,7 +1156,18 @@ export function App() {
     );
   }
 
-  if (accountOpen) return <AccountPage onBack={() => setAccountOpen(false)} />;
+  if (accountOpen)
+    return (
+      <AccountPage
+        onBack={() => setAccountOpen(false)}
+        initialSection={settingsSection}
+        revision={projectRevision}
+        onOpenProject={(id) => {
+          setAccountOpen(false);
+          openProject(id);
+        }}
+      />
+    );
   return (
     <main
       className="workspace reference-workspace todoist-workspace modern-workspace"
@@ -1203,12 +1214,7 @@ export function App() {
         {desktopAvailable && (
           <div className="sidebar-bottom">
             <button
-              className={
-                view === "settings"
-                  ? "sidebar-settings active"
-                  : "sidebar-settings"
-              }
-              aria-current={view === "settings" ? "page" : undefined}
+              className="sidebar-settings"
               disabled={projectBusy || detailBusy || planningBusy || inboxBusy}
               onClick={openSettings}
             >
@@ -1216,7 +1222,7 @@ export function App() {
               设置
             </button>
             <LanSyncStatus onRefresh={synced} />
-            <AccountButton disabled={projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty || (view === "day" && planLocked)} onClick={() => setAccountOpen(true)} />
+            <AccountButton disabled={projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty || (view === "day" && planLocked)} onClick={() => { setSettingsSection("account"); setAccountOpen(true); }} />
           </div>
         )}
       </aside>
@@ -1267,11 +1273,6 @@ export function App() {
           onSelect={setProjectId}
           onProjectsChanged={projectsChanged}
           onSettings={openSettings}
-        />
-      ) : view === "settings" ? (
-        <SettingsView
-          revision={projectRevision}
-          onOpenProject={openProject}
         />
       ) : view === "inbox" && !desktopAvailable ? (
         <MobileCaptureView onBusyChange={setInboxBusy} />

@@ -37,7 +37,7 @@ export function KanbanView({
   disabled?: boolean;
 }) {
   const taskPanel = useContext(ProjectTaskPanelContext);
-  const leaves = projectTree(tasks).filter((task) => !task.hasChildren);
+  const leaves = projectTree(tasks).filter((task) => task.depth === 0);
   const [transition, setTransition] = useState<{
     task: ProjectTask;
     status: string;
@@ -241,8 +241,13 @@ export function KanbanView({
             }
           </TaskActionMenu>
         </div>
-        {(parent || task.executionDate || task.important) && (
+        {(parent || task.executionDate || task.important || tasks.some((child) => child.parentTaskId === task.taskId)) && (
           <div className="kanban-card-meta">
+            {tasks.some((child) => child.parentTaskId === task.taskId) && (
+              <span>
+                {tasks.filter((child) => child.parentTaskId === task.taskId && child.status !== "cancelled").length} 个子任务
+              </span>
+            )}
             {parent && <span title={parent.title}>{parent.title}</span>}
             {task.executionDate && (
               <time dateTime={task.executionDate}>{task.executionDate}</time>

@@ -221,6 +221,7 @@ export interface PersonalTaskDraft {
   notes: string;
   deadline: TimeValue | null;
   projectId: string | null;
+  parentId?: string | null;
 }
 /** A definite rejection: the caller may discard the attempt and reload its base. */
 export class PersonalTaskRejectedError extends Error {
@@ -340,6 +341,13 @@ export function createPersonalTasks<Command>(
           )
         )
           throw Error("请选择进行中的个人项目");
+        if (draft.parentId) {
+          const parent = base.work.tasks.find((t) => t.id === draft.parentId);
+          if (!parent) throw Error("父任务已不存在，请重新读取");
+          if (parent.parentId) throw Error("子任务不能再拆子任务");
+          if (parent.projectId !== draft.projectId)
+            throw Error("子任务必须与父任务属于同一项目");
+        }
       } catch (error) {
         throw new PersonalTaskRejectedError(error);
       }
@@ -387,9 +395,9 @@ export function createPersonalTasks<Command>(
             throw Error("请先确认移动全部子任务");
         } else if (
           change.type === "delete" &&
-          (task?.parentId || subtree(base.work.tasks, taskId).length > 1)
+          subtree(base.work.tasks, taskId).length > 1
         ) {
-          throw Error("旧层级任务请在原任务入口预览删除范围");
+          throw Error("请先处理子任务，再删除这个任务");
         }
       } catch (error) {
         throw new PersonalTaskRejectedError(error);

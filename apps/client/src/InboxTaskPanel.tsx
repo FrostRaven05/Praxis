@@ -23,6 +23,7 @@ import {
 } from "./TaskPanelFields";
 import { TaskDescription, TaskSubtitle } from "./TaskDescription";
 import { TaskProjectControl } from "./TaskProjectControl";
+import { TaskSubtasks } from "./TaskSubtasks";
 const editor = new TaskDetailEditor(taskDetailsStorage);
 const message = (error: unknown) =>
   error instanceof Error ? error.message : String(error);
@@ -365,6 +366,11 @@ export function InboxTaskPanel({
                 onChange={(value) => changed(setDeadline, value, true)}
               />
             </div>
+            <TaskSubtasks
+              taskId={task.taskId}
+              disabled={locked}
+              onChanged={() => void onReload()}
+            />
             <TaskWorkload
               estimate={estimate}
               disabled={locked}

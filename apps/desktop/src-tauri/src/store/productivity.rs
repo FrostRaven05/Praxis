@@ -74,6 +74,8 @@ pub enum ProductivityAction {
         labels: Vec<String>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         arrange_on_create: Option<bool>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        parent_id: Option<String>,
     },
     Label {
         id: String,
@@ -268,6 +270,7 @@ impl Store {
                 waiting_note,
                 labels,
                 arrange_on_create,
+                parent_id,
             } => {
                 Uuid::parse_str(id).map_err(|_| "Invalid task ID")?;
                 limited(title, 500)?;
@@ -297,6 +300,22 @@ impl Store {
                         if !active { return Err("USER:请先恢复项目，再添加任务".into()); }
                     }
                     sqlx::query("INSERT INTO tasks(id,owner_id,title,notes,project_id,source,created_at) VALUES(?,?,?,?,?,'temporary',?)").bind(id).bind(&self.owner_id).bind(title.trim()).bind(notes).bind(project_id).bind(&c.occurred_at).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+                    if let Some(parent) = parent_id {
+                        if parent == id {
+                            return Err("USER:不能把任务设为自己的子任务".into());
+                        }
+                        let found: Option<(Option<String>, Option<String>, Option<String>)> = sqlx::query_as("SELECT project_id, section_id, parent_task_id FROM tasks WHERE id=? AND owner_id=? AND deleted_at IS NULL").bind(parent).bind(&self.owner_id).fetch_optional(&mut *tx).await.map_err(|e| e.to_string())?;
+                        let Some((parent_project, parent_section, parent_parent)) = found else {
+                            return Err("USER:父任务不存在".into());
+                        };
+                        if parent_parent.is_some() {
+                            return Err("USER:子任务不能再拆子任务".into());
+                        }
+                        if parent_project != *project_id {
+                            return Err("USER:子任务必须与父任务属于同一项目".into());
+                        }
+                        sqlx::query("UPDATE tasks SET parent_task_id=?, section_id=? WHERE id=? AND owner_id=?").bind(parent).bind(parent_section).bind(id).bind(&self.owner_id).execute(&mut *tx).await.map_err(|e| e.to_string())?;
+                    }
                 } else {
                     let old: Option<String> = sqlx::query_scalar(
                         "SELECT project_id FROM tasks WHERE id=? AND owner_id=?",

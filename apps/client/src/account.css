@@ -352,6 +352,202 @@
   color: var(--text-secondary);
   font-size: 12px;
 }
+.settings-shell {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100dvh;
+  background: var(--surface-card, #fff);
+  color: var(--text-primary);
+}
+.settings-shell-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 56px;
+  padding: 0 18px 0 22px;
+}
+.settings-shell-bar h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 650;
+}
+.settings-shell-close {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+.settings-shell-close:hover:not(:disabled) {
+  background: var(--surface-tertiary);
+  color: var(--text-primary);
+}
+.settings-shell-body {
+  display: grid;
+  grid-template-columns: 196px minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+}
+.settings-shell-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px 24px;
+}
+.settings-shell-nav button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+  cursor: pointer;
+}
+.settings-shell-nav button svg {
+  width: 16px;
+  height: 16px;
+  color: var(--text-secondary);
+}
+.settings-shell-nav button[aria-current="page"] {
+  background: color-mix(in srgb, var(--primary) 28%, var(--surface-card));
+  box-shadow: inset 3px 0 0 var(--primary-text);
+}
+.settings-shell-nav button[aria-current="page"] svg {
+  color: var(--primary-text);
+}
+.settings-shell-main {
+  min-width: 0;
+  padding: 8px 48px 40px 12px;
+  overflow: auto;
+}
+.settings-pane-heading h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 650;
+}
+.settings-pane-heading p {
+  margin: 6px 0 18px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.settings-group-title {
+  margin: 18px 0 8px;
+  font-size: 14px;
+  font-weight: 650;
+}
+.settings-rows {
+  border: 1px solid var(--hairline, var(--line));
+  border-radius: 10px;
+  overflow: hidden;
+}
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  padding: 10px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--hairline, var(--line));
+  border-radius: 0;
+  background: var(--surface-card, #fff);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+  text-align: left;
+}
+.settings-rows > :last-child {
+  border-bottom: 0;
+}
+button.settings-row {
+  cursor: pointer;
+}
+button.settings-row:hover:not(:disabled) {
+  background: var(--row-hover, var(--surface-tertiary));
+}
+.settings-row strong,
+.settings-row small {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 400;
+}
+.settings-row-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.settings-row-label svg {
+  width: 16px;
+  height: 16px;
+  color: var(--primary-text);
+}
+.settings-switch {
+  width: 40px;
+  height: 22px;
+  padding: 2px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-tertiary);
+  cursor: pointer;
+}
+.settings-switch span {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 150ms ease;
+}
+.settings-switch[aria-checked="true"] {
+  background: var(--primary-text);
+}
+.settings-switch[aria-checked="true"] span {
+  transform: translateX(18px);
+}
+.settings-minutes {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.settings-minutes input {
+  width: 72px;
+  min-height: 32px;
+  padding: 4px 8px;
+  border: 1px solid var(--hairline, var(--line));
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+  text-align: center;
+}
+.settings-shell-main form {
+  display: grid;
+  gap: 12px;
+  max-width: 420px;
+}
+.settings-shell .theme-settings {
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+}
 @media (max-width: 600px) {
   .account-page {
     padding: 72px 20px 32px;
@@ -362,5 +558,20 @@
   .account-auth-card input,
   .account-auth-card textarea {
     font-size: 16px;
+  }
+  .settings-shell-body {
+    grid-template-columns: 1fr;
+  }
+  .settings-shell-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  .settings-shell-nav button {
+    width: auto;
+    white-space: nowrap;
+  }
+  .settings-shell-main {
+    padding: 8px 20px 32px;
   }
 }

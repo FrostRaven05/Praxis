@@ -4,7 +4,21 @@ import {
   accountStorage,
   type AccountStatus,
 } from "./account-storage";
+import { ThemeSettings } from "./ThemeSettings";
+import { ProjectIcon } from "./ProjectIcon";
+import { useProjectList } from "./useProjectList";
+import {
+  clampPomodoroMinutes,
+  readPomodoroState,
+  setPomodoroDuration,
+  stopPomodoro,
+  writePomodoroState,
+  type PomodoroMode,
+  type PomodoroState,
+} from "./pomodoro";
 import "./account.css";
+
+export type SettingsSection = "account" | "pomodoro" | "appearance" | "general";
 
 export function AccountButton({
   onClick,
@@ -84,7 +98,17 @@ export function AccountPanel({ compact = false }: { compact?: boolean }) {
   );
 }
 
-export function AccountPage({ onBack }: { onBack: () => void }) {
+export function AccountPage({
+  onBack,
+  initialSection = "account",
+  revision = 0,
+  onOpenProject,
+}: {
+  onBack: () => void;
+  initialSection?: SettingsSection;
+  revision?: number;
+  onOpenProject?: (id: string) => void;
+}) {
   const [status, setStatus] = useState<AccountStatus | null>(null);
   const [mode, setMode] = useState<"login" | "register">("login");
   const [baseUrl, setBaseUrl] = useState("");
@@ -99,6 +123,9 @@ export function AccountPage({ onBack }: { onBack: () => void }) {
   const saving = useRef(false);
   const emailInput = useRef<HTMLInputElement>(null);
   const id = useId();
+  const [section, setSection] = useState<SettingsSection>(initialSection);
+  const [pomodoro, setPomodoro] = useState<PomodoroState>(() => readPomodoroState());
+  const projects = useProjectList(revision);
   async function read() {
     try {
       const next = await accountStorage.status();
@@ -152,6 +179,22 @@ export function AccountPage({ onBack }: { onBack: () => void }) {
     setShowPassword(false);
     setError("");
   }
+  function publishPomodoro(next: PomodoroState) {
+    setPomodoro(next);
+    writePomodoroState(next);
+  }
+  function togglePomodoro() {
+    const current = readPomodoroState();
+    publishPomodoro(
+      current.enabled
+        ? { ...stopPomodoro(current), enabled: false }
+        : { ...current, enabled: true },
+    );
+  }
+  function changeMinutes(mode: PomodoroMode, raw: string) {
+    const minutes = clampPomodoroMinutes(Number(raw));
+    publishPomodoro(setPomodoroDuration(readPomodoroState(), mode, minutes));
+  }
   const expired = status?.expiresAt
     ? Date.parse(status.expiresAt) <= Date.now()
     : false;
@@ -167,65 +210,93 @@ export function AccountPage({ onBack }: { onBack: () => void }) {
       )}
     </p>
   );
+  const archived = projects.items.filter(
+    (project) => project.status === "archived" || !!project.archivedAt,
+  );
+  const nav = [
+    ["account", "账户与安全"],
+    ["pomodoro", "番茄"],
+    ["appearance", "外观"],
+    ["general", "通用"],
+  ] as const;
   return (
     <main
-      className="account-page"
-      aria-label={signedIn ? "我的账号" : "账号登录页"}
+      className="settings-shell"
+      aria-label="设置"
       onKeyDown={(e) => {
         e.stopPropagation();
         if (e.key === "Escape" && !saving.current && !switching) onBack();
       }}
     >
-      <button
-        type="button"
-        className="account-page-back"
-        disabled={busy || switching}
-        onClick={onBack}
-      >
-        <svg
-          viewBox="0 0 20 20"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          aria-hidden="true"
+      <header className="settings-shell-bar">
+        <h1>设置</h1>
+        <button
+          type="button"
+          className="settings-shell-close"
+          aria-label="关闭设置"
+          disabled={busy || switching}
+          onClick={onBack}
         >
-          <path d="M16 10H4m5-5-5 5 5 5" />
-        </svg>
-        返回应用
-      </button>
-      <section
-        className="account-auth-card"
-        aria-labelledby={`${id}-auth-heading`}
-      >
-        <header className="account-login-heading">
-          <span className="account-brand" aria-hidden="true">
-            P
-          </span>
-          <h2 id={`${id}-auth-heading`}>
-            {signedIn ? "我的账号" : mode === "login" ? "登录账号" : "创建账号"}
-          </h2>
+          ×
+        </button>
+      </header>
+      <div className="settings-shell-body">
+        <nav className="settings-shell-nav" aria-label="设置分类">
+          {nav.map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              aria-current={section === key ? "page" : undefined}
+              onClick={() => setSection(key)}
+            >
+              <SettingsNavIcon name={key} />
+              {label}
+            </button>
+          ))}
+        </nav>
+        <div className="settings-shell-main">
+      {section === "account" && (
+      <section aria-labelledby={`${id}-auth-heading`}>
+        <header className="settings-pane-heading">
+          <h2 id={`${id}-auth-heading`}>账户与安全</h2>
           <p>
-            {signedIn ? "管理你的个人账号" : "同步你的项目、任务与每一步进展"}
+            {signedIn
+              ? "管理个人资料与登录。"
+              : mode === "login"
+                ? "登录后同步项目、任务与每一步进展。"
+                : "创建账号并登录。"}
           </p>
         </header>
         {signedIn ? (
-          <div className="account-profile-details">
-            <strong>{status!.user!.displayName}</strong>
-            <span>{status!.user!.email}</span>
-            <p>支持离线使用，联网后自动同步。</p>
-            <button
-              type="button"
-              className="account-profile-logout"
-              disabled={unavailable}
-              onClick={() => void run(accountStorage.logout)}
-            >
-              退出登录
-            </button>
+          <>
+            <h3 className="settings-group-title">个人资料</h3>
+            <div className="settings-rows">
+              <div className="settings-row">
+                <span>昵称</span>
+                <strong>{status!.user!.displayName}</strong>
+              </div>
+              <div className="settings-row">
+                <span>账号</span>
+                <strong>{status!.user!.email}</strong>
+              </div>
+            </div>
+            <h3 className="settings-group-title">登录与安全</h3>
+            <div className="settings-rows">
+              <button
+                type="button"
+                className="settings-row"
+                disabled={unavailable}
+                onClick={() => void run(accountStorage.logout)}
+              >
+                <span>退出登录</span>
+                <small>返回本机</small>
+              </button>
+            </div>
             <p className="account-note">
-              退出后返回本机工作空间，账号内的内容会保留。
+              支持离线使用，联网后自动同步。退出后账号内的内容会保留。
             </p>
             {errorMessage}
-          </div>
+          </>
         ) : (
           <>
             {expired && (
@@ -394,6 +465,142 @@ export function AccountPage({ onBack }: { onBack: () => void }) {
           </div>
         )}
       </section>
+      )}
+      {section === "pomodoro" && (
+        <section aria-labelledby={`${id}-pomodoro-heading`}>
+          <header className="settings-pane-heading">
+            <h2 id={`${id}-pomodoro-heading`}>番茄</h2>
+            <p>安排专注与休息时间。</p>
+          </header>
+          <h3 className="settings-group-title">专注计时</h3>
+          <div className="settings-rows">
+            <div className="settings-row">
+              <span>番茄功能开关</span>
+              <button
+                type="button"
+                className="settings-switch"
+                role="switch"
+                aria-checked={pomodoro.enabled}
+                onClick={togglePomodoro}
+              >
+                <span />
+              </button>
+            </div>
+            <label className="settings-row">
+              <span>番茄时长</span>
+              <span className="settings-minutes">
+                <input
+                  type="number"
+                  min={1}
+                  max={180}
+                  aria-label="番茄时长"
+                  disabled={!pomodoro.enabled}
+                  value={pomodoro.durations.focus}
+                  onChange={(event) => changeMinutes("focus", event.target.value)}
+                />
+                分钟
+              </span>
+            </label>
+            <label className="settings-row">
+              <span>休息时长</span>
+              <span className="settings-minutes">
+                <input
+                  type="number"
+                  min={1}
+                  max={180}
+                  aria-label="休息时长"
+                  disabled={!pomodoro.enabled}
+                  value={pomodoro.durations.short}
+                  onChange={(event) => changeMinutes("short", event.target.value)}
+                />
+                分钟
+              </span>
+            </label>
+          </div>
+        </section>
+      )}
+      {section === "appearance" && (
+        <section aria-labelledby={`${id}-theme-heading`}>
+          <header className="settings-pane-heading">
+            <h2 id={`${id}-theme-heading`}>外观</h2>
+            <p>选择强调色，背景与正文保持不变。</p>
+          </header>
+          <ThemeSettings />
+        </section>
+      )}
+      {section === "general" && (
+        <section aria-labelledby={`${id}-general-heading`}>
+          <header className="settings-pane-heading">
+            <h2 id={`${id}-general-heading`}>通用</h2>
+            <p>已归档的项目保存在这里。</p>
+          </header>
+          <h3 className="settings-group-title">归档项目</h3>
+          {projects.error ? (
+            <p className="account-error" role="alert">
+              {projects.error}{" "}
+              <button type="button" onClick={projects.reload}>重试</button>
+            </p>
+          ) : projects.loading ? (
+            <p className="account-note" role="status">正在读取归档项目…</p>
+          ) : archived.length === 0 ? (
+            <p className="account-note">暂无归档项目。</p>
+          ) : (
+            <div className="settings-rows">
+              {archived.map((project) => (
+                <button
+                  key={project.id}
+                  type="button"
+                  className="settings-row"
+                  onClick={() => onOpenProject?.(project.id)}
+                >
+                  <span className="settings-row-label">
+                    <ProjectIcon name="folder" />
+                    {project.name}
+                  </span>
+                  <small>{project.outcome || "未填写预期结果"}</small>
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+        </div>
+      </div>
     </main>
+  );
+}
+
+function SettingsNavIcon({ name }: { name: SettingsSection }) {
+  const common = {
+    viewBox: "0 0 24 24",
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.7,
+    "aria-hidden": true as const,
+  };
+  if (name === "pomodoro")
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="13" r="7" />
+        <path d="M12 13V9M9 3h6" />
+      </svg>
+    );
+  if (name === "appearance")
+    return (
+      <svg {...common}>
+        <path d="M4 14a8 8 0 0 1 14-5l2 2-3 1 1 3-2 2-3-1-2 2-2-2-3 1 1-3-3-1 2-2" />
+      </svg>
+    );
+  if (name === "general")
+    return (
+      <svg {...common}>
+        <circle cx="12" cy="12" r="3" />
+        <path d="M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6l1.4 1.4m10 10 1.4 1.4m0-12.8-1.4 1.4m-10 10-1.4 1.4" />
+      </svg>
+    );
+  return (
+    <svg {...common}>
+      <path d="M12 3 5 6v6c0 4 3 6.5 7 8 4-1.5 7-4 7-8V6Z" />
+    </svg>
   );
 }

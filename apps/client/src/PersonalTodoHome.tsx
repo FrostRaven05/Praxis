@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   personalTaskQuery,
   PersonalTaskRejectedError,
@@ -13,7 +14,6 @@ import { PersonalTaskInlineEditor } from "./PersonalTaskInlineEditor";
 import { TaskCompletionButton } from "./TaskCompletionButton";
 import { TaskCompletionTitle } from "./TaskCompletionTitle";
 import { animateTaskCompletion } from "./task-completion-motion";
-import { TaskActionMenu } from "./TaskActionMenu";
 import { PersonalTaskDetails } from "./PersonalTaskDetails";
 import { noteCardText } from "./task-note";
 import { desktopAvailable } from "./storage";
@@ -94,6 +94,8 @@ export function PersonalTodoHome({
   } | null>(null);
   const [composerLocked, setComposerLocked] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [rowMenu, setRowMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const rowMenuPanel = useRef<HTMLDivElement>(null);
   const [panelLocked, setPanelLocked] = useState(false);
   const region = useRef<HTMLElement>(null);
   const [base, setBase] = useState<PersonalTaskRead | null>(null);
@@ -105,6 +107,9 @@ export function PersonalTodoHome({
     [error, setError] = useState(""),
     [notice, setNotice] = useState("");
   const [now, setNow] = useState(() => new Date());
+  const [folded, setFolded] = useState<Record<string, boolean>>({});
+  const [addingParent, setAddingParent] = useState<string | null>(null);
+  const [subtaskTitle, setSubtaskTitle] = useState("");
   const [undo, setUndo] = useState<{
     attempt: Attempt;
     expiresAt: number;
@@ -124,7 +129,8 @@ export function PersonalTodoHome({
     saving = useRef(false),
     attempt = useRef<Attempt | null>(null),
     needsRead = useRef(false),
-    heading = useRef<HTMLHeadingElement>(null);
+    heading = useRef<HTMLHeadingElement>(null),
+    subtaskDraft = useRef<{ parentId: string; taskId: string; title: string } | null>(null);
   const callbacks = useRef({
     onBusyChange,
     onChanged,
@@ -135,7 +141,7 @@ export function PersonalTodoHome({
     onBusyChange,
     onChanged,
     externalBusy,
-    draft: editing !== null || composerLocked || panelLocked,
+    draft: editing !== null || composerLocked || panelLocked || addingParent !== null,
   };
   const refresh = useCallback(async () => {
     if (
@@ -270,15 +276,15 @@ export function PersonalTodoHome({
     return () => cancelAnimationFrame(frame);
   }, [focusRevision, loading]);
   useEffect(() => {
-    if (!externalBusy && !editing && !composerLocked && !panelLocked && needsRead.current)
+    if (!externalBusy && !editing && !composerLocked && !panelLocked && !addingParent && needsRead.current)
       void refresh();
-  }, [externalBusy, editing, composerLocked, panelLocked, refresh]);
+  }, [externalBusy, editing, composerLocked, panelLocked, addingParent, refresh]);
   useEffect(() => {
     onBusyChange?.(
-      busy || pending !== null || editing !== null || composerLocked || panelLocked,
+      busy || pending !== null || editing !== null || composerLocked || panelLocked || addingParent !== null,
     );
     return () => onBusyChange?.(false);
-  }, [busy, pending, editing, composerLocked, panelLocked, onBusyChange]);
+  }, [busy, pending, editing, composerLocked, panelLocked, addingParent, onBusyChange]);
   useEffect(() => {
     const prevent = (event: BeforeUnloadEvent) => {
       if (saving.current || attempt.current || callbacks.current.draft)
@@ -359,6 +365,45 @@ export function PersonalTodoHome({
       clearMotion();
     }
   }
+  async function addSubtask(parent: WorkTask, title: string) {
+    if (!base || !port.create || saving.current || !title.trim()) return;
+    const same =
+      subtaskDraft.current?.parentId === parent.id &&
+      subtaskDraft.current.title === title.trim();
+    const draft = same
+      ? subtaskDraft.current!
+      : {
+          parentId: parent.id,
+          taskId: crypto.randomUUID(),
+          title: title.trim(),
+        };
+    subtaskDraft.current = draft;
+    saving.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      await port.create(base, {
+        taskId: draft.taskId,
+        title: draft.title,
+        notes: "",
+        deadline: null,
+        projectId: parent.projectId,
+        parentId: parent.id,
+      });
+      subtaskDraft.current = null;
+      setSubtaskTitle("");
+      setAddingParent(parent.id);
+      if (alive.current) {
+        await refresh();
+        callbacks.current.onChanged?.();
+      }
+    } catch (error) {
+      if (alive.current) setError(message(error));
+    } finally {
+      saving.current = false;
+      if (alive.current) setBusy(false);
+    }
+  }
   const query = base
     ? personalTaskQuery(
         {
@@ -382,7 +427,45 @@ export function PersonalTodoHome({
     composerLocked ||
     panelLocked;
   const useDailyActions = desktopAvailable;
+  useEffect(() => {
+    if (!rowMenu) return;
+    const close = () => setRowMenu(null);
+    const outside = (event: PointerEvent) => {
+      if (rowMenuPanel.current?.contains(event.target as Node)) return;
+      close();
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      event.preventDefault();
+      close();
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    window.addEventListener("resize", close);
+    window.addEventListener("scroll", close, true);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+      window.removeEventListener("resize", close);
+      window.removeEventListener("scroll", close, true);
+    };
+  }, [rowMenu]);
   const selectedTask = query?.tasks.find((task) => task.id === selectedId);
+  const menuTask = rowMenu
+    ? query?.tasks.find((task) => task.id === rowMenu.id)
+    : undefined;
+  const menuHasChildren = menuTask
+    ? query!.tasks.some((child) => child.parentId === menuTask.id)
+    : false;
+  useLayoutEffect(() => {
+    const panel = rowMenuPanel.current;
+    if (!rowMenu || !panel) return;
+    const width = panel.offsetWidth;
+    const height = panel.offsetHeight;
+    panel.style.left = `${Math.max(12, Math.min(rowMenu.x, innerWidth - width - 12))}px`;
+    panel.style.top = `${Math.max(12, rowMenu.y + height + 12 <= innerHeight ? rowMenu.y : rowMenu.y - height)}px`;
+    panel.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+  }, [rowMenu]);
   const scopedTrash = (base?.trash ?? []).filter(
     (task) => task.projectId === (projectId ?? null),
   );
@@ -393,6 +476,12 @@ export function PersonalTodoHome({
     callbacks.current.onChanged?.();
     return next;
   }
+  function rooted<T extends { id: string; parentId: string | null }>(tasks: readonly T[]) {
+    return tasks.filter(
+      (task) =>
+        !task.parentId || !query!.tasks.some((parent) => parent.id === task.parentId),
+    );
+  }
   function openDetails(task: WorkTask) {
     if (useDailyActions) setSelectedId(selectedId === task.id ? null : task.id);
     else if (base) setEditing({ base, task });
@@ -400,8 +489,30 @@ export function PersonalTodoHome({
   function row(task: NonNullable<typeof query>["tasks"][number]) {
     const project = base?.work.projects.find((p) => p.id === task.projectId);
     const description = noteCardText(task.notes);
+    const children = task.parentId
+      ? []
+      : query!.tasks.filter(
+          (child) => child.parentId === task.id && child.status !== "cancelled",
+        );
+    const hasChildren = query!.tasks.some((child) => child.parentId === task.id);
     return (
-      <li className={`personal-todo-row${useDailyActions ? " uses-daily-actions" : ""}${task.status === "completed" ? " completed" : ""}${selectedId === task.id ? " selected" : ""}`} key={task.id} data-task-id={task.id} data-completion-row="">
+      <li
+        className={`personal-todo-row${useDailyActions ? " uses-daily-actions" : ""}${task.status === "completed" ? " completed" : ""}${selectedId === task.id ? " selected" : ""}`}
+        key={task.id}
+        data-task-id={task.id}
+        data-completion-row=""
+        onContextMenu={(event) => {
+          if (!useDailyActions || locked) return;
+          const target = event.target;
+          if (
+            target instanceof Element &&
+            target.closest("input, textarea, [contenteditable='true']")
+          )
+            return;
+          event.preventDefault();
+          setRowMenu({ id: task.id, x: event.clientX, y: event.clientY });
+        }}
+      >
         {useDailyActions ? (
           <TaskCompletionButton
             title={task.title}
@@ -472,31 +583,113 @@ export function PersonalTodoHome({
               </button>
             ) : null}
           </div>
-        </div>
-        {useDailyActions ? (
-          <TaskActionMenu label={`更多操作：${task.title}`} disabled={locked}>
-            {(close) => (
-              <>
-                <button type="button" onClick={() => { openDetails(task); close(); }}>打开任务详情</button>
-                {task.status !== "completed" && (
-                  <button type="button" onClick={() => {
-                    close();
-                    if (base) void perform({base, taskId: task.id, title: task.title, change: {type: "status", status: task.status === "in_progress" ? "todo" : "in_progress"}});
-                  }}>{task.status === "in_progress" ? "设为待办" : "开始任务"}</button>
-                )}
-                <button
-                  type="button"
-                  disabled={!!task.parentId || base!.work.tasks.some((other) => other.parentId === task.id)}
-                  title="移到已删除任务，可恢复"
-                  onClick={() => {
-                    close();
-                    if (base) void perform({base, taskId: task.id, title: task.title, change: {type: "delete"}});
-                  }}
-                >删除任务</button>
-              </>
+          {!task.parentId && children.length > 0 && (
+            <button
+              type="button"
+              className="personal-subtask-toggle"
+              aria-expanded={!folded[task.id]}
+              onClick={() =>
+                setFolded((current) => ({
+                  ...current,
+                  [task.id]: !current[task.id],
+                }))
+              }
+            >
+              {folded[task.id] ? "展开" : "收起"}
+            </button>
+          )}
+          {!task.parentId && children.length === 0 && addingParent !== task.id && (
+            <button
+              type="button"
+              className="personal-subtask-add"
+              disabled={locked}
+              onClick={() => {
+                setAddingParent(task.id);
+                setSubtaskTitle("");
+              }}
+            >
+              添加子任务
+            </button>
+          )}
+          {!task.parentId &&
+            !folded[task.id] &&
+            (children.length > 0 || addingParent === task.id) && (
+              <ul className="personal-subtasks">
+                {children.map((child) => (
+                  <li key={child.id} className={child.status === "completed" ? "completed" : ""}>
+                    <button
+                      type="button"
+                      className="personal-todo-check"
+                      aria-label={`${child.status === "completed" ? "重新打开" : "完成"}：${child.title}`}
+                      aria-pressed={child.status === "completed"}
+                      disabled={locked}
+                      onClick={() =>
+                        base &&
+                        void perform({
+                          base,
+                          taskId: child.id,
+                          title: child.title,
+                          change: {
+                            type: "status",
+                            status: child.status === "completed" ? "todo" : "completed",
+                          },
+                        })
+                      }
+                    >
+                      {child.status === "completed" ? "✓" : ""}
+                    </button>
+                    <button
+                      type="button"
+                      className="personal-subtask-title"
+                      disabled={locked}
+                      onClick={() => openDetails(child)}
+                    >
+                      {child.title}
+                    </button>
+                    <button
+                      type="button"
+                      className="personal-subtask-delete"
+                      aria-label={`删除子任务：${child.title}`}
+                      disabled={locked}
+                      onClick={() =>
+                        base &&
+                        void perform({
+                          base,
+                          taskId: child.id,
+                          title: child.title,
+                          change: { type: "delete" },
+                        })
+                      }
+                    >
+                      删除
+                    </button>
+                  </li>
+                ))}
+                <li>
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void addSubtask(task, subtaskTitle);
+                    }}
+                  >
+                    <input
+                      aria-label={`添加子任务：${task.title}`}
+                      placeholder="添加子任务"
+                      value={addingParent === task.id ? subtaskTitle : ""}
+                      disabled={locked}
+                      autoFocus={addingParent === task.id && children.length === 0}
+                      onFocus={() => setAddingParent(task.id)}
+                      onChange={(event) => {
+                        setAddingParent(task.id);
+                        setSubtaskTitle(event.target.value);
+                      }}
+                    />
+                  </form>
+                </li>
+              </ul>
             )}
-          </TaskActionMenu>
-        ) : (
+        </div>
+        {useDailyActions ? null : (
         <div className="personal-task-row-actions">
           <select
             aria-label={`任务状态：${task.title}`}
@@ -529,14 +722,10 @@ export function PersonalTodoHome({
             type="button"
             className="personal-todo-delete"
             aria-label={`删除：${task.title}`}
-            disabled={
-              locked ||
-              !!task.parentId ||
-              query!.tasks.some((t) => t.parentId === task.id)
-            }
+            disabled={locked || hasChildren}
             title={
-              task.parentId || query!.tasks.some((t) => t.parentId === task.id)
-                ? "包含子任务，暂不能在这里删除"
+              hasChildren
+                ? "请先处理子任务，再删除这个任务"
                 : "移到已删除任务，可恢复"
             }
             onClick={() =>
@@ -719,7 +908,7 @@ export function PersonalTodoHome({
             </div>
           )}
           {order
-            .filter((key) => query.groups[key].length > 0)
+            .filter((key) => rooted(query.groups[key]).length > 0)
             .map((key) => (
               <section
                 className="personal-todo-group"
@@ -729,17 +918,17 @@ export function PersonalTodoHome({
               >
                 <h2 id={`personal-group-${key}`}>
                   <i aria-hidden="true">{icons[key]}</i>
-                  {labels[key]} <span>{query.groups[key].length}</span>
+                  {labels[key]} <span>{rooted(query.groups[key]).length}</span>
                 </h2>
-                <ul>{query.groups[key].map(row)}</ul>
+                <ul>{rooted(query.groups[key]).map(row)}</ul>
               </section>
             ))}
-          {query.completed.length > 0 && (
+          {rooted(query.completed).length > 0 && (
             <details className="personal-todo-completed">
               <summary>
-                已完成 <span>{query.completed.length}</span>
+                已完成 <span>{rooted(query.completed).length}</span>
               </summary>
-              <ul>{query.completed.map(row)}</ul>
+              <ul>{rooted(query.completed).map(row)}</ul>
             </details>
           )}
           {scopedTrash.length > 0 ? (
@@ -779,6 +968,85 @@ export function PersonalTodoHome({
           ) : null}
         </>
       )}
+      {useDailyActions && rowMenu && menuTask &&
+        createPortal(
+          <div
+            ref={rowMenuPanel}
+            className="task-action-popover"
+            role="menu"
+            aria-label={`任务操作：${menuTask.title}`}
+            style={{ left: rowMenu.x, top: rowMenu.y }}
+            onKeyDown={(event) => {
+              if (
+                event.altKey ||
+                event.ctrlKey ||
+                event.metaKey ||
+                !(event.target instanceof HTMLButtonElement)
+              )
+                return;
+              const buttons = Array.from(
+                rowMenuPanel.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)") ?? [],
+              );
+              const index = buttons.indexOf(event.target);
+              if (index < 0) return;
+              const next =
+                event.key === "ArrowDown"
+                  ? (index + 1) % buttons.length
+                  : event.key === "ArrowUp"
+                    ? (index + buttons.length - 1) % buttons.length
+                    : event.key === "Home"
+                      ? 0
+                      : event.key === "End"
+                        ? buttons.length - 1
+                        : null;
+              if (next !== null) {
+                event.preventDefault();
+                buttons[next]?.focus();
+              }
+            }}
+          >
+            {menuTask.status !== "completed" && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setRowMenu(null);
+                  if (base)
+                    void perform({
+                      base,
+                      taskId: menuTask.id,
+                      title: menuTask.title,
+                      change: {
+                        type: "status",
+                        status: menuTask.status === "in_progress" ? "todo" : "in_progress",
+                      },
+                    });
+                }}
+              >
+                {menuTask.status === "in_progress" ? "设为待办" : "开始任务"}
+              </button>
+            )}
+            <button
+              type="button"
+              role="menuitem"
+              disabled={menuHasChildren}
+              title={menuHasChildren ? "请先处理子任务，再删除这个任务" : "移到已删除任务，可恢复"}
+              onClick={() => {
+                setRowMenu(null);
+                if (base)
+                  void perform({
+                    base,
+                    taskId: menuTask.id,
+                    title: menuTask.title,
+                    change: { type: "delete" },
+                  });
+              }}
+            >
+              删除任务
+            </button>
+          </div>,
+          document.body,
+        )}
       {useDailyActions && selectedTask && base && (
         <PersonalTaskDetails
           key={selectedTask.id}

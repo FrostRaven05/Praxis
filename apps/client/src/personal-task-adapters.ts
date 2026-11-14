@@ -114,6 +114,7 @@ export function createDesktopPersonalTasks(
               waitingNote: "",
               labels: [],
               arrangeOnCreate: false,
+              ...(draft.parentId ? { parentId: draft.parentId } : {}),
             },
           },
         };
@@ -273,6 +274,11 @@ export function createMobilePersonalTasks(
       prepareCreate(base, draft, operationId, occurredAt) {
         const source = sources.get(base.work);
         if (!source) throw Error("请通过个人任务入口重新读取");
+        const parent = draft.parentId
+          ? source.snapshot.entities.find(
+              (entity) => entity.kind === "task" && entity.id === draft.parentId,
+            )
+          : undefined;
         const value = draft.deadline;
         const command: WorkspaceCommand = {
           operationId,
@@ -291,8 +297,8 @@ export function createMobilePersonalTasks(
                 title: draft.title,
                 notes: draft.notes,
                 projectId: draft.projectId,
-                parentId: null,
-                sectionId: null,
+                parentId: draft.parentId ?? null,
+                sectionId: parent?.data.sectionId ?? null,
                 status: "todo",
                 priority: 0,
                 tags: [],

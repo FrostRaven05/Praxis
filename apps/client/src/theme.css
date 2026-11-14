@@ -1,8 +1,8 @@
 /* DESIGN.md is the source of truth. Theme values live only here. */
 :root {
   color-scheme: light;
-  --font-ui: "HarmonyOS Sans SC", "Segoe UI", "Microsoft YaHei", sans-serif;
-  --font-data: ui-monospace, "Cascadia Code", Consolas, monospace;
+  --font-ui: "Ink Free", "LXGW WenKai Light", "霞鹜文楷 Light", "LXGW WenKai", "霞鹜文楷", serif;
+  --font-data: "Ink Free", "LXGW WenKai Light", "霞鹜文楷 Light", "LXGW WenKai", "霞鹜文楷", serif;
   --primary-light: #a6d6c3;
   --primary: var(--primary-light);
   --primary-light-hover: #94bfae;

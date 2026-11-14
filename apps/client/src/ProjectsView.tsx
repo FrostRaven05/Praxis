@@ -170,6 +170,7 @@ export function ProjectsView({
                 key={form === "new" ? "new" : selectedId}
                 initial={form === "edit" ? (selected ?? null) : null}
                 createSave={() => desktopProjectSave(form === "edit" ? (selected ?? null) : null)}
+                modal={form === "edit"}
                 onBusyChange={setFormLocked}
                 onCancel={() => setForm(null)}
                 onSaved={async id => {
@@ -179,7 +180,7 @@ export function ProjectsView({
                 }}
               />
             )}
-            {!form && selected && (
+            {form !== "new" && selected && (
               <>
                 {(selected.status === "archived" || !!selected.archivedAt) && (
                   <button className="project-back-button" onClick={onSettings}>
@@ -220,16 +221,14 @@ export function ProjectsView({
                     {selected.targetDate && <small>目标日期 {selected.targetDate}</small>}
                   </div>
                   {work && <PersonalProjectProgress work={work} projectId={selected.id} />}
-                </header>
-                {onOpenPersonalAgent && (
-                  <div className="ai-planner-launch-group">
-                    <button type="button" className="ai-planner-launch" disabled={locked || loading || (selected.status !== undefined && selected.status !== "active")} onClick={() => onOpenPersonalAgent("decompose",selected.id)}>✦ 拆成步骤</button>
-                    <button type="button" className="ai-planner-launch" disabled={locked || loading} onClick={() => onOpenPersonalAgent("next",selected.id)}>✦ 下一步建议</button>
-                  </div>
-                )}
-                <div className="project-view-toolbar">
-                  <span className="project-section-label">任务</span>
-                  <div className="project-view-controls">
+                  <div className="project-summary-aside">
+                    {onOpenPersonalAgent && (
+                      <div className="ai-planner-launch-group">
+                        <button type="button" className="ai-planner-launch" disabled={locked || loading || (selected.status !== undefined && selected.status !== "active")} onClick={() => onOpenPersonalAgent("decompose",selected.id)}>✦ 拆成步骤</button>
+                        <button type="button" className="ai-planner-launch" disabled={locked || loading} onClick={() => onOpenPersonalAgent("next",selected.id)}>✦ 下一步建议</button>
+                      </div>
+                    )}
+                    <div className="project-view-controls">
                     <div
                       className="project-view-tabs"
                       role="tablist"
@@ -281,7 +280,6 @@ export function ProjectsView({
                           }}
                         >
                           <ProjectIcon name={key} />
-                          <span>{label}</span>
                         </button>
                       ))}
                     </div>
@@ -300,7 +298,11 @@ export function ProjectsView({
                         )}
                       </TaskActionMenu>
                     )}
+                    </div>
                   </div>
+                </header>
+                <div className="project-view-toolbar">
+                  <span className="project-section-label">任务</span>
                 </div>
                 {loading && (
                   <p className="project-loading" role="status">

@@ -22,6 +22,7 @@ import {
 } from "./TaskPanelFields";
 import { TaskDescription, TaskSubtitle } from "./TaskDescription";
 import { TaskProjectControl } from "./TaskProjectControl";
+import { TaskSubtasks } from "./TaskSubtasks";
 
 const scheduleEditor = new EditTask(editStorage);
 const detailsEditor = new TaskDetailEditor(taskDetailsStorage);
@@ -469,6 +470,11 @@ export function TaskDetailPanel({
                 onChange={(value) => changed(setDeadline, value, true)}
               />
             </div>
+            <TaskSubtasks
+              taskId={task.taskId}
+              disabled={loading || !base}
+              onChanged={() => void onUpdated()}
+            />
             <TaskWorkload
               estimate={estimate}
               disabled={loading || !base}
