@@ -1,0 +1,26 @@
+{
+  "passed": true,
+  "completedAt": "2026-11-12T15:07:32.670Z",
+  "runtime": "real Tauri WebView2 + Android 17/API 37 isolated emulator; local HTTPS account/entity service; real configured model",
+  "device": {
+    "serial": "emulator-5560",
+    "avd": "Praxis_P4",
+    "packageId": "com.praxis.mobile.qa"
+  },
+  "syntheticDataOnly": true,
+  "checks": [
+    "actual Tauri and isolated Android package start with two primary destinations and fresh guest storage",
+    "actual guest project/task identity, progress, completion XP, deletion and checked undo round-trip",
+    "actual desktop UI creates/validates backup, restarts into a restored copy and keeps the original guest identity/completion",
+    "actual HTTPS account registration/login and cross-device same-ID state/progress/XP synchronization",
+    "offline Android save survives HTTPS server downtime and synchronizes once after reconnect",
+    "actual model generation stays draft until one confirmation; edited fields sync; Android AI next-step explanation remains task-read-only",
+    "actual Android process restart and second-account isolation retain the first account's synchronized tasks"
+  ],
+  "errors": [],
+  "dataDirectory": "C:\\Project\\01Project\\Praxis\\.scratch\\p4-native-GwdfWi",
+  "limits": [
+    "Android emulator, not physical handset",
+    "System IME handwriting/Chinese candidate selection is not replaced by Playwright text entry"
+  ]
+}

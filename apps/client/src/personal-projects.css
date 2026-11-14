@@ -1,0 +1,177 @@
+.personal-project-list {
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+.personal-project-list > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+.personal-project-list h2 {
+  margin: 0 0 6px;
+}
+.personal-project-list small,
+.personal-project-progress small {
+  color: var(--text-secondary, #818692);
+}
+.personal-project-list .personal-project-card {
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border, #8884);
+}
+.personal-project-list .personal-project-open {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+.personal-project-open strong {
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+.personal-project-open span {
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.personal-project-card p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.personal-project-progress {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 13px;
+  padding: 12px 0;
+}
+.personal-project-progress progress {
+  width: 100px;
+  height: 6px;
+  accent-color: #68845b;
+}
+.personal-project-progress .personal-project-overdue {
+  color: #cb664f;
+}
+.personal-project-list .personal-project-archive {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.personal-project-card-actions {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.personal-project-card-actions button {
+  font-size: 12px;
+}
+.personal-project-form {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+.personal-project-form label {
+  font-size: 14px;
+}
+.personal-project-form input,
+.personal-project-form textarea {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--border, #8886);
+  border-radius: 8px;
+  background: var(--surface, transparent);
+  color: inherit;
+  box-sizing: border-box;
+  font: inherit;
+}
+.personal-project-form .personal-project-form-actions {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+}
+.personal-project-form button,
+.personal-project-list > header button {
+  min-height: 44px;
+  padding: 8px 16px;
+}
+.personal-project-form [role="alert"] {
+  color: #cb664f;
+  overflow-wrap: anywhere;
+}
+.personal-project-modal {
+  width: min(calc(100% - 24px), 560px);
+  max-height: 90dvh;
+  overflow-y: auto;
+  padding: 0;
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--text-primary);
+}
+.personal-project-modal::backdrop {
+  background: #0007;
+}
+.sidebar-project-heading .project-list-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-control);
+  color: inherit;
+  padding: 4px 6px;
+  font: inherit;
+}
+.sidebar-project-heading .project-list-link:hover:not(:disabled),
+.sidebar-project-heading .project-list-link[aria-current="page"] {
+  background: var(--selected);
+  color: var(--primary-text);
+}
+.sidebar-project-heading .project-list-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.pm-app .personal-project-list {
+  padding: 20px 20px 24px;
+}
+.pm-app .personal-project-card-actions button {
+  min-height: 44px;
+  padding: 8px 0;
+}
+.pm-app .personal-project-list .personal-project-open {
+  min-height: 44px;
+}
+.projects-view .personal-project-list .personal-project-open {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+  padding: 0;
+  min-height: 32px;
+}
+@media (max-width: 600px) {
+  .personal-project-progress progress {
+    width: 70px;
+  }
+  .personal-project-modal {
+    padding: 12px;
+  }
+}

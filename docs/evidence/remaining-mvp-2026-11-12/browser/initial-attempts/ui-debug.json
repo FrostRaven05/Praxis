@@ -1,0 +1,7 @@
+{
+  "href": "http://127.0.0.1:5173/__personal-todo?mode=mobile",
+  "mode": "mobile",
+  "tauri": false,
+  "internals": false,
+  "tasks": 13
+}

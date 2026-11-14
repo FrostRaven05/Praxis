@@ -1,0 +1,73 @@
+{
+  "date": "2026-11-11",
+  "stage": "P0-02",
+  "scope": "personal-only for entire product",
+  "passed": true,
+  "typecheckExitCode": 0,
+  "typescriptExitCode": 0,
+  "typescriptFilesPassed": 47,
+  "typescriptTestsPassed": 275,
+  "nativeExitCode": 0,
+  "nativeTestsPassed": 176,
+  "newMobileCompatibilityTests": 3,
+  "newNativeCompatibilityTests": 2,
+  "desktopUpgrade": {
+    "beforeUpgradeBackupAllTablesEqual": true,
+    "fromSchema": 10,
+    "originalTaskVersion": 7,
+    "queuePreserved": true,
+    "reopenAllTablesEqual": true,
+    "synthetic": true,
+    "taskIdUnchanged": true,
+    "toSchema": 25,
+    "unknownCompletionStillNull": true
+  },
+  "desktopRoundtrip": {
+    "aiReceipts": 1,
+    "allTablesEqualAfterRestore": true,
+    "claimedRewards": 1,
+    "legacyCredits": 1,
+    "originalUnchanged": true,
+    "outboxRows": 3,
+    "pendingCommands": 1,
+    "schema": 25,
+    "stableTaskIdAcrossProjectChanges": true,
+    "synthetic": true,
+    "tablesCompared": 57,
+    "taskVersions": [
+      7,
+      8,
+      9
+    ],
+    "unknownTableRetained": true
+  },
+  "mobileCoverage": "Schema 2 through 5 scripts and current storage tested on host SQLite; not Android device acceptance",
+  "checkedPreExistingFiles": 524,
+  "expectedExistingChanges": [
+    {
+      "path": "docs/mvp-development-plan-2026-11-09.md",
+      "beforeSha256": "78FF3A7DB812C199E973107624CD5060286A7345C93E676AF2C18606CBEEAF90",
+      "afterSha256": "B9611560D0EBBC98B207BC73AB56402E7D201BED4F912C43C37601A19F7813FE"
+    },
+    {
+      "path": "docs/prd-mvp-v0.1.md",
+      "beforeSha256": "3E87EEA906C387A97D8724CBD832F6B7BAD15BBF76BCFDBF53D7A605AB5658B1",
+      "afterSha256": "97D3EC0F86E2A83570FBDE512BC58B035C65EB4B2185408F9F352410C1CB8152"
+    }
+  ],
+  "unexpectedExistingChanges": [],
+  "productionCodeChanged": false,
+  "migrationFilesChanged": false,
+  "realUserDataRead": false,
+  "realUserMigration": false,
+  "deployed": false,
+  "completedTasks": 2,
+  "pendingTasks": 16,
+  "nextTask": "P0-03",
+  "brokenDocumentLinks": [],
+  "verificationCommands": [
+    "pnpm.cmd typecheck",
+    "pnpm.cmd test",
+    "cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml --locked"
+  ]
+}

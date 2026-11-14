@@ -1,0 +1,41 @@
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\praxis_desktop_lib-0fraqoia1443m\s-ho2dkgvlj8-02de1l1-working`
+
+warning: linker stdout: 正在创建库 C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\deps\praxis_desktop_lib.dll.lib 和对象 C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\deps\praxis_desktop_lib.dll.exp
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `praxis-desktop` (lib) generated 2 warnings
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\productivity-32fbdhyy68o6x\s-ho2dknlnoi-155bibk-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\praxis_desktop-1ufkjqwnni38j\s-ho2dknls4m-1ib6l3j-working`
+
+   Compiling praxis-desktop v0.1.0 (C:\Project\01Project\Praxis\apps\desktop\src-tauri)
+warning: `praxis-desktop` (test "productivity") generated 1 warning
+warning: `praxis-desktop` (bin "praxis-desktop") generated 1 warning
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\personal_inline_tasks-2qd33411vuq2s\s-ho2dm5t1rr-0eqejhh-working`
+
+warning: `praxis-desktop` (test "personal_inline_tasks") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.47s
+     Running tests\personal_inline_tasks.rs (apps\desktop\src-tauri\target\debug\deps\personal_inline_tasks-06d13f60f33b7fad.exe)
+
+running 2 tests
+test closed_project_rejects_new_tasks_atomically_but_keeps_existing_task_edits_available ... ok
+test inline_creation_edit_and_three_states_keep_one_unplanned_identity_and_old_typed_time ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+     Running tests\productivity.rs (apps\desktop\src-tauri\target\debug\deps\productivity-e5d2f5f90647b06e.exe)
+
+running 9 tests
+test invalid_fields_stale_writes_and_outbox_failures_are_atomic ... ok
+test automatic_postponement_keeps_arrangement_identity_and_merges_date_collisions ... ok
+test parent_end_requires_confirmation_and_reopen_preserves_completion_history ... ok
+test automatic_postponement_handles_a_skipped_dst_hour ... ok
+test typed_times_labels_days_and_retry_survive_restart ... ok
+test sections_subtrees_cycles_and_stale_preview ... ok
+test waiting_clears_next_action_and_project_archive_reopen_is_atomic ... ok
+test automatic_postponement_preserves_deadlines_times_and_future_choices ... ok
+test schema_ten_upgrade_maps_dates_preserves_legacy_history_and_backups ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.69s
+

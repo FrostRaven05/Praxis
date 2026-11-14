@@ -105,6 +105,8 @@ export interface WorkspaceEntity {
   updatedAt: string;
 }
 export interface WorkspaceSnapshot {
+  /** Captured with the entities; callers can reject a workspace switch during a read. */
+  workspaceId?: string;
   entities: WorkspaceEntity[];
   pendingOperations: number;
 }
@@ -120,10 +122,49 @@ export interface WorkspaceChange {
   data: Record<string, unknown>;
   deleted?: boolean;
 }
+export interface AiRecoveryReadSet {
+  projectId: string;
+  entities: { id: string; version: number }[];
+}
+/** A conservative local read set: shared records are guarded without sending their content to AI. */
+export function aiRecoveryReadSet(snapshot: WorkspaceSnapshot, projectId: string): AiRecoveryReadSet {
+  const live = snapshot.entities.filter(entity => !entity.deleted);
+  const targets = new Set([projectId, ...snapshot.entities.filter(entity => entity.kind === "task" && entity.data.projectId === projectId).map(entity => entity.id)]);
+  const references = (value: unknown): boolean => typeof value === "string" ? targets.has(value)
+    : Array.isArray(value) ? value.some(references)
+    : !!value && typeof value === "object" && Object.values(value).some(references);
+  const recordKinds = new Set(["record", "review", "strategy", "decision"]);
+  const recordIds = new Set(live.filter(entity => recordKinds.has(entity.kind) && references(entity.data)).map(entity => entity.id));
+  for (const entity of live) {
+    const row = entity.data.row as Record<string, unknown> | undefined;
+    if (entity.kind === "desktop_row" && entity.data.table === "record_links" && row && targets.has(String(row.target_id))) recordIds.add(String(row.record_id));
+  }
+  return { projectId, entities: live.filter(entity => {
+    if (recordKinds.has(entity.kind)) return recordIds.has(entity.id);
+    if (entity.kind === "plan") return references(entity.data);
+    if (entity.kind !== "desktop_row") return false;
+    const row = entity.data.row as Record<string, unknown> | undefined;
+    if (!row) return false;
+    return references(row) || (["record_links", "weekly_reviews"].includes(String(entity.data.table)) && recordIds.has(String(row.record_id)));
+  }).map(entity => ({ id: entity.id, version: entity.version })).sort((a, b) => a.id.localeCompare(b.id)) };
+}
 export interface WorkspaceCommand {
+  preserveCompletionFact?: {taskId:string;operationId:string;expectedVersion:number};
   operationId: string;
   occurredAt: string;
   changes: WorkspaceChange[];
+  /** Local transaction preconditions; never projected into the sync protocol. */
+  expectedWorkspaceId?: string;
+  /** Personal status/move previews guard the complete live task set transactionally. */
+  expectedTaskVersions?: {id:string;version:number}[];
+  expectedProjectVersions?: {id:string;version:number}[];
+  expectedAiRunUnused?: string;
+  expectedAiRecoveryReadSet?: AiRecoveryReadSet;
+  expectedProjectTasks?: {
+    projectId: string;
+    projectVersion: number;
+    tasks: { id: string; version: number }[];
+  };
 }
 export class WorkspaceRejectedError extends Error {}
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -142,10 +183,13 @@ function date(value: unknown) {
 export async function readWorkspace(
   db: Connection,
 ): Promise<WorkspaceSnapshot> {
+  const workspace = (await db.query("SELECT id FROM mobile_workspaces WHERE active=1")).values?.[0];
+  if (!workspace) throw new WorkspaceRejectedError("个人工作空间不存在");
+  const workspaceId = String(workspace.id);
   const rows =
     (
       await db.query(
-        "SELECT * FROM mobile_entities WHERE workspace_id=(SELECT id FROM mobile_workspaces WHERE active=1) ORDER BY created_at,id",
+        "SELECT * FROM mobile_entities WHERE workspace_id=? ORDER BY created_at,id", [workspaceId],
       )
     ).values ?? [];
   const entities = rows.map((row) => ({
@@ -159,10 +203,10 @@ export async function readWorkspace(
   }));
   const pending = (
     await db.query(
-      "SELECT COUNT(*) AS count FROM mobile_operations WHERE workspace_id=(SELECT id FROM mobile_workspaces WHERE active=1)",
+      "SELECT COUNT(*) AS count FROM mobile_operations WHERE workspace_id=?", [workspaceId],
     )
   ).values?.[0];
-  return { entities, pendingOperations: Number(pending?.count ?? 0) };
+  return { workspaceId, entities, pendingOperations: Number(pending?.count ?? 0) };
 }
 export function validateGraph(entities: WorkspaceEntity[]) {
   if (entities.filter((e) => e.kind === "settings" && !e.deleted).length > 1)
@@ -651,10 +695,30 @@ export async function changeWorkspace(
     command.changes.length > 10000
   )
     reject("操作数据无效。");
+  const guard = command.expectedProjectTasks;
+  const personalGuard = command.expectedTaskVersions;
+  if (personalGuard !== undefined && (!Array.isArray(personalGuard) || personalGuard.length>10000 || personalGuard.some(t=>!t || !uuid.test(t.id) || !Number.isSafeInteger(t.version) || t.version<1) || new Set(personalGuard.map(t=>t.id)).size!==personalGuard.length)) reject("个人任务预览版本无效。");
+  const personalProjects = command.expectedProjectVersions;
+  if (personalProjects !== undefined && (!Array.isArray(personalProjects) || personalProjects.length>10000 || personalProjects.some(p=>!p || !uuid.test(p.id) || !Number.isSafeInteger(p.version) || p.version<1) || new Set(personalProjects.map(p=>p.id)).size!==personalProjects.length)) reject("个人项目预览版本无效。");
+  const recoveryGuard = command.expectedAiRecoveryReadSet;
+  if (
+    (command.expectedAiRunUnused !== undefined && !uuid.test(command.expectedAiRunUnused)) ||
+    (command.expectedWorkspaceId !== undefined && (typeof command.expectedWorkspaceId !== "string" || !command.expectedWorkspaceId || command.expectedWorkspaceId.length > 200)) ||
+    (guard !== undefined && (!guard || !uuid.test(guard.projectId) || !Number.isSafeInteger(guard.projectVersion) || guard.projectVersion < 1 ||
+      !Array.isArray(guard.tasks) || guard.tasks.length > 100 ||
+      guard.tasks.some(t => !t || !uuid.test(t.id) || !Number.isSafeInteger(t.version) || t.version < 1) ||
+      new Set(guard.tasks.map(t => t.id)).size !== guard.tasks.length))
+  ) reject("AI_INVALID_COMMAND");
+  if (recoveryGuard !== undefined && (!recoveryGuard || !uuid.test(recoveryGuard.projectId) ||
+      !Array.isArray(recoveryGuard.entities) || recoveryGuard.entities.length > 10000 ||
+      recoveryGuard.entities.some(entity => !entity || !uuid.test(entity.id) || !Number.isSafeInteger(entity.version) || entity.version < 1) ||
+      new Set(recoveryGuard.entities.map(entity => entity.id)).size !== recoveryGuard.entities.length)) reject("AI_INVALID_COMMAND");
   const payload = JSON.stringify(command);
   if (payload.length > 10_000_000) reject("单次内容过大，请分批保存。");
   await db.beginTransaction();
   try {
+    if (command.expectedWorkspaceId !== undefined &&
+        (await listWorkspaces(db)).find(w => w.active)?.id !== command.expectedWorkspaceId) reject("AI_STALE_PROJECT");
     const replay = (
       await db.query(
         "SELECT payload,workspace_id FROM mobile_operations WHERE operation_id=?",
@@ -673,6 +737,40 @@ export async function changeWorkspace(
     }
     const snapshot = await readWorkspace(db);
     const entities = new Map(snapshot.entities.map((e) => [e.id, e]));
+    const recovered=command.preserveCompletionFact;
+    if(recovered){
+      const current=entities.get(recovered.taskId),saved=current?.data._personalUndo as {operationId?:unknown;version?:unknown;before?:Record<string,unknown>}|undefined;
+      const change=command.changes.find(c=>c.id===recovered.taskId && c.kind==="task");
+      if(!current || current.deleted || !saved || saved.operationId!==recovered.operationId || saved.version!==recovered.expectedVersion || current.version!==recovered.expectedVersion || !change || change.expectedVersion!==recovered.expectedVersion || !saved.before || ["status","waiting","completedAt","statusReason"].some(key=>JSON.stringify(change.data[key]??null)!==JSON.stringify(saved.before![key]??null)))reject("任务已被后续修改，无法恢复原完成事实。");
+    }
+    if (personalGuard) {
+      const expected = new Map(personalGuard.map(t=>[t.id,t.version]));
+      const liveTasks = snapshot.entities.filter(e=>e.kind==="task" && !e.deleted);
+      if (expected.size!==liveTasks.length || liveTasks.some(t=>expected.get(t.id)!==t.version)) reject("任务已变更，请重新预览；当前输入仍保留。");
+    }
+    if (personalProjects) {
+      const expected = new Map(personalProjects.map(p=>[p.id,p.version]));
+      const liveProjects = snapshot.entities.filter(e=>e.kind==="project" && !e.deleted);
+      if (expected.size!==liveProjects.length || liveProjects.some(p=>expected.get(p.id)!==p.version)) reject("项目已变更，请重新预览；当前输入仍保留。");
+    }
+    if (command.expectedAiRunUnused && snapshot.entities.some(e => {
+      if (e.kind !== "capture") return false;
+      const entries = [...(Array.isArray(e.data.aiApplications) ? e.data.aiApplications : []), e.data.aiApplication];
+      return entries.some(a => a && typeof a === "object" && (a as { runId?: unknown }).runId === command.expectedAiRunUnused);
+    })) reject("AI_ALREADY_APPLIED");
+    if (guard) {
+      const project = entities.get(guard.projectId);
+      const basis = new Map(guard.tasks.map(t => [t.id, t.version]));
+      const tasks = snapshot.entities.filter(e => !e.deleted && e.kind === "task" && e.data.projectId === guard.projectId);
+      if (!project || project.deleted || project.kind !== "project" || project.version !== guard.projectVersion ||
+          project.data.status !== "active" || project.data.archivedAt || tasks.length !== basis.size ||
+          tasks.some(t => basis.get(t.id) !== t.version)) reject("AI_STALE_PROJECT");
+    }
+    if (recoveryGuard) {
+      const current = aiRecoveryReadSet(snapshot, recoveryGuard.projectId);
+      const frozen = [...recoveryGuard.entities].sort((a, b) => a.id.localeCompare(b.id));
+      if (JSON.stringify(current.entities) !== JSON.stringify(frozen)) reject("AI_STALE_PROJECT");
+    }
     // Undo is validated against the current transactional graph, not merely output
     // versions: adding a child/reference does not increment its target's version.
     const references = (value: unknown, id: string): boolean =>
@@ -696,6 +794,24 @@ export async function changeWorkspace(
           .filter((change) => change.deleted === true)
           .map((change) => change.id),
       );
+      const originalOutputIds = new Set(
+        (original.data.outputs as Record<string, unknown>[]).map(o => String(o.id)),
+      );
+      // Edges frozen in the original AI application are internal outputs too.
+      // Later-added or modified edges remain external references and block undo.
+      const aiApplication = original.data.aiApplication as { dependencyRows?: { id: string; version: number }[] } | undefined;
+      if (Array.isArray(aiApplication?.dependencyRows)) {
+        for (const frozen of aiApplication.dependencyRows) {
+          const edge = entities.get(frozen.id);
+          const row = edge?.data.row as Record<string, unknown> | undefined;
+          const deletion = command.changes.find(change => change.id === frozen.id && change.deleted === true);
+          if (edge && !edge.deleted && edge.kind === "desktop_row" && edge.data.table === "task_dependencies" &&
+              frozen.version === edge.version && deletion?.expectedVersion === edge.version &&
+              row && originalOutputIds.has(String(row.task_id)) && originalOutputIds.has(String(row.predecessor_id))) {
+            originalOutputIds.add(edge.id);
+          }
+        }
+      }
       for (const output of original.data.outputs as Record<string, unknown>[]) {
         const id = String(output.id);
         if (!removed.has(id)) continue;
@@ -715,11 +831,6 @@ export async function changeWorkspace(
           reject("澄清输出已有后续关联，请保留输出并恢复原文。");
         // Explicitly deleting newly added dependents in the same undo does not
         // make the undo safe: those dependents were not part of the capture.
-        const originalOutputIds = new Set(
-          (original.data.outputs as Record<string, unknown>[]).map((o) =>
-            String(o.id),
-          ),
-        );
         if (
           snapshot.entities.some(
             (dependent) =>
@@ -892,7 +1003,8 @@ export async function changeWorkspace(
           )
         )
           reject("请先完成或取消全部子任务，再完成父任务。");
-        if (e.data.status === "completed" && !e.data.completedAt)
+        const previous = snapshot.entities.find(old=>old.id===e.id);
+        if (e.data.status === "completed" && !e.data.completedAt && previous?.data.status!=="completed" && recovered?.taskId!==e.id)
           modify(e, { ...e.data, completedAt: command.occurredAt });
         else if (e.data.status !== "completed" && e.data.completedAt)
           modify(e, { ...e.data, completedAt: null });

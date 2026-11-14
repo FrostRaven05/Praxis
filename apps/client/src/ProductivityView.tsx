@@ -17,9 +17,14 @@ import {
 import { DateStrip } from "./DateStrip";
 import { upcomingDayRows } from "./day-timeline";
 import { TaskPanelIcon } from "./TaskPanelIcon";
+import { DatePicker } from "./DatePicker";
+import { shiftCalendarDate } from "./calendar-controls";
 import { invoke } from "@tauri-apps/api/core";
+import { readPersonalWork } from "./personal-task-storage";
 import {
   calendarDate,
+  deadlineToLocal,
+  deadlineFromLocal,
   dateAfter,
   dayRows,
   timeLabel,
@@ -34,14 +39,16 @@ import {
 import { RetriableCommands } from "../../../packages/application/src/retriable-commands";
 import { RelatedRecords } from "./RelatedRecords";
 import "./productivity.css";
+import "./task-editor.css";
 type Action = Record<string, unknown> & { type: string };
 type Command = { operationId: string; occurredAt: string; action: Action };
 const retry = new RetriableCommands<Command>();
 export const readWork = async () => {
   await prepareDailyTasks();
-  return invoke<WorkSnapshot>("productivity_snapshot");
+  return readPersonalWork();
 };
-async function send(action: Action) {
+export async function sendWorkAction(action: Action) {
+  await prepareDailyTasks();
   await retry.execute(
     action.type,
     (c) => JSON.stringify(c.action) === JSON.stringify(action),
@@ -128,8 +135,12 @@ export function ProductivityView({
   onTabChange,
   dailyRevision,
   onZoneChange,
+  editorOnly = false,
+  settingsOnly = false,
+  onEditorClosed,
+  onTaskCreated,
 }: {
-  initialTab?: "today" | "search";
+  initialTab?: "today" | "search" | "trash";
   initialTaskId?: string | null;
   initialProjectId?: string | null;
   initialReviewId?: string | null;
@@ -143,6 +154,10 @@ export function ProductivityView({
   onTabChange?: (tab: string) => void;
   dailyRevision?: string;
   onZoneChange?: (zone: string) => void;
+  editorOnly?: boolean;
+  settingsOnly?: boolean;
+  onEditorClosed?: () => void;
+  onTaskCreated?: (title: string, plan: TimeValue | null) => void;
 }) {
   const [data, setData] = useState<WorkSnapshot | null>(null),
     [error, setError] = useState(""),
@@ -252,7 +267,7 @@ export function ProductivityView({
     setBusy(true);
     setError("");
     try {
-      await send(action);
+      await sendWorkAction(action);
       await refresh();
       onChanged();
       return true;
@@ -372,16 +387,95 @@ export function ProductivityView({
       </article>
     );
   }
+  function closeEditor() {
+    setEdit(null);
+    onEditorClosed?.();
+  }
   if (!data)
     return (
-      <section className="work-view">
+      <section className={editorOnly ? "work-overlay" : "work-view"}>
         <p>{error || "正在读取本地工作空间…"}</p>
         <button
           onClick={() => void refresh().catch((e) => setError(errorText(e)))}
         >
           重新加载
         </button>
+        {editorOnly && <button onClick={closeEditor}>关闭任务编辑</button>}
       </section>
+    );
+  const overlays = (
+    <>
+      {edit && (
+        <div
+          className={`work-overlay task-editor-overlay ${edit === "new" ? "quick-task-overlay" : "task-properties-overlay"}`}
+          role="dialog"
+          aria-modal="true"
+          aria-label="任务属性"
+        >
+          <div>
+            {error && <p role="alert">{error}</p>}
+            <TaskEditor
+              key={edit === "new" ? "new" : edit.id}
+              task={edit === "new" ? null : edit}
+              initialPlan={
+                renderToday && (tab === "today" || tab === "upcoming")
+                  ? { kind: "date", date }
+                  : null
+              }
+              onCreated={onTaskCreated}
+              data={data}
+              zone={zone}
+              save={save}
+              onSplitSaved={async () => {
+                await refresh();
+                onChanged();
+                closeEditor();
+              }}
+              close={closeEditor}
+              confirm={setConfirm}
+            />
+          </div>
+        </div>
+      )}
+      {confirm && (
+        <div
+          className="work-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-label="确认影响"
+        >
+          <div className="work-dialog">
+            <h2>确认影响</h2>
+            {error && <p role="alert">{error}</p>}
+            <p>{confirm.description}</p>
+            <button
+              disabled={busy}
+              onClick={async () => {
+                if (await save(confirm.action)) {
+                  setConfirmedAction(confirm.action);
+                  setConfirm(null);
+                  closeEditor();
+                }
+              }}
+            >
+              确认执行
+            </button>
+            <button disabled={busy} onClick={() => setConfirm(null)}>
+              返回检查
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+  if (editorOnly) return overlays;
+  if (settingsOnly)
+    return (
+      <div className="workspace-advanced-settings">
+        {error && <p role="alert">{error}</p>}
+        <ZoneEditor data={data} save={save} onDirtyChange={setEditorDirty} />
+        <LabelEditor data={data} save={save} onDirtyChange={setEditorDirty} />
+      </div>
     );
   return (
     <section
@@ -453,53 +547,8 @@ export function ProductivityView({
             />
           )}
         </div>
-        <details className="timeline-more">
-          <summary
-            aria-disabled={locked}
-            onClick={(event) => {
-              if (locked) event.preventDefault();
-            }}
-          >
-            更多
-          </summary>
-          <nav aria-label="工作空间工具">
-            {[
-              ["all", "全部任务"],
-              ["projects", "项目与分区"],
-              ["settings", "时区与标签"],
-              ["repeat", "重复任务"],
-              ["habits", "习惯"],
-              ["trash", "回收站"],
-              ["search", "搜索与筛选"],
-              ["review", "项目检查与周回顾"],
-              ["notes", "策略决策与专注"],
-            ].map(([k, v]) => (
-              <button
-                key={k}
-                aria-pressed={tab === k}
-                onClick={(event) => {
-                  setTab(k!);
-                  event.currentTarget
-                    .closest("details")
-                    ?.removeAttribute("open");
-                }}
-              >
-                {v}
-              </button>
-            ))}
-            <button
-              className="work-create-button"
-              onClick={() => setEdit("new")}
-            >
-              快速任务
-            </button>
-          </nav>
-        </details>
       </fieldset>
-      {!data.settings.length &&
-      !(renderToday && (tab === "today" || tab === "upcoming")) ? (
-        <ZoneEditor data={data} save={save} onDirtyChange={setEditorDirty} />
-      ) : (
+      {
         <>
           {!renderToday && (tab === "today" || tab === "upcoming") && (
             <label className="work-date-control">
@@ -616,7 +665,7 @@ export function ProductivityView({
             <>
               {data.tasks.map((t) => row(t))}
               {!data.tasks.length && (
-                <p>还没有任务。使用快速任务创建，属性会先预览。</p>
+                <p>还没有任务。在今日或收件箱输入任务，按回车添加。</p>
               )}
             </>
           )}
@@ -684,62 +733,8 @@ export function ProductivityView({
             </>
           )}
         </>
-      )}
-      {edit && (
-        <div
-          className="work-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-label="任务属性"
-        >
-          <div>
-            {error && <p role="alert">{error}</p>}
-            <TaskEditor
-              key={edit === "new" ? "new" : edit.id}
-              task={edit === "new" ? null : edit}
-              data={data}
-              zone={zone}
-              save={save}
-              onSplitSaved={async () => {
-                await refresh();
-                onChanged();
-                setEdit(null);
-              }}
-              close={() => setEdit(null)}
-              confirm={setConfirm}
-            />
-          </div>
-        </div>
-      )}
-      {confirm && (
-        <div
-          className="work-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-label="确认影响"
-        >
-          <div className="work-dialog">
-            <h2>确认影响</h2>
-            {error && <p role="alert">{error}</p>}
-            <p>{confirm.description}</p>
-            <button
-              disabled={busy}
-              onClick={async () => {
-                if (await save(confirm.action)) {
-                  setConfirmedAction(confirm.action);
-                  setConfirm(null);
-                  setEdit(null);
-                }
-              }}
-            >
-              确认执行
-            </button>
-            <button disabled={busy} onClick={() => setConfirm(null)}>
-              返回检查
-            </button>
-          </div>
-        </div>
-      )}
+      }
+      {overlays}
     </section>
   );
 }
@@ -779,24 +774,23 @@ function TimeInput({
         <option value="instant">确定时刻</option>
       </select>
       {value?.kind === "date" && (
-        <input
-          aria-label={label}
-          type="date"
+        <DatePicker
+          label={label}
           value={value.date}
-          onChange={(e) => onChange({ ...value, date: e.target.value })}
+          onChange={(date) => onChange({ ...value, date })}
         />
       )}{" "}
       {value?.kind === "instant" && (
         <>
-          <input
-            aria-label={`${label} UTC时刻`}
-            type="datetime-local"
-            value={value.atUtc.replace(/Z$/, "").slice(0, 16)}
-            onChange={(e) =>
-              onChange({ ...value, atUtc: e.target.value + ":00Z" })
+          <DatePicker
+            label={`${label}（本地时间）`}
+            mode="datetime"
+            value={deadlineToLocal(value.atUtc)}
+            onChange={(local) =>
+              onChange({ ...value, atUtc: deadlineFromLocal(local)! })
             }
           />
-          <span>UTC 输入；显示为 {timeLabel(value, zone)}</span>
+          <small>本地时间输入 · {timeLabel(value, zone)}</small>
         </>
       )}
     </fieldset>
@@ -810,6 +804,8 @@ function TaskEditor({
   close,
   confirm,
   onSplitSaved,
+  initialPlan,
+  onCreated,
 }: {
   task: WorkTask | null;
   data: WorkSnapshot;
@@ -818,11 +814,13 @@ function TaskEditor({
   close: () => void;
   onSplitSaved: () => Promise<void>;
   confirm: (v: { action: Action; description: string }) => void;
+  initialPlan?: TimeValue | null;
+  onCreated?: ((title: string, plan: TimeValue | null) => void) | undefined;
 }) {
   const [id] = useState(() => task?.id ?? crypto.randomUUID()),
     [title, setTitle] = useState(task?.title ?? ""),
     [notes, setNotes] = useState(task?.notes ?? ""),
-    [plan, setPlan] = useState(task?.plan ?? null),
+    [plan, setPlan] = useState(task ? task.plan : (initialPlan ?? null)),
     [deadline, setDeadline] = useState(task?.deadline ?? null),
     [followUp, setFollowUp] = useState(task?.followUp ?? null),
     [priority, setPriority] = useState(task?.priority ?? 4),
@@ -834,9 +832,50 @@ function TaskEditor({
     [section, setSection] = useState(task?.sectionId ?? ""),
     [preview, setPreview] = useState(false),
     [saving, setSaving] = useState(false);
+  const [expanded, setExpanded] = useState(!!task);
+  const submitting = useRef(false);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const originRef = useRef(document.activeElement as HTMLElement | null);
+  const closeRef = useRef(close);
+  closeRef.current = close;
+  useEffect(() => {
+    const origin = originRef.current;
+    const root = editorRef.current;
+    const handler = (event: KeyboardEvent) => {
+      if (document.querySelector(".date-picker-popover") || event.isComposing)
+        return;
+      if (event.key === "Escape" && !submitting.current) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeRef.current();
+      }
+      if (event.key !== "Tab" || !root) return;
+      const controls = Array.from(
+        root.querySelectorAll<HTMLElement>(
+          'button,input,select,textarea,summary,[tabindex="0"]',
+        ),
+      ).filter((e) => e.getClientRects().length && !e.matches(":disabled"));
+      const first = controls[0],
+        last = controls.at(-1);
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    document.addEventListener("keydown", handler);
+    return () => {
+      document.removeEventListener("keydown", handler);
+      if (origin?.isConnected) origin.focus();
+    };
+  }, []);
+  const quickToday = calendarDate(new Date(), zone);
   const action = {
     type: "task",
     id,
+    ...(!task && plan ? { arrangeOnCreate: true } : {}),
     expectedVersion: task?.version ?? null,
     title,
     notes,
@@ -859,23 +898,51 @@ function TaskEditor({
       JSON.stringify([plan, deadline, followUp, labels]) !==
         JSON.stringify([task.plan, task.deadline, task.followUp, task.labels]));
   return (
-    <div className="work-dialog">
-      <h2>{task ? "编辑任务" : "快速任务"}</h2>
+    <div
+      ref={editorRef}
+      className={`work-dialog task-editor ${task ? "task-editor-existing" : "task-editor-quick"}`}
+    >
+      <header className="task-editor-heading">
+        <h2>{task ? "任务详情" : "添加任务"}</h2>
+        <button
+          type="button"
+          aria-label="关闭任务编辑"
+          disabled={saving}
+          onClick={close}
+        >
+          <TaskPanelIcon name="close" />
+        </button>
+      </header>
       <form
         onSubmit={async (e) => {
           e.preventDefault();
-          if (!preview) {
+          if (submitting.current) return;
+          if (planConflict({ plan, deadline }, zone) && !preview) {
             setPreview(true);
             return;
           }
+          submitting.current = true;
           setSaving(true);
           try {
-            if (await save(action)) close();
+            if (await save(action)) {
+              if (!task) onCreated?.(title.trim(), plan);
+              close();
+            }
           } finally {
+            submitting.current = false;
             setSaving(false);
           }
         }}
         onKeyDown={(e) => {
+          if (
+            (e.ctrlKey || e.metaKey) &&
+            e.key === "Enter" &&
+            !e.nativeEvent.isComposing
+          ) {
+            e.preventDefault();
+            e.currentTarget.requestSubmit();
+            return;
+          }
           if (e.key === "Enter" && e.nativeEvent.isComposing)
             e.preventDefault();
         }}
@@ -885,6 +952,8 @@ function TaskEditor({
             标题{" "}
             <input
               aria-label="任务标题"
+              autoFocus
+              placeholder="准备做什么？"
               value={title}
               onChange={(e) => {
                 setTitle(e.target.value);
@@ -894,129 +963,175 @@ function TaskEditor({
               maxLength={1000}
             />
           </label>
-          <label>
-            说明{" "}
-            <textarea
-              value={notes}
-              onChange={(e) => {
-                setNotes(e.target.value);
-                setPreview(false);
-              }}
-            />
-          </label>
-          <label>
-            项目{" "}
-            <select
-              aria-label="任务项目"
-              disabled={!!task}
-              value={task ? (task.projectId ?? "") : project}
-              onChange={(e) => {
-                setProject(e.target.value);
-                setPreview(false);
-              }}
-            >
-              <option value="">独立任务</option>
-              {data.projects
-                .filter(
-                  (p) =>
-                    !p.archivedAt &&
-                    !["completed", "cancelled"].includes(p.status),
-                )
-                .map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
+          {!task && (
+            <>
+              <div
+                className="task-date-options quick-task-dates"
+                aria-label="快速安排日期"
+              >
+                {[
+                  [quickToday, "今天"],
+                  [shiftCalendarDate(quickToday, 1), "明天"],
+                  ["", "没有日期"],
+                ].map(([date, caption]) => (
+                  <button
+                    key={caption}
+                    type="button"
+                    aria-pressed={
+                      date ? plan?.kind === "date" && plan.date === date : !plan
+                    }
+                    onClick={() => {
+                      setPlan(date ? { kind: "date", date } : null);
+                      setPreview(false);
+                    }}
+                  >
+                    {caption}
+                  </button>
                 ))}
-            </select>
-          </label>
-          <label>
-            优先级{" "}
-            <select
-              aria-label="优先级"
-              value={priority}
-              onChange={(e) => {
-                setPriority(Number(e.target.value));
-                setPreview(false);
-              }}
-            >
-              {[1, 2, 3, 4].map((p) => (
-                <option key={p} value={p}>
-                  P{p}
-                </option>
-              ))}
-            </select>
-          </label>
-          <TimeInput
-            label="计划"
-            value={plan}
-            onChange={(v) => {
-              setPlan(v);
-              setPreview(false);
-            }}
-            zone={zone}
-          />
-          <TimeInput
-            label="真实截止"
-            value={deadline}
-            onChange={(v) => {
-              setDeadline(v);
-              setPreview(false);
-            }}
-            zone={zone}
-          />
-          <TimeInput
-            label="跟进"
-            value={followUp}
-            onChange={(v) => {
-              setFollowUp(v);
-              setPreview(false);
-            }}
-            zone={zone}
-          />
-          {planConflict({ plan, deadline }, zone) && (
-            <p role="alert">计划晚于真实截止。允许保存，请确认两个值。</p>
-          )}
-          <fieldset>
-            <legend>标签（可取消选择）</legend>
-            {data.labels.map((l) => (
-              <label key={l.id}>
-                <input
-                  type="checkbox"
-                  checked={labels.includes(l.id)}
-                  onChange={(e) => {
-                    setLabels(
-                      e.target.checked
-                        ? [...labels, l.id]
-                        : labels.filter((id) => id !== l.id),
-                    );
+                <DatePicker
+                  label="快速任务日期"
+                  value={plan?.kind === "date" ? plan.date : ""}
+                  onChange={(date) => {
+                    setPlan(date ? { kind: "date", date } : null);
                     setPreview(false);
                   }}
                 />
-                {l.name}
-              </label>
-            ))}
-            {!data.labels.length && <p>可在“时区与标签”中创建可复用标签。</p>}
-          </fieldset>
-          <label>
-            等待对象{" "}
-            <input
-              value={waitingFor}
-              onChange={(e) => {
-                setWaitingFor(e.target.value);
+              </div>
+              <button
+                type="button"
+                className="quick-task-more"
+                aria-expanded={expanded}
+                onClick={() => setExpanded(!expanded)}
+              >
+                {expanded ? "收起选项" : "更多选项"}
+              </button>
+            </>
+          )}
+          <div className="task-editor-fields" hidden={!expanded}>
+            <label>
+              说明{" "}
+              <textarea
+                value={notes}
+                onChange={(e) => {
+                  setNotes(e.target.value);
+                  setPreview(false);
+                }}
+              />
+            </label>
+            <label>
+              项目{" "}
+              <select
+                aria-label="任务项目"
+                disabled={!!task}
+                value={task ? (task.projectId ?? "") : project}
+                onChange={(e) => {
+                  setProject(e.target.value);
+                  setPreview(false);
+                }}
+              >
+                <option value="">独立任务</option>
+                {data.projects
+                  .filter(
+                    (p) =>
+                      !p.archivedAt &&
+                      !["completed", "cancelled"].includes(p.status),
+                  )
+                  .map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <label>
+              优先级{" "}
+              <select
+                aria-label="优先级"
+                value={priority}
+                onChange={(e) => {
+                  setPriority(Number(e.target.value));
+                  setPreview(false);
+                }}
+              >
+                {[1, 2, 3, 4].map((p) => (
+                  <option key={p} value={p}>
+                    P{p}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <TimeInput
+              label="计划"
+              value={plan}
+              onChange={(v) => {
+                setPlan(v);
                 setPreview(false);
               }}
+              zone={zone}
             />
-          </label>
-          <label>
-            等待说明{" "}
-            <textarea
-              value={waitingNote}
-              onChange={(e) => {
-                setWaitingNote(e.target.value);
+            <TimeInput
+              label="真实截止"
+              value={deadline}
+              onChange={(v) => {
+                setDeadline(v);
                 setPreview(false);
               }}
+              zone={zone}
             />
-          </label>
+            <TimeInput
+              label="跟进"
+              value={followUp}
+              onChange={(v) => {
+                setFollowUp(v);
+                setPreview(false);
+              }}
+              zone={zone}
+            />
+            {planConflict({ plan, deadline }, zone) && (
+              <p role="alert">计划晚于真实截止。允许保存，请确认两个值。</p>
+            )}
+            <fieldset>
+              <legend>标签（可取消选择）</legend>
+              {data.labels.map((l) => (
+                <label key={l.id}>
+                  <input
+                    type="checkbox"
+                    checked={labels.includes(l.id)}
+                    onChange={(e) => {
+                      setLabels(
+                        e.target.checked
+                          ? [...labels, l.id]
+                          : labels.filter((id) => id !== l.id),
+                      );
+                      setPreview(false);
+                    }}
+                  />
+                  {l.name}
+                </label>
+              ))}
+              {!data.labels.length && <p>可在“时区与标签”中创建可复用标签。</p>}
+            </fieldset>
+            <label>
+              等待对象{" "}
+              <input
+                value={waitingFor}
+                onChange={(e) => {
+                  setWaitingFor(e.target.value);
+                  setPreview(false);
+                }}
+              />
+            </label>
+            <label>
+              等待说明{" "}
+              <textarea
+                value={waitingNote}
+                onChange={(e) => {
+                  setWaitingNote(e.target.value);
+                  setPreview(false);
+                }}
+              />
+            </label>
+          </div>
           {preview && (
             <div className="work-preview">
               <h3>保存预览</h3>
@@ -1038,10 +1153,21 @@ function TaskEditor({
               </p>
             </div>
           )}
-          <button type="submit">{preview ? "确认保存" : "预览属性"}</button>
-          <button type="button" onClick={close}>
-            取消编辑
-          </button>
+          <div className="task-editor-actions">
+            <span>
+              {task
+                ? "Ctrl + Enter 保存"
+                : plan
+                  ? `保存到 ${timeLabel(plan, zone)}`
+                  : "保存到收件箱 · Enter 添加"}
+            </span>
+            <button type="submit" className="primary" disabled={!title.trim()}>
+              {preview ? "确认保存" : task ? "保存修改" : "添加任务"}
+            </button>
+            <button type="button" onClick={close}>
+              取消
+            </button>
+          </div>
         </fieldset>
       </form>
       {task && (

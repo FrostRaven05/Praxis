@@ -1,0 +1,8 @@
+   Compiling praxis-desktop v0.1.0 (C:\Project\01Project\Praxis\apps\desktop\src-tauri)
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\praxis_desktop_lib-0zietne8c8bbh\s-hnjnoknfvv-1jn7o97-working`
+
+warning: `praxis-desktop` (lib) generated 1 warning
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\praxis_desktop-2r74zpfevib36\s-hnjnp0y7hb-06gkqjw-working`
+
+warning: `praxis-desktop` (bin "praxis-desktop") generated 1 warning
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 30.67s

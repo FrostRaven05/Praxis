@@ -19,8 +19,9 @@ export function useProjectList(revision: number) {
           setItems(projects);
           setError("");
         }
-      } catch {
-        if (active && token === query) setError("无法读取项目，请重试。");
+      } catch (error) {
+        if (active && token === query)
+          setError(error instanceof Error ? error.message : String(error));
       } finally {
         if (active && token === query) setLoading(false);
       }

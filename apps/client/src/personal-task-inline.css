@@ -1,0 +1,120 @@
+.personal-task-composer {
+  margin: 12px 0 24px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.personal-task-capture-line {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.personal-task-capture-line input {
+  flex: 1;
+  min-width: 0;
+}
+.personal-task-composer input,
+.personal-task-composer textarea,
+.personal-task-inline-editor input,
+.personal-task-inline-editor textarea {
+  font: inherit;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 12px;
+  min-height: 44px;
+  box-sizing: border-box;
+  width: 100%;
+}
+.personal-task-composer button,
+.personal-task-inline-editor button {
+  min-height: 44px;
+  padding: 8px 12px;
+  font: inherit;
+}
+.personal-task-capture-options {
+  margin-top: 12px;
+}
+.personal-task-capture-options summary {
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 0;
+}
+.personal-task-capture-options label,
+.personal-task-inline-editor label {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0;
+  font-size: 13px;
+}
+.personal-task-inline-editor {
+  flex-basis: 100%;
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  box-sizing: border-box;
+}
+.personal-task-inline-actions,
+.personal-task-old-deadline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.personal-task-inline-error,
+.personal-task-inline-editor [role="alert"] {
+  color: var(--danger-text);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.personal-todo-home .personal-todo-row {
+  flex-wrap: wrap;
+}
+.personal-todo-home .personal-task-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.personal-task-row-actions select {
+  font: inherit;
+  font-size: 12px;
+  padding: 6px;
+  min-height: 36px;
+  color: var(--text-primary);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface);
+  max-width: 120px;
+}
+.personal-todo-home .personal-task-row-actions button {
+  font-size: 12px;
+  padding: 6px 8px;
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+}
+.personal-todo-home.is-project-tasks {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+}
+.personal-todo-home.is-project-tasks .personal-todo-header h2 {
+  margin: 0;
+}
+@media (max-width: 700px) {
+  .personal-todo-home .personal-task-row-actions {
+    margin-left: 36px;
+    width: calc(100% - 36px);
+  }
+  .personal-task-row-actions select,
+  .personal-todo-home .personal-task-row-actions button {
+    min-height: 44px;
+  }
+  .personal-task-capture-line {
+    gap: 8px;
+  }
+}

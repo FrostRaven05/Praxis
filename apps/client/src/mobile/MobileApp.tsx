@@ -1,20 +1,27 @@
+import "../personal-shell.css";
+import { AccountPage } from "../AccountPanel";
+import { PersonalProjectForm } from "../PersonalProjectForm";
+import { PersonalAgentPanel } from "../PersonalAgentPanel";
+import { PersonalProjectList, PersonalProjectProgress } from "../PersonalProjectList";
+import { mobileProjectSave } from "../personal-project-storage";
 import { LanSyncPanel } from "./LanSyncPanel";
+import { useLanRefresh } from "../useLanRefresh";
+import { PersonalTodoHome } from "../PersonalTodoHome";
 import { useEffect, useRef, useState } from "react";
 import type {
   WorkspaceEntity,
   WorkspaceSnapshot,
   WorkspaceCommand,
 } from "@praxis/storage-mobile";
-import { WorkspaceRejectedError } from "@praxis/storage-mobile";
-import { calendarDate } from "@praxis/application";
+import { WorkspaceRejectedError, mobilePersonalTaskFields, mobilePersonalWork } from "@praxis/storage-mobile";
+import { calendarDate, personalTaskQuery, personalDeadlineDay, timeLabel } from "@praxis/application";
 import { App as NativeApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
 import { mobileStorage } from "../../../../packages/storage-mobile/src/native";
 import { Inbox } from "./Inbox";
 import { Extras, type ExtraSection } from "./Extras";
 import { MobileDrawer } from "./MobileDrawer";
-import { QuickInbox } from "./QuickInbox";
-import { unplannedTasks } from "./mobile-inbox-model";
+import { QuickTaskEntry } from "./QuickTaskEntry";
 import { TaskPanelIcon } from "../TaskPanelIcon";
 import { MonthCalendar } from "./MonthCalendar";
 import { MobileNavIcon, type MobileIconName } from "./MobileNavIcon";
@@ -22,6 +29,7 @@ import "./mobile.css";
 import "./mobile-polish.css";
 
 const labels: Record<string, string> = {
+  todos: "杂事",
   tasks: "任务清单",
   calendar: "日历",
   projects: "项目",
@@ -47,11 +55,12 @@ function shifted(date: string, n: number) {
   return day(d);
 }
 export function MobileApp() {
+  const [accountOpen, setAccountOpen] = useState(false);
   const [snapshot, setSnapshot] = useState<WorkspaceSnapshot>({
     entities: [],
     pendingOperations: 0,
   });
-  const [section, setSection] = useState("tasks"),
+  const [section, setSection] = useState("todos"),
     [date, setDate] = useState(day()),
     [menu, setMenu] = useState(false),
     [error, setError] = useState(""),
@@ -61,14 +70,22 @@ export function MobileApp() {
   const [editing, setEditing] = useState<WorkspaceEntity | null>(null),
     [expanded, setExpanded] = useState<string[]>([]),
     [projectFilter, setProjectFilter] = useState(""),
-    [searchQuery, setSearchQuery] = useState(""),
-    [quickInbox, setQuickInbox] = useState(false);
+    [searchQuery, setSearchQuery] = useState("");
+  const [basicProject, setBasicProject] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [personalAgent, setPersonalAgent] = useState<{mode:"decompose"|"next";projectId?:string}|null>(null);
+  const [agentTask, setAgentTask] = useState<string|null>(null);
+  useEffect(()=>{if(!personalAgent && agentTask){setAgentTask(null);void openTodoTask(agentTask);}},[personalAgent,agentTask]);
+  useEffect(() => {
+    if (!notice) return;
+    const timer = window.setTimeout(() => setNotice(""), 3500);
+    return () => window.clearTimeout(timer);
+  }, [notice]);
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [section, projectFilter]);
   const saving = useRef(false);
   const menuButton = useRef<HTMLButtonElement>(null);
-  const inboxButton = useRef<HTMLButtonElement>(null);
   const pending = useRef<WorkspaceCommand | null>(null);
   const initializedDate = useRef(false),
     lastToday = useRef("");
@@ -82,16 +99,25 @@ export function MobileApp() {
       Intl.DateTimeFormat().resolvedOptions().timeZone,
   );
   const today = calendarDate(new Date(), timeZone);
-  const quickInboxCount = unplannedTasks(snapshot.entities).length;
+  const personal = (()=>{
+    try {return personalTaskQuery(mobilePersonalWork(snapshot,timeZone));}
+    catch {return null;}
+  })();
   const draftActive = useRef(false);
   draftActive.current = !!(
+    personalAgent ||
     editing ||
     childBusy ||
     organizing ||
     saving.current ||
     pending.current
   );
-  async function refresh(background = false) {
+  useEffect(() => {
+    const open = () => { if (!draftActive.current) setAccountOpen(true); };
+    window.addEventListener("praxis-open-account", open);
+    return () => window.removeEventListener("praxis-open-account", open);
+  }, []);
+  async function refresh(background = false, reportFailure = false) {
     if (background && draftActive.current) return;
     const sequence = ++refreshSequence.current;
     try {
@@ -118,10 +144,12 @@ export function MobileApp() {
     } catch (e) {
       if (sequence === refreshSequence.current)
         setError(e instanceof Error ? e.message : "本机数据读取失败");
+      if (reportFailure) throw e;
     } finally {
       if (sequence === refreshSequence.current) setLoading(false);
     }
   }
+  useLanRefresh(() => mobileStorage.workspaceSnapshot(), setSnapshot, draftActive.current, snapshot.workspaceId);
   useEffect(() => {
     void refresh();
     const f = () => {
@@ -132,18 +160,18 @@ export function MobileApp() {
   }, []);
   const backHandler = useRef(() => {});
   backHandler.current = () => {
+    if (accountOpen) {
+      window.dispatchEvent(new Event("praxis-account-back"));
+      return;
+    }
     if (saving.current || pending.current) {
       setError("保存尚未确认，请先重试保存。");
       return;
     }
     const dialog =
-      document.querySelector<HTMLDialogElement>(".pm-dialog[open]");
+      document.querySelector<HTMLDialogElement>(".pm-dialog[open], .ai-planner-dialog[open], .personal-project-modal[open], .personal-agent-dialog[open]");
     if (dialog) {
       dialog.dispatchEvent(new Event("cancel", { cancelable: true }));
-      return;
-    }
-    if (quickInbox) {
-      closeQuickInbox();
       return;
     }
     if (childBusy) {
@@ -158,8 +186,8 @@ export function MobileApp() {
       setProjectFilter("");
       return;
     }
-    if (section !== "tasks") {
-      setSection("tasks");
+    if (section !== "todos") {
+      setSection("todos");
       return;
     }
     void NativeApp.minimizeApp();
@@ -188,6 +216,7 @@ export function MobileApp() {
   }, [editing, childBusy, organizing]);
   function canNavigate() {
     if (
+      personalAgent ||
       saving.current ||
       editing ||
       childBusy ||
@@ -202,19 +231,24 @@ export function MobileApp() {
   function chooseDate(next: string) {
     if (canNavigate()) setDate(next);
   }
-  function closeQuickInbox() {
-    if (saving.current || pending.current) {
-      setError("保存尚未确认，请先重试保存。");
-      return;
-    }
-    setQuickInbox(false);
-  }
   function navigate(next: string) {
     if (!canNavigate()) return;
     if (next === "search") setSearchQuery("");
     setSection(next);
     setMenu(false);
     setProjectFilter("");
+  }
+  async function openTodoTask(taskId:string) {
+    if(!canNavigate()) return;
+    saving.current=true;setBusy(true);setError("");++refreshSequence.current;
+    try {
+      const next=await mobileStorage.workspaceSnapshot();
+      const entity=next.entities.find(e=>e.kind==="task" && !e.deleted && e.id===taskId);
+      setSnapshot(next);
+      if(!entity) throw Error("任务已变化，请刷新后再打开。");
+      setEditing(entity);
+    }catch(error){setError(error instanceof Error ? error.message : "无法打开任务，请重试。");}
+    finally{saving.current=false;setBusy(false);}
   }
   async function save(
     entity: WorkspaceEntity,
@@ -226,6 +260,7 @@ export function MobileApp() {
     setError("");
     setBusy(true);
     try {
+      if (entity.kind === "task") data=mobilePersonalTaskFields(entity.data,data);
       const command: WorkspaceCommand = {
         operationId: crypto.randomUUID(),
         occurredAt: new Date().toISOString(),
@@ -353,6 +388,18 @@ export function MobileApp() {
       pending.current ??= command;
       await mobileStorage.workspaceCommand(pending.current);
       pending.current = null;
+      if (entity.kind === "task" && !entity.version && !deleted) {
+        const planned = String(data.executionDate ?? "");
+        setNotice(
+          !planned
+            ? "已添加到收件箱"
+            : planned === today
+              ? "已添加到今天"
+              : planned === shifted(today, 1)
+                ? "已添加到明天"
+                : `已添加到 ${planned}`,
+        );
+      }
       setEditing(null);
       setOrganizing(null);
       await refresh();
@@ -387,7 +434,9 @@ export function MobileApp() {
   }
   function create(kind: "task" | "project", parent?: WorkspaceEntity) {
     if (!canNavigate()) return;
+    setBasicProject(kind === "project");
     setError("");
+    setNotice("");
     setEditing({
       id: crypto.randomUUID(),
       kind,
@@ -400,7 +449,7 @@ export function MobileApp() {
           ? {
               title: "",
               status: "todo",
-              executionDate: date,
+              executionDate: section==="todos" ? null : date,
               priority: 0,
               tags: [],
               parentId: parent?.id ?? null,
@@ -428,10 +477,11 @@ export function MobileApp() {
     (t) =>
       (projectFilter
         ? text(t, "projectId") === projectFilter
-        : text(t, "executionDate") === date || text(t, "dueDate") === date) &&
+        : text(t, "executionDate") === date || (personal ? personalDeadlineDay(personal.task(t.id)?.deadline ?? null) : text(t,"dueDate")) === date) &&
       text(t, "status") !== "cancelled",
   );
   function taskRow(t: WorkspaceEntity, depth = 0): React.ReactNode {
+    const projected=personal?.task(t.id);
     const children = tasks.filter((c) => text(c, "parentId") === t.id),
       open = expanded.includes(t.id);
     return (
@@ -445,7 +495,7 @@ export function MobileApp() {
             className="pm-check"
             aria-label={`${text(t, "status") === "completed" ? "撤销完成" : "完成"}：${text(t, "title")}`}
             aria-pressed={text(t, "status") === "completed"}
-            disabled={busy || Boolean(pending.current)}
+            disabled={busy || childBusy || Boolean(pending.current)}
             onClick={() =>
               void save(t, {
                 ...t.data,
@@ -474,8 +524,8 @@ export function MobileApp() {
             <span>
               {[
                 t.data.priority ? `P${t.data.priority}` : "",
-                t.data.waiting ? "等待跟进" : "",
-                text(t, "dueDate") ? `截止 ${text(t, "dueDate")}` : "",
+                projected?.legacy ? projected.label : !personal && t.data.waiting ? "等待跟进" : "",
+                projected?.deadline ? `截止 ${timeLabel(projected.deadline,projected.deadline.kind==="instant" ? projected.deadline.displayTimezone : personal?.timeZone ?? timeZone)}` : !personal && text(t,"dueDate") ? `截止 ${text(t,"dueDate")}` : "",
                 projects.find((p) => p.id === t.data.projectId)?.data.title,
               ]
                 .filter(Boolean)
@@ -483,11 +533,12 @@ export function MobileApp() {
             </span>
           </button>
           <button
-            className="pm-icon"
+            className="pm-subtask"
             aria-label={`添加子任务：${text(t, "title")}`}
+            title="添加子任务"
             onClick={() => create("task", t)}
           >
-            ＋
+            <TaskPanelIcon name="branch" />
           </button>
         </div>
         {children.length > 0 && (
@@ -509,8 +560,11 @@ export function MobileApp() {
       </div>
     );
   }
+  if (accountOpen) return <AccountPage onBack={() => setAccountOpen(false)} />;
   return (
     <div className="pm-app">
+      {personalAgent && <PersonalAgentPanel {...personalAgent} onClose={()=>setPersonalAgent(null)} onApplied={()=>void refresh()} onOpenTask={id=>{setPersonalAgent(null);setAgentTask(id);}} />}
+      {!personal && <p role="alert">部分日期暂时无法读取，请在原任务中检查。任务内容已保留。</p>}
       <header className="pm-header">
         <div className="pm-top">
           <button
@@ -533,36 +587,10 @@ export function MobileApp() {
             ☰
           </button>
           <div>
-            <small>PRAXIS · 把下一步变清晰</small>
+            <small>PRAXIS</small>
             <h1>{labels[section]}</h1>
           </div>
-          <button
-            ref={inboxButton}
-            className="pm-icon pm-inbox-trigger"
-            aria-label="打开收件箱"
-            aria-expanded={quickInbox}
-            disabled={
-              loading ||
-              busy ||
-              !!pending.current ||
-              !!editing ||
-              childBusy ||
-              !!organizing
-            }
-            onClick={() => {
-              if (canNavigate()) {
-                setError("");
-                setQuickInbox(true);
-              }
-            }}
-          >
-            <TaskPanelIcon name="inbox" />
-            {quickInboxCount > 0 && (
-              <span className="pm-inbox-count" aria-hidden="true">
-                {quickInboxCount}
-              </span>
-            )}
-          </button>
+          <span className="pm-icon" aria-hidden="true" />
         </div>
         {section === "tasks" && (
           <>
@@ -638,13 +666,6 @@ export function MobileApp() {
           timeZone={timeZone}
           onClose={() => setMenu(false)}
           onNavigate={navigate}
-          onSearch={(query) => {
-            if (!canNavigate()) return;
-            setSearchQuery(query);
-            setSection("search");
-            setProjectFilter("");
-            setMenu(false);
-          }}
           onProject={(id) => {
             if (!canNavigate()) return;
             setSection("projects");
@@ -658,37 +679,6 @@ export function MobileApp() {
             setProjectFilter("");
             create("project");
           }}
-        />
-      )}
-      {quickInbox && (
-        <QuickInbox
-          triggerRef={inboxButton}
-          entities={snapshot.entities}
-          today={today}
-          tomorrow={shifted(today, 1)}
-          busy={busy}
-          pending={!!pending.current}
-          error={error}
-          onClose={closeQuickInbox}
-          onSchedule={(task, nextDate) =>
-            save(task, { ...task.data, executionDate: nextDate })
-          }
-          onProject={(task, id) =>
-            save(task, { ...task.data, projectId: id || null, sectionId: null })
-          }
-          onEdit={(task) => {
-            if (!canNavigate()) return;
-            setQuickInbox(false);
-            setError("");
-            setEditing(task);
-          }}
-          onNavigate={(next) => {
-            if (!canNavigate()) return;
-            setQuickInbox(false);
-            navigate(next);
-          }}
-          onRetry={retryPending}
-          onRefresh={refresh}
         />
       )}
       {error && (
@@ -707,15 +697,43 @@ export function MobileApp() {
           <p className="pm-empty">正在读取本机数据…</p>
         ) : (
           <>
+            {section==="todos" && <PersonalTodoHome embedded revision={snapshot.entities.map(e=>`${e.id}:${e.version}:${e.deleted}`).join("|")} externalBusy={personalAgent!==null || busy || editing!==null || organizing!==null || pending.current!==null} onBusyChange={setChildBusy} onOpenProject={id=>{if(canNavigate()){setProjectFilter(id);setSection("projects");}}} onChanged={()=>void refresh()} onOpenAgent={()=>{if(canNavigate())setPersonalAgent({mode:"next"});}} />}
             {["tasks", "calendar"].includes(section) && (
               <>
                 {section === "calendar" && (
-                  <MonthCalendar
-                    date={date}
-                    today={today}
-                    entities={entities}
-                    onChoose={chooseDate}
-                  />
+                  <>
+                    <MonthCalendar
+                      date={date}
+                      today={today}
+                      entities={entities}
+                      onChoose={chooseDate}
+                    />
+                    <div className="pm-calendar-agenda">
+                      <div className="pm-list-heading">
+                        <h2>
+                          {date === today ? "今天" : date}{" "}
+                          <small>{visible.length} 项</small>
+                        </h2>
+                        <button onClick={() => setOrganizing("plan")}>
+                          每日安排
+                        </button>
+                      </div>
+                      {visible.length ? (
+                        visible
+                          .filter(
+                            (t) =>
+                              !visible.some((p) => p.id === t.data.parentId),
+                          )
+                          .map((t) => taskRow(t))
+                      ) : (
+                        <div className="pm-empty">
+                          <span>○</span>
+                          <h2>这一天还没有安排</h2>
+                          <p>点击右下角添加任务，或从收件箱安排。</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 )}
                 {section === "tasks" && (
                   <>
@@ -747,7 +765,7 @@ export function MobileApp() {
             )}
             {section === "projects" && (
               <>
-                <div className="pm-list-heading">
+                {projectFilter && <div className="pm-list-heading">
                   <h2>
                     {projectFilter
                       ? String(
@@ -761,83 +779,29 @@ export function MobileApp() {
                       全部项目
                     </button>
                   )}
-                </div>
+                </div>}
                 {projectFilter ? (
                   <>
-                    <button
-                      className="pm-secondary"
-                      onClick={() => setOrganizing("section")}
-                    >
-                      管理分区
-                    </button>
-                    {tasks
-                      .filter(
-                        (t) =>
-                          text(t, "projectId") === projectFilter &&
-                          !t.data.parentId,
-                      )
-                      .map((t) => taskRow(t))}
-                    <button
-                      className="pm-secondary"
-                      onClick={() => create("task")}
-                    >
-                      ＋ 添加项目任务
-                    </button>
+                    <div className="personal-project-detail-summary">
+                      {projects.find(p=>p.id===projectFilter)?.data.outcome ? <p>{text(projects.find(p=>p.id===projectFilter)!, "outcome")}</p> : null}
+                      {projects.find(p=>p.id===projectFilter)?.data.dueDate ? <small>目标日期 {text(projects.find(p=>p.id===projectFilter)!, "dueDate")}</small> : null}
+                      <PersonalProjectProgress work={mobilePersonalWork(snapshot, timeZone)} projectId={projectFilter} />
+                      <button className="pm-secondary" disabled={busy || childBusy || !!editing} onClick={()=>{if(canNavigate()){setBasicProject(true);setEditing(projects.find(p=>p.id===projectFilter)!);}}}>编辑基本信息</button>
+                    </div>
+                    <div className="ai-planner-launch-group">{(["decompose", "next"] as const).map(mode => <button key={mode} type="button" className="ai-planner-launch" disabled={busy || childBusy || !!editing || !!organizing} onClick={()=>{if(canNavigate())setPersonalAgent({mode,projectId:projectFilter});}}>✦ {mode === "decompose" ? "拆成步骤" : "下一步建议"}</button>)}</div>
+                    <PersonalTodoHome key={projectFilter} projectId={projectFilter} embedded
+                      revision={snapshot.entities.map(e=>`${e.id}:${e.version}:${e.deleted}`).join("|")}
+                      externalBusy={personalAgent!==null || busy || editing!==null || organizing!==null || pending.current!==null}
+                      onBusyChange={setChildBusy}                      onOpenProject={id=>{if(canNavigate())setProjectFilter(id);}}
+                      onChanged={()=>void refresh()} />
                   </>
                 ) : (
                   <>
-                    {projects.map((p) => (
-                      <article className="pm-project" key={p.id}>
-                        <button onClick={() => setProjectFilter(p.id)}>
-                          <span className="pm-project-symbol">▱</span>
-                          <h2>{text(p, "title")}</h2>
-                          <small>
-                            {
-                              (
-                                {
-                                  active: "进行中",
-                                  completed: "已完成",
-                                  cancelled: "已取消",
-                                } as Record<string, string>
-                              )[text(p, "status")]
-                            }{" "}
-                            {p.data.archivedAt ? " · 已归档 " : ""}·{" "}
-                            {
-                              tasks.filter(
-                                (t) =>
-                                  t.data.projectId === p.id &&
-                                  t.data.status === "completed",
-                              ).length
-                            }
-                            /
-                            {
-                              tasks.filter((t) => t.data.projectId === p.id)
-                                .length
-                            }{" "}
-                            完成
-                          </small>
-                        </button>
-                        {text(p, "recoveryNote") && (
-                          <p>{text(p, "recoveryNote")}</p>
-                        )}
-                        <button
-                          className="pm-secondary"
-                          onClick={() => {
-                            if (canNavigate()) {
-                              setError("");
-                              setEditing(p);
-                            }
-                          }}
-                        >
-                          编辑与恢复卡
-                        </button>
-                      </article>
-                    ))}
-                    {!projects.length && (
-                      <p className="pm-empty">
-                        还没有项目。点击 ＋ 创建第一个项目。
-                      </p>
-                    )}
+                    <PersonalProjectList work={mobilePersonalWork(snapshot, timeZone)} disabled={busy || childBusy || !!editing}
+                      onOpen={id => {if(canNavigate()) setProjectFilter(id);}}
+                      onCreate={() => create("project")}
+                      onEdit={id => {if(canNavigate()){setBasicProject(true);setEditing(projects.find(p=>p.id===id)!);}}}
+                    />
                   </>
                 )}
               </>
@@ -849,7 +813,7 @@ export function MobileApp() {
                 onBusyChange={setChildBusy}
               />
             )}
-            {!["tasks", "calendar", "projects", "inbox"].includes(section) && (
+            {!["todos", "tasks", "calendar", "projects", "inbox"].includes(section) && (
               <Extras
                 section={section as ExtraSection}
                 searchQuery={searchQuery}
@@ -866,9 +830,10 @@ export function MobileApp() {
           visible={section === "settings"}
         />
       </main>
-      {["tasks", "calendar", "projects"].includes(section) && !editing && (
+      {["todos", "tasks", "calendar", "projects"].includes(section) && !editing && !childBusy && (
         <button
           className="pm-fab"
+          disabled={busy || childBusy || pending.current!==null}
           aria-label={
             section === "projects" && !projectFilter ? "新建项目" : "新建任务"
           }
@@ -883,11 +848,8 @@ export function MobileApp() {
       )}
       <nav className="pm-bottom" aria-label="主导航">
         {[
-          ["tasks", "清单"],
-          ["calendar", "日历"],
-          ["focus", "专注"],
-          ["stats", "统计"],
-          ["settings", "我的"],
+          ["todos", "待办"],
+          ["projects", "项目"],
         ].map(([key, label]) => (
           <button
             key={key}
@@ -900,10 +862,22 @@ export function MobileApp() {
           </button>
         ))}
       </nav>
-      {editing && (
+      {editing && editing.kind === "project" && basicProject && (
+        <PersonalProjectForm key={editing.id} modal
+          initial={editing.version ? {name: text(editing,"title"), outcome: text(editing,"outcome"), targetDate: typeof editing.data.dueDate === "string" ? editing.data.dueDate : null} : null}
+          createSave={() => mobileProjectSave(editing, snapshot.workspaceId ?? "local")}
+          onBusyChange={setChildBusy}
+          onCancel={() => setEditing(null)}
+          onSaved={async id => {
+            await refresh(false, true);
+            setEditing(null);setSection("projects");setProjectFilter(id);setNotice("项目已保存");
+          }} />
+      )}
+      {editing && !(editing.kind === "project" && basicProject) && (
         <Editor
           key={editing.id}
           entity={editing}
+          today={today}
           tasks={tasks}
           projects={projects}
           sections={entities.filter((e) => e.kind === "section")}
@@ -932,6 +906,11 @@ export function MobileApp() {
           }}
           onSave={(entity, data, deleted) => void save(entity, data, deleted)}
         />
+      )}
+      {notice && (
+        <div className="pm-entry-notice" role="status">
+          {notice}
+        </div>
       )}
     </div>
   );
@@ -1142,6 +1121,7 @@ function Organizer({
 }
 function Editor({
   entity,
+  today,
   tasks,
   projects,
   sections,
@@ -1152,6 +1132,7 @@ function Editor({
   onClose,
 }: {
   entity: WorkspaceEntity;
+  today: string;
   tasks: WorkspaceEntity[];
   projects: WorkspaceEntity[];
   sections: WorkspaceEntity[];
@@ -1167,9 +1148,23 @@ function Editor({
     Array.isArray(entity.data.tags) ? entity.data.tags.join(", ") : "",
   );
   const ref = useRef<HTMLDialogElement>(null);
+  const [fullDetails, setFullDetails] = useState(false);
+  const quick = entity.kind === "task" && !entity.version && !fullDetails;
   useEffect(() => {
-    ref.current?.showModal();
-  }, []);
+    const dialog = ref.current;
+    const overflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    dialog?.showModal();
+    if (quick) {
+      dialog
+        ?.querySelector<HTMLInputElement>(".pm-entry-title")
+        ?.focus({ preventScroll: true });
+    }
+    return () => {
+      dialog?.close();
+      document.body.style.overflow = overflow;
+    };
+  }, [quick]);
   function update(key: string, value: unknown) {
     setData({ ...data, [key]: value });
     setDirty(true);
@@ -1178,6 +1173,29 @@ function Editor({
     if (!busy && (!dirty || window.confirm("放弃尚未保存的修改？"))) onClose();
   }
   const field = (key: string) => String(data[key] ?? "");
+  if (quick)
+    return (
+      <QuickTaskEntry
+        dialogRef={ref}
+        data={data}
+        today={today}
+        tomorrow={shifted(today, 1)}
+        busy={busy}
+        error={error}
+        onRetry={onRetry}
+        onChange={update}
+        onSave={() => onSave({ ...data, title: field("title").trim() })}
+        onClose={close}
+        onMore={() => setFullDetails(true)}
+        context={
+          tasks.find((t) => t.id === data.parentId)?.data.title
+            ? `子任务 · ${String(tasks.find((t) => t.id === data.parentId)?.data.title)}`
+            : String(
+                projects.find((p) => p.id === data.projectId)?.data.title ?? "",
+              )
+        }
+      />
+    );
   return (
     <dialog
       ref={ref}

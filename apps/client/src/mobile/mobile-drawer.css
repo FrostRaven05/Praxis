@@ -150,6 +150,7 @@
   grid-template-columns: repeat(12, minmax(0, 1fr));
   grid-auto-flow: column;
   gap: 3px;
+  max-width: 320px;
 }
 .pm-drawer-heatmap span {
   aspect-ratio: 1;

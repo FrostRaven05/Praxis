@@ -4,6 +4,8 @@ use std::path::{Path, PathBuf};
 use tauri::State;
 use uuid::Uuid;
 
+const DEFAULT_ACCOUNT_BASE_URL: &str = "https://todo.frostraven05.com";
+
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct User {
@@ -92,11 +94,7 @@ fn client(ca_pem: &str) -> Result<reqwest::Client, String> {
 }
 #[tauri::command]
 pub fn account_status(accounts: State<'_, Accounts>) -> serde_json::Value {
-    let default_url = lan_sync::pairing(&accounts.root.join("lan-sync.dpapi"))
-        .ok()
-        .map(|p| p.base_url)
-        .unwrap_or_default();
-    serde_json::json!({ "user": accounts.active.as_ref().map(|a| &a.user), "baseUrl": accounts.active.as_ref().map(|a| a.base_url.as_str()).unwrap_or(&default_url), "expiresAt": accounts.active.as_ref().map(|a| &a.expires_at) })
+    serde_json::json!({ "user": accounts.active.as_ref().map(|a| &a.user), "baseUrl": accounts.active.as_ref().map(|a| a.base_url.as_str()).unwrap_or(DEFAULT_ACCOUNT_BASE_URL), "expiresAt": accounts.active.as_ref().map(|a| &a.expires_at) })
 }
 #[tauri::command]
 pub async fn account_authenticate(

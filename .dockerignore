@@ -1,0 +1,13 @@
+**
+!package.json
+!pnpm-lock.yaml
+!pnpm-workspace.yaml
+!apps/
+!apps/api/
+!apps/api/package.json
+!apps/api/tsconfig.json
+!apps/api/scripts/
+!apps/api/scripts/**
+!apps/api/src/
+!apps/api/src/**
+apps/api/src/**/*.test.ts

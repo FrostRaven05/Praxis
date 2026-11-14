@@ -1,0 +1,34 @@
+{
+  "testedAt": "2026-10-25T15:19:49.298600+00:00",
+  "credentialCheck": {
+    "name": "DEEPSEEK_API_KEY",
+    "processPresent": true,
+    "machinePresent": true,
+    "valuePrinted": false,
+    "valueWrittenToProject": false
+  },
+  "configuration": {
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "baseUrl": "https://api.deepseek.com"
+  },
+  "tests": {
+    "files": 39,
+    "passed": 199,
+    "typecheck": "passed",
+    "apiBuild": "passed"
+  },
+  "liveProbe": {
+    "endpoint": "https://api.deepseek.com/models",
+    "networkError": "ENOTFOUND",
+    "receivedProviderResponse": false
+  },
+  "liveRun": {
+    "case": "clarify",
+    "status": "failed",
+    "code": "AI_UPSTREAM",
+    "businessTaskWrites": 0,
+    "otherCases": "not attempted after first failure"
+  },
+  "productionDeployed": false
+}

@@ -1,0 +1,79 @@
+import type { FastifyInstance, FastifyRequest } from "fastify";
+import {
+  createProjectSchema,
+  createProjectTasksSchema,
+  projectUuid,
+  type CreateProjectRequest,
+  type CreateProjectTasksRequest,
+  type ProjectIdentity,
+} from "./project-contract.js";
+import { ProjectError, type ProjectStore } from "./project-store.js";
+
+export function registerProjectRoutes(
+  app: FastifyInstance,
+  store: ProjectStore,
+  identity: (request: FastifyRequest) => ProjectIdentity | undefined,
+) {
+  const actor = (request: FastifyRequest) => {
+    const current = identity(request);
+    if (!current) throw new ProjectError("UNAUTHENTICATED", 401);
+    return current;
+  };
+  const projectParams = {
+    type: "object",
+    additionalProperties: false,
+    required: ["projectId"],
+    properties: { projectId: projectUuid },
+  };
+  app.post<{ Body: CreateProjectRequest }>(
+    "/v2/projects",
+    { schema: { body: createProjectSchema }, bodyLimit: 16384 },
+    async (request, reply) =>
+      reply
+        .code(201)
+        .header("Cache-Control", "no-store")
+        .send(store.create(actor(request), request.body)),
+  );
+  app.get<{ Params: { projectId: string } }>(
+    "/v2/projects/:projectId/snapshot",
+    { schema: { params: projectParams } },
+    async (request, reply) =>
+      reply
+        .header("Cache-Control", "no-store")
+        .send(store.snapshot(actor(request), request.params.projectId)),
+  );
+  app.post<{ Params: { projectId: string }; Body: CreateProjectTasksRequest }>(
+    "/v2/projects/:projectId/commands",
+    {
+      schema: { params: projectParams, body: createProjectTasksSchema },
+      bodyLimit: 524288,
+    },
+    async (request, reply) =>
+      reply
+        .header("Cache-Control", "no-store")
+        .send(
+          store.createTasks(
+            actor(request),
+            request.params.projectId,
+            request.body,
+          ),
+        ),
+  );
+  app.get<{ Params: { operationId: string } }>(
+    "/v2/commands/:operationId",
+    {
+      schema: {
+        params: {
+          type: "object",
+          additionalProperties: false,
+          required: ["operationId"],
+          properties: { operationId: projectUuid },
+        },
+      },
+    },
+    async (request, reply) =>
+      reply
+        .header("Cache-Control", "no-store")
+        .send(store.receipt(actor(request), request.params.operationId)),
+  );
+}

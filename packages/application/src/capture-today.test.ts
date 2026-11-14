@@ -9,6 +9,45 @@ const unavailable: TaskStorage = {
     throw new Error("Disk unavailable");
   },
 };
+
+test("capture follows the selected calendar date and retries the same operation", async () => {
+  const commands: import("./capture-today").CaptureCommand[] = [];
+  const storage: TaskStorage = {
+    async capture(command) {
+      commands.push(command);
+      if (commands.length === 1) throw new Error("reply lost");
+      return {
+        taskId: command.taskId,
+        planId: command.planId,
+        title: command.title,
+        executionDate: command.executionDate,
+        createdAt: command.occurredAt,
+        projectId: null,
+        status: "todo",
+        source: "temporary",
+      };
+    },
+    async listDay() {
+      return [];
+    },
+  };
+  const capture = new CaptureToday(storage);
+  await expect(
+    capture.add("明天的报告", "Asia/Hong_Kong", "2027-01-05"),
+  ).rejects.toThrow("reply lost");
+  const task = await capture.add("明天的报告", "Asia/Hong_Kong", "2027-01-05");
+  expect(task.executionDate).toBe("2027-01-05");
+  expect(commands[0]).toEqual(commands[1]);
+  await capture.add("明天的报告", "Asia/Hong_Kong", "2027-01-06");
+  expect(commands[2]?.operationId).not.toBe(commands[1]?.operationId);
+  expect(commands[2]?.executionDate).toBe("2027-01-06");
+});
+
+test("an invalid selected date is rejected before storage", async () => {
+  await expect(
+    new CaptureToday(unavailable).add("任务", "Asia/Hong_Kong", "2026-02-30"),
+  ).rejects.toThrow("请选择有效的安排日期");
+});
 test("an empty title is rejected with a useful message before attempting storage", async () => {
   const today = new CaptureToday(unavailable);
   await expect(today.add("   \n ", "Asia/Hong_Kong")).rejects.toThrow(

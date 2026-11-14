@@ -1,0 +1,11 @@
+{
+  "beforeUpgradeBackupAllTablesEqual": true,
+  "fromSchema": 10,
+  "originalTaskVersion": 7,
+  "queuePreserved": true,
+  "reopenAllTablesEqual": true,
+  "synthetic": true,
+  "taskIdUnchanged": true,
+  "toSchema": 25,
+  "unknownCompletionStillNull": true
+}

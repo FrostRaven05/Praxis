@@ -1,0 +1,9 @@
+{
+  "host": "0.0.0.0",
+  "port": 4318,
+  "databasePath": "/data/praxis.sqlite",
+  "keyPath": "/config/server.key",
+  "certPath": "/config/fullchain.pem",
+  "healthServerName": "sync.example.com",
+  "devices": []
+}

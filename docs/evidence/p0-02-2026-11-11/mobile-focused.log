@@ -1,0 +1,11 @@
+
+ RUN  v3.2.7 C:/Project/01Project/Praxis
+
+ ✓ packages/storage-mobile/src/personal-compatibility.test.ts (3 tests) 1028ms
+   ✓ keeps one task identity when changing personal project, rejects stale edits and does not merge separate account stores  471ms
+
+ Test Files  1 passed (1)
+      Tests  3 passed (3)
+   Start at  21:43:35
+   Duration  1.73s (transform 135ms, setup 0ms, collect 217ms, tests 1.03s, environment 0ms, prepare 201ms)
+

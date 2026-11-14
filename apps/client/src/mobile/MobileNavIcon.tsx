@@ -1,4 +1,6 @@
 export type MobileIconName =
+  | "todos"
+  | "projects"
   | "tasks"
   | "calendar"
   | "focus"
@@ -19,8 +21,10 @@ export function MobileNavIcon({ name }: { name: MobileIconName }) {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      {name === "tasks" ? (
+      {name === "tasks" || name === "todos" ? (
         <path d="M4 6h2m4 0h10M4 12h2m4 0h10M4 18h2m4 0h10" />
+      ) : name === "projects" ? (
+        <path d="M3 7V5h6l2 2h10v13H3V7Z" />
       ) : name === "calendar" ? (
         <>
           <rect x="3" y="5" width="18" height="16" rx="3" />

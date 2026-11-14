@@ -111,6 +111,7 @@ export function SearchViews() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [detail, setDetail] = useState<Row | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const request = useRef(0);
   useLanRefresh(
     async () => ({
@@ -135,7 +136,10 @@ export function SearchViews() {
     setBusy(true);
     try {
       const data = await invoke<Result>("view_query", { query: q });
-      if (generation === request.current) setResult(data);
+      if (generation === request.current) {
+        setResult(data);
+        setFiltersOpen(false);
+      }
     } catch (e) {
       if (generation === request.current) setError(String(e));
     } finally {
@@ -280,8 +284,7 @@ export function SearchViews() {
   }
   return (
     <section className="search-views" aria-label="搜索与筛选">
-      <h2>搜索与筛选</h2>
-      <p>本机离线搜索。回收站内容不参与结果。</p>
+      <p className="search-lede">本机离线搜索。回收站内容不参与结果。</p>
       {error && <p role="alert">{error}</p>}
       {!snapshot ? (
         <p>
@@ -309,18 +312,21 @@ export function SearchViews() {
             ))}
           </div>
           <form
+            className="search-form"
             onSubmit={(e) => {
               e.preventDefault();
               void search(query);
             }}
           >
-            <fieldset disabled={busy}>
-              <legend>搜索范围</legend>
-              <label>
-                文字
+            <div className="search-text">
+              <label htmlFor="search-text-input">文字</label>
+              <div className="search-input-row">
                 <input
+                  id="search-text-input"
+                  autoFocus
                   aria-label="搜索文字"
                   value={query.text}
+                  disabled={busy}
                   onChange={(e) => setQuery({ ...query, text: e.target.value })}
                   onKeyDown={(e) => {
                     if (
@@ -329,179 +335,212 @@ export function SearchViews() {
                     )
                       e.preventDefault();
                   }}
-                  placeholder="标题或正文"
+                  placeholder="搜索标题、正文、项目或记录"
                 />
-              </label>
-              <label>
-                类型
-                <select
-                  value={query.entityType}
-                  onChange={(e) =>
-                    setQuery({
-                      ...query,
-                      entityType: e.target.value,
-                      groups: e.target.value === "task" ? query.groups : [],
-                    })
-                  }
-                >
-                  {Object.entries(types).map(([v, n]) => (
-                    <option key={v} value={v}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                项目范围
-                <select
-                  value={query.projectId ?? ""}
-                  onChange={(e) =>
-                    setQuery({ ...query, projectId: e.target.value || null })
-                  }
-                >
-                  <option value="">所有项目</option>
-                  {snapshot.projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                状态
-                <select
-                  value={query.status ?? ""}
-                  onChange={(e) =>
-                    setQuery({ ...query, status: e.target.value || null })
-                  }
-                >
-                  <option value="">全部状态</option>
-                  {Object.entries(statuses).map(([v, n]) => (
-                    <option key={v} value={v}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                <input
-                  type="checkbox"
-                  checked={query.includeArchived}
-                  onChange={(e) =>
-                    setQuery({ ...query, includeArchived: e.target.checked })
-                  }
-                />
-                包含归档项目及其任务
-              </label>
-            </fieldset>
-            {query.entityType === "task" && (
-              <fieldset disabled={busy}>
-                <legend>
-                  条件组：组内全部符合（AND），组间任一符合（OR，最多 3 组）
-                </legend>
-                {query.groups.map((group, gi) => (
-                  <div className="view-group" key={gi}>
-                    <p>条件组 {gi + 1}</p>
-                    {group.map((c, ci) => condition(c, gi, ci))}
-                    <button
-                      type="button"
-                      disabled={group.length >= 12}
-                      onClick={() =>
-                        setQuery({
-                          ...query,
-                          groups: query.groups.map((g, i) =>
-                            i === gi ? [...g, defaultCondition()] : g,
-                          ),
-                        })
-                      }
-                    >
-                      添加 AND 条件
-                    </button>
-                  </div>
-                ))}
-                <button
-                  type="button"
-                  disabled={query.groups.length >= 3}
-                  onClick={() =>
-                    setQuery({
-                      ...query,
-                      groups: [...query.groups, [defaultCondition()]],
-                    })
-                  }
-                >
-                  添加 OR 条件组
+                <button type="submit" className="primary" disabled={busy}>
+                  {busy ? "查询中…" : "搜索 / 应用筛选"}
                 </button>
-                <p>
-                  预计时长由你填写；“零碎处理”的 15 分钟阈值可在条件中修改。
-                </p>
+              </div>
+            </div>
+            <details
+              className="search-advanced"
+              open={filtersOpen}
+              onToggle={(e) => setFiltersOpen(e.currentTarget.open)}
+            >
+              <summary>
+                筛选与排序
+                {query.entityType !== "all" ||
+                query.projectId ||
+                query.status ||
+                query.includeArchived ||
+                query.groups.length ||
+                query.sort !== empty.sort ||
+                query.groupBy !== empty.groupBy
+                  ? "（已设置）"
+                  : ""}
+              </summary>
+              <fieldset className="search-scope" disabled={busy}>
+                <legend>搜索范围</legend>
+                <label>
+                  类型
+                  <select
+                    value={query.entityType}
+                    onChange={(e) =>
+                      setQuery({
+                        ...query,
+                        entityType: e.target.value,
+                        groups: e.target.value === "task" ? query.groups : [],
+                      })
+                    }
+                  >
+                    {Object.entries(types).map(([v, n]) => (
+                      <option key={v} value={v}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  项目范围
+                  <select
+                    value={query.projectId ?? ""}
+                    onChange={(e) =>
+                      setQuery({ ...query, projectId: e.target.value || null })
+                    }
+                  >
+                    <option value="">所有项目</option>
+                    {snapshot.projects.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  状态
+                  <select
+                    value={query.status ?? ""}
+                    onChange={(e) =>
+                      setQuery({ ...query, status: e.target.value || null })
+                    }
+                  >
+                    <option value="">全部状态</option>
+                    {Object.entries(statuses).map(([v, n]) => (
+                      <option key={v} value={v}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={query.includeArchived}
+                    onChange={(e) =>
+                      setQuery({ ...query, includeArchived: e.target.checked })
+                    }
+                  />
+                  包含归档项目及其任务
+                </label>
               </fieldset>
-            )}
-            <fieldset disabled={busy}>
-              <legend>展示</legend>
-              <label>
-                排序
-                <select
-                  value={query.sort}
-                  onChange={(e) => setQuery({ ...query, sort: e.target.value })}
-                >
-                  {Object.entries({
-                    title: "标题",
-                    priority: "优先级",
-                    plan: "计划日期",
-                    deadline: "截止日期",
-                    followUp: "跟进日期",
-                    created: "创建时间",
-                  }).map(([v, n]) => (
-                    <option key={v} value={v}>
-                      {n}
-                    </option>
+              {query.entityType === "task" && (
+                <fieldset disabled={busy}>
+                  <legend>
+                    条件组：组内全部符合（AND），组间任一符合（OR，最多 3 组）
+                  </legend>
+                  {query.groups.map((group, gi) => (
+                    <div className="view-group" key={gi}>
+                      <p>条件组 {gi + 1}</p>
+                      {group.map((c, ci) => condition(c, gi, ci))}
+                      <button
+                        type="button"
+                        disabled={group.length >= 12}
+                        onClick={() =>
+                          setQuery({
+                            ...query,
+                            groups: query.groups.map((g, i) =>
+                              i === gi ? [...g, defaultCondition()] : g,
+                            ),
+                          })
+                        }
+                      >
+                        添加 AND 条件
+                      </button>
+                    </div>
                   ))}
-                </select>
-              </label>
-              <label>
-                分组
-                <select
-                  value={query.groupBy}
-                  onChange={(e) =>
-                    setQuery({ ...query, groupBy: e.target.value })
-                  }
-                >
-                  {Object.entries({
-                    none: "不分组",
-                    project: "项目",
-                    status: "状态",
-                    priority: "优先级",
-                    type: "类型",
-                  }).map(([v, n]) => (
-                    <option key={v} value={v}>
-                      {n}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <button type="submit">
-                {busy ? "查询中…" : "搜索 / 应用筛选"}
-              </button>
-            </fieldset>
+                  <button
+                    type="button"
+                    disabled={query.groups.length >= 3}
+                    onClick={() =>
+                      setQuery({
+                        ...query,
+                        groups: [...query.groups, [defaultCondition()]],
+                      })
+                    }
+                  >
+                    添加 OR 条件组
+                  </button>
+                  <p>
+                    预计时长由你填写；“零碎处理”的 15 分钟阈值可在条件中修改。
+                  </p>
+                </fieldset>
+              )}
+              <fieldset disabled={busy}>
+                <legend>展示</legend>
+                <label>
+                  排序
+                  <select
+                    value={query.sort}
+                    onChange={(e) =>
+                      setQuery({ ...query, sort: e.target.value })
+                    }
+                  >
+                    {Object.entries({
+                      title: "标题",
+                      priority: "优先级",
+                      plan: "计划日期",
+                      deadline: "截止日期",
+                      followUp: "跟进日期",
+                      created: "创建时间",
+                    }).map(([v, n]) => (
+                      <option key={v} value={v}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  分组
+                  <select
+                    value={query.groupBy}
+                    onChange={(e) =>
+                      setQuery({ ...query, groupBy: e.target.value })
+                    }
+                  >
+                    {Object.entries({
+                      none: "不分组",
+                      project: "项目",
+                      status: "状态",
+                      priority: "优先级",
+                      type: "类型",
+                    }).map(([v, n]) => (
+                      <option key={v} value={v}>
+                        {n}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </fieldset>
+            </details>
           </form>
           {result ? (
-            <div aria-live="polite">
+            <div className="search-results" aria-live="polite">
               {result.warnings.map((w) => (
                 <p role="alert" key={w}>
                   {w}
                 </p>
               ))}
-              <p>
-                {result.rows.length} 项 · 工作空间时区 {result.timeZone} ·{" "}
-                {result.today}。结果对应最近一次查询。
-              </p>
+              <p>找到 {result.rows.length} 项结果</p>
               {!result.rows.length && <p>没有符合当前搜索和条件的内容。</p>}
               {[...groups].map(([group, rows]) => (
                 <section key={group}>
                   <h3>{group}</h3>
                   {rows.map((row) => (
                     <article key={`${row.type}:${row.id}`}>
-                      <button onClick={() => setDetail(row)}>
+                      <button
+                        onClick={() =>
+                          row.type === "task" || row.type === "project"
+                            ? window.dispatchEvent(
+                                new CustomEvent(
+                                  row.type === "task"
+                                    ? "praxis-work-task"
+                                    : "praxis-work-project",
+                                  { detail: row.id },
+                                ),
+                              )
+                            : setDetail(row)
+                        }
+                      >
                         {row.title || "无标题记录"}
                       </button>
                       <small>
@@ -509,32 +548,6 @@ export function SearchViews() {
                         {row.projectName ? ` · ${row.projectName}` : ""}
                       </small>
                       <p>{row.body.slice(0, 180)}</p>
-                      {row.type === "task" && (
-                        <button
-                          onClick={() =>
-                            window.dispatchEvent(
-                              new CustomEvent("praxis-work-task", {
-                                detail: row.id,
-                              }),
-                            )
-                          }
-                        >
-                          打开任务
-                        </button>
-                      )}
-                      {row.type === "project" && (
-                        <button
-                          onClick={() =>
-                            window.dispatchEvent(
-                              new CustomEvent("praxis-work-project", {
-                                detail: row.id,
-                              }),
-                            )
-                          }
-                        >
-                          打开项目
-                        </button>
-                      )}
                     </article>
                   ))}
                 </section>

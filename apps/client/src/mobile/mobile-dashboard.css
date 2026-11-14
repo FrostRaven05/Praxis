@@ -7,16 +7,16 @@
 }
 .pm-month-calendar {
   background: var(--surface);
-  border-radius: 20px;
-  overflow: hidden;
+  border-radius: 24px;
+  padding: 8px 10px 14px;
   margin: 4px 12px 14px;
-  box-shadow: 0 3px 14px rgb(0 0 0 / 3%);
+  box-shadow: var(--shadow-card);
 }
 .pm-month-toolbar {
   display: flex;
   align-items: center;
-  padding: 10px 8px;
-  gap: 4px;
+  padding: 2px 0 10px;
+  gap: 6px;
 }
 .pm-month-toolbar > label {
   position: relative;
@@ -38,74 +38,106 @@
   border-radius: 6px;
 }
 .pm-app .pm-month-toolbar button {
+  min-width: 44px;
   padding: 0 10px;
   color: var(--text-secondary);
+  border-radius: 50%;
+  font-size: 22px;
+}
+.pm-app .pm-month-toolbar .pm-month-today {
+  border-radius: 999px;
+  background: var(--surface-secondary);
+  color: var(--primary-text);
+  font-size: 12px;
 }
 .pm-month-weekdays,
 .pm-month-grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
+  column-gap: 2px;
+}
+.pm-month-grid {
+  row-gap: 4px;
 }
 .pm-month-weekdays span {
   text-align: center;
-  padding: 10px 0;
+  padding: 8px 0 12px;
   font-size: 11px;
-  color: var(--primary-text);
-  background: var(--surface-secondary);
+  color: var(--text-secondary);
 }
 .pm-app .pm-month-day {
   min-width: 0;
-  height: 104px;
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  padding: 5px 3px;
+  height: 58px;
+  padding: 3px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  border-radius: 0;
-}
-.pm-month-day:nth-child(7n) {
-  border-right: 0;
-}
-.pm-app .pm-month-day.selected {
-  background: var(--selected);
-  box-shadow: inset 0 0 0 1.5px var(--primary-text);
+  border-radius: 16px;
 }
 .pm-month-day.outside {
-  color: var(--text-secondary);
-  background: var(--surface-secondary);
+  color: var(--text-tertiary);
+}
+.pm-month-day.outside .pm-month-number {
+  opacity: 0.55;
+}
+.pm-calendar-agenda {
+  margin: 4px 12px 0;
+  padding-bottom: 8px;
+  border-radius: 20px 20px 0 0;
+  background: var(--surface);
+  overflow: hidden;
+}
+.pm-calendar-agenda .pm-list-heading {
+  padding: 14px 18px 6px;
+}
+.pm-calendar-agenda .pm-task {
+  padding-right: 88px;
 }
 .pm-month-number {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   font-size: 14px;
   flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }
-.pm-month-number.today {
+.pm-month-number.is-today {
+  box-shadow: inset 0 0 0 1px var(--primary-text);
+  color: var(--primary-text);
+  font-weight: 700;
+}
+.pm-month-day.selected .pm-month-number {
   background: var(--primary);
   color: var(--on-primary);
   font-weight: 700;
+  box-shadow: none;
+  opacity: 1;
+}
+@media (hover: hover) {
+  .pm-month-day:not(.selected):hover .pm-month-number {
+    background: var(--surface-hover);
+  }
 }
 .pm-month-snippets {
   width: 100%;
   display: grid;
-  gap: 3px;
-  font-size: 10px;
-  line-height: 16px;
-  text-align: left;
+  place-items: center;
   min-width: 0;
+}
+.pm-month-count {
+  color: var(--primary-text);
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 .pm-month-snippets > span {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  background: var(--surface-secondary);
   padding: 0 2px;
-  border-radius: 3px;
   color: var(--text-secondary);
 }
 .pm-month-snippets .done {
@@ -564,14 +596,31 @@
   margin: 0;
 }
 .pm-app .pm-profile-controls > summary {
-  min-height: 24px;
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+  list-style: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.pm-app .pm-profile-controls > summary::-webkit-details-marker {
+  display: none;
+}
+.pm-app .pm-profile-controls > summary::after {
+  content: "›";
+  margin-left: auto;
+  color: var(--text-tertiary);
+  font-size: 18px;
+  line-height: 1;
+  transition: transform 160ms ease-out;
+}
+.pm-app .pm-profile-controls[open] > summary::after {
+  transform: rotate(90deg);
 }
 @media (max-width: 350px) {
   .pm-month-calendar {
     margin-inline: 8px;
-  }
-  .pm-app .pm-month-day {
-    height: 92px;
   }
   .pm-stat-cards {
     gap: 8px;

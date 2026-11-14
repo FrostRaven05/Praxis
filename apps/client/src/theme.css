@@ -3,15 +3,15 @@
   color-scheme: light;
   --font-ui: "HarmonyOS Sans SC", "Segoe UI", "Microsoft YaHei", sans-serif;
   --font-data: ui-monospace, "Cascadia Code", Consolas, monospace;
-  --primary-light: #bde7ee;
+  --primary-light: #a6d6c3;
   --primary: var(--primary-light);
-  --primary-light-hover: #a8cdd3;
+  --primary-light-hover: #94bfae;
   --primary-hover: var(--primary-light-hover);
-  --primary-dark: #bde7ee;
-  --primary-dark-hover: #c5eaf0;
+  --primary-dark: #a6d6c3;
+  --primary-dark-hover: #b4dccc;
   --primary-text: var(--primary-light-text);
-  --primary-light-text: #287f91;
-  --primary-dark-text: #bde7ee;
+  --primary-light-text: #2e7a64;
+  --primary-dark-text: #a6d6c3;
   --on-primary: var(--on-primary-light);
   --on-primary-light: #111111;
   --on-primary-inverse: #111111;
@@ -23,7 +23,7 @@
   --surface-canvas: #f6f7f9;
   --text-primary: #0d0d0d;
   --text-secondary: #6e6e80;
-  --text-tertiary: #8e8ea0;
+  --text-tertiary: #6f6f82;
   --success: #10b981;
   --warning: #f59e0b;
   --danger: #ef4444;
@@ -62,7 +62,7 @@
     --sidebar-surface: #171717;
     --text-primary: #ececec;
     --text-secondary: #b4b4b4;
-    --text-tertiary: #676767;
+    --text-tertiary: #a6a6a6;
     --shadow-color: rgb(0 0 0 / 12%);
     --shadow-card: 0 2px 8px var(--shadow-color);
   }

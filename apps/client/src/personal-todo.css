@@ -1,0 +1,301 @@
+.personal-todo-home {
+  width: min(100%, 920px);
+  min-width: 0;
+  padding: 42px clamp(20px, 4vw, 56px) 80px;
+  margin: 0 auto;
+  color: var(--text-primary);
+}
+.workspace.modern-workspace > .personal-todo-home {
+  margin-left: var(--sidebar-width, 238px);
+  margin-right: 0;
+  width: calc(100% - var(--sidebar-width, 238px));
+  flex: 1;
+  padding: 42px
+    max(32px, calc((100vw - var(--sidebar-width, 238px) - 920px) / 2)) 80px;
+}
+.personal-todo-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+.personal-todo-header h1 {
+  margin: 0 0 8px;
+  font-size: 28px;
+  line-height: 1.3;
+  letter-spacing: -0.03em;
+}
+.personal-todo-header p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.personal-todo-tools {
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  flex-wrap: wrap;
+  max-width: 100%;
+}
+.personal-todo-home .personal-todo-tools button,
+.personal-todo-home .personal-todo-error button {
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.personal-todo-home .personal-todo-tools button:first-child {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+.personal-todo-home button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.personal-todo-home button:focus-visible,
+.personal-todo-home summary:focus-visible {
+  outline: 2px solid var(--primary-text);
+  outline-offset: 3px;
+}
+.personal-todo-group {
+  margin: 26px 0 0;
+}
+.personal-todo-group h2,
+.personal-todo-completed summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--line);
+}
+.personal-todo-group h2 span,
+.personal-todo-completed summary span {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 400;
+}
+.personal-todo-group[data-group="overdue"] h2 {
+  color: var(--danger-text);
+}
+.personal-todo-home ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.personal-todo-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+}
+.personal-todo-home .personal-todo-row.uses-daily-actions {
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 6px 4px;
+  border-radius: var(--radius-control);
+}
+.personal-todo-row.uses-daily-actions.selected {
+  background: var(--selected);
+}
+.personal-todo-row.uses-daily-actions > .completion-toggle,
+.personal-todo-row.uses-daily-actions > .task-action-trigger {
+  flex-shrink: 0;
+}
+.personal-todo-row.uses-daily-actions .personal-todo-title {
+  min-height: 36px;
+  padding: 6px 4px;
+  font-size: 15px;
+}
+.personal-todo-row.uses-daily-actions .personal-todo-meta:empty {
+  display: none;
+}
+@media (min-width: 1100px) {
+  .workspace.modern-workspace > .personal-todo-home:has(.task-detail) {
+    width: calc(100% - var(--sidebar-width) - var(--inspector-width));
+    margin-right: var(--inspector-width);
+    padding-inline: 24px;
+  }
+}
+.personal-todo-home .personal-todo-check {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  margin-top: 1px;
+  width: 22px;
+  height: 22px;
+  min-height: 22px;
+  padding: 0;
+  border: 1.5px solid var(--text-tertiary);
+  border-radius: 50%;
+  color: var(--primary-text);
+  background: var(--surface);
+}
+@media (max-width: 700px) {
+  .workspace.modern-workspace > .personal-todo-home {
+    margin-left: 0;
+    width: 100%;
+    padding: 24px 20px 90px;
+  }
+}
+.personal-todo-home .personal-todo-check[aria-pressed="true"] {
+  border-color: var(--primary-text);
+  background: var(--selected);
+}
+.personal-todo-content {
+  min-width: 0;
+  flex: 1;
+}
+.personal-todo-home .personal-todo-title {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  text-align: left;
+  font: inherit;
+  line-height: 1.55;
+  color: var(--text-primary);
+  background: transparent;
+  overflow-wrap: anywhere;
+}
+.personal-todo-meta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.personal-todo-home .personal-todo-project {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--primary-text);
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.personal-todo-status[data-state="blocked"] {
+  color: var(--warning-text);
+}
+.personal-todo-status[data-state="in_progress"] {
+  color: var(--primary-text);
+}
+.personal-todo-completed {
+  margin-top: 32px;
+  color: var(--text-secondary);
+}
+.personal-todo-completed summary {
+  display: list-item;
+  cursor: pointer;
+}
+.personal-todo-completed .personal-todo-title {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+}
+.personal-todo-notice {
+  font-size: 13px;
+  color: var(--success-text);
+}
+.personal-todo-error {
+  padding: 14px 16px;
+  border-radius: var(--radius-control);
+  background: var(--danger-surface);
+  color: var(--text-primary);
+  font-size: 13px;
+}
+.personal-todo-error p {
+  margin: 0 0 8px;
+}
+.personal-todo-empty {
+  padding: 38px 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.personal-todo-empty h2 {
+  font-size: 16px;
+  color: var(--text-primary);
+  margin: 0 0 10px;
+}
+.personal-todo-home.is-embedded {
+  padding: 4px 20px 24px;
+}
+.pm-app .personal-todo-check {
+  position: relative;
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  border: 1.5px solid var(--text-tertiary);
+  background: var(--surface);
+  color: var(--primary-text);
+}
+.pm-app .personal-todo-check::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+}
+.pm-app .personal-todo-check[aria-pressed="true"] {
+  border-color: var(--primary-text);
+  background: var(--selected);
+}
+.pm-app .personal-todo-title {
+  min-height: 28px;
+  text-align: left;
+}
+.pm-app .personal-todo-project {
+  min-height: 28px;
+  color: var(--primary-text);
+  text-align: left;
+}
+.pm-app .personal-todo-tools button,
+.pm-app .personal-todo-error button {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: var(--radius-control);
+  padding: 7px 12px;
+}
+.pm-app .personal-todo-tools button:first-child {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--on-primary);
+}
+.is-embedded .personal-todo-header {
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+@media (max-width: 600px) {
+  .personal-todo-home {
+    padding: 24px 20px 90px;
+  }
+  .personal-todo-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+  .personal-todo-row {
+    gap: 10px;
+    padding: 15px 0;
+  }
+  .personal-todo-check {
+    width: 26px;
+    height: 26px;
+  }
+  .personal-todo-title {
+    min-height: 26px;
+  }
+  .personal-todo-project {
+    min-height: 24px;
+  }
+}

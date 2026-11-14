@@ -1,0 +1,12 @@
+PASS actual Tauri and isolated Android package start with two primary destinations and fresh guest storage
+PASS actual guest project/task identity, progress, completion XP, deletion and checked undo round-trip
+PASS actual desktop UI creates/validates backup, restarts into a restored copy and keeps the original guest identity/completion
+PASS actual HTTPS account registration/login and cross-device same-ID state/progress/XP synchronization
+PASS offline Android save survives HTTPS server downtime and synchronizes once after reconnect
+PASS actual model generation stays draft until one confirmation; edited fields sync; Android AI next-step explanation remains task-read-only
+PASS actual Android process restart and second-account isolation retain the first account's synchronized tasks
+{
+  "passed": true,
+  "checks": 7,
+  "errors": []
+}

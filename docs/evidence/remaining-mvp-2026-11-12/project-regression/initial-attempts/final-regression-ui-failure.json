@@ -1,0 +1,15 @@
+{
+  "passed": false,
+  "error": "Error: locator.click: Error: strict mode violation: getByRole('button', { name: '项目', exact: true }) resolved to 2 elements:\n    1) <button type=\"button\" aria-label=\"项目\" class=\"pm-drawer-link\">…</button> aka getByLabel('项目', { exact: true })\n    2) <button class=\"\">…</button> aka getByLabel('主导航').getByRole('button', { name: '项目', exact: true })\n\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '项目', exact: true })\u001b[22m\n",
+  "checks": [
+    "desktop: shared project list uses leaf progress, empty/all-complete states, typed deadlines; old archived projects remain reachable",
+    "desktop: project cards fit the viewport in light/dark themes with reduced motion",
+    "desktop: only name is required; exactly three form fields; success opens the new project detail and empty progress",
+    "desktop: basic edits retain identity, old priority/lifecycle/recovery extensions and move the project to the top; compatibility editor remains reachable",
+    "desktop: unknown save result locks the draft and retries the exact project/operation/version/time without duplicates",
+    "desktop: definite rejection preserves editable input, permits cancel and creates no project",
+    "desktop: committed save plus failed refresh retries only the read and opens the same project",
+    "desktop: refresh after a reopen updates the same legacy leaf progress"
+  ],
+  "errors": []
+}

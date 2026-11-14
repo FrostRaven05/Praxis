@@ -1,0 +1,69 @@
+{
+  "date": "2026-10-18",
+  "scope": "Released desktop application at .tools/releases/ecs-cloud/Praxis.exe; existing user window plus isolated sample workspace",
+  "viewport": "1160 x 800 CSS pixels",
+  "changes": "Inspection only; sample tasks and project were created in an isolated workspace",
+  "findings": [
+    {
+      "priority": "P1",
+      "area": "Existing workspace error state",
+      "observation": "Sidebar reports 11 projects and a read error, while the project content shows a first-project empty-state prompt. Root cause of the read error was not diagnosed in this UX inspection.",
+      "recommendation": "Separate failed loading from an empty project list; preserve known project context and provide one clear recovery action.",
+      "screenshot": "current.png"
+    },
+    {
+      "priority": "P1",
+      "area": "Task attributes",
+      "observation": "Changing priority through the observed path requires opening task details, opening Time and labels, changing the value, previewing attributes, then confirming save. The advanced modal exposes numerous fields for a single change.",
+      "recommendation": "Edit priority, dates and labels in the task side panel; reserve impact previews for structural or consequential changes.",
+      "screenshot": "03-task-advanced.png"
+    },
+    {
+      "priority": "P1",
+      "area": "Quick task",
+      "observation": "Quick task opens a long form containing project, priority, plan, deadline, follow-up, labels and waiting fields, followed by preview and confirmation.",
+      "recommendation": "Start with title, optional date and one Add action. Reveal secondary fields on demand.",
+      "screenshot": "05-quick-task-form.png"
+    },
+    {
+      "priority": "P1",
+      "area": "Project content hierarchy",
+      "observation": "The project heading and expanded recovery card occupy most of the initial viewport; task rows begin below the visible area in the sample project.",
+      "recommendation": "Use a compact project heading and next-action summary; collapse empty recovery fields and keep tasks visible initially.",
+      "screenshot": "11-project-list.png"
+    },
+    {
+      "priority": "P1",
+      "area": "First-use configuration",
+      "observation": "In a fresh workspace, entering habits, repeated tasks or search first presents the workspace time zone editor instead of the selected tool. It exposes an IANA string and a two-stage confirmation.",
+      "recommendation": "Initialize a safe device time-zone default for a new workspace; retain explicit impact confirmation when changing an established workspace time zone.",
+      "screenshot": "06-habits.png"
+    },
+    {
+      "priority": "P2",
+      "area": "Legacy form components",
+      "observation": "Advanced task and quick-task forms use browser-default double-line fieldsets, inline label/control layout and large scrolling modal content, unlike the styled task side panel.",
+      "recommendation": "Unify field spacing, labels, selectors, date controls and action bars with the current side-panel visual system.",
+      "screenshot": "03-task-advanced.png"
+    },
+    {
+      "priority": "P2",
+      "area": "Repeated tasks and search",
+      "observation": "Repeated tasks stack seven native weekday checkboxes vertically. Search exposes five selectors alongside text, scope and archived-content controls before an explicit apply action.",
+      "recommendation": "Use weekday chips and common recurrence presets; make search text primary and put secondary filters into compact chips or an expandable panel.",
+      "screenshots": ["07b-repeat-ready.png", "09b-search-ready.png"]
+    },
+    {
+      "priority": "P2",
+      "area": "Secondary navigation",
+      "observation": "All tasks, projects and sections, time zones and labels, repeat, habits, trash, search, review, notes and quick-task creation share the More menu. Quick-task creation leaves that menu expanded behind its modal.",
+      "recommendation": "Provide a persistent search entry and a small number of clearly grouped frequent tools; close menus when opening an editor.",
+      "screenshot": "05-quick-task-form.png"
+    }
+  ],
+  "retain": [
+    "Today title entry with Enter is already concise",
+    "Current task side panel, project view tabs and theme cards offer a reusable visual baseline",
+    "Keep confirmation for restore, structural moves and other consequential actions"
+  ]
+}

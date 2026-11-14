@@ -1,0 +1,22 @@
+{
+  "date": "2026-11-11",
+  "passed": true,
+  "environment": "headless Chromium; real App/MobileApp and personal modules; synthetic native/Capacitor test doubles, not device acceptance",
+  "checks": [
+    "desktop: default homepage includes both projects, independent/unplanned tasks, all four deadline groups; deleted/cancelled excluded; completed collapsed; old states/instant zone retained",
+    "desktop: complete/reopen keeps identities and historical unknown completion dates",
+    "desktop: unknown result retries the exact command once; refresh blocked until acknowledged",
+    "desktop: definite stale-version rejection offers reload instead of an unknown-result retry",
+    "desktop: committed write plus failed refresh keeps a read-recovery path without resubmitting",
+    "desktop: task and project context open; previous daily view remains reachable and returns home",
+    "desktop: refresh replaces account scope even for colliding IDs; empty groups hidden and all-complete state shown (browser fixture scope only)",
+    "mobile: default homepage includes both projects, independent/unplanned tasks, all four deadline groups; deleted/cancelled excluded; completed collapsed; old states/instant zone retained",
+    "mobile: complete/reopen keeps identities and historical unknown completion dates",
+    "mobile: unknown result retries the exact command once; refresh blocked until acknowledged",
+    "mobile: definite stale-version rejection offers reload instead of an unknown-result retry",
+    "mobile: committed write plus failed refresh keeps a read-recovery path without resubmitting",
+    "mobile: task and project context open; previous daily view remains reachable and returns home",
+    "mobile: refresh replaces account scope even for colliding IDs; empty groups hidden and all-complete state shown (browser fixture scope only)"
+  ],
+  "errors": []
+}

@@ -1,0 +1,514 @@
+.ai-planner-launch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  color: var(--primary-text);
+  background: var(--selected);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.ai-planner-launch:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.ai-planner-launch-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0;
+}
+.ai-planner-dialog {
+  position: fixed;
+  inset: 0;
+  box-sizing: border-box;
+  width: min(800px, calc(100vw - 40px));
+  max-width: none;
+  max-height: min(900px, calc(100dvh - 40px));
+  padding: 0;
+  margin: auto;
+  overflow: hidden;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-dialog);
+  box-shadow: var(--shadow-card);
+  font: 14px/1.6 var(--font-ui);
+}
+.ai-planner-dialog::backdrop {
+  background: var(--backdrop);
+}
+.ai-planner-shell {
+  display: flex;
+  flex-direction: column;
+  max-height: inherit;
+}
+.ai-planner-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--line);
+  flex: 0 0 auto;
+}
+.ai-planner-eyebrow {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.ai-planner-header h2 {
+  margin: 2px 0 0;
+  font-size: 22px;
+  font-weight: 650;
+}
+.ai-planner-dialog button {
+  min-height: 36px;
+  padding: 7px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-control);
+  color: var(--text-primary);
+  background: var(--surface-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.ai-planner-dialog button:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+.ai-planner-dialog button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.ai-planner-dialog button.ai-planner-primary {
+  color: var(--on-primary);
+  border-color: transparent;
+  background: var(--primary);
+  font-weight: 600;
+}
+.ai-planner-dialog button.ai-planner-primary:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+.ai-planner-dialog button.ai-planner-close {
+  width: 36px;
+  min-width: 36px;
+  padding: 0;
+  border-color: transparent;
+  background: transparent;
+  font-size: 25px;
+  line-height: 1;
+}
+.ai-planner-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 0 24px 24px;
+}
+.ai-planner-scope {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin: 16px 0 20px;
+}
+.ai-planner-dialog p {
+  overflow-wrap: anywhere;
+}
+.ai-planner-dialog label {
+  display: grid;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.ai-planner-dialog input:not([type="checkbox"]),
+.ai-planner-dialog textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 9px 11px;
+  color: var(--text-primary);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: 14px/1.6 var(--font-ui);
+}
+.ai-planner-dialog textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+.ai-planner-dialog input:focus,
+.ai-planner-dialog textarea:focus {
+  outline: 2px solid var(--primary-text);
+  outline-offset: 2px;
+}
+.ai-planner-dialog input:disabled,
+.ai-planner-dialog textarea:disabled {
+  opacity: 0.65;
+}
+.ai-planner-dialog fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 12px;
+}
+.ai-planner-inputs {
+  display: grid;
+  gap: 14px;
+}
+.ai-planner-optional {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  font-weight: 400;
+}
+.ai-planner-generation {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+.ai-planner-generation small {
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+.ai-planner-generation > span {
+  color: var(--primary-text);
+  font-size: 13px;
+}
+.ai-planner-warning,
+.ai-planner-error,
+.ai-planner-notice,
+.ai-planner-question,
+.ai-planner-result {
+  padding: 12px 14px;
+  margin: 14px 0;
+  border-radius: 10px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.ai-planner-warning {
+  background: var(--warning-surface);
+  color: var(--text-primary);
+}
+.ai-planner-error {
+  background: var(--danger-surface);
+  color: var(--danger-text);
+}
+.ai-planner-notice,
+.ai-planner-result {
+  background: var(--selected);
+  color: var(--text-primary);
+}
+.ai-planner-question {
+  background: var(--surface-secondary);
+  border: 1px solid var(--line);
+}
+.ai-planner-question p,
+.ai-planner-warning p,
+.ai-planner-result p {
+  margin: 4px 0 8px;
+}
+.ai-planner-question small {
+  color: var(--text-secondary);
+}
+.ai-planner-proposal {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.ai-planner-proposal-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ai-planner-proposal-heading h3 {
+  margin: 0;
+  font-size: 17px;
+}
+.ai-planner-proposal-heading span {
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+.ai-planner-next {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--primary-text);
+  background: var(--selected);
+  border-radius: 4px 8px 8px 4px;
+}
+.ai-planner-next strong {
+  color: var(--primary-text);
+  font-size: 12px;
+}
+.ai-planner-existing {
+  color: var(--primary-text);
+}
+.ai-planner-assumptions {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin: 12px 0 18px;
+}
+.ai-planner-assumptions summary {
+  cursor: pointer;
+}
+.ai-planner-assumptions ul {
+  padding-left: 20px;
+}
+.ai-planner-project {
+  padding: 14px !important;
+  background: var(--surface-secondary);
+  border-radius: 12px;
+  margin: 16px 0 !important;
+}
+.ai-planner-dialog label.ai-planner-check {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--text-primary);
+  cursor: pointer;
+}
+.ai-planner-check input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: var(--primary-text);
+  flex: 0 0 auto;
+}
+.ai-planner-help {
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+.ai-planner-target {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.ai-planner-steps {
+  display: grid;
+  gap: 14px;
+  list-style: none;
+  padding: 0;
+  margin: 14px 0 20px;
+}
+.ai-planner-steps > li {
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-secondary);
+}
+.ai-planner-steps > li.selected {
+  background: var(--surface);
+}
+.ai-planner-step-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.ai-planner-step-heading small {
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+.ai-planner-step-title input {
+  font-weight: 550 !important;
+}
+.ai-planner-estimate > span:last-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+}
+.ai-planner-estimate input {
+  width: 115px !important;
+}
+.ai-planner-reward {
+  padding: 15px !important;
+  background: var(--surface-secondary);
+  border-radius: 12px;
+}
+.ai-planner-reward small {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.ai-planner-footer {
+  flex: 0 0 auto;
+  padding: 14px 24px;
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ai-planner-footer > small {
+  color: var(--text-tertiary);
+  font-size: 11px;
+}
+.ai-planner-footer > div {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+@media (max-width: 600px) {
+  .ai-planner-dialog {
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    border-radius: 16px;
+  }
+  .ai-planner-header {
+    padding: 16px;
+  }
+  .ai-planner-body {
+    padding: 0 16px 20px;
+  }
+  .ai-planner-footer {
+    padding: 12px 16px max(12px, env(safe-area-inset-bottom));
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ai-planner-footer > div {
+    justify-content: flex-end;
+  }
+  .ai-planner-steps > li {
+    padding: 12px;
+  }
+  .ai-planner-dialog button {
+    min-height: 40px;
+  }
+  .ai-planner-check {
+    min-height: 32px;
+  }
+}
+
+.ai-planner-cultivation {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  margin: 16px 0;
+}
+.ai-planner-cultivation small {
+  color: var(--text-secondary);
+}
+
+.ai-context-preview {
+  margin: 14px 0 20px;
+  border: 1px solid var(--border, #dce1e7);
+  border-radius: 12px;
+  font-size: 13px;
+}
+.ai-context-preview > summary {
+  padding: 13px 15px;
+  cursor: pointer;
+  font-weight: 600;
+}
+.ai-context-content {
+  padding: 0 15px 15px;
+  max-height: 480px;
+  overflow-y: auto;
+}
+.ai-context-content p,
+.ai-context-content dd,
+.ai-proposal-sources p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.6;
+}
+.ai-context-content > p {
+  margin: 8px 0;
+}
+.ai-context-content small {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary, #666e7b);
+  line-height: 1.7;
+}
+.ai-context-content section {
+  margin-top: 18px;
+}
+.ai-context-content h3,
+.ai-proposal-sources h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+.ai-context-content dl {
+  margin: 10px 0;
+}
+.ai-context-content dl > div {
+  margin: 9px 0;
+}
+.ai-context-content dt {
+  color: var(--text-secondary, #666e7b);
+  font-size: 11px;
+  margin-bottom: 3px;
+}
+.ai-context-content dd {
+  margin: 0;
+}
+.ai-context-record {
+  border-top: 1px solid var(--border, #dce1e7);
+  padding: 12px 0 0;
+  margin-top: 10px;
+}
+.ai-context-record p {
+  margin: 6px 0;
+}
+.ai-context-tasks {
+  margin-top: 16px;
+}
+.ai-context-tasks summary {
+  cursor: pointer;
+}
+.ai-context-tasks ul {
+  list-style: none;
+  padding: 0;
+}
+.ai-context-tasks li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border, #dce1e7);
+}
+.ai-context-tasks li p {
+  margin: 5px 0;
+}
+.ai-context-date,
+.ai-context-truncated {
+  color: var(--text-secondary, #666e7b);
+  font-size: 12px;
+}
+.ai-planner-time-budget input {
+  width: min(260px, 100%);
+  padding: 10px 12px;
+  border: 1px solid var(--border, #dce1e7);
+  border-radius: 8px;
+  font: inherit;
+  background: var(--surface, #fff);
+  color: inherit;
+}
+.ai-planner-time-budget small {
+  color: var(--text-secondary, #666e7b);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.ai-proposal-sources {
+  padding: 14px;
+  margin: 14px 0;
+  border-radius: 10px;
+  background: var(--surface-secondary, #f5f7f8);
+}
+.ai-proposal-sources details + details {
+  margin-top: 9px;
+}
+.ai-proposal-sources summary {
+  cursor: pointer;
+  font-size: 13px;
+}
+.ai-proposal-sources p {
+  margin: 8px 0;
+  font-size: 13px;
+}

@@ -1,7 +1,11 @@
+import "./personal-shell.css";
+import { AccountButton, AccountPage } from "./AccountPanel";
+import { PersonalAgentPanel } from "./PersonalAgentPanel";
+import { PersonalTodoHome } from "./PersonalTodoHome";
 import { LanSyncStatus } from "./LanSyncStatus";
 import { useLanRefresh } from "./useLanRefresh";
 import { ProductivityView, type TodayContent } from "./ProductivityView";
-import { dayTimeline } from "./day-timeline";
+import { dayTimeline, recommendBacklog } from "./day-timeline";
 import { DailyHabitTask, useDailyHabitTasks } from "./DailyHabitTasks";
 import { HabitDetailPanel } from "./HabitDetailPanel";
 import type { Row as HabitRow } from "./HabitsView";
@@ -12,7 +16,10 @@ import { ProjectIcon } from "./ProjectIcon";
 import { projectStates, taskStates } from "@praxis/application";
 import { TaskDetailPanel } from "./TaskDetailPanel";
 import { TaskPanelIcon } from "./TaskPanelIcon";
-import { TaskActionMenu } from "./TaskActionMenu";
+import { TaskCompletionButton } from "./TaskCompletionButton";
+import { TaskCompletionTitle } from "./TaskCompletionTitle";
+import { animateTaskCompletion } from "./task-completion-motion";
+import { ActionNotice } from "./ActionNotice";
 import { ProjectsView } from "./ProjectsView";
 import { InboxView } from "./InboxView";
 import { MobileCaptureView } from "./MobileCaptureView";
@@ -47,6 +54,7 @@ import {
   type DayPeriod,
   type PlanChange,
   type WorkTask,
+  type TimeValue,
 } from "@praxis/application";
 import {
   nativeAvailable,
@@ -57,6 +65,16 @@ import {
 
 const todayTasks = new CaptureToday(taskStorage);
 const completion = new ChangeCompletion(completionStorage);
+const periodTitles: Record<(typeof dayPeriods)[number], string> = {
+  morning: "早上",
+  afternoon: "中午",
+  evening: "晚上",
+};
+const periodIcons: Record<(typeof dayPeriods)[number], string> = {
+  morning: "🌅",
+  afternoon: "☀️",
+  evening: "🌙",
+};
 function localDay(timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone) {
   const instant = new Date();
   return { instant, timeZone, date: calendarDate(instant, timeZone) };
@@ -70,10 +88,12 @@ function message(error: unknown): string {
 }
 
 export function App() {
+  const [personalAgent, setPersonalAgent] = useState<{mode:"decompose"|"next";projectId?:string}|null>(null);
+  useEffect(()=>{if(personalAgent)setInboxBusy(true);return()=>{if(personalAgent)setInboxBusy(false);};},[personalAgent]);
   const [workTaskId, setWorkTaskId] = useState<string | null>(null);
   const [workProjectId, setWorkProjectId] = useState<string | null>(null);
   const [workSearchRevision, setWorkSearchRevision] = useState(0);
-  const [workStartTab, setWorkStartTab] = useState<"today" | "search">("today");
+  const [workStartTab, setWorkStartTab] = useState<"today" | "search" | "trash">("today");
   const [timelineTab, setTimelineTab] = useState("today");
   const [workReviewId, setWorkReviewId] = useState<string | null>(null);
   useEffect(() => {
@@ -91,8 +111,6 @@ export function App() {
       setWorkProjectId(null);
       setWorkReviewId(null);
       setWorkTaskId((e as CustomEvent<string>).detail);
-      setSelectedId(null);
-      setView("day");
     };
     window.addEventListener("praxis-work-task", open);
     return () => window.removeEventListener("praxis-work-task", open);
@@ -111,9 +129,10 @@ export function App() {
     () => setProjectRevision((n) => n + 1),
     [],
   );
-  const [view, setView] = useState<"day" | "inbox" | "projects" | "settings">(
-    Capacitor.isNativePlatform() ? "inbox" : "day",
+  const [view, setView] = useState<"todos" | "day" | "inbox" | "projects" | "settings">(
+    "todos",
   );
+  const [accountOpen, setAccountOpen] = useState(false);
   useEffect(() => {
     workspaceRef.current?.scrollTo({ top: 0 });
   }, [view, projectId, projectNavigation]);
@@ -143,6 +162,15 @@ export function App() {
   const [changingId, setChangingId] = useState<string | null>(null);
   const [changeError, setChangeError] = useState("");
   const [showCompleted, setShowCompleted] = useState(false);
+  const [notice, setNotice] = useState<{
+    message: string;
+    destination?: string;
+  }>({ message: "" });
+  const [completionUndo, setCompletionUndo] = useState<DailyTask | null>(null);
+  useEffect(() => {
+    setNotice({ message: "" });
+    setCompletionUndo(null);
+  }, [view]);
   const completedItems = items.filter((item) => item.status === "completed");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -278,7 +306,8 @@ export function App() {
     )
       return;
     setSelectedId(null);
-    setView("inbox");
+    setWorkTaskId(null);
+    setView("todos");
     setCaptureFocusRevision((revision) => revision + 1);
   }, [
     projectBusy,
@@ -290,7 +319,7 @@ export function App() {
     planLocked,
   ]);
   const openProject = useCallback(
-    (id: string) => {
+    (id: string | null) => {
       if (
         projectBusy ||
         detailBusy ||
@@ -324,10 +353,26 @@ export function App() {
     window.addEventListener("praxis-work-project", open);
     return () => window.removeEventListener("praxis-work-project", open);
   }, [openProject]);
+  useEffect(() => {
+    const manage = (event: Event) => {
+      if (projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty || (view === "day" && planLocked)) return;
+      setProjectForm(null);
+      setWorkTaskId(null);
+      setWorkReviewId(null);
+      setWorkProjectId((event as CustomEvent<string>).detail);
+      setView("day");
+    };
+    window.addEventListener("praxis-project-settings", manage);
+    return () => window.removeEventListener("praxis-project-settings", manage);
+  }, [projectBusy, detailBusy, planningBusy, inboxBusy, detailDirty, view, planLocked]);
   function openSettings() {
     if (projectBusy || detailBusy || planningBusy || inboxBusy) return;
     setSelectedId(null);
     setView("settings");
+  }
+  function openTodos() {
+    if(projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty || (view==="day" && planLocked)) return;
+    setSelectedId(null);setWorkTaskId(null);setWorkProjectId(null);setWorkReviewId(null);setView("todos");
   }
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
@@ -366,8 +411,7 @@ export function App() {
         event.key.toLowerCase() === "n"
       ) {
         event.preventDefault();
-        setSelectedId(null);
-        setView("inbox");
+        quickCapture();
       }
     };
     window.addEventListener("keydown", handler);
@@ -524,10 +568,11 @@ export function App() {
     setSaving(true);
     setSaveError("");
     try {
-      const current = localDay();
+      const current = localDay(day.timeZone);
       setDay(current);
-      const task = await todayTasks.add(title, current.timeZone);
+      const task = await todayTasks.add(title, current.timeZone, displayedDate);
       setTitle("");
+      setCompletionUndo(null);
       // A refresh failure must not imply that the successful save failed.
       setRecoveryDate(
         task.executionDate !== current.date ? task.executionDate : null,
@@ -535,6 +580,8 @@ export function App() {
       await refresh(task.executionDate);
       inputRef.current?.focus();
     } catch (error) {
+      const pending = todayTasks.pendingDateFor(title, day.timeZone);
+      if (pending) setRecoveryDate(pending);
       setSaveError(message(error));
     } finally {
       setSaving(false);
@@ -573,23 +620,27 @@ export function App() {
     if (changingId || planningBusy || pendingPlan) return;
     setChangingId(item.taskId);
     setChangeError("");
+    let clearMotion = () => {};
     try {
       const updated = await completion.change(
         item,
         item.status === "completed" ? "undo" : "complete",
-        localDay().timeZone,
+        day.timeZone,
       );
-      const resultDate =
-        updated.status === "completed"
-          ? (updated.completionDate ?? localDay(day.timeZone).date)
-          : updated.executionDate;
-      setRecoveryDate(
-        resultDate !== localDay(day.timeZone).date ? resultDate : null,
-      );
-      await refresh(resultDate);
+      if (updated.status === "completed") clearMotion = await animateTaskCompletion(item.taskId);
+      setCompletionUndo(updated.status === "completed" ? updated : null);
+      setNotice({
+        message:
+          updated.status === "completed"
+            ? `已完成「${updated.title}」`
+            : `已撤销完成「${updated.title}」`,
+      });
+      setSelectedId(null);
+      await refresh(displayedDate);
     } catch (error) {
       setChangeError(message(error));
     } finally {
+      clearMotion();
       setChangingId(null);
     }
   }
@@ -615,6 +666,22 @@ export function App() {
     setWorkSearchRevision((n) => n + 1);
     setView("day");
     setRecoveryDate(date === localDay(day.timeZone).date ? null : date);
+  }
+
+  function taskCreated(title: string, plan: TimeValue | null) {
+    setCompletionUndo(null);
+    const date =
+      plan?.kind === "date"
+        ? plan.date
+        : plan?.kind === "instant"
+          ? calendarDate(new Date(plan.atUtc), day.timeZone)
+          : null;
+    setNotice({
+      message: date
+        ? `「${title}」已添加到 ${date}`
+        : `「${title}」已保存到收件箱`,
+      destination: date ?? "inbox",
+    });
   }
 
   function rowDragProps(key: string, canArrange = true) {
@@ -696,6 +763,7 @@ export function App() {
       <li
         key={item.planId}
         data-plan-id={item.planId}
+        data-completion-row=""
         className={`task-item${item.status === "completed" ? " completed" : ""}${draggingId === item.planId ? " is-dragging" : ""}${targeted ? " drop-" + dropTarget.position : ""}`}
         {...rowDragProps(item.planId, canArrange)}
       >
@@ -714,11 +782,9 @@ export function App() {
           </button>
         )}
         {desktopAvailable && (
-          <button
-            className="completion-toggle"
-            aria-pressed={item.status === "completed"}
-            aria-busy={changingId === item.taskId}
-            aria-label={item.status === "completed" ? "撤销完成" : "标为完成"}
+          <TaskCompletionButton
+            completed={item.status === "completed"}
+            busy={changingId === item.taskId}
             title={item.title}
             disabled={
               changingId !== null ||
@@ -727,23 +793,10 @@ export function App() {
               detailDirty ||
               pendingPlan !== null
             }
-            onClick={() => {
+            onToggle={() => {
               void changeStatus(item);
             }}
-          >
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              {changingId === item.taskId ? (
-                <path className="completion-spinner" d="M12 3a9 9 0 1 1-9 9" />
-              ) : (
-                <>
-                  <circle cx="12" cy="12" r="9" />
-                  {item.status === "completed" && (
-                    <path className="completion-check" d="m7.5 12 3 3 6-6" />
-                  )}
-                </>
-              )}
-            </svg>
-          </button>
+          />
         )}
         <button
           disabled={detailBusy || detailDirty || planningBusy || inboxBusy}
@@ -767,7 +820,7 @@ export function App() {
                   重要
                 </span>
               )}
-              {item.title}
+              <TaskCompletionTitle taskId={item.taskId}>{item.title}</TaskCompletionTitle>
             </span>
             <span className="task-meta">
               {reasons
@@ -803,48 +856,6 @@ export function App() {
             onChange={savePlan}
           />
         )}
-        {desktopAvailable && (
-          <TaskActionMenu
-            key={item.planId + ":actions:" + item.version}
-            label={`更多操作：${item.title}`}
-            disabled={planLocked}
-          >
-            {(close) => (
-              <>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedHabitId(null);
-                    setEditBaseline(item);
-                    setSelectedId(item.taskId);
-                    close();
-                  }}
-                >
-                  打开任务详情
-                </button>
-                {canArrange && (
-                  <>
-                    <p className="task-action-label">移动到时段</p>
-                    {dayPeriods.map((period) => (
-                      <button
-                        type="button"
-                        key={period}
-                        disabled={taskPeriod(item) === period}
-                        onClick={() => {
-                          moveDayTask(item.planId, period);
-                          close();
-                        }}
-                      >
-                        {dayPeriodLabels[period]}
-                        {taskPeriod(item) === period ? " · 当前" : ""}
-                      </button>
-                    ))}
-                  </>
-                )}
-              </>
-            )}
-          </TaskActionMenu>
-        )}
       </li>
     );
   }
@@ -859,6 +870,17 @@ export function App() {
           content.zone,
         )
       : null;
+    const recommendations = content
+      ? recommendBacklog(
+          content.data,
+          items,
+          displayedDate,
+          content.zone,
+        )
+      : [];
+    const projectNames = new Map(
+      (content?.data.projects ?? []).map((p) => [p.id, p.name]),
+    );
     return (
       <div className="today-content">
         <header className={content ? "sr-only" : "day-toolbar"}>
@@ -879,9 +901,8 @@ export function App() {
           onSubmit={(event) => {
             void capture(event);
           }}
-          aria-label="添加今日任务"
+          aria-label={`添加 ${displayedDate} 的任务`}
         >
-          <span className="capture-circle" aria-hidden="true" />
           <label className="sr-only" htmlFor="task-title">
             任务标题
           </label>
@@ -893,7 +914,7 @@ export function App() {
               setTitle(event.target.value);
               setSaveError("");
             }}
-            placeholder="添加今日任务，按回车保存"
+            placeholder={`添加${displayedDate === day.date ? "今日" : displayedDate}任务，按回车保存`}
             autoComplete="off"
             disabled={
               saving ||
@@ -911,42 +932,47 @@ export function App() {
             </span>
           )}
         </form>
-        {!loading && timeline && timeline.attention.length > 0 && (
-          <details className="timeline-attention">
-            <summary>
-              建议任务 <span>{timeline.attention.length}</span>
-            </summary>
+        {!loading && recommendations.length > 0 && (
+          <section
+            className="timeline-attention today-recommendations"
+            aria-label="推荐候选"
+          >
+            <h2>
+              推荐 <span>{recommendations.length}</span>
+            </h2>
             <ul className="task-suggestions">
-              {timeline.attention.map((row) => (
+              {recommendations.map((row) => {
+                const projectName = row.task.projectId ? projectNames.get(row.task.projectId) : null;
+                const attention = row.reasons.find((reason) => ["已逾期", "今日截止", "即将截止", "到期跟进", "P1"].includes(reason));
+                return (
                 <li key={row.task.id} data-task-id={row.task.id}>
-                  <span className="task-suggestion-title">
+                  <span className="task-suggestion-title" title={row.task.title}>
                     {row.task.title}
+                    {projectName && projectName.trim() !== row.task.title.trim() && (
+                      <small> · {projectName}</small>
+                    )}
                   </span>
-                  <span className="task-suggestion-reason">
-                    {{
-                      真实逾期: "已逾期",
-                      当日截止: "当日截止",
-                      当日重点: "当日重点",
-                      到期跟进: "需要跟进",
-                    }[row.reasons[0] ?? ""] ?? "值得关注"}
-                  </span>
+                  {attention && <span className="task-suggestion-reason">{attention}</span>}
                   <button
                     type="button"
                     className="accept-suggestion"
                     disabled={planLocked || !desktopAvailable}
-                    aria-label={`转为普通任务：${row.task.title}`}
+                    aria-label={`加入${displayedDate === day.date ? "今日" : displayedDate}：${row.task.title}`}
                     onClick={() =>
                       void acceptSuggestion(row.task, content!.zone)
                     }
                   >
                     {acceptingSuggestion === row.task.id
-                      ? "转换中…"
-                      : "转为普通任务"}
+                      ? "加入中…"
+                      : displayedDate === day.date
+                        ? "加入今日"
+                        : "加入当天"}
                   </button>
                 </li>
-              ))}
+                );
+              })}
             </ul>
-          </details>
+          </section>
         )}
         {saveError && (
           <p className="error" id="save-error" role="alert">
@@ -1005,7 +1031,8 @@ export function App() {
                 >
                   <div className="list-heading">
                     <h2>
-                      {dayPeriodLabels[period]}{" "}
+                      <i aria-hidden="true">{periodIcons[period]}</i>
+                      {periodTitles[period]}{" "}
                       <span>{arrangements.length + independent.length}</span>
                     </h2>
                   </div>
@@ -1026,7 +1053,7 @@ export function App() {
                   </ul>
                   {arrangements.length + independent.length === 0 && (
                     <p className="period-empty">
-                      {draggingId ? "拖到这里安排" : "暂无安排"}
+                      {draggingId ? "拖到这里安排" : "此时段暂无任务"}
                     </p>
                   )}
                 </section>
@@ -1117,62 +1144,21 @@ export function App() {
     );
   }
 
+  if (accountOpen) return <AccountPage onBack={() => setAccountOpen(false)} />;
   return (
     <main
       className="workspace reference-workspace todoist-workspace modern-workspace"
       ref={workspaceRef}
     >
       <aside className="sidebar">
-        <a className="brand" href="#today" aria-label="Praxis 首页">
+        <a className="brand" href="#todos" aria-label="Praxis 首页" onClick={event=>{event.preventDefault();openTodos();}}>
           <span className="brand-mark">P</span>Praxis
           <span className="brand-dot">.</span>
         </a>
         <nav aria-label="主导航">
-          <a
-            className={view === "day" ? "nav-item active" : "nav-item"}
-            href="#today"
-            aria-current={view === "day" ? "page" : undefined}
-            aria-disabled={
-              projectBusy ||
-              detailBusy ||
-              planningBusy ||
-              inboxBusy ||
-              detailDirty
-            }
-            onClick={(event) => {
-              if (
-                projectBusy ||
-                detailBusy ||
-                planningBusy ||
-                inboxBusy ||
-                detailDirty
-              )
-                event.preventDefault();
-              else selectDate(localDay(day.timeZone).date);
-            }}
-          >
-            <TaskPanelIcon name="sun" />
-            今日与近期
-          </a>
-          {desktopAvailable && (
-            <button
-              className={view === "inbox" ? "nav-item active" : "nav-item"}
-              disabled={projectBusy || detailBusy || planningBusy || inboxBusy}
-              onClick={openInbox}
-            >
-              <TaskPanelIcon name="inbox" />
-              收件箱 <span className="nav-shortcut">Ctrl ⇧ N</span>
-            </button>
-          )}
+          {desktopAvailable && <button type="button" className={view==="day" ? "nav-item active" : "nav-item"} aria-current={view==="day" ? "page" : undefined} disabled={projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty} onClick={()=>selectDate(localDay(day.timeZone).date)}><TaskPanelIcon name="sun" />今日</button>}
+          <button type="button" className={view==="todos" ? "nav-item active" : "nav-item"} aria-current={view==="todos" ? "page" : undefined} disabled={projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty || (view==="day" && planLocked)} onClick={openTodos}><TaskPanelIcon name="check" />杂事</button>
         </nav>
-        {!desktopAvailable && Capacitor.isNativePlatform() && (
-          <button
-            className={view === "inbox" ? "nav-item active" : "nav-item"}
-            onClick={() => setView("inbox")}
-          >
-            本机收件箱
-          </button>
-        )}
         {desktopAvailable && (
           <ProjectNavigation
             revision={projectRevision}
@@ -1187,7 +1173,11 @@ export function App() {
             selectedId={
               view === "projects" && projectForm !== "new" ? projectId : null
             }
+            overviewSelected={
+              view === "projects" && projectId === null && projectForm === null
+            }
             onSelect={openProject}
+            onList={() => openProject(null)}
             onCreate={() => {
               if (projectBusy || detailBusy || planningBusy || inboxBusy)
                 return;
@@ -1214,10 +1204,13 @@ export function App() {
               设置
             </button>
             <LanSyncStatus onRefresh={synced} />
+            <AccountButton disabled={projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty || (view === "day" && planLocked)} onClick={() => setAccountOpen(true)} />
           </div>
         )}
       </aside>
-      {view === "day" && desktopAvailable ? (
+      {view === "todos" ? (
+        <PersonalTodoHome revision={projectRevision} externalBusy={detailBusy || detailDirty || personalAgent!==null} onBusyChange={setInboxBusy} onOpenProject={openProject} focusRevision={captureFocusRevision} onChanged={projectsChanged} onOpenAgent={()=>setPersonalAgent({mode:"next"})} />
+      ) : view === "day" && desktopAvailable ? (
         <ProductivityView
           renderToday={renderDailyView}
           dailyNavigation={
@@ -1244,15 +1237,16 @@ export function App() {
           onTabChange={handleTimelineTab}
           onZoneChange={applyWorkspaceZone}
           initialTab={workStartTab}
-          initialTaskId={workTaskId}
           initialProjectId={workProjectId}
           initialReviewId={workReviewId}
           searchRevision={workSearchRevision}
           onChanged={workChanged}
           onBusyChange={setInboxBusy}
+          onTaskCreated={taskCreated}
         />
       ) : view === "projects" ? (
         <ProjectsView
+          onOpenPersonalAgent={(mode,projectId)=>setPersonalAgent({mode,projectId})}
           form={projectForm}
           onFormChange={setProjectForm}
           navigationRevision={projectNavigation}
@@ -1261,17 +1255,17 @@ export function App() {
           onSelect={setProjectId}
           onProjectsChanged={projectsChanged}
           onSettings={openSettings}
-          onDay={(date) => {
-            selectDate(date);
-            void refresh(date);
-          }}
         />
       ) : view === "settings" ? (
-        <SettingsView revision={projectRevision} onOpenProject={openProject} />
+        <SettingsView
+          revision={projectRevision}
+          onOpenProject={openProject}
+        />
       ) : view === "inbox" && !desktopAvailable ? (
         <MobileCaptureView onBusyChange={setInboxBusy} />
       ) : view === "inbox" ? (
         <InboxView
+          revision={projectRevision}
           focusRevision={captureFocusRevision}
           onBusyChange={setInboxBusy}
           onScheduled={(date) => {
@@ -1339,6 +1333,52 @@ export function App() {
             onClose={() => setSelectedHabitId(null)}
           />
         )}
+      {personalAgent && <PersonalAgentPanel {...personalAgent} onClose={()=>setPersonalAgent(null)} onApplied={()=>{projectsChanged();window.dispatchEvent(new Event("praxis-lan-sync"));}} onOpenTask={id=>{setPersonalAgent(null);setWorkTaskId(id);}} />}
+      {workTaskId && (
+        <ProductivityView
+          key={workTaskId}
+          editorOnly
+          initialTaskId={workTaskId}
+          onEditorClosed={() => {
+            setWorkTaskId(null);
+            projectsChanged();
+            window.dispatchEvent(new Event("praxis-task-editor-closed"));
+            window.dispatchEvent(new Event("praxis-lan-sync"));
+          }}
+          onChanged={workChanged}
+          onBusyChange={setDetailBusy}
+        />
+      )}
+      {view !== "inbox" && (
+        <ActionNotice
+          message={notice.message}
+          actionLabel={
+            completionUndo
+              ? "撤销"
+              : notice.destination === "inbox"
+                ? "查看收件箱"
+                : "查看日期"
+          }
+          onAction={
+            completionUndo
+              ? () => void changeStatus(completionUndo)
+              : notice.destination
+                ? () =>
+                    notice.destination === "inbox"
+                      ? openInbox()
+                      : selectDate(notice.destination!)
+                : undefined
+          }
+          disabled={
+            changingId !== null || planningBusy || inboxBusy || detailBusy
+          }
+          onDismiss={() => {
+            setNotice({ message: "" });
+            setCompletionUndo(null);
+          }}
+        />
+      )}
     </main>
   );
 }
+import "./personal-shell.css";

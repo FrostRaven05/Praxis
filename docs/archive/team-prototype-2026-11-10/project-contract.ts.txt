@@ -1,0 +1,148 @@
+/** Implemented M1-01 subset of the frozen project protocol. */
+export const PROJECT_PROTOCOL = "praxis-project-v2";
+export interface ProjectIdentity {
+  actorId: string;
+  deviceId: string;
+}
+export interface DateDeadline {
+  kind: "date";
+  date: string;
+  timeZone: string;
+}
+export interface ProjectMemberView {
+  userId: string;
+  role: "creator" | "member";
+  state: "active" | "removed";
+  version: number;
+  accessGeneration: number;
+}
+export interface ProjectView {
+  projectId: string;
+  creatorId: string;
+  name: string;
+  goal: string;
+  targetDate: string | null;
+  timeZone: string;
+  version: number;
+  updatedAt: string;
+  statisticsMode: "flat" | "legacy-tree";
+  members: ProjectMemberView[];
+}
+export interface ProjectTaskView {
+  scope: { kind: "project"; projectId: string };
+  id: string;
+  createdBy: string;
+  assigneeId: string;
+  title: string;
+  notes: string;
+  status: "todo" | "in_progress" | "completed";
+  deadline: DateDeadline | null;
+  version: number;
+  deletedAt: string | null;
+  completion: null;
+}
+export interface ProjectReceipt {
+  protocol: typeof PROJECT_PROTOCOL;
+  operationId: string;
+  projectId: string;
+  actorId: string;
+  commandDigest: string;
+  committedAt: string;
+  changedTasks: { id: string; version: number }[];
+  cursor: string;
+}
+interface Envelope {
+  protocol: typeof PROJECT_PROTOCOL;
+  operationId: string;
+  deviceId: string;
+  projectId: string;
+  expectedAccessGeneration: number;
+}
+export interface CreateProjectRequest extends Envelope {
+  name: "project.create";
+  payload: {
+    projectId: string;
+    name: string;
+    goal: string;
+    targetDate: string | null;
+    timeZone: string;
+  };
+}
+export interface CreateProjectTasksRequest extends Envelope {
+  name: "task.create";
+  payload: {
+    tasks: {
+      id: string;
+      title: string;
+      assigneeId?: string;
+      notes?: string;
+      deadline?: DateDeadline | null;
+    }[];
+  };
+}
+export const projectUuid = {
+  type: "string",
+  pattern:
+    "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+};
+const date = { type: "string", pattern: "^\\d{4}-\\d{2}-\\d{2}$" };
+const text = (maxLength: number, minLength = 0) => ({
+  type: "string",
+  maxLength,
+  minLength,
+});
+const object = (
+  properties: Record<string, unknown>,
+  required = Object.keys(properties),
+) => ({ type: "object", additionalProperties: false, properties, required });
+const nullable = (schema: unknown) => ({ anyOf: [schema, { type: "null" }] });
+const baseProperties = {
+  protocol: { type: "string", minLength: 1, maxLength: 80 },
+  operationId: projectUuid,
+  deviceId: projectUuid,
+  projectId: projectUuid,
+};
+export const createProjectSchema = object({
+  ...baseProperties,
+  expectedAccessGeneration: { type: "integer", const: 0 },
+  name: { type: "string", const: "project.create" },
+  payload: object({
+    projectId: projectUuid,
+    name: text(500, 1),
+    goal: text(4000),
+    targetDate: nullable(date),
+    timeZone: text(80, 1),
+  }),
+});
+export const createProjectTasksSchema = object({
+  ...baseProperties,
+  expectedAccessGeneration: {
+    type: "integer",
+    minimum: 1,
+    maximum: Number.MAX_SAFE_INTEGER,
+  },
+  name: { type: "string", const: "task.create" },
+  payload: object({
+    tasks: {
+      type: "array",
+      minItems: 1,
+      maxItems: 100,
+      items: object(
+        {
+          id: projectUuid,
+          title: text(500, 1),
+          notes: text(4000),
+          assigneeId: projectUuid,
+          deadline: nullable(
+            object({
+              kind: { type: "string", const: "date" },
+              date,
+              timeZone: text(80, 1),
+            }),
+          ),
+        },
+        ["id", "title"],
+      ),
+    },
+  }),
+});

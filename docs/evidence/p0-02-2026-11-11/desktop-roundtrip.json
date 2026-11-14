@@ -1,0 +1,19 @@
+{
+  "aiReceipts": 1,
+  "allTablesEqualAfterRestore": true,
+  "claimedRewards": 1,
+  "legacyCredits": 1,
+  "originalUnchanged": true,
+  "outboxRows": 3,
+  "pendingCommands": 1,
+  "schema": 25,
+  "stableTaskIdAcrossProjectChanges": true,
+  "synthetic": true,
+  "tablesCompared": 57,
+  "taskVersions": [
+    7,
+    8,
+    9
+  ],
+  "unknownTableRetained": true
+}

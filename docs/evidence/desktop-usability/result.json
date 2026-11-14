@@ -1,0 +1,18 @@
+{
+  "testedAt": "2026-10-18T12:55:47.692Z",
+  "release": "C:\\Project\\01Project\\Praxis\\.tools\\releases\\desktop-usability\\Praxis.exe",
+  "isolated": true,
+  "workspace": "C:\\Project\\01Project\\Praxis\\.tools\\usability-test-2LR97L\\client",
+  "checks": [
+    "daily priority, label and consecutive text autosave",
+    "quick add one field, Enter once, no preview or duplicate",
+    "quick add date and optional draft preserved",
+    "inbox shares property editor and remains editable",
+    "project properties, text autosave and compact recovery card",
+    "advanced editor saves ordinary fields in one step",
+    "cancel does not create a task",
+    "weekday options use compact shared controls",
+    "no horizontal viewport overflow"
+  ],
+  "errors": []
+}

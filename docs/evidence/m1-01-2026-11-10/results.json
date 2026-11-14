@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-10",
+  "stage": "M1-01",
+  "passed": true,
+  "typecheckExitCode": 0,
+  "apiBuildExitCode": 0,
+  "typescriptTestsPassed": 296,
+  "newProjectTests": 26,
+  "existingFilesChecked": 437,
+  "changedExistingFiles": [
+    "apps/api/src/server.ts"
+  ],
+  "unexpectedExistingChanges": [],
+  "scope": "server resource model and authorization; invitation, migration and clients pending",
+  "nativeValidation": "not rerun; M0 174-test evidence retained and native sources unchanged",
+  "realUserMigration": false,
+  "deployed": false
+}

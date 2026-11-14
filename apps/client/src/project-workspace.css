@@ -39,6 +39,12 @@
   min-width: 0;
   margin-left: auto;
 }
+.simple-project-workspace .project-settings-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
 .workspace.todoist-workspace .simple-project-workspace .project-view-tabs {
   display: flex;
   flex-wrap: nowrap;

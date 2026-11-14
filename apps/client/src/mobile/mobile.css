@@ -52,8 +52,8 @@
   text-align: center;
 }
 .pm-top small {
-  font-size: 10px;
-  letter-spacing: 1.5px;
+  font-size: 11px;
+  letter-spacing: 1.2px;
   color: var(--text-secondary);
 }
 .pm-top h1 {
@@ -117,13 +117,13 @@
   font-weight: 700;
 }
 .pm-week span {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--text-secondary);
 }
 .pm-main {
   max-width: 760px;
   margin: auto;
-  padding: 10px 0 85px;
+  padding: 10px 0 150px;
 }
 .pm-list-heading {
   padding: 10px 22px;
@@ -195,9 +195,22 @@
   overflow-wrap: anywhere;
 }
 .pm-task-title span {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--pm-muted);
   overflow-wrap: anywhere;
+}
+.pm-subtask {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 48px;
+  min-width: 48px;
+  min-height: 48px;
+  color: var(--text-secondary);
+}
+.pm-subtask svg {
+  width: 20px;
+  height: 20px;
 }
 .pm-task-title span:empty {
   display: none;
@@ -254,7 +267,7 @@
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  font-size: 10px;
+  font-size: 11px;
   color: var(--text-secondary);
   min-width: 52px;
 }
@@ -495,4 +508,3 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
-

@@ -1,0 +1,671 @@
+import { createHash, randomUUID } from "node:crypto";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
+import { afterAll, beforeAll, expect, expectTypeOf, it } from "vitest";
+import { createServer } from "./server";
+import type { AccountSession } from "./accounts";
+import {
+  PROJECT_PROTOCOL,
+  type CreateProjectRequest,
+  type CreateProjectTasksRequest,
+  type ProjectMemberView,
+  type ProjectReceipt,
+  type ProjectTaskView,
+  type ProjectView,
+} from "./project-contract";
+import {
+  MVP_PROTOCOL,
+  type CommandReceipt,
+  type ProjectMember,
+  type ProjectSnapshot,
+  type TaskSnapshot,
+} from "../../../packages/application/src/mvp/contract";
+
+let server: ReturnType<typeof createServer>,
+  db: DatabaseSync,
+  root: string,
+  databasePath: string;
+let creator: AccountSession, member: AccountSession, outsider: AccountSession;
+const password = "M1 isolated test password only";
+beforeAll(async () => {
+  root = await mkdtemp(join(tmpdir(), "praxis-m1-01-"));
+  databasePath = join(root, "api.db");
+  server = createServer({ databasePath, devices: [] });
+  db = new DatabaseSync(databasePath);
+  for (const role of ["creator", "member", "outsider"]) {
+    const response = await server.inject({
+      method: "POST",
+      url: "/auth/register",
+      payload: {
+        email: `${role}@m1.test`,
+        displayName: role,
+        password,
+        deviceId: randomUUID(),
+      },
+    });
+    expect(response.statusCode).toBe(201);
+    const account = response.json<AccountSession>();
+    if (role === "creator") creator = account;
+    else if (role === "member") member = account;
+    else outsider = account;
+  }
+}, 30000);
+afterAll(async () => {
+  await server?.close();
+  db?.close();
+  if (root) await rm(root, { recursive: true, force: true });
+});
+const headers = (session: AccountSession) => ({
+  authorization: `Bearer ${session.token}`,
+});
+function createBody(session = creator): CreateProjectRequest {
+  const projectId = randomUUID();
+  return {
+    protocol: PROJECT_PROTOCOL,
+    operationId: randomUUID(),
+    deviceId: session.deviceId,
+    projectId,
+    expectedAccessGeneration: 0,
+    name: "project.create",
+    payload: {
+      projectId,
+      name: "协作报名页",
+      goal: "",
+      targetDate: null,
+      timeZone: "Asia/Hong_Kong",
+    },
+  };
+}
+const post = (url: string, payload: object, session = creator) =>
+  server.inject({ method: "POST", url, headers: headers(session), payload });
+const snapshot = (projectId: string, session = creator) =>
+  server.inject({
+    url: `/v2/projects/${projectId}/snapshot`,
+    headers: headers(session),
+  });
+async function project(session = creator) {
+  const body = createBody(session);
+  expect((await post("/v2/projects", body, session)).statusCode).toBe(201);
+  return body.projectId;
+}
+function batch(
+  projectId: string,
+  session = creator,
+): CreateProjectTasksRequest {
+  return {
+    protocol: PROJECT_PROTOCOL,
+    operationId: randomUUID(),
+    deviceId: session.deviceId,
+    projectId,
+    expectedAccessGeneration: 1,
+    name: "task.create",
+    payload: { tasks: [{ id: randomUUID(), title: "完成可验证结果" }] },
+  };
+}
+const submit = (body: ReturnType<typeof batch>, session = creator) =>
+  post(`/v2/projects/${body.projectId}/commands`, body, session);
+// M1-02 will supply invitation endpoints. Only test setup writes membership rows directly.
+function seedMember(
+  projectId: string,
+  session = member,
+  generation = 1,
+  state = "active",
+) {
+  db.prepare("INSERT INTO project_members VALUES(?,?,'member',?,1,?)").run(
+    projectId,
+    session.user.id,
+    state,
+    generation,
+  );
+}
+const count = (table: string, projectId: string) =>
+  Number(
+    db
+      .prepare(`SELECT count(*) AS n FROM ${table} WHERE project_id=?`)
+      .get(projectId)?.n,
+  );
+
+it("aligns implemented response types and protocol with the frozen M0 contract", () => {
+  expect(PROJECT_PROTOCOL).toBe(MVP_PROTOCOL);
+  expectTypeOf<ProjectView>().toMatchTypeOf<ProjectSnapshot>();
+  expectTypeOf<ProjectMemberView>().toMatchTypeOf<ProjectMember>();
+  expectTypeOf<ProjectTaskView>().toMatchTypeOf<TaskSnapshot>();
+  expectTypeOf<ProjectReceipt>().toMatchTypeOf<CommandReceipt>();
+});
+it("requires real account sessions for v2, while keeping configured v1 devices working", async () => {
+  const token = "m1-legacy-device-only";
+  const deviceId = randomUUID();
+  const legacy = createServer({
+    databasePath: ":memory:",
+    devices: [
+      {
+        ownerId: randomUUID(),
+        deviceId,
+        tokenHash: createHash("sha256").update(token).digest("hex"),
+      },
+    ],
+  });
+  try {
+    expect(
+      (
+        await server.inject({
+          method: "POST",
+          url: "/v2/projects",
+          payload: createBody(),
+        })
+      ).statusCode,
+    ).toBe(401);
+    expect(
+      (await server.inject({ url: `/v2/projects/${randomUUID()}/snapshot` }))
+        .statusCode,
+    ).toBe(401);
+    expect(
+      (
+        await legacy.inject({
+          url: "/v1/entities/snapshot",
+          headers: { authorization: `Bearer ${token}` },
+        })
+      ).statusCode,
+    ).toBe(200);
+    expect(
+      (
+        await legacy.inject({
+          method: "POST",
+          url: "/v2/projects",
+          payload: { ...createBody(), deviceId },
+          headers: { authorization: `Bearer ${token}` },
+        })
+      ).statusCode,
+    ).toBe(401);
+  } finally {
+    await legacy.close();
+  }
+});
+it("creates a project and exactly one creator membership atomically", async () => {
+  const body = createBody();
+  const response = await post("/v2/projects", body);
+  expect(response.statusCode).toBe(201);
+  expect(response.headers["cache-control"]).toBe("no-store");
+  expect(response.json()).toMatchObject({
+    actorId: creator.user.id,
+    projectId: body.projectId,
+    changedTasks: [],
+  });
+  const result = await snapshot(body.projectId);
+  expect(result.json()).toMatchObject({
+    project: {
+      name: "协作报名页",
+      creatorId: creator.user.id,
+      timeZone: "Asia/Hong_Kong",
+      version: 1,
+      members: [
+        {
+          userId: creator.user.id,
+          role: "creator",
+          state: "active",
+          accessGeneration: 1,
+        },
+      ],
+    },
+    tasks: [],
+  });
+  expect(count("project_members", body.projectId)).toBe(1);
+});
+it("rejects unsupported protocols and mismatched command project IDs without writes", async () => {
+  const create = createBody();
+  expect(
+    (
+      await post("/v2/projects", {
+        ...create,
+        protocol: "unsupported-protocol",
+      })
+    ).json(),
+  ).toEqual({ error: "PROTOCOL_UNSUPPORTED" });
+  expect(
+    db
+      .prepare("SELECT 1 FROM shared_projects WHERE id=?")
+      .get(create.projectId),
+  ).toBeUndefined();
+  const projectId = await project();
+  const body = batch(projectId);
+  expect(
+    (
+      await post(`/v2/projects/${projectId}/commands`, {
+        ...body,
+        protocol: "unsupported-protocol",
+      })
+    ).json(),
+  ).toEqual({ error: "PROTOCOL_UNSUPPORTED" });
+  expect(
+    (
+      await post(`/v2/projects/${projectId}/commands`, {
+        ...body,
+        projectId: randomUUID(),
+      })
+    ).statusCode,
+  ).toBe(400);
+  expect(count("project_tasks", projectId)).toBe(0);
+});
+it.each([
+  "blank-name",
+  "invalid-date",
+  "invalid-zone",
+  "forged-creator",
+  "mismatched-id",
+])("rejects %s without creating any project", async (variant) => {
+  const body = createBody();
+  const payload: Record<string, unknown> = { ...body.payload };
+  if (variant === "blank-name") payload.name = "   ";
+  if (variant === "invalid-date") payload.targetDate = "2026-02-30";
+  if (variant === "invalid-zone") payload.timeZone = "Invalid/Zone";
+  if (variant === "forged-creator") payload.creatorId = outsider.user.id;
+  if (variant === "mismatched-id") payload.projectId = randomUUID();
+  expect((await post("/v2/projects", { ...body, payload })).statusCode).toBe(
+    400,
+  );
+  expect(
+    db.prepare("SELECT 1 FROM shared_projects WHERE id=?").get(body.projectId),
+  ).toBeUndefined();
+});
+it("rejects forged devices and identity fields before any writes", async () => {
+  const body = createBody();
+  expect(
+    (await post("/v2/projects", { ...body, deviceId: outsider.deviceId }))
+      .statusCode,
+  ).toBe(403);
+  expect(
+    (await post("/v2/projects", { ...body, actorId: outsider.user.id }))
+      .statusCode,
+  ).toBe(400);
+  expect(
+    db.prepare("SELECT 1 FROM shared_projects WHERE id=?").get(body.projectId),
+  ).toBeUndefined();
+});
+it("allows real members to read and create tasks with trusted creator and default assignee", async () => {
+  const projectId = await project();
+  seedMember(projectId);
+  const body = batch(projectId, member);
+  expect((await submit(body, member)).statusCode).toBe(200);
+  const response = await snapshot(projectId, member);
+  expect(response.statusCode).toBe(200);
+  expect(response.json().tasks).toMatchObject([
+    {
+      scope: { kind: "project", projectId },
+      createdBy: member.user.id,
+      assigneeId: member.user.id,
+      status: "todo",
+      notes: "",
+      deadline: null,
+      version: 1,
+    },
+  ]);
+  const assigned = {
+    ...batch(projectId, member),
+    payload: {
+      tasks: [
+        { id: randomUUID(), title: "明确分配", assigneeId: creator.user.id },
+      ],
+    },
+  };
+  expect((await submit(assigned, member)).statusCode).toBe(200);
+  expect(
+    (await snapshot(projectId))
+      .json()
+      .tasks.find(
+        (task: { id: string }) => task.id === assigned.payload.tasks[0]!.id,
+      ),
+  ).toMatchObject({ createdBy: member.user.id, assigneeId: creator.user.id });
+});
+it("does not distinguish forbidden projects from nonexistent projects and refuses outsider writes", async () => {
+  const projectId = await project();
+  const forbidden = await snapshot(projectId, outsider);
+  const missing = await snapshot(randomUUID(), outsider);
+  expect(forbidden.statusCode).toBe(403);
+  expect(missing.statusCode).toBe(403);
+  expect(forbidden.json()).toEqual(missing.json());
+  expect((await submit(batch(projectId, outsider), outsider)).statusCode).toBe(
+    403,
+  );
+  expect(count("project_tasks", projectId)).toBe(0);
+});
+it("rejects nonmembers and members removed from the target project as assignees", async () => {
+  const projectId = await project();
+  seedMember(projectId, member, 2, "removed");
+  for (const assigneeId of [member.user.id, outsider.user.id]) {
+    const body = {
+      ...batch(projectId),
+      payload: { tasks: [{ id: randomUUID(), title: "不能分配", assigneeId }] },
+    };
+    expect((await submit(body)).statusCode).toBe(422);
+  }
+  expect(count("project_tasks", projectId)).toBe(0);
+});
+it("rejects disabled accounts for both access and new assignments", async () => {
+  const projectId = await project();
+  seedMember(projectId, outsider);
+  db.prepare("UPDATE account_users SET disabled=1 WHERE id=?").run(
+    outsider.user.id,
+  );
+  try {
+    expect((await snapshot(projectId, outsider)).statusCode).toBe(401);
+    expect(
+      (
+        await submit({
+          ...batch(projectId),
+          payload: {
+            tasks: [
+              {
+                id: randomUUID(),
+                title: "禁止禁用账号接收",
+                assigneeId: outsider.user.id,
+              },
+            ],
+          },
+        })
+      ).statusCode,
+    ).toBe(422);
+  } finally {
+    db.prepare("UPDATE account_users SET disabled=0 WHERE id=?").run(
+      outsider.user.id,
+    );
+  }
+});
+it("rejects stale access generations and checks authorization before replay and receipt reads", async () => {
+  const projectId = await project();
+  seedMember(projectId, member, 2);
+  const body = batch(projectId, member);
+  expect((await submit(body, member)).statusCode).toBe(403);
+  body.expectedAccessGeneration = 2;
+  expect((await submit(body, member)).statusCode).toBe(200);
+  db.prepare(
+    "UPDATE project_members SET state='removed',access_generation=3 WHERE project_id=? AND user_id=?",
+  ).run(projectId, member.user.id);
+  expect((await submit(body, member)).statusCode).toBe(403);
+  expect((await snapshot(projectId, member)).statusCode).toBe(403);
+  expect(
+    (
+      await server.inject({
+        url: `/v2/commands/${body.operationId}`,
+        headers: headers(member),
+      })
+    ).statusCode,
+  ).toBe(403);
+});
+it.each(["createdBy", "recipientId", "status", "approved"])(
+  "rejects caller supplied trusted task field %s",
+  async (key) => {
+    const projectId = await project();
+    const body = batch(projectId);
+    const task = {
+      ...body.payload.tasks[0]!,
+      [key]: key === "approved" ? true : outsider.user.id,
+    };
+    expect(
+      (await submit({ ...body, payload: { tasks: [task] } })).statusCode,
+    ).toBe(400);
+    expect(count("project_tasks", projectId)).toBe(0);
+  },
+);
+it("validates the project-local date while preserving notes and whitespace inside content", async () => {
+  const projectId = await project();
+  const base = batch(projectId);
+  const title = "  报名页面  ";
+  const notes = "原文\n第二行 😀  ";
+  const make = (date: string, timeZone = "Asia/Hong_Kong") => ({
+    ...base,
+    payload: {
+      tasks: [
+        {
+          id: base.payload.tasks[0]!.id,
+          title,
+          notes,
+          deadline: { kind: "date", date, timeZone },
+        },
+      ],
+    },
+  });
+  expect(
+    (await post(`/v2/projects/${projectId}/commands`, make("2026-02-30")))
+      .statusCode,
+  ).toBe(400);
+  expect(
+    (
+      await post(
+        `/v2/projects/${projectId}/commands`,
+        make("2026-11-11", "UTC"),
+      )
+    ).statusCode,
+  ).toBe(400);
+  expect(
+    (await post(`/v2/projects/${projectId}/commands`, make("2026-11-11")))
+      .statusCode,
+  ).toBe(200);
+  expect((await snapshot(projectId)).json().tasks).toMatchObject([
+    {
+      title: "报名页面",
+      notes,
+      deadline: {
+        kind: "date",
+        date: "2026-11-11",
+        timeZone: "Asia/Hong_Kong",
+      },
+    },
+  ]);
+});
+it("rolls back an entire task batch when a later database write fails", async () => {
+  const projectId = await project();
+  const secondId = randomUUID();
+  const before = (await snapshot(projectId)).json();
+  const body = {
+    ...batch(projectId),
+    payload: {
+      tasks: [
+        { id: randomUUID(), title: "先写第一项" },
+        { id: secondId, title: "第二项被故障拒绝" },
+      ],
+    },
+  };
+  db.exec(
+    `CREATE TRIGGER m1_fail_task BEFORE INSERT ON project_tasks WHEN NEW.id='${secondId}' BEGIN SELECT RAISE(ABORT,'synthetic failure'); END`,
+  );
+  try {
+    expect((await submit(body)).statusCode).toBe(500);
+  } finally {
+    db.exec("DROP TRIGGER m1_fail_task");
+  }
+  expect(count("project_tasks", projectId)).toBe(0);
+  expect(count("shared_project_events", projectId)).toBe(1);
+  expect((await snapshot(projectId)).json().project).toEqual(before.project);
+  expect(
+    db
+      .prepare("SELECT 1 FROM shared_command_receipts WHERE operation_id=?")
+      .get(body.operationId),
+  ).toBeUndefined();
+  expect((await submit(body)).statusCode).toBe(200);
+  expect(count("project_tasks", projectId)).toBe(2);
+});
+it("rolls back project and creator membership when saving a receipt fails", async () => {
+  const body = createBody();
+  db.exec(
+    `CREATE TRIGGER m1_fail_receipt BEFORE INSERT ON shared_command_receipts WHEN NEW.operation_id='${body.operationId}' BEGIN SELECT RAISE(ABORT,'synthetic failure'); END`,
+  );
+  try {
+    expect((await post("/v2/projects", body)).statusCode).toBe(500);
+  } finally {
+    db.exec("DROP TRIGGER m1_fail_receipt");
+  }
+  expect(
+    db.prepare("SELECT 1 FROM shared_projects WHERE id=?").get(body.projectId),
+  ).toBeUndefined();
+  expect(count("project_members", body.projectId)).toBe(0);
+  expect(count("shared_project_events", body.projectId)).toBe(0);
+});
+it("enforces one immutable creator and active assignees at the database boundary", async () => {
+  const projectId = await project();
+  expect(() =>
+    db
+      .prepare("UPDATE shared_projects SET creator_id=? WHERE id=?")
+      .run(member.user.id, projectId),
+  ).toThrow();
+  expect(() =>
+    db
+      .prepare(
+        "UPDATE project_members SET state='removed' WHERE project_id=? AND role='creator'",
+      )
+      .run(projectId),
+  ).toThrow();
+  expect(() =>
+    db
+      .prepare(
+        "DELETE FROM project_members WHERE project_id=? AND role='creator'",
+      )
+      .run(projectId),
+  ).toThrow();
+  expect(() =>
+    db
+      .prepare("INSERT INTO project_members VALUES(?,?,'creator','active',1,1)")
+      .run(projectId, member.user.id),
+  ).toThrow();
+  const body = batch(projectId);
+  expect((await submit(body)).statusCode).toBe(200);
+  expect(() =>
+    db
+      .prepare("UPDATE project_tasks SET assignee_id=? WHERE project_id=?")
+      .run(outsider.user.id, projectId),
+  ).toThrow();
+});
+it("keeps colliding task IDs distinct by project and out of personal feeds", async () => {
+  const first = await project();
+  const second = await project(member);
+  const id = randomUUID();
+  for (const [projectId, session] of [
+    [first, creator],
+    [second, member],
+  ] as const) {
+    expect(
+      (
+        await submit(
+          {
+            ...batch(projectId, session),
+            payload: { tasks: [{ id, title: session.user.displayName }] },
+          },
+          session,
+        )
+      ).statusCode,
+    ).toBe(200);
+  }
+  expect((await snapshot(first)).json().tasks[0].title).toBe(
+    creator.user.displayName,
+  );
+  expect((await snapshot(second, member)).json().tasks[0].title).toBe(
+    member.user.displayName,
+  );
+  expect((await snapshot(second)).statusCode).toBe(403);
+  const personal = await server.inject({
+    url: "/v1/entities/snapshot",
+    headers: headers(creator),
+  });
+  expect(personal.json().entities).toEqual([]);
+  const generation = (await server.inject({ url: "/health" })).json()
+    .generation;
+  expect(
+    (
+      await post(`/v1/entities/commands?generation=${generation}`, {
+        operationId: randomUUID(),
+        deviceId: creator.deviceId,
+        changes: [
+          {
+            id,
+            kind: "task",
+            expectedVersion: null,
+            data: { title: "私人同 ID 内容", status: "todo" },
+            deleted: false,
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      })
+    ).statusCode,
+  ).toBe(200);
+  expect((await snapshot(first)).json().tasks[0].title).toBe(
+    creator.user.displayName,
+  );
+});
+it("replays identical requests across devices and rejects changed operation contents", async () => {
+  const body = createBody();
+  const created = await post("/v2/projects", body);
+  expect((await post("/v2/projects", body)).json()).toEqual(created.json());
+  expect(
+    (
+      await post("/v2/projects", {
+        ...body,
+        payload: { ...body.payload, name: "不同名称" },
+      })
+    ).json(),
+  ).toEqual({ error: "OPERATION_CHANGED" });
+  const tasks = batch(body.projectId);
+  const first = await submit(tasks);
+  const login = await server.inject({
+    method: "POST",
+    url: "/auth/login",
+    payload: { email: creator.user.email, password, deviceId: randomUUID() },
+  });
+  const secondDevice = login.json<AccountSession>();
+  expect(
+    (
+      await submit({ ...tasks, deviceId: secondDevice.deviceId }, secondDevice)
+    ).json(),
+  ).toEqual(first.json());
+  expect(
+    (
+      await submit({
+        ...tasks,
+        payload: { tasks: [{ ...tasks.payload.tasks[0]!, title: "改了草稿" }] },
+      })
+    ).json(),
+  ).toEqual({ error: "OPERATION_CHANGED" });
+  expect(count("project_tasks", body.projectId)).toBe(1);
+  expect(
+    (
+      await server.inject({
+        url: `/v2/commands/${tasks.operationId}`,
+        headers: headers(secondDevice),
+      })
+    ).json(),
+  ).toEqual(first.json());
+  expect(
+    (
+      await server.inject({
+        url: `/v2/commands/${tasks.operationId}`,
+        headers: headers(outsider),
+      })
+    ).statusCode,
+  ).toBe(403);
+});
+it("preserves shared projects, tasks, receipts and old personal data across server reopen", async () => {
+  const projectId = await project();
+  const tasks = batch(projectId);
+  const applied = (await submit(tasks)).json();
+  const before = (await snapshot(projectId)).json();
+  const privateBefore = (
+    await server.inject({
+      url: "/v1/entities/snapshot",
+      headers: headers(creator),
+    })
+  ).json().entities;
+  await server.close();
+  server = createServer({ databasePath, devices: [] });
+  const after = (await snapshot(projectId)).json();
+  expect(after.project).toEqual(before.project);
+  expect(after.tasks).toEqual(before.tasks);
+  expect((await submit(tasks)).json()).toEqual(applied);
+  expect(
+    (
+      await server.inject({
+        url: "/v1/entities/snapshot",
+        headers: headers(creator),
+      })
+    ).json().entities,
+  ).toEqual(privateBefore);
+});

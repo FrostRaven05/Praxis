@@ -1,0 +1,22 @@
+{
+  "verifiedAt": "2026-10-18T11:50:09.338Z",
+  "baseUrl": "https://8.152.219.210",
+  "checks": {
+    "publicHttpsWithCertificateValidation": true,
+    "adminPage": true,
+    "unauthenticatedAdminRejected": true,
+    "adminBrowserLogin": true,
+    "secureAdminCookie": true,
+    "allAdminViews": true,
+    "adminLogoutRevokesSession": true,
+    "noBrowserErrors": true,
+    "normalUserCannotAccessAdmin": true,
+    "registrationAndEntitySync": true,
+    "userLoginAndLogout": true,
+    "temporaryTestAccountAndDataRemoved": true,
+    "productionContainerHealthy": true,
+    "certificateRenewalTimerActive": true
+  },
+  "browserErrors": [],
+  "testAccountCleanup": "complete"
+}

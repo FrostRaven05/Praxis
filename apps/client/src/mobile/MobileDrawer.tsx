@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type ReactNode,
-  type RefObject,
-} from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import type { WorkspaceEntity } from "@praxis/storage-mobile";
 import { calendarDate } from "@praxis/application";
 import { TaskPanelIcon } from "../TaskPanelIcon";
@@ -20,21 +14,9 @@ type Props = {
   timeZone: string;
   onClose: () => void;
   onNavigate: (section: string) => void;
-  onSearch: (query: string) => void;
   onProject: (id: string) => void;
   onCreateProject: () => void;
 };
-const extraLinks: [string, string, ReactNode][] = [
-  ["habits", "习惯", <TaskPanelIcon name="check" />],
-  ["repeat", "重复任务", <TaskPanelIcon name="sync" />],
-  ["focus", "专注", <TaskPanelIcon name="clock" />],
-  ["records", "记录", <TaskPanelIcon name="folder" />],
-  ["review", "回顾", <TaskPanelIcon name="criteria" />],
-  ["templates", "策略与决策", <TaskPanelIcon name="branch" />],
-  ["search", "搜索与筛选", <TaskPanelIcon name="search" />],
-  ["stats", "数据复盘", <ProjectIcon name="gantt" />],
-  ["trash", "回收站", <ProjectIcon name="archive" />],
-];
 function offset(date: string, days: number) {
   const value = new Date(`${date}T12:00:00Z`);
   value.setUTCDate(value.getUTCDate() + days);
@@ -46,7 +28,6 @@ export function MobileDrawer(props: Props) {
     props;
   const dialog = useRef<HTMLDialogElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
-  const [query, setQuery] = useState("");
   useEffect(() => {
     const element = dialog.current;
     if (!element) return;
@@ -66,9 +47,6 @@ export function MobileDrawer(props: Props) {
     (e) =>
       e.kind === "project" && e.data.status === "active" && !e.data.archivedAt,
   );
-  const inboxCount = live.filter(
-    (e) => e.kind === "capture" && e.data.status !== "clarified",
-  ).length;
   const weekDay = (new Date(`${today}T12:00:00Z`).getUTCDay() + 6) % 7;
   const start = offset(today, -weekDay - 77);
   const activity = new Map<string, number>();
@@ -158,25 +136,6 @@ export function MobileDrawer(props: Props) {
           </button>
         </header>
         <div className="pm-drawer-scroll">
-          <form
-            className="pm-drawer-search"
-            onSubmit={(event) => {
-              event.preventDefault();
-              props.onSearch(query.trim());
-            }}
-          >
-            <TaskPanelIcon name="search" />
-            <input
-              type="search"
-              aria-label="搜索工作空间"
-              placeholder="搜索任务、项目和记录"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-            <button type="submit" aria-label="执行搜索">
-              <ProjectIcon name="arrow" />
-            </button>
-          </form>
           <section
             className="pm-drawer-activity"
             aria-label="最近十二周完成记录"
@@ -208,14 +167,7 @@ export function MobileDrawer(props: Props) {
             </div>
           </section>
           <div className="pm-drawer-primary">
-            {link("tasks", "任务清单", <TaskPanelIcon name="sun" />)}
-            {link("calendar", "日历", <ProjectIcon name="gantt" />)}
-            {link(
-              "inbox",
-              "收件箱",
-              <TaskPanelIcon name="inbox" />,
-              inboxCount,
-            )}
+            {link("todos", "杂事", <TaskPanelIcon name="check" />)}
           </div>
           <section
             className="pm-drawer-group"
@@ -250,12 +202,6 @@ export function MobileDrawer(props: Props) {
             {!projects.length && (
               <p className="pm-drawer-empty">还没有项目，点击 ＋ 创建</p>
             )}
-          </section>
-          <section className="pm-drawer-group" aria-labelledby="drawer-more">
-            <div className="pm-drawer-group-heading">
-              <h2 id="drawer-more">更多功能</h2>
-            </div>
-            {extraLinks.map(([key, label, icon]) => link(key, label, icon))}
           </section>
         </div>
         <footer className="pm-drawer-footer">

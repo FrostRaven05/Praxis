@@ -33,6 +33,7 @@ pub enum TrashAction {
     Restore {
         batch_id: String,
     },
+    RestoreChecked { batch_id: String, expected_deleted_tasks: Vec<(String,i64)> },
 }
 #[derive(Clone, Debug, Serialize, Deserialize, FromRow)]
 #[serde(rename_all = "camelCase")]
@@ -80,7 +81,7 @@ impl Store {
         let (days, version) = retention(&mut tx, &self.owner_id).await?;
         let now = chrono::Utc::now();
         let projects:Vec<String>=sqlx::query_scalar("SELECT json_object('id',id,'title',name,'version',version,'templateCount',(SELECT count(*) FROM recurrence_templates WHERE project_id=projects.id AND enabled=1),'linkCount',(SELECT count(*) FROM record_links WHERE target_type='project' AND target_id=projects.id)) FROM projects WHERE owner_id=? AND deleted_at IS NULL ORDER BY name,id").bind(&self.owner_id).fetch_all(&mut *tx).await.map_err(|e|e.to_string())?;
-        let entries:Vec<String>=sqlx::query_scalar("SELECT json_object('id',id,'targetType',target_type,'title',title,'deletedAt',deleted_at,'recoveryStartedAt',recovery_started_at,'taskCount',json_array_length(payload,'$.deletedIds')) FROM trash_batches WHERE owner_id=? AND restored_at IS NULL ORDER BY deleted_at DESC,id").bind(&self.owner_id).fetch_all(&mut *tx).await.map_err(|e|e.to_string())?;
+        let entries:Vec<String>=sqlx::query_scalar("SELECT json_object('id',b.id,'taskId',b.target_id,'version',(SELECT version FROM tasks WHERE id=b.target_id AND owner_id=b.owner_id AND deleted_at IS NOT NULL),'projectId',(SELECT project_id FROM tasks WHERE id=b.target_id AND owner_id=b.owner_id),'targetType',b.target_type,'title',b.title,'deletedAt',b.deleted_at,'recoveryStartedAt',b.recovery_started_at,'taskCount',json_array_length(b.payload,'$.deletedIds'),'simpleTask',json_array_length(b.payload,'$.tasks')=1 AND json_extract(b.payload,'$.tasks[0].parentTaskId') IS NULL) FROM trash_batches b WHERE owner_id=? AND restored_at IS NULL ORDER BY deleted_at DESC,id").bind(&self.owner_id).fetch_all(&mut *tx).await.map_err(|e|e.to_string())?;
         let entries: Vec<Value> = entries
             .into_iter()
             .map(|entry| {
@@ -308,7 +309,7 @@ impl Store {
                     .await
                     .map_err(|e| e.to_string())?;
             }
-            TrashAction::Restore { batch_id } => {
+            TrashAction::Restore { batch_id } | TrashAction::RestoreChecked { batch_id,.. } => {
                 let (days, _) = retention(&mut tx, &self.owner_id).await?;
                 let started:String=sqlx::query_scalar("SELECT recovery_started_at FROM trash_batches WHERE id=? AND owner_id=? AND restored_at IS NULL")
                     .bind(batch_id).bind(&self.owner_id).fetch_optional(&mut *tx).await.map_err(|e|e.to_string())?.ok_or("USER:该条目已恢复或不存在")?;
@@ -323,6 +324,15 @@ impl Store {
                     serde_json::from_value(v["tasks"].clone()).map_err(|e| e.to_string())?;
                 let deleted: Vec<String> =
                     serde_json::from_value(v["deletedIds"].clone()).map_err(|e| e.to_string())?;
+                if let TrashAction::RestoreChecked { expected_deleted_tasks,.. }=&c.action {
+                    let mut expected=expected_deleted_tasks.clone();expected.sort();
+                    let mut actual=vec![];
+                    for task in &deleted {
+                        let current:Option<i64>=sqlx::query_scalar("SELECT version FROM tasks WHERE id=? AND owner_id=? AND deleted_at IS NOT NULL").bind(task).bind(&self.owner_id).fetch_optional(&mut *tx).await.map_err(|e|e.to_string())?;
+                        actual.push((task.clone(),current.ok_or("STATE_CONFLICT")?));
+                    }
+                    actual.sort();if actual!=expected || kind!="task" || actual.len()!=1{return Err("STATE_CONFLICT:删除内容已变化，请在原回收站核对".into());}
+                }
                 if kind == "project" {
                     run(
                         &mut tx,

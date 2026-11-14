@@ -1,0 +1,781 @@
+/* Accent styling loaded after the theme. Page surfaces stay on theme.css. */
+:root {
+  --font-title: "STKaiti", "KaiTi", "楷体", "Noto Serif SC", serif;
+  --xp: #d4a43c;
+  --xp-deep: #a87a1c;
+  --streak: #c8553d;
+  --ink: #2b2622;
+  --ink-soft: #4a423b;
+  --cinnabar: #b8432f;
+  --game-lift: 0 1px 2px rgb(60 40 20 / 6%), 0 4px 14px rgb(60 40 20 / 5%);
+}
+
+/* Page titles in brush-style script */
+.modern-workspace .personal-todo-header h1,
+.modern-workspace .personal-project-list header h1,
+.modern-workspace .personal-project-list header h2,
+.modern-workspace .settings-view h1,
+.modern-workspace .project-summary h1,
+.modern-workspace .project-summary h2,
+.personal-agent-dialog h2 {
+  font-family: var(--font-title);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  -webkit-text-stroke: 0.6px currentColor;
+}
+.modern-workspace .personal-todo-header h1 {
+  font-size: 34px;
+}
+
+/* Sidebar */
+.workspace.modern-workspace .sidebar {
+  background: var(--sidebar-surface);
+  border-right: 1px solid var(--line);
+}
+.workspace.modern-workspace .brand {
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+.workspace.modern-workspace .brand-mark {
+  border-radius: 6px;
+  background: var(--cinnabar);
+  color: #fff6ea;
+  font-family: var(--font-title);
+  box-shadow: inset 0 0 0 2px rgb(255 240 220 / 35%);
+  transform: rotate(-4deg);
+}
+.workspace.modern-workspace .brand-dot {
+  display: none;
+}
+.workspace.modern-workspace .sidebar .nav-item,
+.workspace.modern-workspace .sidebar-settings {
+  color: var(--ink-soft);
+}
+.workspace.modern-workspace .sidebar .nav-item:not(:disabled):hover,
+.workspace.modern-workspace .sidebar-settings:not(:disabled):hover {
+  background: rgb(120 90 50 / 8%);
+}
+.workspace.modern-workspace .sidebar .nav-item.active,
+.workspace.modern-workspace .sidebar-settings.active {
+  background: var(--surface);
+  color: var(--primary-text);
+  box-shadow:
+    inset 3px 0 0 var(--primary-text),
+    0 1px 3px rgb(60 40 20 / 8%);
+}
+
+/* Cultivation panel: ink card with gold accents */
+.personal-growth-strip {
+  border: 1px solid #4b3f2c;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 92% -20%, rgb(212 164 60 / 28%), transparent 50%),
+    radial-gradient(circle at 0% 120%, rgb(63 154 124 / 22%), transparent 45%),
+    linear-gradient(135deg, #2a2621, #1d1b18);
+  color: #efe4cf;
+  box-shadow: 0 10px 28px rgb(40 28 12 / 22%);
+}
+.personal-growth-level {
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 35% 30%, #f6dc95, var(--xp) 55%, var(--xp-deep));
+  color: #3b2a08;
+  font-family: var(--font-title);
+  text-shadow: none;
+  box-shadow:
+    0 0 0 3px rgb(212 164 60 / 25%),
+    0 0 22px rgb(212 164 60 / 45%);
+  transform: none;
+}
+.personal-growth-progress strong {
+  font-family: var(--font-title);
+  font-size: 20px;
+  -webkit-text-stroke: 0.5px currentColor;
+  color: #f6dc95;
+  letter-spacing: 0.06em;
+}
+.personal-growth-progress span,
+.personal-growth-progress small {
+  color: rgb(239 228 207 / 70%);
+}
+.personal-growth-progress progress,
+.personal-growth-progress progress::-webkit-progress-bar {
+  background: rgb(255 255 255 / 10%);
+}
+.personal-growth-progress progress::-webkit-progress-value {
+  background: linear-gradient(90deg, #3f9a7c, #8fd3b6 60%, #f6dc95);
+  box-shadow: 0 0 10px rgb(143 211 182 / 55%);
+}
+.personal-growth-progress progress::-moz-progress-bar {
+  background: linear-gradient(90deg, #3f9a7c, #8fd3b6 60%, #f6dc95);
+}
+.personal-growth-stats li {
+  border: 1px solid rgb(255 255 255 / 10%);
+  background: rgb(255 255 255 / 5%);
+  color: rgb(239 228 207 / 60%);
+}
+.personal-growth-stats li[data-active] {
+  border-color: rgb(212 164 60 / 50%);
+  background: rgb(212 164 60 / 14%);
+  color: #efe4cf;
+}
+.personal-growth-stats b {
+  color: #fff4dc;
+}
+.personal-growth-stats i {
+  color: #f6dc95;
+}
+.personal-growth-feedback:not(:empty) {
+  background: #f6dc95;
+  color: #3b2a08;
+  box-shadow: 0 0 16px rgb(246 220 149 / 60%);
+}
+
+/* Primary buttons: solid jade */
+.workspace.modern-workspace button.primary,
+.workspace.modern-workspace .personal-todo-tools button.primary,
+.pm-app button.primary {
+  min-height: 38px;
+  padding: 7px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary-text);
+  color: #fffdf8;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--primary-text) 28%, transparent);
+  transition: transform 120ms ease-out, box-shadow 120ms ease-out;
+}
+.workspace.modern-workspace button.primary:hover:not(:disabled),
+.workspace.modern-workspace .personal-todo-tools button.primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--primary-text) 86%, #000);
+  transform: translateY(-1px);
+}
+.workspace.modern-workspace button.primary:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: none;
+}
+.workspace.modern-workspace button.primary:disabled {
+  opacity: 0.5;
+  box-shadow: none;
+}
+
+/* Task rows */
+.personal-todo-group h2 {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+.personal-todo-group .personal-todo-row {
+  border: 1px solid rgb(120 90 50 / 16%);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.personal-todo-group .personal-todo-row:hover,
+.personal-todo-group .personal-todo-row:focus-within {
+  border-color: color-mix(in srgb, var(--primary-text) 40%, transparent);
+  box-shadow: 0 6px 18px rgb(60 40 20 / 8%);
+}
+.personal-todo-group[data-group="overdue"] .personal-todo-row {
+  border-left: 3px solid var(--cinnabar);
+}
+.personal-todo-group[data-group="today"] .personal-todo-row {
+  border-left: 3px solid var(--xp);
+}
+.personal-todo-home .personal-todo-check {
+  border-width: 2px;
+  border-color: color-mix(in srgb, var(--primary-text) 55%, var(--text-tertiary));
+}
+.personal-todo-home .personal-todo-check[aria-pressed="true"],
+.pm-app .personal-todo-check[aria-pressed="true"] {
+  border-color: var(--primary-text);
+  background: var(--primary-text);
+}
+/* Inline editor */
+.personal-todo-row:has(.personal-task-inline-editor) {
+  border-color: var(--primary-text);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+.personal-todo-row:has(.personal-task-inline-editor) > :not(.personal-task-inline-editor) {
+  opacity: 0.45;
+  pointer-events: none;
+}
+.personal-task-inline-editor {
+  display: grid;
+  gap: 8px;
+  flex-basis: 100%;
+  margin: 4px 0 0;
+  padding: 12px 0 0;
+  border: 0;
+  border-top: 1px dashed rgb(120 90 50 / 25%);
+  background: transparent;
+}
+.workspace.modern-workspace .personal-task-inline-editor .pie-title {
+  min-height: 40px;
+  border: 0;
+  border-bottom: 1px solid rgb(120 90 50 / 20%);
+  border-radius: 0;
+  background: transparent;
+  padding: 4px 2px;
+  font-size: 16px;
+  font-weight: 600;
+  box-shadow: none;
+}
+.workspace.modern-workspace .personal-task-inline-editor .pie-notes {
+  min-height: 56px;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--surface-secondary);
+  resize: none;
+  font-size: 14px;
+}
+.personal-task-inline-editor .pie-dates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.workspace.modern-workspace .personal-task-inline-editor .pie-dates button {
+  min-height: 28px;
+  padding: 2px 12px;
+  border: 1px solid rgb(120 90 50 / 18%);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.workspace.modern-workspace .personal-task-inline-editor .pie-dates button[data-on] {
+  border-color: var(--primary-text);
+  background: color-mix(in srgb, var(--primary) 35%, var(--surface));
+  color: var(--primary-text);
+  font-weight: 600;
+}
+.workspace.modern-workspace .personal-task-inline-editor .pie-dates input[type="date"] {
+  min-height: 28px;
+  width: auto;
+  padding: 2px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+.workspace.modern-workspace .personal-task-inline-editor .pie-dates .pie-clear {
+  border-color: transparent;
+  color: var(--cinnabar);
+}
+.personal-task-inline-editor .personal-task-inline-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.workspace.modern-workspace .personal-task-inline-editor .personal-task-inline-actions button:not(.primary) {
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+/* Quick capture matches the Today field: one line, enter to save. */
+.personal-task-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 4px 0 20px;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface-secondary);
+  box-shadow: none;
+}
+.personal-task-composer .personal-task-capture-line {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.workspace.modern-workspace .personal-task-composer input[data-personal-capture] {
+  flex: 1;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 15px;
+  padding: 10px 0;
+}
+.workspace.modern-workspace .personal-task-composer input[data-personal-capture]:focus-visible {
+  box-shadow: none;
+}
+.personal-task-composer:focus-within {
+  border-color: var(--primary-text);
+  box-shadow: 0 0 0 3px var(--focus-ring);
+}
+.personal-task-quick-dates {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 0 4px;
+}
+.workspace.modern-workspace .personal-task-quick-dates button {
+  min-height: 28px;
+  padding: 2px 12px;
+  border: 1px solid rgb(120 90 50 / 18%);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.workspace.modern-workspace .personal-task-quick-dates button:not(:disabled):hover {
+  background: var(--surface-tertiary);
+}
+.workspace.modern-workspace .personal-task-quick-dates button[data-on] {
+  border-color: var(--primary-text);
+  background: color-mix(in srgb, var(--primary) 35%, var(--surface));
+  color: var(--primary-text);
+  font-weight: 600;
+}
+.personal-task-composer .personal-task-capture-options summary {
+  color: var(--text-tertiary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+/* Task row details: compact, tags, quiet actions */
+.personal-todo-group .personal-todo-row {
+  align-items: center;
+  gap: 14px;
+  min-height: 56px;
+  padding: 10px 12px 10px 16px;
+}
+.personal-todo-home .personal-todo-row .personal-todo-title,
+.workspace.modern-workspace .projects-view .personal-todo-row .personal-todo-title {
+  min-height: 0;
+  line-height: 1.5;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.personal-todo-home .personal-todo-row .personal-todo-title:not(:disabled):hover {
+  color: var(--primary-text);
+}
+.personal-todo-row .personal-todo-meta {
+  gap: 6px;
+  margin-top: 4px;
+}
+.personal-todo-row .personal-todo-meta > span,
+.personal-todo-home .personal-todo-row .personal-todo-project,
+.workspace.modern-workspace .projects-view .personal-todo-row .personal-todo-project {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 0;
+  padding: 1px 9px;
+  border-radius: 999px;
+  background: var(--surface-tertiary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.personal-todo-home .personal-todo-row .personal-todo-project,
+.workspace.modern-workspace .projects-view .personal-todo-row .personal-todo-project {
+  background: color-mix(in srgb, var(--primary) 26%, var(--surface));
+  color: var(--primary-text);
+  cursor: pointer;
+}
+.personal-todo-home .personal-todo-row .personal-todo-project::before {
+  content: "⛰";
+  font-size: 11px;
+}
+.personal-todo-home .personal-todo-row .personal-todo-project:not(:disabled):hover {
+  background: color-mix(in srgb, var(--primary) 45%, var(--surface));
+}
+.personal-todo-group[data-group="overdue"] .personal-todo-meta > span:not(.personal-todo-status) {
+  background: color-mix(in srgb, var(--cinnabar) 12%, var(--surface));
+  color: var(--cinnabar);
+}
+.personal-todo-group[data-group="today"] .personal-todo-meta > span:not(.personal-todo-status) {
+  background: rgb(212 164 60 / 16%);
+  color: var(--xp-deep);
+}
+.personal-todo-meta .personal-todo-status[data-state="in_progress"] {
+  background: color-mix(in srgb, var(--primary) 30%, var(--surface));
+  color: var(--primary-text);
+}
+.personal-todo-home .personal-task-row-actions {
+  gap: 2px;
+  opacity: 1;
+}
+.personal-todo-home .personal-task-row-actions select,
+.workspace.modern-workspace .personal-todo-home .personal-task-row-actions select {
+  min-height: 28px;
+  padding: 2px 22px 2px 10px;
+  border: 0;
+  border-radius: 999px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%237a6e61'/%3E%3C/svg%3E")
+      no-repeat right 9px center,
+    var(--surface-tertiary);
+  color: var(--text-secondary);
+  font-size: 12px;
+  appearance: none;
+  cursor: pointer;
+}
+.personal-todo-home .personal-task-row-actions select:not(:disabled):hover,
+.workspace.modern-workspace .personal-todo-home .personal-task-row-actions select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--primary) 30%, var(--surface));
+  color: var(--primary-text);
+}
+.personal-todo-home .personal-task-row-actions .personal-todo-delete {
+  min-height: 28px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  color: var(--text-tertiary);
+  opacity: 0;
+  transition: opacity 150ms ease-out;
+}
+.personal-todo-row:hover .personal-todo-delete,
+.personal-todo-row:focus-within .personal-todo-delete {
+  opacity: 1;
+}
+.personal-todo-home .personal-task-row-actions .personal-todo-delete:not(:disabled):hover {
+  background: color-mix(in srgb, var(--cinnabar) 10%, var(--surface));
+  color: var(--cinnabar);
+}
+@media (hover: none) {
+  .personal-todo-home .personal-task-row-actions .personal-todo-delete {
+    opacity: 1;
+  }
+}
+.personal-todo-home .personal-todo-check,
+.workspace.modern-workspace .projects-view .personal-todo-row .personal-todo-check {
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  border-width: 2px;
+}
+.personal-todo-home .personal-todo-check:not(:disabled):not([aria-pressed="true"]):hover::after {
+  content: "✓";
+  color: var(--primary-text);
+  font-size: 13px;
+}
+.personal-todo-notice {
+  background: color-mix(in srgb, var(--primary) 30%, var(--surface));
+  color: var(--primary-text);
+}
+
+/* Guidance dialog */
+.personal-agent-dialog {
+  width: min(560px, calc(100% - 32px));
+  border: 1px solid rgb(120 90 50 / 18%);
+  border-radius: 20px;
+  padding: 26px 28px;
+  background:
+    radial-gradient(circle at 100% 0%, rgb(212 164 60 / 12%), transparent 40%),
+    var(--surface);
+  box-shadow: 0 24px 60px rgb(40 28 12 / 25%);
+}
+.personal-agent-dialog::backdrop {
+  background: rgb(30 22 12 / 45%);
+  backdrop-filter: blur(2px);
+}
+.personal-agent-dialog > header small {
+  color: var(--xp-deep);
+  font-weight: 600;
+  letter-spacing: 0.1em;
+}
+.personal-agent-dialog h2 {
+  margin: 4px 0 18px;
+  font-size: 26px;
+}
+.personal-agent-dialog .personal-agent-close {
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 24px;
+  line-height: 1;
+}
+.personal-agent-dialog .personal-agent-close:hover {
+  background: var(--surface-tertiary);
+  color: var(--ink);
+}
+.personal-agent-dialog .personal-agent-facts {
+  padding: 0;
+  background: none;
+}
+.personal-agent-facts ul {
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.personal-agent-facts li {
+  flex: 1;
+  display: grid;
+  justify-items: center;
+  padding: 10px 6px;
+  border: 1px solid rgb(120 90 50 / 14%);
+  border-radius: 12px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.personal-agent-facts li b {
+  color: var(--ink);
+  font-size: 20px;
+  line-height: 1.3;
+}
+.personal-agent-facts li[data-alert] b {
+  color: var(--cinnabar);
+}
+.personal-agent-suggestions h3 {
+  margin: 22px 0 10px;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+}
+.personal-agent-suggestions ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: guide;
+}
+.personal-agent-suggestions li {
+  position: relative;
+  padding: 12px 14px 12px 56px;
+  border: 1px solid rgb(120 90 50 / 14%);
+  border-radius: 14px;
+  background: var(--surface);
+  counter-increment: guide;
+}
+.personal-agent-suggestions li::before {
+  content: counter(guide);
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin-top: -14px;
+  border-radius: 6px;
+  background: var(--cinnabar);
+  color: #fff6ea;
+  font: 700 15px/1 var(--font-title);
+  transform: rotate(-4deg);
+}
+.personal-agent-suggestions li:first-child {
+  border-color: rgb(212 164 60 / 55%);
+  background: rgb(212 164 60 / 8%);
+}
+.personal-agent-dialog .personal-agent-suggestions li > button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.personal-agent-dialog .personal-agent-suggestions li > button:hover {
+  color: var(--primary-text);
+  text-decoration: underline;
+}
+.personal-agent-suggestions li > p {
+  margin: 2px 0 0;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.personal-agent-hint {
+  margin: 16px 0 0;
+  color: var(--text-tertiary);
+  font-size: 12px;
+}
+.personal-agent-dialog .personal-agent-controls button {
+  min-height: 38px;
+  border: 1px solid rgb(120 90 50 / 20%);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+}
+.personal-agent-dialog .personal-agent-controls button:disabled {
+  border-style: dashed;
+  background: transparent;
+  color: var(--text-tertiary);
+  opacity: 0.7;
+}
+
+/* Paper cards shared by projects, settings and daily practice */
+.modern-workspace .project-summary,
+.modern-workspace .settings-card,
+.modern-workspace .account-panel,
+.modern-workspace .day-period,
+.personal-project-list .personal-project-card,
+.modern-workspace .kanban-card {
+  border: 1px solid rgb(120 90 50 / 16%);
+  background: var(--surface);
+  box-shadow: var(--game-lift);
+}
+.modern-workspace .project-summary {
+  background:
+    radial-gradient(circle at 100% 0%, rgb(63 154 124 / 12%), transparent 45%),
+    var(--surface);
+}
+.personal-project-list .personal-project-card:hover {
+  border-color: color-mix(in srgb, var(--primary-text) 40%, transparent);
+  box-shadow: 0 8px 22px rgb(60 40 20 / 10%);
+}
+.personal-project-progress progress::-webkit-progress-value,
+.project-summary progress::-webkit-progress-value {
+  background: linear-gradient(90deg, #3f9a7c, #8fd3b6);
+}
+.modern-workspace .day-period .list-heading h2 {
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+.modern-workspace .day-period.is-drop-target {
+  border-color: var(--xp);
+  background: rgb(212 164 60 / 6%);
+}
+.personal-todo-empty h2,
+.personal-project-empty p {
+  font-family: var(--font-title);
+  letter-spacing: 0.06em;
+  color: var(--ink-soft);
+  -webkit-text-stroke: 0.4px currentColor;
+}
+.personal-todo-empty h2 {
+  font-size: 22px;
+}
+
+/* ---------- Mobile app ---------- */
+.pm-app {
+  --pm-bg: var(--surface-canvas);
+}
+.pm-app .pm-header {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0 0 26px 26px;
+  background:
+    radial-gradient(circle at 90% -30%, rgb(212 164 60 / 30%), transparent 55%),
+    radial-gradient(circle at 0% 130%, rgb(63 154 124 / 25%), transparent 50%),
+    linear-gradient(135deg, #2a2621, #1d1b18);
+  color: #efe4cf;
+  box-shadow: 0 10px 26px rgb(40 28 12 / 25%);
+}
+.pm-app .pm-top small {
+  color: #d4a43c;
+  letter-spacing: 0.22em;
+}
+.pm-app .pm-top h1 {
+  font-family: var(--font-title);
+  font-size: 24px;
+  letter-spacing: 0.12em;
+  color: #f6dc95;
+  -webkit-text-stroke: 0.5px currentColor;
+}
+.pm-app .pm-header .pm-icon,
+.pm-app .pm-week-title,
+.pm-app .pm-week small,
+.pm-app .pm-week span {
+  color: rgb(239 228 207 / 72%);
+}
+.pm-app .pm-header .pm-icon:active {
+  background: rgb(255 255 255 / 10%);
+}
+.pm-app .pm-week b {
+  color: #efe4cf;
+}
+.pm-app .pm-week .selected b {
+  background: radial-gradient(circle at 35% 30%, #f6dc95, #d4a43c 60%, #a87a1c);
+  color: #3b2a08;
+  box-shadow: 0 0 14px rgb(212 164 60 / 50%);
+}
+.pm-app .pm-trend {
+  color: #8fd3b6;
+}
+.pm-app .pm-list-heading h2 {
+  color: var(--ink);
+}
+.pm-app .pm-list-heading > button {
+  background: color-mix(in srgb, var(--primary) 30%, var(--surface));
+}
+.pm-app .pm-main > .pm-task {
+  border-color: rgb(120 90 50 / 16%);
+  background: var(--surface);
+}
+.pm-app .pm-task-title strong {
+  color: var(--ink);
+}
+.pm-app .pm-check:before,
+.pm-app .is-complete > .pm-task-line .pm-check:before {
+  border-color: var(--primary-text);
+}
+.pm-app .is-complete > .pm-task-line .pm-check:before {
+  background: var(--primary-text);
+}
+.pm-app .is-complete > .pm-task-line .pm-check {
+  color: #fffdf8;
+}
+.pm-app .pm-fab {
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f6dc95, #d4a43c 60%, #a87a1c) !important;
+  color: #3b2a08 !important;
+  box-shadow: 0 0 0 4px rgb(212 164 60 / 22%), 0 10px 24px rgb(168 122 28 / 40%);
+}
+.pm-app .pm-fab:active {
+  transform: scale(0.94);
+  box-shadow: 0 0 0 4px rgb(212 164 60 / 22%);
+}
+.pm-app .pm-bottom {
+  background: var(--sidebar-surface);
+}
+.pm-app .pm-bottom .active {
+  color: var(--primary-text);
+}
+.pm-app .pm-primary,
+.pm-app .pm-dialog button[type="submit"]:not(.pm-delete) {
+  border-radius: 999px;
+  background: var(--primary-text);
+  color: #fffdf8;
+  font-weight: 600;
+}
+.pm-app .pm-dialog {
+  border-radius: 22px;
+  background: var(--surface);
+}
+.pm-app .pm-empty {
+  font-family: var(--font-title);
+  color: var(--ink-soft);
+}
+.pm-app .pm-month-calendar,
+.pm-app .pm-settings-group,
+.pm-app .pm-stat-insight,
+.pm-app .pm-stat-list {
+  border: 1px solid rgb(120 90 50 / 14%);
+  box-shadow: var(--game-lift);
+}
+.pm-app .pm-stat-cards article {
+  background: linear-gradient(135deg, #2a2621, #1d1b18);
+  color: #f6dc95;
+}
+.pm-app .pm-stat-cards article + article {
+  background: var(--surface);
+  color: var(--ink);
+}
+.pm-app .pm-focus-primary {
+  background: var(--primary-text);
+  color: #fffdf8;
+}

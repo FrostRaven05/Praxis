@@ -1,10 +1,18 @@
 # Praxis
 
+2026-11-10：产品定位固定为个人管理，团队协作从路线移除。同一账号跨设备同步、成长修炼与 AI 保留。当前实施以[个人版 PRD](docs/prd-mvp-v0.1.md)和[个人版开发计划](docs/mvp-development-plan-2026-11-09.md)为准；团队切片仅作[历史归档](docs/archive/team-prototype-2026-11-10/README.md)。
+
+2026-10-25：AI 规划与自身修炼已实现首版；桌面具备关联行动、心愿奖励与设置草稿恢复，本轮继续加入项目恢复卡、近期记录、来源引用和项目内时间筛选。当前只有自身修炼，没有灵宠。范围与验证见 [项目恢复说明](docs/implementation-project-recovery.md)、[奖励闭环说明](docs/implementation-cultivation-rewards.md)、[开发进度](docs/ai-cultivation-progress.md)；DeepSeek 环境变量已接入，真实生成仍待联网验证，线上 AI 服务尚未启用。
+
+2026-10-18：Praxis 管理后台已部署至 [线上管理控制台](https://8.152.219.210/admin)，提供数据概览、用户管理、同步数据、操作日志和系统状态，含独立管理员登录及账号禁用/设备登录撤销。公网登录、退出及原有账号同步接口验证通过，原有数据保留。运行 `pnpm admin:preview` 可本地查看；配置与验证见 [管理后台说明](docs/implementation-admin.md)。
+
+2026-10-18：账号与同步 API 已以 Docker 部署，当前使用 `https://8.152.219.210` 的有效 IP HTTPS 证书；域名待完成备案接入后再切回。Windows 与 Android 模拟器已通过云端登录、双向任务同步及重启验证，见 [双端云连接验收](docs/implementation-ecs-clients.md)。部署与维护见 [ECS Docker 部署](docs/deploy-ecs.md)。
+
 2026-10-11：建议任务可直接转入普通清单；Windows / Android 新增邮箱注册、登录、退出及用户数据隔离，接入现有 HTTPS 后端。新版程序与验证范围见 [用户账号与建议任务转换](docs/implementation-accounts-suggestions.md)。
 
 2026-10-11：已建立可运行的 [局域网开发后端](docs/backend-lan.md)，Windows / Android 已接入 [非 AI 全域自动同步](docs/implementation-full-sync.md)，覆盖任务、项目、安排、记录、视图、重复和习惯等对象。实际双端验收使用 Windows WebView2 与 Android 17 模拟器；最终验收状态见该记录。手机端界面见 [手机端记录](docs/implementation-mobile-reference.md)。
 
-T15–T21 的桌面本地能力和 T22 手机离线收集适配见 [本轮实施与验证](docs/implementation-p1-followups.md)。Android 真机、云登录、统一完整导出与发布/规模验收仍按 [当前工单](ticket.md) 推进；AI 相关 T32–T34 暂缓。Android 当前在前台及恢复前台/网络后同步，系统停止 App 期间不承诺持续后台工作。
+T15–T21 的桌面本地能力和 T22 手机离线收集适配见 [本轮实施与验证](docs/implementation-p1-followups.md)。Android 真机、云登录、统一完整导出与发布/规模验收仍按 [当前工单](ticket.md) 推进；AI 相关 T32–T34 的首个实现切片见 [AI 首版说明](docs/implementation-ai-planner-v1.md)。Android 当前在前台及恢复前台/网络后同步，系统停止 App 期间不承诺持续后台工作。
 
 T08–T14 已完成 Windows 本地实现：今日与近期、独立时间与工作空间时区、优先级/标签/等待、每日结果、分区和安全项目终结。见 [实施与验收记录](docs/implementation-p1-core.md)。
 

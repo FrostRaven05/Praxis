@@ -50,7 +50,7 @@ import javax.net.ssl.*;
   @PluginMethod public void accountStatus(PluginCall call){ executor.execute(()->{ try {
     JSONObject c=config(); JSObject result=new JSObject();
     result.put("user",c!=null&&c.has("user")?c.getJSONObject("user"):JSONObject.NULL);
-    result.put("baseUrl",c!=null?c.getString("baseUrl"):""); result.put("expiresAt",c!=null?c.opt("expiresAt"):JSONObject.NULL); call.resolve(result);
+    result.put("baseUrl",c!=null&&c.has("user")?c.getString("baseUrl"):"https://todo.frostraven05.com"); result.put("expiresAt",c!=null?c.opt("expiresAt"):JSONObject.NULL); call.resolve(result);
   } catch(Exception e){call.reject("无法读取账号状态。");} }); }
   @PluginMethod public void accountAuthenticate(PluginCall call){ executor.execute(()->{
     HttpsURLConnection connection=null;
@@ -207,4 +207,32 @@ import javax.net.ssl.*;
     }
     );
   }
+
+  @PluginMethod public void aiRequest(PluginCall call) { executor.execute(()-> {
+    HttpsURLConnection connection=null;
+    try {
+      JSONObject c=config();
+      if(c==null||!c.has("user")){call.reject("请先登录账号，再使用 AI 规划。");return;}
+      String method=call.getString("method",""),path=call.getString("path","");
+      boolean allowed=("GET".equals(method)&&"/v1/ai/status".equals(path))||("POST".equals(method)&&"/v1/ai/runs".equals(path))||
+        ("GET".equals(method)&&path.matches("/v1/ai/runs/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"))||
+        ("POST".equals(method)&&path.matches("/v1/ai/runs/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/cancel"));
+      if(!allowed){call.reject("不支持的 AI 请求。");return;}
+      connection=(HttpsURLConnection)new URL(c.getString("baseUrl")+path).openConnection();
+      trust(connection,c.optString("caPem",""));connection.setInstanceFollowRedirects(false);
+      connection.setConnectTimeout(8000);connection.setReadTimeout(12000);connection.setRequestMethod(method);
+      connection.setRequestProperty("Authorization","Bearer "+c.getString("token"));
+      if("POST".equals(method)){
+        JSObject value=call.getObject("body",new JSObject());byte[] payload=value.toString().getBytes(StandardCharsets.UTF_8);
+        if(payload.length>131072)throw new Exception("Too large");
+        connection.setDoOutput(true);connection.setRequestProperty("Content-Type","application/json");
+        try(OutputStream out=connection.getOutputStream()){out.write(payload);}
+      }
+      int status=connection.getResponseCode();InputStream stream=status<400?connection.getInputStream():connection.getErrorStream();
+      ByteArrayOutputStream bytes=new ByteArrayOutputStream();
+      if(stream!=null)try(InputStream in=stream){byte[] buffer=new byte[8192];int n;while((n=in.read(buffer))!=-1){if(bytes.size()+n>1048576)throw new Exception("Too large");bytes.write(buffer,0,n);}}
+      JSObject result=new JSObject();result.put("status",status);result.put("body",new JSObject(bytes.toString(StandardCharsets.UTF_8.name())));call.resolve(result);
+    } catch(Exception e){call.reject("无法确认 AI 请求结果，请检查网络后恢复。");}
+    finally{if(connection!=null)connection.disconnect();}
+  }); }
 }

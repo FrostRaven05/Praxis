@@ -1,0 +1,11 @@
+√ Copying web assets from dist to android\app\src\main\assets\public in 7.80ms
+√ Creating capacitor.config.json in android\app\src\main\assets in 559.10μs
+√ copy android in 17.23ms
+√ Updating Android plugins in 466.70μs
+[info] Found 4 Capacitor plugins for android:
+       @capacitor-community/sqlite@8.1.1
+       @capacitor/app@8.1.1
+       @capacitor/filesystem@8.1.4
+       @capacitor/share@8.0.3
+√ update android in 57.53ms
+[info] Sync finished in 0.111s

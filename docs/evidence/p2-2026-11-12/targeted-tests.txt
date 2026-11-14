@@ -1,0 +1,12 @@
+
+ RUN  v3.2.7 C:/Project/01Project/Praxis
+
+ ✓ apps/client/src/personal-growth-settings.test.ts (3 tests) 3ms
+ ✓ packages/application/src/personal-growth.test.ts (6 tests) 18ms
+ ✓ apps/client/src/personal-growth-storage.test.ts (2 tests) 23ms
+
+ Test Files  3 passed (3)
+      Tests  11 passed (11)
+   Start at  00:12:35
+   Duration  754ms (transform 233ms, setup 0ms, collect 413ms, tests 44ms, environment 0ms, prepare 600ms)
+

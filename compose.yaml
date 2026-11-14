@@ -1,0 +1,41 @@
+services:
+  api:
+    build:
+      context: .
+      args:
+        NODE_IMAGE: ${PRAXIS_NODE_IMAGE:-node:24-bookworm-slim}
+    restart: unless-stopped
+    init: true
+    environment:
+      PRAXIS_AI_API_KEY: ${PRAXIS_AI_API_KEY:-}
+      PRAXIS_AI_PROVIDER: ${PRAXIS_AI_PROVIDER:-}
+      PRAXIS_AI_BASE_URL: ${PRAXIS_AI_BASE_URL:-}
+      PRAXIS_AI_MODEL: ${PRAXIS_AI_MODEL:-}
+      DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY:-}
+      DEEPSEEK_BASE_URL: ${DEEPSEEK_BASE_URL:-}
+      DEEPSEEK_MODEL: ${DEEPSEEK_MODEL:-}
+    ports:
+      - "${PRAXIS_BIND_ADDRESS:-0.0.0.0}:${PRAXIS_HTTPS_PORT:-4318}:4318"
+    volumes:
+      - ./deploy/runtime/config:/config:ro
+      - ./deploy/runtime/data:/data
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "const fs=require('node:fs'),https=require('node:https');const c=JSON.parse(fs.readFileSync('/config/server.json','utf8'));https.get({host:'127.0.0.1',port:4318,path:'/health',ca:fs.readFileSync('/config/health-ca.crt'),servername:c.healthServerName},r=>{r.resume();process.exitCode=r.statusCode===200?0:1}).on('error',()=>process.exitCode=1)"
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

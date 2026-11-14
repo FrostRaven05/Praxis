@@ -1,0 +1,18 @@
+{
+  "verifiedAt": "2026-10-18T11:32:31.686Z",
+  "environment": "isolated local SQLite; test users only; no production connection",
+  "checks": [
+    "管理员登录与真实空状态",
+    "数据概览展示真实注册用户与已同步实体",
+    "用户分页",
+    "用户搜索、导出与真实设备详情",
+    "禁用与启用确认、撤销登录与旧会话失效",
+    "账号状态筛选",
+    "同步数据页面",
+    "操作日志页面",
+    "系统状态页面",
+    "390px 手机布局与折叠导航",
+    "退出登录"
+  ],
+  "browserErrors": []
+}

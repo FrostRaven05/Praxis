@@ -32,8 +32,13 @@ export class StoreError extends Error {
 /** All capture versions, receipts and feed entries commit in one synchronous transaction. */
 export class CaptureStore {
   private readonly db: DatabaseSync;
-  constructor(databasePath: string) {
-    this.db = new DatabaseSync(databasePath);
+  private readonly ownsDatabase: boolean;
+  constructor(databasePath: string | DatabaseSync) {
+    this.ownsDatabase = typeof databasePath === "string";
+    this.db =
+      typeof databasePath === "string"
+        ? new DatabaseSync(databasePath)
+        : databasePath;
     this.db.exec(`
       PRAGMA journal_mode=WAL;
       PRAGMA synchronous=FULL;
@@ -51,7 +56,7 @@ export class CaptureStore {
     `);
   }
   close(): void {
-    this.db.close();
+    if (this.ownsDatabase) this.db.close();
   }
   command(owner: string, command: CaptureCommand): CommandResult {
     // Explicit key ordering makes equivalent JSON objects the same logical request.
@@ -147,13 +152,11 @@ export class CaptureStore {
         "SELECT device_id,operation_id,result FROM capture_changes WHERE owner=? AND cursor>? ORDER BY cursor LIMIT ?",
       )
       .all(owner, after, limit + 1);
-    const changes = rows
-      .slice(0, limit)
-      .map((row) => ({
-        ...(JSON.parse(String(row.result)) as CommandResult),
-        deviceId: String(row.device_id),
-        operationId: String(row.operation_id),
-      }));
+    const changes = rows.slice(0, limit).map((row) => ({
+      ...(JSON.parse(String(row.result)) as CommandResult),
+      deviceId: String(row.device_id),
+      operationId: String(row.operation_id),
+    }));
     return {
       changes,
       cursor: changes.at(-1)?.cursor ?? after,

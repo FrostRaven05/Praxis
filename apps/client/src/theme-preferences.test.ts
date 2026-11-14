@@ -32,10 +32,10 @@ it("keeps arbitrary accents while making their text readable in light and dark m
 });
 it("uses the same stronger foreground for each preset's text, icons and outlines", () => {
   expect(THEME_COLORS.map((theme) => theme.name)).toEqual([
-    "冰蓝",
-    "珊瑚红",
-    "鼠尾草绿",
-    "雾紫",
+    "青玉",
+    "朱砂",
+    "金丹",
+    "紫府",
   ]);
   for (const theme of THEME_COLORS) {
     expect(themeColorTokens(theme.color)["--primary-light-text"]).toBe(

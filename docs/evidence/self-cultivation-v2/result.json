@@ -1,0 +1,31 @@
+{
+  "testedAt": "2026-10-25T15:30:33.5284136Z",
+  "theme": "self-cultivation",
+  "petIncluded": false,
+  "changes": [
+    "adopted planner outcome and reward prefill cultivation form",
+    "explicit save or discard of imported stage",
+    "account scope check",
+    "existing stage replacement explanation"
+  ],
+  "checks": {
+    "typecheck": "passed",
+    "embeddedDesktopBuild": "passed",
+    "testFiles": 40,
+    "guiAcceptance": "not completed; local debug-port access restricted",
+    "frontendBuild": "passed",
+    "testsPassed": 204
+  },
+  "network": {
+    "providerResponseReceived": false,
+    "windowsDnsErrorId": "5",
+    "curlExitCode": 6,
+    "node": "ENOTFOUND"
+  },
+  "artifact": {
+    "bytes": 30601728,
+    "sha256": "C730C49038281EF22FB59D1B3D016E6310D85DB263293486C9AD1EDED32FFD5C",
+    "path": ".tools/releases/self-cultivation-v2/Praxis.exe"
+  },
+  "productionDeployed": false
+}

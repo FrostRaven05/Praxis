@@ -82,9 +82,10 @@
   white-space: nowrap;
 }
 .workspace.modern-workspace .sidebar-bottom {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
   align-items: center;
-  gap: 8px;
+  gap: 6px 8px;
   margin-top: auto;
   padding-top: 24px;
 }
@@ -95,6 +96,7 @@
   border-radius: 10px;
   margin-top: 0;
   padding: 12px 14px;
+  white-space: nowrap;
 }
 .workspace.modern-workspace .today,
 .workspace.modern-workspace .work-view {
@@ -157,8 +159,8 @@
 }
 .workspace.modern-workspace .reference-day .date-strip {
   flex-wrap: wrap;
-  min-height: 52px;
-  padding: 8px 12px;
+  min-height: 62px;
+  padding: 6px 12px;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--surface-card);
@@ -176,27 +178,83 @@
   border-radius: 10px;
   font-size: 14px;
 }
-.workspace.modern-workspace .reference-day .date-strip-day {
+.workspace.modern-workspace .reference-day .date-strip .date-strip-day {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  width: 34px;
+  height: 46px;
+  min-height: 46px;
+  padding: 4px 0;
+  border-radius: 12px;
   background: var(--surface-secondary);
+  line-height: 1;
+}
+.workspace.modern-workspace .reference-day .date-strip-weekday {
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 500;
+}
+.workspace.modern-workspace .reference-day .date-strip-number {
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 600;
+}
+.workspace.modern-workspace .reference-day .date-strip-day.is-today {
+  position: relative;
+  box-shadow: inset 0 0 0 1px
+    color-mix(in srgb, var(--primary) 55%, var(--line));
+}
+.workspace.modern-workspace .reference-day .date-strip-day.is-today::after {
+  content: "";
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--primary-text);
+  transform: translateX(-50%);
 }
 .workspace.modern-workspace .reference-day .date-strip-day.is-selected {
   background: var(--primary);
   color: var(--on-primary);
 }
+.workspace.modern-workspace
+  .reference-day
+  .date-strip-day.is-selected
+  .date-strip-weekday,
+.workspace.modern-workspace
+  .reference-day
+  .date-strip-day.is-selected
+  .date-strip-number {
+  color: var(--on-primary);
+}
+.workspace.modern-workspace .reference-day .date-strip-day.is-selected::after {
+  content: none;
+}
 .workspace.modern-workspace .reference-day .date-strip .date-strip-label {
   width: auto;
   height: auto;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 14px;
-  margin-left: 12px;
+  margin-left: 8px;
 }
 .workspace.modern-workspace .reference-day .date-strip-today {
   flex-shrink: 0;
-  width: 40px;
+  width: auto;
+  min-width: 52px;
   height: 40px;
-  padding: 8px;
-  background: transparent;
-  color: var(--text-secondary);
+  padding: 0 12px;
+  border-radius: 10px;
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+}
+.workspace.modern-workspace .reference-day .date-strip-today:hover {
+  background: var(--surface-hover);
 }
 .workspace.modern-workspace .reference-day .capture-form,
 .workspace.modern-workspace .simple-project-workspace .project-task-form {
@@ -399,32 +457,45 @@
 }
 .workspace.modern-workspace .task-suggestions {
   list-style: none;
-  margin: 16px 0 0;
+  margin: 0;
   padding: 0;
 }
 .workspace.modern-workspace .task-suggestions li {
-  display: grid;
-  gap: 6px;
-  padding: 14px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  padding: 5px 0;
   border-top: 1px solid var(--line);
 }
+.workspace.modern-workspace .task-suggestions li:first-child {
+  border-top: 0;
+}
 .workspace.modern-workspace .task-suggestion-title {
+  flex: 1;
+  min-width: 0;
   font-size: 14px;
   line-height: 1.6;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 .workspace.modern-workspace .task-suggestion-reason {
+  flex-shrink: 0;
   font-size: 12px;
-  color: var(--text-secondary);
+  color: var(--warning-text);
 }
 .workspace.modern-workspace .accept-suggestion {
-  justify-self: start;
-  padding: 6px 12px;
+  flex-shrink: 0;
+  min-height: 28px;
+  padding: 4px 8px;
   border: 1px solid var(--line);
   border-radius: 6px;
   background: var(--surface-secondary);
   color: var(--primary-text);
   font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
   cursor: pointer;
 }
 .workspace.modern-workspace .accept-suggestion:disabled {
@@ -1028,6 +1099,7 @@
   margin: 0;
   padding: 28px 28px 20px;
   border: 0;
+  container-type: inline-size;
 }
 .workspace.modern-workspace .work-view .timeline-header {
   padding: 20px 0;
@@ -1126,6 +1198,26 @@
 .workspace.modern-workspace .timeline-attention > summary span {
   margin-left: 8px;
 }
+.workspace.modern-workspace .today-recommendations > h2 {
+  margin: 0;
+  padding: 0 0 2px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.workspace.modern-workspace .today-recommendations > h2 span {
+  margin-left: 8px;
+}
+.workspace.modern-workspace .timeline-attention.today-recommendations {
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border-color: var(--line);
+  background: var(--surface-secondary);
+}
+.workspace.modern-workspace .task-suggestion-title small {
+  color: var(--text-secondary);
+}
 .workspace.modern-workspace .timeline-support,
 .workspace.modern-workspace .timeline-reschedule {
   margin: 24px 28px;
@@ -1210,6 +1302,48 @@
   background: var(--surface-secondary);
   color: var(--text-primary);
   font-size: 12px;
+}
+@container (max-width: 720px) {
+  .workspace.modern-workspace .reference-day .date-strip-row {
+    width: 100%;
+    flex-basis: auto;
+    gap: 8px;
+  }
+  .workspace.modern-workspace .reference-day .date-strip {
+    flex: 1 1 auto;
+    gap: 4px;
+    padding: 6px 8px;
+  }
+  .workspace.modern-workspace .reference-day .date-strip-days {
+    flex: 1 1 auto;
+    justify-content: space-between;
+    gap: 2px;
+  }
+  .workspace.modern-workspace .reference-day .date-strip .date-strip-day {
+    width: 30px;
+    height: 42px;
+    min-height: 42px;
+  }
+  .workspace.modern-workspace .reference-day .date-strip-arrow {
+    width: 28px;
+    height: 30px;
+    min-height: 30px;
+  }
+  .workspace.modern-workspace .reference-day .date-strip-weekday {
+    font-size: 10px;
+  }
+  .workspace.modern-workspace .reference-day .date-strip-number {
+    font-size: 14px;
+  }
+  .workspace.modern-workspace .reference-day .date-strip .date-strip-label {
+    flex-basis: 100%;
+    justify-content: center;
+    margin: 4px 0 0;
+    font-size: 11px;
+  }
+  .workspace.modern-workspace .reference-day .date-strip-today {
+    display: none;
+  }
 }
 @media (max-width: 700px) {
   .workspace.modern-workspace .day-periods {

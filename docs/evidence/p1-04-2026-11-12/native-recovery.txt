@@ -1,0 +1,23 @@
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\praxis_desktop_lib-0fraqoia1443m\s-ho2ectv4vv-0lgdpcz-working`
+
+warning: linker stdout: 正在创建库 C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\deps\praxis_desktop_lib.dll.lib 和对象 C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\deps\praxis_desktop_lib.dll.exp
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `praxis-desktop` (lib) generated 2 warnings
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\praxis_desktop-1ufkjqwnni38j\s-ho2ed0kn37-07lb7ok-working`
+
+   Compiling praxis-desktop v0.1.0 (C:\Project\01Project\Praxis\apps\desktop\src-tauri)
+warning: `praxis-desktop` (bin "praxis-desktop") generated 1 warning
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\personal_recovery-3ewf0ipnhdb63\s-ho2ehpiw1g-0jp768g-working`
+
+warning: `praxis-desktop` (test "personal_recovery") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.89s
+     Running tests\personal_recovery.rs (apps\desktop\src-tauri\target\debug\deps\personal_recovery-e4ebb69e2c36ec04.exe)
+
+running 2 tests
+test checked_leaf_restore_preserves_content_receipts_and_rejects_deleted_version_changes ... ok
+test status_undo_restores_known_and_unknown_completion_facts_and_rejects_newer_edits ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+

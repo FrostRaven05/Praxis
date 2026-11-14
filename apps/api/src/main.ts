@@ -1,7 +1,9 @@
+import { aiEnvironment } from "./ai.js";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createServer } from "./server.js";
+import { createHash } from "node:crypto";
 
 // Config is local-only: tokens are hashed; TLS private key never enters a client build.
 const configPath = process.env.PRAXIS_LAN_CONFIG
@@ -35,9 +37,25 @@ try {
       throw new Error("invalid_device");
     return { ownerId: d.ownerId, deviceId: d.deviceId, tokenHash: d.tokenHash };
   });
+  const adminToken = process.env.PRAXIS_ADMIN_TOKEN;
+  if (adminToken !== undefined && adminToken.length < 32)
+    throw new Error("invalid_admin_token");
+  if (
+    c.adminTokenHash !== undefined &&
+    (typeof c.adminTokenHash !== "string" ||
+      !/^[a-f0-9]{64}$/i.test(c.adminTokenHash))
+  )
+    throw new Error("invalid_admin_hash");
+  const adminTokenHash = adminToken
+    ? createHash("sha256").update(adminToken).digest("hex")
+    : typeof c.adminTokenHash === "string"
+      ? c.adminTokenHash
+      : undefined;
   const app = createServer({
+    ai: aiEnvironment(process.env),
     databasePath: resolve(root, c.databasePath),
     devices,
+    ...(adminTokenHash ? { adminTokenHash } : {}),
     https: {
       key: readFileSync(resolve(root, c.keyPath)),
       cert: readFileSync(resolve(root, c.certPath)),

@@ -1,0 +1,58 @@
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\praxis_desktop_lib-0fraqoia1443m\s-ho2ao9837k-1v1bk6x-working`
+
+warning: linker stdout: 正在创建库 C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\deps\praxis_desktop_lib.dll.lib 和对象 C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\deps\praxis_desktop_lib.dll.exp
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `praxis-desktop` (lib) generated 2 warnings
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\m0_baseline-3tbkuyz3fnz3v\s-ho2ar3jdl7-1b81vc8-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\personal_compatibility-0vk8v5go79v27\s-ho2aredg0s-0fb5kax-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\personal_queries-25ix8x3991s07\s-ho2aohi0rb-1rovqza-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\completion-1vs8q7898z9tz\s-ho2ar4dnkg-1oph849-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\praxis_desktop-1ufkjqwnni38j\s-ho2aohhxhw-1yj4blk-working`
+
+warning: `praxis-desktop` (test "m0_baseline") generated 1 warning
+warning: `praxis-desktop` (test "personal_compatibility") generated 1 warning
+warning: `praxis-desktop` (test "personal_queries") generated 1 warning
+warning: `praxis-desktop` (test "completion") generated 1 warning
+warning: `praxis-desktop` (bin "praxis-desktop") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.31s
+     Running tests\completion.rs (apps\desktop\src-tauri\target\debug\deps\completion-d3bf22f444f8a5f4.exe)
+
+running 5 tests
+test execution_fact_cannot_reference_another_tasks_plan ... ok
+test stale_undo_cannot_revert_a_later_completion ... ok
+test completion_and_undo_persist_facts_and_history_across_restart ... ok
+test outbox_failure_rolls_back_completion_and_execution_fact ... ok
+test upgrade_preserves_existing_capture_and_enables_completion ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.50s
+
+     Running tests\m0_baseline.rs (apps\desktop\src-tauri\target\debug\deps\m0_baseline-70a79e952410a24c.exe)
+
+running 1 test
+test m0_full_legacy_fixture_roundtrips_all_tables_and_failed_restore_keeps_original ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.46s
+
+     Running tests\personal_compatibility.rs (apps\desktop\src-tauri\target\debug\deps\personal_compatibility-3648b6a544d1e345.exe)
+
+running 2 tests
+test personal_current_backup_keeps_legacy_data_ai_receipt_pending_conflict_and_task_identity ... ok
+test personal_v10_upgrade_keeps_ids_versions_queue_and_unknown_completion_date ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.55s
+
+     Running tests\personal_queries.rs (apps\desktop\src-tauri\target\debug\deps\personal_queries-d2c5bbe798f667a3.exe)
+
+running 3 tests
+test personal_snapshot_reads_unplanned_identity_raw_waiting_and_typed_deadline_without_writing ... ok
+test personal_completion_replication_keeps_unknown_dates_and_uses_known_fact_time_not_last_edit_time ... ok
+test explicit_same_day_typed_deadline_edit_replaces_instant_but_title_only_edit_preserves_it ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+

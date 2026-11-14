@@ -128,20 +128,24 @@ export function RepeatView() {
           />
         </label>
         <p>选择星期时按指定星期执行；不选择则按每隔天数。</p>
-        {[1, 2, 3, 4, 5, 6, 7].map((d) => (
-          <label key={d}>
-            <input
-              type="checkbox"
-              checked={days.includes(d)}
-              onChange={(e) =>
-                setDays(
-                  e.target.checked ? [...days, d] : days.filter((x) => x !== d),
-                )
-              }
-            />
-            周{["一", "二", "三", "四", "五", "六", "日"][d - 1]}
-          </label>
-        ))}
+        <div className="weekday-options" aria-label="执行星期">
+          {[1, 2, 3, 4, 5, 6, 7].map((d) => (
+            <label key={d}>
+              <input
+                type="checkbox"
+                checked={days.includes(d)}
+                onChange={(e) =>
+                  setDays(
+                    e.target.checked
+                      ? [...days, d]
+                      : days.filter((x) => x !== d),
+                  )
+                }
+              />
+              周{["一", "二", "三", "四", "五", "六", "日"][d - 1]}
+            </label>
+          ))}
+        </div>
         <label>
           归属
           <select value={project} onChange={(e) => setProject(e.target.value)}>
@@ -372,22 +376,24 @@ function RuleEditor({
                 onChange={(e) => setInterval(Number(e.target.value))}
               />
             </label>
-            {[1, 2, 3, 4, 5, 6, 7].map((d) => (
-              <label key={d}>
-                <input
-                  type="checkbox"
-                  checked={days.includes(d)}
-                  onChange={(e) =>
-                    setDays(
-                      e.target.checked
-                        ? [...days, d]
-                        : days.filter((x) => x !== d),
-                    )
-                  }
-                />
-                周{d}
-              </label>
-            ))}
+            <div className="weekday-options" aria-label="执行星期">
+              {[1, 2, 3, 4, 5, 6, 7].map((d) => (
+                <label key={d}>
+                  <input
+                    type="checkbox"
+                    checked={days.includes(d)}
+                    onChange={(e) =>
+                      setDays(
+                        e.target.checked
+                          ? [...days, d]
+                          : days.filter((x) => x !== d),
+                      )
+                    }
+                  />
+                  周{["一", "二", "三", "四", "五", "六", "日"][d - 1]}
+                </label>
+              ))}
+            </div>
             <label>
               规则时区
               <input value={zone} onChange={(e) => setZone(e.target.value)} />

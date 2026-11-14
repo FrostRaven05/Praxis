@@ -1,0 +1,6 @@
+{
+  "testedAt": "2026-10-25T11:14:39.931Z",
+  "checks": [],
+  "errors": [],
+  "error": "Error: Isolated desktop did not start: Error: browserType.connectOverCDP: connect EACCES 127.0.0.1:4938\nCall log:\n\u001b[2m  - <ws preparing> retrieving websocket url from http://127.0.0.1:4938\u001b[22m\n; "
+}

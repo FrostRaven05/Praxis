@@ -1,0 +1,12 @@
+file:///C:/Project/01Project/Praxis/scripts/native-ai-planner.mjs:175
+        throw Error(
+              ^
+
+Error: Desktop verification cannot connect to the local debug port: EACCES. Error: browserType.connectOverCDP: connect EACCES 127.0.0.1:1393
+Call log:
+  - <ws preparing> retrieving websocket url from http://127.0.0.1:1393
+
+    at start (file:///C:/Project/01Project/Praxis/scripts/native-ai-planner.mjs:175:15)
+    at async file:///C:/Project/01Project/Praxis/scripts/native-ai-planner.mjs:212:3
+
+Node.js v24.21.0

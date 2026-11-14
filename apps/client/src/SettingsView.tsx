@@ -1,6 +1,4 @@
-import { BackupPanel } from "./BackupPanel";
 import { ThemeSettings } from "./ThemeSettings";
-import { AccountPanel } from "./AccountPanel";
 import { ProjectIcon } from "./ProjectIcon";
 import { useProjectList } from "./useProjectList";
 
@@ -20,11 +18,9 @@ export function SettingsView({
       <div className="today-content">
         <header className="settings-heading">
           <h1 id="settings-heading">设置</h1>
-          <p>管理用户账号、主题颜色、备份与归档项目。</p>
+          <p>管理主题与归档项目。</p>
         </header>
-        <AccountPanel />
         <ThemeSettings />
-        <BackupPanel />
         <section className="settings-card" aria-labelledby="archived-heading">
           <header className="settings-card-heading">
             <span className="settings-section-icon">

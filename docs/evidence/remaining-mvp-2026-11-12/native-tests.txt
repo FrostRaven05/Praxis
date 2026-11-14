@@ -1,0 +1,482 @@
+   Compiling praxis-desktop v0.1.0 (C:\Project\01Project\Praxis\apps\desktop\src-tauri)
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\praxis_desktop_lib-3rluhnmorkkay\s-ho2esfmjsx-1y8l8tb-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\praxis_desktop_lib-0fraqoia1443m\s-ho2esfmilv-00pifgq-working`
+
+warning: linker stdout: 正在创建库 C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\deps\praxis_desktop_lib.dll.lib 和对象 C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\deps\praxis_desktop_lib.dll.exp
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `praxis-desktop` (lib) generated 2 warnings
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\praxis_desktop-3m206aae5xpx0\s-ho2eskxlb0-0x7rtfi-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\praxis_desktop-1ufkjqwnni38j\s-ho2eskylxc-0rj5agx-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\habits-2fmsrez6gp4lb\s-ho2eskw7q8-1cpnem7-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\personal_projects-17e1vgkxc83fj\s-ho2eskx3x1-0yyfs55-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\edit-2nvnpktknnl6t\s-ho2eskw7uk-1tv5qyf-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\trash-3jkh4sivncwct\s-ho2eskwjmc-1xunikw-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\personal_queries-25ix8x3991s07\s-ho2eskwyi1-0cxmbqv-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\entities_sync-2muw5k8iyrw5p\s-ho2eskwliv-1o9txy8-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\views-12rg024mptqie\s-ho2eskweu1-1y1pe9r-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\ai-0sb734spada2n\s-ho2eskxsvp-06i9jqq-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\personal_inline_tasks-2qd33411vuq2s\s-ho2eskymkh-0k8nm50-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\projects-2vuffe1hf4kff\s-ho2eskycum-1y3tz9k-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\reviews-2wit2di34b0su\s-ho2eskymeu-1g94j90-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\m0_baseline-3tbkuyz3fnz3v\s-ho2eskxj0v-06ir1vs-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\recurrence-2zh2dqmfp5rbo\s-ho2esky7k5-0wq94nz-working`
+
+warning: `praxis-desktop` (lib test) generated 1 warning
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\habit_arrangements-34g40red12ssm\s-ho2esluem1-02cbhns-working`
+
+warning: `praxis-desktop` (bin "praxis-desktop" test) generated 1 warning
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\project_workspace-1jl9qia8fuzbc\s-ho2esn23zv-1stcat7-working`
+
+warning: `praxis-desktop` (bin "praxis-desktop") generated 1 warning
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\usability-1ha22qs4gt366\s-ho2esqbdbi-1t73ovz-working`
+
+warning: `praxis-desktop` (test "personal_projects") generated 1 warning
+warning: `praxis-desktop` (test "ai") generated 1 warning
+warning: `praxis-desktop` (test "habits") generated 1 warning
+warning: `praxis-desktop` (test "personal_queries") generated 1 warning
+warning: `praxis-desktop` (test "personal_inline_tasks") generated 1 warning
+warning: `praxis-desktop` (test "trash") generated 1 warning
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\corruption-30utwo04e9rq7\s-ho2estj1rw-1gjnqo6-working`
+
+warning: `praxis-desktop` (test "edit") generated 1 warning
+warning: `praxis-desktop` (test "entities_sync") generated 1 warning
+warning: `praxis-desktop` (test "projects") generated 1 warning
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\capture-2jv8tme2jnoi7\s-ho2estofwe-0en615l-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\suggestions-2sjxnsyjeqobv\s-ho2estp5jk-0lriewl-working`
+
+warning: `praxis-desktop` (test "views") generated 1 warning
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\subtasks-01yrvxpklf184\s-ho2estousd-0eptc2s-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\content-3c3nkuzntedt0\s-ho2estpv58-1mljmi5-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\entities_contract_review-1b4zyj6lkuxod\s-ho2estujbf-1mheoec-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\entities_identity_review-3id3vdu0j2xcx\s-ho2estqn39-0jyc9bx-working`
+
+warning: `praxis-desktop` (test "reviews") generated 1 warning
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\planning-30wmlw3cn4d3x\s-ho2estwb22-0da7hhb-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\productivity-32fbdhyy68o6x\s-ho2estximm-1civum2-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\personal_compatibility-0vk8v5go79v27\s-ho2esu0xt9-1nvsgde-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\personal_recovery-3ewf0ipnhdb63\s-ho2esu4s6i-0ov2c8p-working`
+
+warning: `praxis-desktop` (test "recurrence") generated 1 warning
+warning: `praxis-desktop` (test "m0_baseline") generated 1 warning
+warning: `praxis-desktop` (test "habit_arrangements") generated 1 warning
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\task_details-1oh0t60kb2r7y\s-ho2esue866-1skyyf7-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\completion-1vs8q7898z9tz\s-ho2esuenc3-0u9dap2-working`
+
+warning: `praxis-desktop` (test "project_workspace") generated 1 warning
+warning: `praxis-desktop` (test "corruption") generated 1 warning
+warning: `praxis-desktop` (test "usability") generated 1 warning
+warning: `praxis-desktop` (test "suggestions") generated 1 warning
+warning: `praxis-desktop` (test "subtasks") generated 1 warning
+warning: `praxis-desktop` (test "capture") generated 1 warning
+warning: `praxis-desktop` (test "productivity") generated 1 warning
+warning: `praxis-desktop` (test "completion") generated 1 warning
+warning: `praxis-desktop` (test "entities_contract_review") generated 1 warning
+warning: `praxis-desktop` (test "planning") generated 1 warning
+warning: `praxis-desktop` (test "content") generated 1 warning
+warning: `praxis-desktop` (test "personal_recovery") generated 1 warning
+warning: `praxis-desktop` (test "task_details") generated 1 warning
+warning: `praxis-desktop` (test "entities_identity_review") generated 1 warning
+warning: `praxis-desktop` (test "personal_compatibility") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 37.59s
+     Running unittests src\lib.rs (apps\desktop\src-tauri\target\debug\deps\praxis_desktop_lib-a3877cd827dcfdc4.exe)
+
+running 28 tests
+test ai_gateway::tests::only_planner_routes_are_allowed ... ok
+test accounts::tests::isolates_users_and_servers_with_paths_inside_account_root ... ok
+test store::ai_context::tests::snapshot_contains_real_estimate_schedule_recovery_and_exclusive_record_excerpts ... ok
+test store::ai_context::tests::unchanged_recovery_applies_and_replay_ignores_later_source_edits ... ok
+test store::cultivation::tests::merging_completed_roots_does_not_duplicate_package_experience ... ok
+test store::cultivation::tests::parent_packages_need_all_live_leaves_and_subtasks_cannot_be_bound_separately ... ok
+test store::cultivation::tests::final_queue_failure_rolls_back_wish_and_stage_changes ... ok
+test store::cultivation::tests::deleted_bound_work_does_not_unlock_but_confirmed_rewards_survive_later_undo ... ok
+test store::ai_context::tests::records_are_bounded_and_inactive_or_missing_projects_cannot_be_read ... ok
+test store::cultivation::tests::old_command_payload_and_legacy_reward_claim_remain_compatible ... ok
+test store::cultivation::tests::consumed_actions_cannot_support_a_second_breakthrough ... ok
+test store::ai_context::tests::explicit_arrangement_estimate_and_instant_date_use_workspace_timezone ... ok
+test store::cultivation::tests::splitting_or_wrapping_consumed_work_does_not_make_it_eligible_again ... ok
+test store::cultivation::tests::replacing_a_stage_preserves_and_reactivates_the_original_wish_id ... ok
+test store::cultivation::tests::splitting_a_completed_package_does_not_multiply_experience ... ok
+test store::ai_context::tests::changes_to_recovery_and_records_reject_adoption_without_partial_capture ... ok
+test store::cultivation::tests::schema_24_upgrade_preserves_historical_reward_identity_and_legacy_claim ... ok
+test store::cultivation::tests::stage_queue_failure_keeps_previous_stage_and_reward_locked ... ok
+test store::cultivation::tests::foreign_or_missing_work_and_wishes_cannot_be_used_and_stale_writes_leave_no_records ... ok
+test store::entities::tests::atomic_invalid_reference_rolls_back_data_cursor_and_triggers ... ok
+test store::cultivation::tests::work_packages_conserve_credit_and_breakthrough_needs_accumulation ... ok
+test store::lan::tests::lan_frozen_retry_and_ack_preserves_newer_local_edit ... ok
+test store::lan::tests::lan_clean_pull_deletion_and_binding_are_safe ... ok
+test store::cultivation::tests::wish_binding_unlock_claim_and_retry_use_one_persistent_agreement ... ok
+test store::entities::tests::mobile_project_task_plan_roundtrip_and_frozen_retries ... ok
+test store::lan::tests::lan_dirty_pull_keeps_both_and_cursor_survives_reopen ... ok
+test store::entities::tests::conflict_resolution_guard_receipt_and_both_versions_retained ... ok
+test store::entities::tests::unknown_mobile_fields_survive_native_edit_and_ack_inflight_edit ... ok
+
+test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.28s
+
+     Running unittests src\main.rs (apps\desktop\src-tauri\target\debug\deps\praxis_desktop-6b3c2ea525e4f850.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\ai.rs (apps\desktop\src-tauri\target\debug\deps\ai-3b8558ee878a0ba7.exe)
+
+running 6 tests
+test invalid_graph_rolls_back_and_does_not_create_source_or_project ... ok
+test personal_flat_notes_and_calendar_deadline_apply_once_and_keep_legacy_receipts_valid ... ok
+test edited_output_is_not_destroyed_by_undo ... ok
+test stale_project_and_source_are_rejected_before_writing ... ok
+test cultivation_usage_blocks_ai_undo_even_before_tasks_are_completed ... ok
+test atomic_apply_survives_reopen_replays_and_can_undo_internal_dependencies ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+
+     Running tests\capture.rs (apps\desktop\src-tauri\target\debug\deps\capture-faa5ccc975049ee9.exe)
+
+running 6 tests
+test an_operation_id_cannot_be_reused_to_change_a_committed_capture ... ok
+test capture_survives_closing_and_reopening_the_database ... ok
+test invalid_title_or_mismatched_calendar_day_cannot_write_any_records ... ok
+test replaying_a_committed_capture_does_not_duplicate_any_records ... ok
+test failed_plan_insert_rolls_back_the_task_and_all_side_records ... ok
+test shared_cross_adapter_capture_contract ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+
+     Running tests\completion.rs (apps\desktop\src-tauri\target\debug\deps\completion-d3bf22f444f8a5f4.exe)
+
+running 5 tests
+test execution_fact_cannot_reference_another_tasks_plan ... ok
+test stale_undo_cannot_revert_a_later_completion ... ok
+test outbox_failure_rolls_back_completion_and_execution_fact ... ok
+test completion_and_undo_persist_facts_and_history_across_restart ... ok
+test upgrade_preserves_existing_capture_and_enables_completion ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
+
+     Running tests\content.rs (apps\desktop\src-tauri\target\debug\deps\content-a063521fd32875c4.exe)
+
+running 11 tests
+test gantt_changes_protect_outputs_even_without_task_version_change ... ok
+test unicode_and_stale_version_rejection_do_not_mutate_data ... ok
+test record_links_validate_ownership_and_unlink_preserves_body ... ok
+test invalid_output_rolls_back_project_capture_and_all_outputs ... ok
+test resolve_is_atomic_idempotent_and_preserves_source_across_restart ... ok
+test undo_removes_only_unedited_outputs_and_can_preserve_edited_records ... ok
+test failed_outbox_insert_rolls_back_capture_and_event ... ok
+test next_action_clear_and_resume_survive_completion_and_restart ... ok
+test backup_restore_preserves_history_outbox_and_original ... ok
+test interrupted_migration_rolls_back_and_saved_snapshot_restores ... ok
+test old_schema_upgrade_backups_include_wal_and_restore_can_upgrade_copy ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.87s
+
+     Running tests\corruption.rs (apps\desktop\src-tauri\target\debug\deps\corruption-9b2adc3fba6ddc7b.exe)
+
+running 1 test
+test corrupt_project_page_is_detected_before_the_workspace_is_opened ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+     Running tests\edit.rs (apps\desktop\src-tauri\target\debug\deps\edit-612c409efb2cce0f.exe)
+
+running 5 tests
+test stale_edits_and_undo_cannot_overwrite_newer_changes ... ok
+test failure_in_last_write_rolls_back_title_and_date ... ok
+test completed_task_title_edit_preserves_execution_facts_and_rejects_rescheduling ... ok
+test edit_and_reschedule_keep_identity_history_and_survive_restart ... ok
+test upgrade_from_completion_schema_keeps_history_and_outbox ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.45s
+
+     Running tests\entities_contract_review.rs (apps\desktop\src-tauri\target\debug\deps\entities_contract_review-c1ff8e68cc798472.exe)
+
+running 11 tests
+test mobile_or_relative_week_and_unplanned_execution_filters_keep_semantics ... ok
+test future_stop_and_unused_weekday_values_do_not_rewrite_recurrence ... ok
+test historical_habit_zones_survive_workspace_zone_changes ... ok
+test mobile_record_multilinks_are_native_and_native_links_are_canonical ... ok
+test mobile_future_recurrence_rule_controls_native_expansion ... ok
+test valid_remote_long_interval_is_not_silently_changed ... ok
+test independent_structured_review_fields_merge_without_derived_body_conflict ... ok
+test accepted_waiting_task_status_maps_to_native_waiting_flag ... ok
+test native_future_recurrence_edit_exports_canonical_history ... ok
+test mobile_saved_view_is_valid_native_query_and_filters_same_tasks ... ok
+test structured_mobile_weekly_review_roundtrips_through_native_editor ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.98s
+
+     Running tests\entities_identity_review.rs (apps\desktop\src-tauri\target\debug\deps\entities_identity_review-bc86dcf5a6f7ed94.exe)
+
+running 18 tests
+test acknowledged_entity_created_at_remains_immutable_during_local_editor_changes ... ok
+test native_label_name_collision_is_safe_and_does_not_stall_whole_batch ... ok
+test initial_settings_identity_does_not_manufacture_remote_settings_tombstone ... ok
+test preexisting_workspace_upload_receipts_quiesce_without_feedback_loop ... ok
+test bare_mobile_task_native_notes_and_remote_title_merge_without_false_conflict ... ok
+test same_habit_day_remote_identity_does_not_export_duplicate_live_checks ... ok
+test legacy_null_date_projection_keeps_native_instant_extension_when_only_title_changes ... ok
+test native_daily_plan_collision_preserves_existing_arrangement_and_accepts_remote_identity ... ok
+test remote_composite_key_daily_row_invalidates_stale_native_editor_version ... ok
+test mobile_habit_check_tombstone_retains_status_and_same_identity_restores_without_false_conflict ... ok
+test instant_time_attributes_survive_phone_title_edits_and_explicit_date_changes_are_applied ... ok
+test legacy_capture_rebase_adopts_wire_creation_time_without_changing_native_creation_time ... ok
+test alias_tombstone_preserves_foreign_refs_and_last_alias_delete_with_live_refs_rolls_back ... ok
+test canonical_priorities_match_native_priority_labels_in_both_directions ... ok
+test one_alias_tombstone_keeps_shared_native_row_and_never_revives_deleted_wire_identity ... ok
+test task_estimate_roundtrips_through_native_details_without_being_opaque ... ok
+test settings_collision_resolution_explicitly_adopts_remote_identity_and_keeps_local_value ... ok
+test legacy_capture_creation_normalization_preserves_real_business_conflicts_and_resolution ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.70s
+
+     Running tests\entities_sync.rs (apps\desktop\src-tauri\target\debug\deps\entities_sync-53dbd6229a8ee50c.exe)
+
+running 12 tests
+test habit_schedule_identity_and_sunday_recurrence_roundtrip ... ok
+test interval_habit_does_not_poison_the_entire_remote_batch ... ok
+test existing_native_nested_subtasks_do_not_block_unrelated_sync ... ok
+test changing_native_record_type_keeps_registered_wire_kind ... ok
+test remote_unschedule_and_plan_delete_do_not_reappear_in_projection ... ok
+test independent_pull_fields_merge_without_conflict ... ok
+test mobile_clarification_projects_native_resolution_and_native_undo ... ok
+test routine_restart_rebase_preserves_unsent_changes_without_false_conflict ... ok
+test merged_upload_receipt_keeps_independent_remote_field_during_local_edit ... ok
+test nested_sync_tree_rejects_ancestor_cycles_and_deleted_parents_atomically ... ok
+test desktop_clarification_exports_mobile_receipt_and_mobile_undo_clears_native_state ... ok
+test mobile_reclarification_keeps_prior_resolution_history_and_accepts_trashed_output ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.25s
+
+     Running tests\habit_arrangements.rs (apps\desktop\src-tauri\target\debug\deps\habit_arrangements-1a7c2afdba8a4a56.exe)
+
+running 3 tests
+test per_day_placement_replay_inheritance_and_completion_survive_restart ... ok
+test mixed_task_and_habit_reorder_is_atomic_on_stale_versions_and_outbox_failure ... ok
+test habit_placement_is_included_in_workspace_replication ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.53s
+
+     Running tests\habits.rs (apps\desktop\src-tauri\target\debug\deps\habits-405aa4e6bea06a12.exe)
+
+running 5 tests
+test partial_week_and_remaining_dates_do_not_create_obligations ... ok
+test weekly_unique_replay_conflict_undo_and_restart ... ok
+test pause_resume_and_rule_changes_preserve_history ... ok
+test specified_days_skip_and_invalid_input_are_atomic ... ok
+test provenance_timezone_and_outbox_failure_rollback ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+     Running tests\m0_baseline.rs (apps\desktop\src-tauri\target\debug\deps\m0_baseline-70a79e952410a24c.exe)
+
+running 1 test
+test m0_full_legacy_fixture_roundtrips_all_tables_and_failed_restore_keeps_original ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s
+
+     Running tests\personal_compatibility.rs (apps\desktop\src-tauri\target\debug\deps\personal_compatibility-3648b6a544d1e345.exe)
+
+running 2 tests
+test personal_current_backup_keeps_legacy_data_ai_receipt_pending_conflict_and_task_identity ... ok
+test personal_v10_upgrade_keeps_ids_versions_queue_and_unknown_completion_date ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.53s
+
+     Running tests\personal_inline_tasks.rs (apps\desktop\src-tauri\target\debug\deps\personal_inline_tasks-06d13f60f33b7fad.exe)
+
+running 2 tests
+test inline_creation_edit_and_three_states_keep_one_unplanned_identity_and_old_typed_time ... ok
+test closed_project_rejects_new_tasks_atomically_but_keeps_existing_task_edits_available ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.28s
+
+     Running tests\personal_projects.rs (apps\desktop\src-tauri\target\debug\deps\personal_projects-1c4767cc7755e720.exe)
+
+running 1 test
+test basic_project_save_preserves_identity_priority_lifecycle_and_original_update_time ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.19s
+
+     Running tests\personal_queries.rs (apps\desktop\src-tauri\target\debug\deps\personal_queries-d2c5bbe798f667a3.exe)
+
+running 3 tests
+test personal_snapshot_reads_unplanned_identity_raw_waiting_and_typed_deadline_without_writing ... ok
+test personal_completion_replication_keeps_unknown_dates_and_uses_known_fact_time_not_last_edit_time ... ok
+test explicit_same_day_typed_deadline_edit_replaces_instant_but_title_only_edit_preserves_it ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.41s
+
+     Running tests\personal_recovery.rs (apps\desktop\src-tauri\target\debug\deps\personal_recovery-e4ebb69e2c36ec04.exe)
+
+running 2 tests
+test checked_leaf_restore_preserves_content_receipts_and_rejects_deleted_version_changes ... ok
+test status_undo_restores_known_and_unknown_completion_facts_and_rejects_newer_edits ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+
+     Running tests\planning.rs (apps\desktop\src-tauri\target\debug\deps\planning-de520bd3f3c3b359.exe)
+
+running 5 tests
+test inbox_stays_unscheduled_until_explicit_assignment ... ok
+test focus_and_estimate_persist_without_duplicating_tasks ... ok
+test inbox_last_write_failure_does_not_leave_orphan_task ... ok
+test batch_focus_reorder_rolls_back_all_changes_if_one_version_is_stale ... ok
+test load_keeps_unknown_estimates_and_capacity_zero_distinct ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.40s
+
+     Running tests\productivity.rs (apps\desktop\src-tauri\target\debug\deps\productivity-e5d2f5f90647b06e.exe)
+
+running 9 tests
+test automatic_postponement_handles_a_skipped_dst_hour ... ok
+test invalid_fields_stale_writes_and_outbox_failures_are_atomic ... ok
+test typed_times_labels_days_and_retry_survive_restart ... ok
+test automatic_postponement_keeps_arrangement_identity_and_merges_date_collisions ... ok
+test parent_end_requires_confirmation_and_reopen_preserves_completion_history ... ok
+test waiting_clears_next_action_and_project_archive_reopen_is_atomic ... ok
+test sections_subtrees_cycles_and_stale_preview ... ok
+test automatic_postponement_preserves_deadlines_times_and_future_choices ... ok
+test schema_ten_upgrade_maps_dates_preserves_legacy_history_and_backups ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.67s
+
+     Running tests\project_workspace.rs (apps\desktop\src-tauri\target\debug\deps\project_workspace-26c83ba9a4858fc6.exe)
+
+running 7 tests
+test all_project_states_preserve_task_status_and_completion_history ... ok
+test lifecycle_keeps_or_removes_commitments_without_fabricating_facts ... ok
+test subtree_move_checks_cycles_converts_parent_and_preserves_identity ... ok
+test default_estimate_is_only_inherited_on_first_plan_and_failed_completion_is_atomic ... ok
+test predecessors_gate_start_and_completion_and_restore ... ok
+test schedule_is_atomic_versioned_and_preserves_daily_dates ... ok
+test board_completion_undo_and_cancel_share_daily_facts_and_survive_reopen ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.51s
+
+     Running tests\projects.rs (apps\desktop\src-tauri\target\debug\deps\projects-d75cb2075843e21e.exe)
+
+running 5 tests
+test project_batch_failure_rolls_back_tasks_history_and_outbox ... ok
+test missing_project_cannot_take_a_task_or_create_partial_batch ... ok
+test project_query_exposes_actual_completion_day_separately_from_plan ... ok
+test project_tasks_share_identity_with_daily_plan_and_survive_restart ... ok
+test assigning_existing_task_preserves_history_and_rejects_stale_changes ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+     Running tests\recurrence.rs (apps\desktop\src-tauri\target\debug\deps\recurrence-47fbe3d1c6355433.exe)
+
+running 7 tests
+test future_edit_preserves_history_and_requires_fresh_preview ... ok
+test workspace_zone_preview_is_required_and_interval_anchor_survives ... ok
+test future_overrides_are_preserved_until_explicitly_confirmed ... ok
+test terminal_project_requires_stopped_template_and_keeps_future_tasks ... ok
+test weekdays_stop_and_identity_survive_edit ... ok
+test expansion_is_batched_unique_and_date_anchored ... ok
+test rule_preview_and_edit_preserve_in_progress_blocked_and_waiting ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.51s
+
+     Running tests\reviews.rs (apps\desktop\src-tauri\target\debug\deps\reviews-af6f7672f64be5f8.exe)
+
+running 5 tests
+test editing_keeps_stable_project_links_and_conflicts_have_no_partial_writes ... ok
+test generated_weekly_review_title_follows_period_changes ... ok
+test weekly_review_is_an_editable_record_and_retry_survives_restart ... ok
+test diagnostics_use_local_deadlines_and_latest_recorded_evidence_not_timestamp_text_order ... ok
+test recovery_card_update_counts_as_recorded_progress_and_inactive_projects_are_excluded ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+     Running tests\subtasks.rs (apps\desktop\src-tauri\target\debug\deps\subtasks-ac4c4c01bc688fba.exe)
+
+running 3 tests
+test last_write_failure_rolls_back_split_and_parent_plan_conversion ... ok
+test splitting_scheduled_parent_requires_confirmation_and_preserves_plan_history ... ok
+test nested_subtasks_keep_identity_and_summary_parent_cannot_be_scheduled ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+
+     Running tests\suggestions.rs (apps\desktop\src-tauri\target\debug\deps\suggestions-e9f964c5e9d803b1.exe)
+
+running 2 tests
+test suggestion_becomes_a_daily_task_without_losing_original_fields_or_creating_a_copy ... ok
+test account_workspaces_keep_local_tasks_separate_after_reopening ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.45s
+
+     Running tests\task_details.rs (apps\desktop\src-tauri\target\debug\deps\task_details-1a37a3f4105c3a8c.exe)
+
+running 3 tests
+test editing_completed_details_keeps_completion_facts_and_arrangement_estimate ... ok
+test stale_details_and_failed_outbox_cannot_overwrite_saved_work ... ok
+test unscheduled_details_survive_restart_and_scheduling_preserves_fields ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+
+     Running tests\trash.rs (apps\desktop\src-tauri\target\debug\deps\trash-f1aea7dd8b68c320.exe)
+
+running 9 tests
+test promote_keeps_live_child_and_restore_does_not_move_it_back ... ok
+test expired_recovery_rejects_fake_command_time_but_retains_tombstone_and_content ... ok
+test retention_defaults_to_thirty_days_is_read_only_and_versioned ... ok
+test restoring_task_after_project_deletion_uses_independent_fallback ... ok
+test failed_outbox_rolls_back_deletion_and_next_action ... ok
+test cascade_is_atomic_idempotent_and_restores_parent_tree ... ok
+test whole_project_requires_confirmation_and_stale_preview_is_rejected ... ok
+test project_default_detaches_tree_preserves_records_and_unlinks ... ok
+test valid_dependencies_recover_and_project_deletion_stops_templates ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.58s
+
+     Running tests\usability.rs (apps\desktop\src-tauri\target\debug\deps\usability-56f653bc518cc4c2.exe)
+
+running 3 tests
+test device_zone_initializes_once_and_survives_reopening_without_overwriting ... ok
+test selected_date_capture_and_quick_add_create_atomic_calendar_arrangements ... ok
+test undated_inbox_completion_can_be_undone_without_creating_a_schedule ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+
+     Running tests\views.rs (apps\desktop\src-tauri\target\debug\deps\views-8bdbb2da8b4ecd1b.exe)
+
+running 5 tests
+test search_four_types_body_project_scope_and_literal_input ... ok
+test finite_or_and_typed_predicates_and_invalid_ast ... ok
+test saved_view_replay_restart_rename_and_stale_write_are_transactional ... ok
+test presets_are_dynamic_and_waiting_without_due_followup_is_not_returned ... ok
+test missing_reference_warns_and_archived_and_deleted_are_excluded ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+   Doc-tests praxis_desktop_lib
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

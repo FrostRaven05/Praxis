@@ -1,8 +1,11 @@
+import { AiService, registerAiRoutes, type AiOptions } from "./ai.js";
 import { createHash, timingSafeEqual } from "node:crypto";
 import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import { EntityStore, entityKinds, type EntityCommand } from "./entities.js";
 import { CaptureStore, StoreError, type CaptureCommand } from "./store.js";
 import { AccountStore, AccountError } from "./accounts.js";
+import { DatabaseSync } from "node:sqlite";
+import { registerAdmin } from "./admin.js";
 
 export interface DeviceCredential {
   ownerId: string;
@@ -10,8 +13,10 @@ export interface DeviceCredential {
   tokenHash: string;
 }
 export interface ServerOptions {
+  ai?: AiOptions;
   databasePath: string;
   devices: DeviceCredential[];
+  adminTokenHash?: string;
   https?: { key: string | Buffer; cert: string | Buffer };
 }
 const uuid =
@@ -66,15 +71,25 @@ export function createServer(options: ServerOptions): FastifyInstance {
     ajv: { customOptions: { coerceTypes: false, removeAdditional: false } },
     ...(options.https ? { https: options.https } : {}),
   }) as unknown as FastifyInstance;
-  const store = new CaptureStore(options.databasePath);
-  const entities = new EntityStore(options.databasePath);
-  const accounts = new AccountStore(options.databasePath);
+  const database = new DatabaseSync(options.databasePath);
+  const store = new CaptureStore(database);
+  const entities = new EntityStore(database);
+  const accounts = new AccountStore(database);
+  registerAdmin(app, database, {
+    tokenHash: options.adminTokenHash,
+    secureCookies: Boolean(options.https),
+    generation: entities.generation,
+    configuredDevices: credentials.length,
+  });
   const identities = new WeakMap<FastifyRequest, DeviceCredential>();
+  const ai = new AiService(database, options.ai);
   const windows = new Map<string, { start: number; count: number }>();
   app.addHook("onClose", async () => {
+    await ai.close();
     entities.close();
     store.close();
     accounts.close();
+    database.close();
   });
   app.addHook("onRequest", async (request, reply) => {
     const path = request.url.split("?")[0];
@@ -107,6 +122,8 @@ export function createServer(options: ServerOptions): FastifyInstance {
     }
     identity ??= token ? accounts.identify(token) : undefined;
     if (!identity) return reply.code(401).send({ error: "UNAUTHORIZED" });
+    if (accounts.isDisabled(identity.ownerId))
+      return reply.code(403).send({ error: "ACCOUNT_DISABLED" });
     identities.set(request, identity);
     const key = `${identity.ownerId}:${identity.deviceId}`;
     const now = Date.now();
@@ -122,7 +139,13 @@ export function createServer(options: ServerOptions): FastifyInstance {
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof AccountError)
       return reply
-        .code(error.message === "EMAIL_EXISTS" ? 409 : 401)
+        .code(
+          error.message === "EMAIL_EXISTS"
+            ? 409
+            : error.message === "ACCOUNT_DISABLED"
+              ? 403
+              : 401,
+        )
         .send({ error: error.message });
     if (error instanceof StoreError)
       return reply
@@ -144,6 +167,7 @@ export function createServer(options: ServerOptions): FastifyInstance {
       return reply.code(413).send({ error: "BODY_TOO_LARGE" });
     return reply.code(500).send({ error: "INTERNAL_ERROR" });
   });
+  registerAiRoutes(app, ai, request => identities.get(request)?.ownerId);
   app.get("/", async (_request, reply) =>
     reply
       .type("text/plain; charset=utf-8")

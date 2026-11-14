@@ -1,0 +1,17 @@
+{
+  "passed": false,
+  "error": "Error: expect(received).toBeLessThanOrEqual(expected)\n\nExpected: <= 390\nReceived:    422",
+  "checks": [
+    "desktop: initial read shows task XP and today from persisted facts without adding old cultivation experience",
+    "desktop: completion, level-up, deletion and restoration update the same contribution without a claim step",
+    "desktop: hide/reduced-motion preferences survive reload and hiding retains a restore control",
+    "desktop: account/workspace remounts do not leak appearance preferences or previous-account announcements",
+    "desktop: light/dark and reduced motion fit the viewport with all task-management content still available",
+    "desktop: unavailable preference storage gives a non-blocking warning",
+    "mobile: initial read shows task XP and today from persisted facts without adding old cultivation experience",
+    "mobile: completion, level-up, deletion and restoration update the same contribution without a claim step",
+    "mobile: hide/reduced-motion preferences survive reload and hiding retains a restore control",
+    "mobile: account/workspace remounts do not leak appearance preferences or previous-account announcements"
+  ],
+  "errors": []
+}

@@ -1,0 +1,30 @@
+{
+  "checkedAt": "2026-11-12T15:13:14.206Z",
+  "passed": true,
+  "documents": [
+    "docs/mvp-development-plan-2026-11-09.md",
+    "docs/p1/implementation-p1-04.md",
+    "docs/p1/implementation-p1-05.md",
+    "docs/p2/implementation-personal-growth.md",
+    "docs/p3/implementation-p3-01-04.md",
+    "docs/p4/personal-mvp-acceptance-2026-11-12.md",
+    "docs/evidence/remaining-mvp-2026-11-12/README.md"
+  ],
+  "missingLinks": [],
+  "completedTasks": 18,
+  "openTasks": 0,
+  "nativeChecks": 7,
+  "nativeErrors": [],
+  "browserChecks": 86,
+  "sourceAudit": true,
+  "artifacts": [
+    {
+      "file": "Praxis-personal-qa.exe",
+      "passed": true
+    },
+    {
+      "file": "Praxis-personal-qa.apk",
+      "passed": true
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+
+ RUN  v3.2.7 C:/Project/01Project/Praxis
+
+ ✓ packages/application/src/personal-tasks.test.ts (4 tests) 19ms
+ ✓ apps/client/src/personal-task-adapters.test.ts (15 tests) 64ms
+
+ Test Files  2 passed (2)
+      Tests  19 passed (19)
+   Start at  00:22:53
+   Duration  808ms (transform 231ms, setup 0ms, collect 382ms, tests 84ms, environment 0ms, prepare 440ms)
+

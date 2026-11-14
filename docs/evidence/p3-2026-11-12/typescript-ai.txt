@@ -1,0 +1,16 @@
+
+ RUN  v3.2.7 C:/Project/01Project/Praxis
+
+ ✓ apps/client/src/ai-planner-model.test.ts (13 tests) 18ms
+ ✓ apps/api/src/ai-provider.test.ts (10 tests) 11ms
+ ✓ apps/client/src/personal-agent-model.test.ts (8 tests) 112ms
+ ✓ apps/client/src/ai-mobile-adapter.test.ts (22 tests) 81ms
+ ✓ apps/api/src/ai-recovery.test.ts (10 tests) 327ms
+ ✓ apps/api/src/ai-personal.test.ts (3 tests) 328ms
+ ✓ apps/api/src/ai.test.ts (10 tests) 576ms
+
+ Test Files  7 passed (7)
+      Tests  76 passed (76)
+   Start at  00:31:59
+   Duration  1.52s (transform 536ms, setup 0ms, collect 2.01s, tests 1.45s, environment 1ms, prepare 1.80s)
+

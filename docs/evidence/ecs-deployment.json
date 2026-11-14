@@ -1,0 +1,27 @@
+{
+  "date": "2026-10-18",
+  "instanceId": "i-2zee4ny1lv9woz0s9jvk",
+  "region": "cn-beijing",
+  "baseUrl": "https://8.152.219.210",
+  "deploymentPath": "/opt/praxis",
+  "container": "praxis-api-1",
+  "checks": {
+    "imageBuiltOnEcs": true,
+    "containerHealthy": true,
+    "publicHttpsWithSystemTrust": true,
+    "registration": true,
+    "unauthenticatedAccessRejected": true,
+    "accountPersistsAfterContainerRestart": true,
+    "loginAfterRestart": true,
+    "logoutRevokesSession": true,
+    "temporaryTestAccountAndSessionsRemoved": true,
+    "dockerBootEnabled": true,
+    "restartPolicy": "unless-stopped",
+    "certificateRenewalTimerEnabled": true,
+    "certificateRenewalDryRun": "IP certificate renewal simulation passed",
+    "windowsAndroidEmulatorLoginAndSync": true
+  },
+  "certificateExpires": "2026-10-25",
+  "dataMigration": "New database; development data was not copied",
+  "scope": "API deployment plus real Windows and Android emulator login, task synchronization and restart; no physical Android phone tested"
+}

@@ -1,0 +1,56 @@
+[
+  {
+    "source": "apps/api/src/project-contract.ts",
+    "archive": "project-contract.ts.txt",
+    "sha256": "43a723f6a21d786a3fb0bd9c3744e26adb057ccb435d396859ade057b4747e19",
+    "movedFromProduction": true
+  },
+  {
+    "source": "apps/api/src/project-store.ts",
+    "archive": "project-store.ts.txt",
+    "sha256": "d416db939fb73b52cd4e8fd764e7461f932f2dfd9e925185496afa728c328bfa",
+    "movedFromProduction": true
+  },
+  {
+    "source": "apps/api/src/project-routes.ts",
+    "archive": "project-routes.ts.txt",
+    "sha256": "7708d4eaf9192dd45c7863cb50bb6e8ab64adfeed9d04a51bf41aa426d700435",
+    "movedFromProduction": true
+  },
+  {
+    "source": "apps/api/src/project.test.ts",
+    "archive": "project.test.ts.txt",
+    "sha256": "f3ab79b88274fd0073fe38229933fa794f32356b99bcb61d7f003a3b6ec9a25a",
+    "movedFromProduction": true
+  },
+  {
+    "source": "apps/api/src/server.ts",
+    "archive": "server-before-personal-scope.ts.txt",
+    "sha256": "b1fa9f2b4e5c241fe7f21933ecc030d902c029addfdc3273b7df892ffe4579bd",
+    "movedFromProduction": false
+  },
+  {
+    "source": "docs/prd-mvp-v0.1.md",
+    "archive": "prd-before-personal-scope.md.txt",
+    "sha256": "197c17ea03f4233bf7738102658829b7bd1e238c8a593c9a2859628cb76fa267",
+    "movedFromProduction": false
+  },
+  {
+    "source": "docs/mvp-development-plan-2026-11-09.md",
+    "archive": "plan-before-personal-scope.md.txt",
+    "sha256": "498eda7034e893209923af8272aeba147fc7b587d473a854f51a854bdd409e1f",
+    "movedFromProduction": false
+  },
+  {
+    "source": "CONTEXT.md",
+    "archive": "context-before-personal-scope.md.txt",
+    "sha256": "11def0dcfa2a6ac06fed035d406f9bb8b81d70c24f567154bc527f1ff5c3b044",
+    "movedFromProduction": false
+  },
+  {
+    "source": "docs/m1/implementation-m1-01.md",
+    "archive": "m1-01-before-personal-scope.md.txt",
+    "sha256": "210eeee4db89c4261f4b5627c8141fd41b46bedca0c03ae1a8f472486d9191ea",
+    "movedFromProduction": false
+  }
+]

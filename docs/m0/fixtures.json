@@ -1,0 +1,161 @@
+{
+  "version": "m0-fixtures-v1",
+  "synthetic": true,
+  "serviceId": "praxis-m0-local",
+  "clock": { "now": "2026-11-10T04:00:00Z", "timeZone": "Asia/Hong_Kong" },
+  "accounts": {
+    "creator": {
+      "userId": "01000000-0000-4000-8000-000000000001",
+      "email": "creator@m0.test"
+    },
+    "member": {
+      "userId": "01000000-0000-4000-8000-000000000002",
+      "email": "member@m0.test"
+    },
+    "outsider": {
+      "userId": "01000000-0000-4000-8000-000000000003",
+      "email": "outsider@m0.test"
+    }
+  },
+  "collision": {
+    "entityId": "02000000-0000-4000-8000-000000000001",
+    "creatorTitle": "甲的私人任务",
+    "memberTitle": "乙的私人任务"
+  },
+  "legacy": {
+    "project": {
+      "id": "03000000-0000-4000-8000-000000000001",
+      "name": "旧树形项目 隔离样本",
+      "outcome": "历史内容和排期保持原样",
+      "targetDate": "2026-11-20"
+    },
+    "independent": {
+      "id": "04000000-0000-4000-8000-000000000001",
+      "title": "独立任务 保留计划与截止",
+      "notes": "原文第一行\n第二行 😀",
+      "planDate": "2026-11-09",
+      "deadline": "2026-11-10T02:00:00Z",
+      "deadlineTimeZone": "America/Los_Angeles"
+    },
+    "tasks": [
+      {
+        "id": "04000000-0000-4000-8000-000000000002",
+        "title": "旧行动包",
+        "status": "todo",
+        "parentId": null,
+        "deleted": false
+      },
+      {
+        "id": "04000000-0000-4000-8000-000000000003",
+        "title": "已完成子步骤",
+        "status": "completed",
+        "parentId": "04000000-0000-4000-8000-000000000002",
+        "deleted": false
+      },
+      {
+        "id": "04000000-0000-4000-8000-000000000004",
+        "title": "等待外部确认",
+        "status": "waiting",
+        "parentId": "04000000-0000-4000-8000-000000000002",
+        "deleted": false
+      },
+      {
+        "id": "04000000-0000-4000-8000-000000000005",
+        "title": "已取消旧事项",
+        "status": "cancelled",
+        "parentId": null,
+        "deleted": false
+      },
+      {
+        "id": "04000000-0000-4000-8000-000000000006",
+        "title": "保留旧阻塞原因",
+        "status": "blocked",
+        "parentId": null,
+        "deleted": false
+      }
+    ],
+    "oldCreditTaskId": "04000000-0000-4000-8000-000000000007",
+    "reward": {
+      "id": "05000000-0000-4000-8000-000000000001",
+      "milestone": "旧成果",
+      "reward": "已经领取的历史奖励",
+      "claimedAt": "2026-11-01T04:00:00Z"
+    },
+    "ai": {
+      "operationId": "06000000-0000-4000-8000-000000000001",
+      "runId": "06000000-0000-4000-8000-000000000002",
+      "projectId": "06000000-0000-4000-8000-000000000003",
+      "taskId": "06000000-0000-4000-8000-000000000004"
+    }
+  },
+  "shared": {
+    "projectId": "07000000-0000-4000-8000-000000000001",
+    "name": "报名页协作 验收规格样本",
+    "timeZone": "Asia/Hong_Kong",
+    "members": [
+      {
+        "role": "creator",
+        "account": "creator",
+        "version": 1,
+        "accessGeneration": 1
+      },
+      {
+        "role": "member",
+        "account": "member",
+        "version": 1,
+        "accessGeneration": 1
+      }
+    ],
+    "tasks": [
+      {
+        "id": "08000000-0000-4000-8000-000000000001",
+        "title": "完成报名字段确认",
+        "status": "todo",
+        "assignee": "creator",
+        "dueDate": "2026-11-09",
+        "parentId": null,
+        "deleted": false
+      },
+      {
+        "id": "08000000-0000-4000-8000-000000000002",
+        "title": "实现报名页",
+        "status": "in_progress",
+        "assignee": "member",
+        "dueDate": "2026-11-10",
+        "parentId": null,
+        "deleted": false
+      },
+      {
+        "id": "08000000-0000-4000-8000-000000000003",
+        "title": "无日期验收任务",
+        "status": "todo",
+        "assignee": "member",
+        "dueDate": null,
+        "parentId": null,
+        "deleted": false
+      },
+      {
+        "id": "08000000-0000-4000-8000-000000000004",
+        "title": "已完成原型",
+        "status": "completed",
+        "assignee": "creator",
+        "dueDate": "2026-11-11",
+        "parentId": null,
+        "deleted": false
+      }
+    ],
+    "revocation": {
+      "removedAccount": "member",
+      "fromAccessGeneration": 1,
+      "toAccessGeneration": 2,
+      "transferTo": "creator"
+    },
+    "confirmation": {
+      "id": "09000000-0000-4000-8000-000000000001",
+      "account": "member",
+      "accessGeneration": 1,
+      "expiresAt": "2026-11-10T03:59:59Z",
+      "draftDigest": "synthetic-digest-not-an-authorization"
+    }
+  }
+}

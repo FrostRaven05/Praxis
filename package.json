@@ -9,6 +9,8 @@
   },
   "scripts": {
     "dev": "pnpm --filter @praxis/client dev",
+    "admin:preview": "pnpm --filter @praxis/api build && node scripts/admin-preview.mjs",
+    "test:admin": "pnpm --filter @praxis/api build && node scripts/admin-smoke.mjs",
     "build": "pnpm typecheck && pnpm --filter @praxis/client build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -19,7 +21,10 @@
     "test:p0": "node scripts/native-p0.mjs",
     "test:p1": "node scripts/native-p1.mjs",
     "test:p2": "node scripts/native-p2.mjs",
-    "desktop:preview": "powershell -NoProfile -File scripts/preview-desktop.ps1"
+    "desktop:preview": "powershell -NoProfile -File scripts/preview-desktop.ps1",
+    "test:ai": "vitest run apps/api/src/ai.test.ts apps/api/src/ai-provider.test.ts apps/client/src/ai-planner-model.test.ts apps/client/src/ai-mobile-adapter.test.ts",
+    "test:ai:desktop": "node scripts/native-ai-planner.mjs",
+    "test:ai:live": "pnpm --filter @praxis/api build && node scripts/ai-live-smoke.mjs"
   },
   "devDependencies": {
     "@capacitor/android": "8.5.2",

@@ -1,0 +1,425 @@
+import { createHash } from "node:crypto";
+import type { DatabaseSync } from "node:sqlite";
+import { canonical } from "./entities.js";
+import {
+  PROJECT_PROTOCOL,
+  type CreateProjectRequest,
+  type CreateProjectTasksRequest,
+  type ProjectIdentity,
+  type ProjectMemberView,
+  type ProjectReceipt,
+  type ProjectTaskView,
+  type ProjectView,
+} from "./project-contract.js";
+
+export class ProjectError extends Error {
+  constructor(
+    public code: string,
+    public status = 409,
+  ) {
+    super(code);
+  }
+}
+const invalid = (): never => {
+  throw new ProjectError("INVALID_REQUEST", 400);
+};
+function validDate(value: string) {
+  const date = new Date(value + "T00:00:00Z");
+  return (
+    /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    Number.isFinite(date.getTime()) &&
+    date.toISOString().slice(0, 10) === value
+  );
+}
+function validZone(value: string) {
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: value }).format();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Separate authority for shared projects; never queries or mutates private entity rows. */
+export class ProjectStore {
+  constructor(private db: DatabaseSync) {
+    db.exec("PRAGMA foreign_keys=ON; BEGIN IMMEDIATE;");
+    try {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS shared_project_schema(singleton INTEGER PRIMARY KEY CHECK(singleton=1),version INTEGER NOT NULL);
+        INSERT OR IGNORE INTO shared_project_schema VALUES(1,1);
+        CREATE TABLE IF NOT EXISTS shared_projects(
+          id TEXT PRIMARY KEY,creator_id TEXT NOT NULL REFERENCES account_users(id),
+          name TEXT NOT NULL CHECK(length(trim(name))>0),goal TEXT NOT NULL,target_date TEXT,time_zone TEXT NOT NULL,
+          version INTEGER NOT NULL CHECK(version>=1),statistics_mode TEXT NOT NULL CHECK(statistics_mode IN('flat','legacy-tree')),
+          created_at TEXT NOT NULL,updated_at TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS project_members(
+          project_id TEXT NOT NULL REFERENCES shared_projects(id),user_id TEXT NOT NULL REFERENCES account_users(id),
+          role TEXT NOT NULL CHECK(role IN('creator','member')),state TEXT NOT NULL CHECK(state IN('active','removed')),
+          version INTEGER NOT NULL CHECK(version>=1),access_generation INTEGER NOT NULL CHECK(access_generation>=1),
+          PRIMARY KEY(project_id,user_id));
+        CREATE UNIQUE INDEX IF NOT EXISTS one_project_creator ON project_members(project_id) WHERE role='creator';
+        CREATE TABLE IF NOT EXISTS project_tasks(
+          project_id TEXT NOT NULL REFERENCES shared_projects(id),id TEXT NOT NULL,
+          created_by TEXT NOT NULL REFERENCES account_users(id),assignee_id TEXT NOT NULL REFERENCES account_users(id),
+          title TEXT NOT NULL CHECK(length(trim(title))>0),notes TEXT NOT NULL,status TEXT NOT NULL CHECK(status IN('todo','in_progress','completed')),
+          deadline TEXT CHECK(deadline IS NULL OR json_valid(deadline)),version INTEGER NOT NULL CHECK(version>=1),
+          created_at TEXT NOT NULL,updated_at TEXT NOT NULL,deleted_at TEXT,
+          PRIMARY KEY(project_id,id),FOREIGN KEY(project_id,assignee_id) REFERENCES project_members(project_id,user_id));
+        CREATE TABLE IF NOT EXISTS shared_project_events(
+          sequence INTEGER PRIMARY KEY AUTOINCREMENT,project_id TEXT NOT NULL REFERENCES shared_projects(id),
+          actor_id TEXT NOT NULL REFERENCES account_users(id),operation_id TEXT NOT NULL,kind TEXT NOT NULL,
+          payload TEXT NOT NULL CHECK(json_valid(payload)),occurred_at TEXT NOT NULL,UNIQUE(actor_id,operation_id));
+        CREATE TABLE IF NOT EXISTS shared_command_receipts(
+          actor_id TEXT NOT NULL REFERENCES account_users(id),operation_id TEXT NOT NULL,
+          project_id TEXT NOT NULL REFERENCES shared_projects(id),command_digest TEXT NOT NULL,
+          receipt_json TEXT NOT NULL CHECK(json_valid(receipt_json)),PRIMARY KEY(actor_id,operation_id));
+        CREATE TRIGGER IF NOT EXISTS shared_creator_immutable BEFORE UPDATE OF creator_id ON shared_projects
+          WHEN NEW.creator_id<>OLD.creator_id BEGIN SELECT RAISE(ABORT,'CREATOR_IMMUTABLE'); END;
+        CREATE TRIGGER IF NOT EXISTS shared_member_creator_insert BEFORE INSERT ON project_members
+          WHEN (NEW.role='creator' AND NEW.user_id<>(SELECT creator_id FROM shared_projects WHERE id=NEW.project_id))
+          OR (NEW.user_id=(SELECT creator_id FROM shared_projects WHERE id=NEW.project_id) AND (NEW.role<>'creator' OR NEW.state<>'active'))
+          BEGIN SELECT RAISE(ABORT,'CREATOR_IMMUTABLE'); END;
+        CREATE TRIGGER IF NOT EXISTS shared_member_creator_update BEFORE UPDATE ON project_members
+          WHEN (OLD.role='creator' AND (NEW.role<>'creator' OR NEW.state<>'active' OR NEW.user_id<>OLD.user_id OR NEW.project_id<>OLD.project_id))
+          OR (NEW.role='creator' AND NEW.user_id<>(SELECT creator_id FROM shared_projects WHERE id=NEW.project_id))
+          OR (NEW.user_id=(SELECT creator_id FROM shared_projects WHERE id=NEW.project_id) AND NEW.role<>'creator')
+          BEGIN SELECT RAISE(ABORT,'CREATOR_IMMUTABLE'); END;
+        CREATE TRIGGER IF NOT EXISTS shared_member_creator_delete BEFORE DELETE ON project_members WHEN OLD.role='creator'
+          BEGIN SELECT RAISE(ABORT,'CREATOR_IMMUTABLE'); END;
+        CREATE TRIGGER IF NOT EXISTS shared_task_assignee_insert BEFORE INSERT ON project_tasks
+          WHEN NOT EXISTS(SELECT 1 FROM project_members m JOIN account_users u ON u.id=m.user_id WHERE m.project_id=NEW.project_id AND m.user_id=NEW.assignee_id AND m.state='active' AND u.disabled=0)
+          BEGIN SELECT RAISE(ABORT,'MEMBER_REQUIRED'); END;
+        CREATE TRIGGER IF NOT EXISTS shared_task_assignee_update BEFORE UPDATE OF project_id,assignee_id ON project_tasks
+          WHEN (NEW.project_id<>OLD.project_id OR NEW.assignee_id<>OLD.assignee_id)
+          AND NOT EXISTS(SELECT 1 FROM project_members m JOIN account_users u ON u.id=m.user_id WHERE m.project_id=NEW.project_id AND m.user_id=NEW.assignee_id AND m.state='active' AND u.disabled=0)
+          BEGIN SELECT RAISE(ABORT,'MEMBER_REQUIRED'); END;
+      `);
+      if (
+        Number(
+          db
+            .prepare(
+              "SELECT version FROM shared_project_schema WHERE singleton=1",
+            )
+            .get()?.version,
+        ) !== 1
+      )
+        throw new Error("Unsupported shared project schema");
+      db.exec("COMMIT");
+    } catch (error) {
+      db.exec("ROLLBACK");
+      throw error;
+    }
+  }
+  private transaction<T>(work: () => T, write = true): T {
+    this.db.exec(write ? "BEGIN IMMEDIATE" : "BEGIN");
+    try {
+      const result = work();
+      this.db.exec("COMMIT");
+      return result;
+    } catch (error) {
+      this.db.exec("ROLLBACK");
+      throw error;
+    }
+  }
+  private registered(identity: ProjectIdentity) {
+    if (
+      !this.db
+        .prepare("SELECT 1 FROM account_users WHERE id=? AND disabled=0")
+        .get(identity.actorId)
+    )
+      throw new ProjectError("RESOURCE_FORBIDDEN", 403);
+  }
+  private membership(
+    projectId: string,
+    userId: string,
+  ): ProjectMemberView | null {
+    const row = this.db
+      .prepare(
+        "SELECT m.* FROM project_members m JOIN account_users u ON u.id=m.user_id WHERE m.project_id=? AND m.user_id=? AND m.state='active' AND u.disabled=0",
+      )
+      .get(projectId, userId);
+    return row
+      ? {
+          userId: String(row.user_id),
+          role: row.role as "creator" | "member",
+          state: "active",
+          version: Number(row.version),
+          accessGeneration: Number(row.access_generation),
+        }
+      : null;
+  }
+  private authorize(
+    identity: ProjectIdentity,
+    projectId: string,
+    generation?: number,
+  ) {
+    const member = this.membership(projectId, identity.actorId);
+    if (
+      !member ||
+      (generation !== undefined && member.accessGeneration !== generation)
+    )
+      throw new ProjectError("RESOURCE_FORBIDDEN", 403);
+    return member;
+  }
+  private digest(name: string, projectId: string, payload: unknown) {
+    return createHash("sha256")
+      .update(
+        canonical({ protocol: PROJECT_PROTOCOL, name, projectId, payload }),
+      )
+      .digest("hex");
+  }
+  private replay(
+    identity: ProjectIdentity,
+    operationId: string,
+    digest: string,
+  ): ProjectReceipt | null {
+    const prior = this.db
+      .prepare(
+        "SELECT * FROM shared_command_receipts WHERE actor_id=? AND operation_id=?",
+      )
+      .get(identity.actorId, operationId);
+    if (!prior) return null;
+    if (prior.command_digest !== digest)
+      throw new ProjectError("OPERATION_CHANGED");
+    return JSON.parse(String(prior.receipt_json)) as ProjectReceipt;
+  }
+  private commit(
+    identity: ProjectIdentity,
+    operationId: string,
+    projectId: string,
+    name: string,
+    digest: string,
+    changedTasks: { id: string; version: number }[],
+    at: string,
+  ): ProjectReceipt {
+    const event = this.db
+      .prepare(
+        "INSERT INTO shared_project_events(project_id,actor_id,operation_id,kind,payload,occurred_at) VALUES(?,?,?,?,?,?)",
+      )
+      .run(
+        projectId,
+        identity.actorId,
+        operationId,
+        name,
+        JSON.stringify({ changedTasks }),
+        at,
+      );
+    const receipt: ProjectReceipt = {
+      protocol: PROJECT_PROTOCOL,
+      operationId,
+      projectId,
+      actorId: identity.actorId,
+      commandDigest: digest,
+      committedAt: at,
+      changedTasks,
+      cursor: String(event.lastInsertRowid),
+    };
+    this.db
+      .prepare("INSERT INTO shared_command_receipts VALUES(?,?,?,?,?)")
+      .run(
+        identity.actorId,
+        operationId,
+        projectId,
+        digest,
+        JSON.stringify(receipt),
+      );
+    return receipt;
+  }
+  create(
+    identity: ProjectIdentity,
+    command: CreateProjectRequest,
+  ): ProjectReceipt {
+    if (command.protocol !== PROJECT_PROTOCOL)
+      throw new ProjectError("PROTOCOL_UNSUPPORTED");
+    if (command.deviceId !== identity.deviceId)
+      throw new ProjectError("DEVICE_MISMATCH", 403);
+    if (
+      command.projectId !== command.payload.projectId ||
+      !command.payload.name.trim() ||
+      !validZone(command.payload.timeZone) ||
+      (command.payload.targetDate !== null &&
+        !validDate(command.payload.targetDate))
+    )
+      invalid();
+    const payload = {
+      ...command.payload,
+      name: command.payload.name.trim(),
+      goal: command.payload.goal.trim(),
+    };
+    return this.transaction(() => {
+      this.registered(identity);
+      const existing = this.db
+        .prepare("SELECT creator_id FROM shared_projects WHERE id=?")
+        .get(command.projectId);
+      if (existing) this.authorize(identity, command.projectId);
+      const digest = this.digest(command.name, command.projectId, payload);
+      const replay = this.replay(identity, command.operationId, digest);
+      if (replay) return replay;
+      if (existing) throw new ProjectError("VERSION_CONFLICT");
+      const at = new Date().toISOString();
+      this.db
+        .prepare("INSERT INTO shared_projects VALUES(?,?,?,?,?,?,1,'flat',?,?)")
+        .run(
+          command.projectId,
+          identity.actorId,
+          payload.name,
+          payload.goal,
+          payload.targetDate,
+          payload.timeZone,
+          at,
+          at,
+        );
+      this.db
+        .prepare(
+          "INSERT INTO project_members VALUES(?,?,'creator','active',1,1)",
+        )
+        .run(command.projectId, identity.actorId);
+      return this.commit(
+        identity,
+        command.operationId,
+        command.projectId,
+        command.name,
+        digest,
+        [],
+        at,
+      );
+    });
+  }
+  createTasks(
+    identity: ProjectIdentity,
+    projectId: string,
+    command: CreateProjectTasksRequest,
+  ): ProjectReceipt {
+    if (command.protocol !== PROJECT_PROTOCOL)
+      throw new ProjectError("PROTOCOL_UNSUPPORTED");
+    if (command.deviceId !== identity.deviceId)
+      throw new ProjectError("DEVICE_MISMATCH", 403);
+    if (command.projectId !== projectId) invalid();
+    return this.transaction(() => {
+      this.authorize(identity, projectId, command.expectedAccessGeneration);
+      const project = this.db
+        .prepare("SELECT time_zone FROM shared_projects WHERE id=?")
+        .get(projectId)!;
+      const tasks = command.payload.tasks.map((task) => ({
+        id: task.id,
+        title: task.title.trim(),
+        notes: task.notes ?? "",
+        assigneeId: task.assigneeId ?? identity.actorId,
+        deadline: task.deadline ?? null,
+      }));
+      if (new Set(tasks.map((task) => task.id)).size !== tasks.length)
+        invalid();
+      for (const task of tasks) {
+        if (
+          !task.title ||
+          (task.deadline &&
+            (!validDate(task.deadline.date) ||
+              task.deadline.timeZone !== project.time_zone))
+        )
+          invalid();
+      }
+      const digest = this.digest(command.name, projectId, { tasks });
+      const replay = this.replay(identity, command.operationId, digest);
+      if (replay) return replay;
+      for (const task of tasks) {
+        if (!this.membership(projectId, task.assigneeId))
+          throw new ProjectError("MEMBER_REQUIRED", 422);
+        if (
+          this.db
+            .prepare("SELECT 1 FROM project_tasks WHERE project_id=? AND id=?")
+            .get(projectId, task.id)
+        )
+          throw new ProjectError("VERSION_CONFLICT");
+      }
+      const at = new Date().toISOString();
+      for (const task of tasks)
+        this.db
+          .prepare(
+            "INSERT INTO project_tasks VALUES(?,?,?,?,?,?,'todo',?,1,?,?,NULL)",
+          )
+          .run(
+            projectId,
+            task.id,
+            identity.actorId,
+            task.assigneeId,
+            task.title,
+            task.notes,
+            task.deadline ? JSON.stringify(task.deadline) : null,
+            at,
+            at,
+          );
+      this.db
+        .prepare("UPDATE shared_projects SET updated_at=? WHERE id=?")
+        .run(at, projectId);
+      return this.commit(
+        identity,
+        command.operationId,
+        projectId,
+        command.name,
+        digest,
+        tasks.map((task) => ({ id: task.id, version: 1 })),
+        at,
+      );
+    });
+  }
+  snapshot(identity: ProjectIdentity, projectId: string) {
+    // A read transaction prevents membership and data from being observed at different versions.
+    return this.transaction(() => {
+      this.authorize(identity, projectId);
+      const row = this.db
+        .prepare("SELECT * FROM shared_projects WHERE id=?")
+        .get(projectId)!;
+      const members = this.db
+        .prepare(
+          "SELECT m.user_id FROM project_members m JOIN account_users u ON u.id=m.user_id WHERE m.project_id=? AND m.state='active' AND u.disabled=0 ORDER BY m.role,m.user_id",
+        )
+        .all(projectId)
+        .map((member) => this.membership(projectId, String(member.user_id))!);
+      const project: ProjectView = {
+        projectId,
+        creatorId: String(row.creator_id),
+        name: String(row.name),
+        goal: String(row.goal),
+        targetDate: row.target_date === null ? null : String(row.target_date),
+        timeZone: String(row.time_zone),
+        version: Number(row.version),
+        updatedAt: String(row.updated_at),
+        statisticsMode: row.statistics_mode as ProjectView["statisticsMode"],
+        members,
+      };
+      const tasks: ProjectTaskView[] = this.db
+        .prepare(
+          "SELECT * FROM project_tasks WHERE project_id=? AND deleted_at IS NULL ORDER BY created_at,id",
+        )
+        .all(projectId)
+        .map((task) => ({
+          scope: { kind: "project", projectId },
+          id: String(task.id),
+          createdBy: String(task.created_by),
+          assigneeId: String(task.assignee_id),
+          title: String(task.title),
+          notes: String(task.notes),
+          status: task.status as ProjectTaskView["status"],
+          deadline:
+            task.deadline === null ? null : JSON.parse(String(task.deadline)),
+          version: Number(task.version),
+          deletedAt: null,
+          completion: null,
+        }));
+      return { project, tasks, asOf: new Date().toISOString() };
+    }, false);
+  }
+  receipt(identity: ProjectIdentity, operationId: string): ProjectReceipt {
+    return this.transaction(() => {
+      const row = this.db
+        .prepare(
+          "SELECT * FROM shared_command_receipts WHERE actor_id=? AND operation_id=?",
+        )
+        .get(identity.actorId, operationId);
+      if (!row) throw new ProjectError("RESOURCE_FORBIDDEN", 403);
+      this.authorize(identity, String(row.project_id));
+      return JSON.parse(String(row.receipt_json)) as ProjectReceipt;
+    }, false);
+  }
+}

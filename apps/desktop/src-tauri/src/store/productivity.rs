@@ -72,6 +72,8 @@ pub enum ProductivityAction {
         waiting_for: String,
         waiting_note: String,
         labels: Vec<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        arrange_on_create: Option<bool>,
     },
     Label {
         id: String,
@@ -92,6 +94,7 @@ pub enum ProductivityAction {
         confirm_related: bool,
         expected_tasks: Vec<(String, i64)>,
     },
+    UndoStatus { id:String, expected_version:i64, original_operation_id:String, expected_tasks:Vec<(String,i64)> },
     Section {
         id: String,
         project_id: String,
@@ -141,12 +144,35 @@ async fn version(tx: &mut Tx<'_>, sql: &str, id: &str, expected: Option<i64>) ->
     Ok(())
 }
 impl Store {
+    /// Set a first-use default atomically; never change an existing workspace or its rules.
+    pub async fn initialize_workspace_zone(&self, time_zone: &str) -> StoreResult<()> {
+        time_zone.parse::<Tz>().map_err(|_| "USER:无法识别设备时区")?;
+        let mut tx = self.pool.begin().await.map_err(|e| e.to_string())?;
+        let inserted = sqlx::query("INSERT INTO workspace_settings(owner_id,time_zone) VALUES(?,?) ON CONFLICT(owner_id) DO NOTHING")
+            .bind(&self.owner_id).bind(time_zone).execute(&mut *tx).await.map_err(|e| e.to_string())?.rows_affected();
+        if inserted == 1 {
+            let c = ProductivityCommand {
+                operation_id: Uuid::new_v4().to_string(),
+                occurred_at: chrono::Utc::now().to_rfc3339(),
+                action: ProductivityAction::Zone {
+                    time_zone: time_zone.into(), expected_version: None, expected_templates: None,
+                },
+            };
+            let payload = serde_json::to_string(&c).map_err(|e| e.to_string())?;
+            sqlx::query("INSERT INTO content_events(id,owner_id,entity_id,kind,occurred_at,payload) VALUES(?,?,?,'productivity',?,?)")
+                .bind(&c.operation_id).bind(&self.owner_id).bind(&self.owner_id).bind(&c.occurred_at).bind(&payload)
+                .execute(&mut *tx).await.map_err(|e| e.to_string())?;
+            self.queue_operation(&mut tx, &c.operation_id, "productivity", &payload, &c.occurred_at).await?;
+        }
+        tx.commit().await.map_err(|e| e.to_string())
+    }
+
     pub async fn productivity_snapshot(&self) -> StoreResult<Value> {
         let mut tx = self.pool.begin().await.map_err(|e| e.to_string())?;
         let specs=[
         ("settings","SELECT json_object('timeZone',time_zone,'version',version) FROM workspace_settings WHERE owner_id=?"),
-        ("tasks","SELECT json_object('id',t.id,'title',title,'notes',notes,'projectId',project_id,'parentId',parent_task_id,'sectionId',section_id,'status',CASE WHEN waiting=1 THEN 'waiting' ELSE status END,'version',version,'plan',json(plan_value),'deadline',json(deadline_value),'followUp',json(follow_up_value),'priority',priority_level,'important',important,'waitingFor',waiting_for,'waitingNote',waiting_note,'completedAt',completed_at,'createdAt',created_at,'rank',task_rank,'labels',json((SELECT json_group_array(label_id) FROM task_labels WHERE task_id=t.id))) FROM tasks t WHERE owner_id=? AND deleted_at IS NULL ORDER BY task_rank,created_at,id"),
-        ("projects","SELECT json_object('id',id,'name',name,'status',CASE WHEN canceled=1 THEN 'cancelled' ELSE status END,'version',version,'planVersion',plan_version,'focused',focused,'archivedAt',archived_at) FROM projects WHERE owner_id=? AND deleted_at IS NULL ORDER BY created_at,id"),
+        ("tasks","SELECT json_object('id',t.id,'title',title,'notes',notes,'completionCriteria',completion_criteria,'projectId',project_id,'parentId',parent_task_id,'sectionId',section_id,'rawStatus',status,'waiting',json(CASE WHEN waiting=1 THEN 'true' ELSE 'false' END),'statusReason',status_reason,'status',CASE WHEN waiting=1 AND status NOT IN('completed','cancelled') THEN 'waiting' ELSE status END,'version',version,'plan',json(plan_value),'deadline',json(deadline_value),'followUp',json(follow_up_value),'priority',priority_level,'important',important,'waitingFor',waiting_for,'waitingNote',waiting_note,'completedAt',completed_at,'createdAt',created_at,'rank',task_rank,'labels',json((SELECT json_group_array(label_id) FROM task_labels WHERE task_id=t.id))) FROM tasks t WHERE owner_id=? AND deleted_at IS NULL ORDER BY task_rank,created_at,id"),
+        ("projects","SELECT json_object('id',p.id,'name',p.name,'outcome',p.outcome,'targetDate',p.target_date,'createdAt',p.created_at,'updatedAt',(SELECT at FROM (SELECT p.created_at AS at UNION ALL SELECT occurred_at FROM project_events WHERE owner_id=p.owner_id AND project_id=p.id UNION ALL SELECT occurred_at FROM content_events WHERE owner_id=p.owner_id AND entity_id=p.id UNION ALL SELECT updated_at FROM lan_entities WHERE id=p.id AND kind='project') ORDER BY julianday(at) DESC LIMIT 1),'status',CASE WHEN p.canceled=1 THEN 'cancelled' ELSE p.status END,'version',p.version,'planVersion',p.plan_version,'focused',p.focused,'archivedAt',p.archived_at) FROM projects p WHERE p.owner_id=? AND p.deleted_at IS NULL ORDER BY p.created_at,p.id"),
         ("sections","SELECT json_object('id',s.id,'projectId',project_id,'name',s.name,'rank',rank,'version',s.version) FROM sections s JOIN projects p ON p.id=s.project_id WHERE p.owner_id=? AND p.deleted_at IS NULL AND s.deleted_at IS NULL ORDER BY rank,s.id"),
         ("labels","SELECT json_object('id',id,'name',name,'version',version) FROM labels WHERE owner_id=? ORDER BY name,id"),
         ("days","SELECT json_object('date',date,'outcome',outcome,'closing',closing,'focusIds',json(focus_ids),'version',version) FROM day_notes WHERE owner_id=?"),
@@ -190,6 +216,7 @@ impl Store {
             return Ok(());
         }
         let entity: String;
+        let mut event_payload:Value=serde_json::from_str(&payload).map_err(|e|e.to_string())?;
         match &c.action {
             ProductivityAction::Rollover { date, time_zone } => {
                 if self
@@ -240,6 +267,7 @@ impl Store {
                 waiting_for,
                 waiting_note,
                 labels,
+                arrange_on_create,
             } => {
                 Uuid::parse_str(id).map_err(|_| "Invalid task ID")?;
                 limited(title, 500)?;
@@ -263,6 +291,11 @@ impl Store {
                     self.productivity_project_exists(&mut tx, p).await?;
                 }
                 if expected_version.is_none() {
+                    if let Some(project) = project_id {
+                        let active: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM projects WHERE id=? AND owner_id=? AND status='active' AND canceled=0 AND archived_at IS NULL AND deleted_at IS NULL)")
+                            .bind(project).bind(&self.owner_id).fetch_one(&mut *tx).await.map_err(|e| e.to_string())?;
+                        if !active { return Err("USER:请先恢复项目，再添加任务".into()); }
+                    }
                     sqlx::query("INSERT INTO tasks(id,owner_id,title,notes,project_id,source,created_at) VALUES(?,?,?,?,?,'temporary',?)").bind(id).bind(&self.owner_id).bind(title.trim()).bind(notes).bind(project_id).bind(&c.occurred_at).execute(&mut *tx).await.map_err(|e|e.to_string())?;
                 } else {
                     let old: Option<String> = sqlx::query_scalar(
@@ -321,6 +354,22 @@ impl Store {
                         .execute(&mut *tx)
                         .await
                         .map_err(|e| e.to_string())?;
+                }
+                if expected_version.is_none() && *arrange_on_create == Some(true) {
+                    if let Some(plan) = plan {
+                        let zone: String = sqlx::query_scalar("SELECT time_zone FROM workspace_settings WHERE owner_id=?")
+                            .bind(&self.owner_id).fetch_one(&mut *tx).await.map_err(|e| e.to_string())?;
+                        let date = match plan {
+                            TimeValue::Date { date } => date.clone(),
+                            TimeValue::Instant { at_utc, .. } => DateTime::parse_from_rfc3339(at_utc).map_err(|e| e.to_string())?
+                                .with_timezone(&zone.parse::<Tz>().map_err(|e| e.to_string())?).date_naive().to_string(),
+                        };
+                        sqlx::query("INSERT INTO daily_plan_items(id,owner_id,task_id,execution_date,time_zone,created_at) VALUES(?,?,?,?,?,?)")
+                            .bind(Uuid::new_v4().to_string()).bind(&self.owner_id).bind(id).bind(date).bind(zone).bind(&c.occurred_at)
+                            .execute(&mut *tx).await.map_err(|e| e.to_string())?;
+                        sqlx::query("UPDATE tasks SET plan_value=? WHERE id=? AND owner_id=?")
+                            .bind(encoded(&Some(plan.clone()))).bind(id).bind(&self.owner_id).execute(&mut *tx).await.map_err(|e| e.to_string())?;
+                    }
                 }
                 entity = id.clone();
             }
@@ -383,6 +432,7 @@ impl Store {
                 confirm_related,
                 expected_tasks,
             } => {
+                let before:Option<String>=sqlx::query_scalar("SELECT json_object('status',status,'waiting',waiting,'statusReason',status_reason,'completedAt',completed_at,'completionId',active_completion_id) FROM tasks WHERE id=? AND owner_id=? AND deleted_at IS NULL").bind(id).bind(&self.owner_id).fetch_optional(&mut *tx).await.map_err(|e|e.to_string())?;
                 self.productivity_check_tasks(&mut tx, expected_tasks)
                     .await?;
                 version(
@@ -459,7 +509,29 @@ impl Store {
                     }
                 }
                 self.productivity_status(&mut tx, id, status, c).await?;
+                let after:i64=sqlx::query_scalar("SELECT version FROM tasks WHERE id=? AND owner_id=?").bind(id).bind(&self.owner_id).fetch_one(&mut *tx).await.map_err(|e|e.to_string())?;
+                event_payload["personalUndo"]=json!({"before":serde_json::from_str::<Value>(&before.ok_or("USER:任务不存在")?).map_err(|e|e.to_string())?,"afterVersion":after});
                 entity = id.clone();
+            }
+            ProductivityAction::UndoStatus{id,expected_version,original_operation_id,expected_tasks}=>{
+                self.productivity_check_tasks(&mut tx,expected_tasks).await?;
+                version(&mut tx,"SELECT version FROM tasks WHERE id=? AND deleted_at IS NULL",id,Some(*expected_version)).await?;
+                let original:Option<String>=sqlx::query_scalar("SELECT payload FROM content_events WHERE id=? AND owner_id=? AND entity_id=? AND kind='productivity'").bind(original_operation_id).bind(&self.owner_id).bind(id).fetch_optional(&mut *tx).await.map_err(|e|e.to_string())?;
+                let original:Value=serde_json::from_str(&original.ok_or("USER:撤销凭据不存在，请使用任务状态操作")?).map_err(|e|e.to_string())?;
+                if original["action"]["type"]!="status" || original["personalUndo"]["afterVersion"]!=json!(expected_version){return Err("STATE_CONFLICT:任务已有后续编辑，不能撤销".into());}
+                let before=&original["personalUndo"]["before"];
+                let current:Option<String>=sqlx::query_scalar("SELECT active_completion_id FROM tasks WHERE id=? AND owner_id=?").bind(id).bind(&self.owner_id).fetch_one(&mut *tx).await.map_err(|e|e.to_string())?;
+                if let Some(completion)=current {sqlx::query("UPDATE execution_records SET revoked_at=? WHERE id=? AND owner_id=?").bind(&c.occurred_at).bind(completion).bind(&self.owner_id).execute(&mut *tx).await.map_err(|e|e.to_string())?;}
+                if let Some(completion)=before["completionId"].as_str(){
+                    let restored=sqlx::query("UPDATE execution_records SET revoked_at=NULL WHERE id=? AND task_id=? AND owner_id=?").bind(completion).bind(id).bind(&self.owner_id).execute(&mut *tx).await.map_err(|e|e.to_string())?.rows_affected();
+                    if restored!=1{return Err("STATE_CONFLICT:原完成记录已变化".into());}
+                }
+                sqlx::query("UPDATE tasks SET status=?,waiting=?,status_reason=?,completed_at=?,active_completion_id=?,version=version+1 WHERE id=? AND owner_id=?")
+                    .bind(before["status"].as_str().ok_or("Invalid undo state")?).bind(before["waiting"].as_i64().unwrap_or(0)).bind(before["statusReason"].as_str().unwrap_or(""))
+                    .bind(before["completedAt"].as_str()).bind(before["completionId"].as_str()).bind(id).bind(&self.owner_id).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+                // Status compatibility triggers may fill a missing terminal time. Undo restores the original fact afterward.
+                sqlx::query("UPDATE tasks SET completed_at=?,waiting=? WHERE id=? AND owner_id=?").bind(before["completedAt"].as_str()).bind(before["waiting"].as_i64().unwrap_or(0)).bind(id).bind(&self.owner_id).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+                entity=id.clone();
             }
             ProductivityAction::Section {
                 id,
@@ -643,7 +715,7 @@ impl Store {
             .bind(entity)
             .bind("productivity")
             .bind(&c.occurred_at)
-            .bind(&payload)
+            .bind(event_payload.to_string())
             .execute(&mut *tx)
             .await
             .map_err(|e| e.to_string())?;

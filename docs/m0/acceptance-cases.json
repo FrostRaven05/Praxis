@@ -1,0 +1,257 @@
+{
+  "version": "m0-acceptance-v1",
+  "fixture": "fixtures.json",
+  "scope": "M0 supplies cases and reference validations; M1-M5 implement and accept the product",
+  "cases": [
+    {
+      "id": "AC01",
+      "stage": "M2",
+      "title": "创建项目",
+      "fixtureRefs": ["/accounts/creator", "/shared"],
+      "steps": [
+        "登录创建者，点击创建项目，只填写名称并确认。",
+        "另测空白名称、重复点击和保存失败。"
+      ],
+      "expected": [
+        "成功直接进入详情且只有一个项目；目标与日期可留空。",
+        "空白名称被拒绝，失败保留输入。"
+      ],
+      "productAcceptance": "pending-implementation-and-ui-validation"
+    },
+    {
+      "id": "AC02",
+      "stage": "M2",
+      "title": "连续录入与中文输入法",
+      "fixtureRefs": ["/accounts/creator", "/shared/tasks"],
+      "steps": [
+        "项目详情输入中文，在组词时按 Enter 选字。",
+        "提交标题后连续添加第二项，再模拟断网后保存。"
+      ],
+      "expected": [
+        "组词不触发写入，正式 Enter 每次只新增一项。",
+        "负责人默认当前用户、状态 todo；失败保留输入与重试标识。"
+      ],
+      "productAcceptance": "pending-implementation-and-ui-validation"
+    },
+    {
+      "id": "AC03",
+      "stage": "M1 M2",
+      "title": "真实邀请与分配",
+      "fixtureRefs": ["/accounts", "/shared/members", "/shared/tasks/0"],
+      "steps": [
+        "在隔离服务注册创建者、成员和非成员账号，创建项目并生成链接。",
+        "成员登录主动加入，创建者把原 overdue 任务分配给成员；非成员尝试查询项目。"
+      ],
+      "expected": [
+        "成员看到分配后的同一任务 ID，初始两项任务加新转交共三项未完成待办。",
+        "非成员不得读写；不同账号的私人同 ID 实体仍独立。"
+      ],
+      "productAcceptance": "pending-implementation-and-ui-validation"
+    },
+    {
+      "id": "AC04",
+      "stage": "M1 M4",
+      "title": "移除成员与旧确认失效",
+      "fixtureRefs": [
+        "/shared/revocation",
+        "/shared/confirmation",
+        "/shared/tasks"
+      ],
+      "steps": [
+        "按原样本预览移除成员，转交其两项未完成任务给创建者。",
+        "在预览后修改其中一项任务，先提交旧预览，再更新预览确认。",
+        "使用被移除者的旧确认与旧访问代数请求写入；重新加入后再重放。"
+      ],
+      "expected": [
+        "旧版本预览整体拒绝；新预览确认后两项任务转交和撤权原子生效。",
+        "服务端拒绝旧读写和确认，重新加入递增代数，旧确认仍不复活。",
+        "失权缓存下次联网重验锁定；未完成转交不改已完成领取人。"
+      ],
+      "productAcceptance": "pending-implementation-and-ui-validation"
+    },
+    {
+      "id": "AC05",
+      "stage": "M2 M3",
+      "title": "完成撤销与并发版本",
+      "fixtureRefs": ["/shared/tasks/1", "/accounts"],
+      "steps": [
+        "创建者将成员负责的进行中任务完成，查看项目和成员待办。",
+        "并发修改标题后使用旧版本执行 10 秒撤销，再以新版本明确重开。"
+      ],
+      "expected": [
+        "任务完成比例从 1/4 变为 2/4，该任务的 10 XP 给负责人而非操作者。",
+        "旧撤销不能覆盖新编辑；明确重开撤回原领取人该项贡献。"
+      ],
+      "productAcceptance": "pending-implementation-and-ui-validation"
+    },
+    {
+      "id": "AC06",
+      "stage": "M2",
+      "title": "进度边界与生命周期",
+      "fixtureRefs": ["/shared/tasks", "/legacy/tasks", "/legacy/project"],
+      "steps": [
+        "每个变体重置样本：空项目、初始四项任务、删除一个未完成任务并恢复、全部完成后重开一项。",
+        "查看旧树形项目统计与项目成果状态。"
+      ],
+      "expected": [
+        "空项目 percentage=null；初始 1/4=25%；删除后 1/3=33%；恢复为25%。",
+        "全部完成100%，重开一项75%，不改项目生命周期。",
+        "旧树保留有效叶子 1/3=33% 的明确口径，不双计父子。"
+      ],
+      "productAcceptance": "pending-implementation-and-ui-validation"
+    },
+    {
+      "id": "AC07",
+      "stage": "M0 M2",
+      "title": "截止日期与时区",
+      "fixtureRefs": ["/clock", "/shared/tasks", "/legacy/independent"],
+      "steps": [
+        "用冻结时钟查询今日、逾期、之后和无日期任务。",
+        "在香港午夜和纽约夏令时回退日边界前后查询；读取旧 instant 与 planDate。"
+      ],
+      "expected": [
+        "日期级截止在项目次日零时才逾期，纽约25小时自然日不按固定24小时截断。",
+        "旧截止时刻与显示时区保持原样，计划日期不变成截止。"
+      ],
+      "productAcceptance": "pending-implementation-and-ui-validation"
+    },
+    {
+      "id": "AC08",
+      "stage": "M0 M3",
+      "title": "经验归属与防重",
+      "fixtureRefs": [
+        "/shared/tasks/1",
+        "/legacy/reward",
+        "/legacy/oldCreditTaskId"
+      ],
+      "steps": [
+        "在隔离的新规则账本完成、重开、再完成任务，重复发送完成请求。",
+        "删除与恢复，再修改已完成任务负责人，最后重开并由新负责人完成。",
+        "迁移旧修炼数据，保留未知完成日期。"
+      ],
+      "expected": [
+        "每个任务同时最多10 XP，重试不增；删除回退、恢复恢复原领取人的一份。",
+        "单纯改负责人不转移经验；重开撤回原领取人，再完成计给新负责人。",
+        "100 XP 自动 Lv2；旧已领取奖励保留不叠加，新版排除旧已删除任务；未知时间不计今天。"
+      ],
+      "productAcceptance": "pending-implementation-and-ui-validation"
+    },
+    {
+      "id": "AC09",
+      "stage": "M4",
+      "title": "AI 草稿与统一确认",
+      "fixtureRefs": ["/shared", "/shared/members"],
+      "steps": [
+        "受控模型生成项目任务草稿，修改标题、成员、日期与说明，删除一项。",
+        "确认前查看正式任务；点击一次创建，再重复点击。"
+      ],
+      "expected": [
+        "未确认不创建、不计进度或XP；说明可空。",
+        "真实创建内容与最后预览一致，只有当前成员可负责，日期可清空，同批只创建一次。"
+      ],
+      "productAcceptance": "pending-implementation-and-ui-validation"
+    },
+    {
+      "id": "AC10",
+      "stage": "M4",
+      "title": "只读建议与真实统计",
+      "fixtureRefs": ["/clock", "/shared/tasks"],
+      "steps": [
+        "分别在项目和成员个人待办请求下一步，核对任务链接与读取时间。",
+        "让模型输出伪造统计或申请修改任务状态。"
+      ],
+      "expected": [
+        "初始项目为1/4=25%，数字由系统计算；最多三项现有任务建议并说明理由。",
+        "个人建议只来自当前负责且有权访问的任务，伪造数据被校正或拒绝，读模式无写权限。"
+      ],
+      "productAcceptance": "pending-implementation-and-ui-validation"
+    },
+    {
+      "id": "AC11",
+      "stage": "M4",
+      "title": "采用中断与跨设备防重",
+      "fixtureRefs": ["/legacy/ai", "/shared"],
+      "steps": [
+        "新协议下两台设备以同 runId 采用；模拟提交成功但响应丢失。",
+        "刷新、服务重启后以原 operationId 查询并重试；变更内容但复用原标识。"
+      ],
+      "expected": [
+        "服务端返回可核对的同一批任务结果，不重复创建。",
+        "内容变化报 OPERATION_CHANGED；原子批次零项或全部提交，不能编造部分成功。",
+        "旧本地回执继续可读，不冒充服务端全局锁。"
+      ],
+      "productAcceptance": "pending-implementation-and-ui-validation"
+    },
+    {
+      "id": "AC12",
+      "stage": "M4",
+      "title": "停止和授权变化",
+      "fixtureRefs": ["/shared/revocation", "/shared/confirmation"],
+      "steps": [
+        "在读取、生成、待确认和实际提交阶段停止。",
+        "在确认与执行之间撤权或修改草稿，再提交旧确认；原样本确认已过期。"
+      ],
+      "expected": [
+        "未提交的不写入，已提交的按回执显示，停止不声称自动回滚。",
+        "过期、摘要变化和访问代数变化要求重新确认；越权动作在副作用前拒绝。"
+      ],
+      "productAcceptance": "pending-implementation-and-ui-validation"
+    },
+    {
+      "id": "AC13",
+      "stage": "M2 M4",
+      "title": "AI 不可用",
+      "fixtureRefs": ["/accounts", "/shared"],
+      "steps": [
+        "关闭模型服务或置离线，执行手动创建项目、拆解分配、更新状态、跟踪和个人待办。",
+        "再进入 AI 入口。"
+      ],
+      "expected": [
+        "手动路径仍可用；在线依赖的成员动作明确显示未确认状态。",
+        "AI 不可用提示清楚，输入保留，无空白可用假入口。"
+      ],
+      "productAcceptance": "pending-implementation-and-ui-validation"
+    },
+    {
+      "id": "AC14",
+      "stage": "M0 M1 M2",
+      "title": "持久化备份恢复与同步",
+      "fixtureRefs": ["/legacy", "/collision"],
+      "steps": [
+        "运行 verify-m0.ps1 的真实 SQLite 样本，备份、拒绝损坏选择、恢复副本并重新打开。",
+        "后续用共享客户端验证待同步、关闭重启、响应丢失和冲突。"
+      ],
+      "expected": [
+        "M0 样本恢复前后56张表逐表一致，包含10条待同步操作、旧奖励和AI回执；原库不变。",
+        "后续产品仍须验证双账号同步反馈，不以M0样本通过替代整体AC14。"
+      ],
+      "productAcceptance": "pending-implementation-and-ui-validation"
+    },
+    {
+      "id": "AC15",
+      "stage": "M3",
+      "title": "成长展示与动效",
+      "fixtureRefs": ["/shared/tasks/1"],
+      "steps": ["任务完成与升级时继续操作任务列表，切换隐藏成长和减少动效。"],
+      "expected": [
+        "反馈不阻塞、约1秒内结束；关闭展示不停止经验记录；Windows与Android一致。"
+      ],
+      "productAcceptance": "pending-implementation-and-ui-validation"
+    },
+    {
+      "id": "AC16",
+      "stage": "M2 M5",
+      "title": "小屏与完整核心旅程",
+      "fixtureRefs": ["/accounts", "/shared"],
+      "steps": [
+        "用实际Windows和Android客户端，从空项目走完创建、拆解、邀请分配、个人待办、完成、全完成和重开。",
+        "测试键盘焦点、中文输入、无任务、加载失败与窄屏。"
+      ],
+      "expected": [
+        "三个核心页面可完成全部操作；任务状态、进度与成长一致。",
+        "无装饰遮挡、虚假可用按钮或样例数据冒充保存结果。"
+      ],
+      "productAcceptance": "pending-implementation-and-ui-validation"
+    }
+  ]
+}

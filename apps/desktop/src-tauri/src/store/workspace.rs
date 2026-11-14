@@ -449,7 +449,13 @@ impl Store {
                 None => {
                     let id = Uuid::new_v4().to_string();
                     sqlx::query("INSERT INTO daily_plan_items(id,owner_id,task_id,execution_date,time_zone,created_at,estimated_minutes) VALUES(?,?,?,?,?,?,(SELECT default_estimated_minutes FROM tasks WHERE id=? AND owner_id=?)) ON CONFLICT(owner_id,task_id,execution_date) DO UPDATE SET removed=0,is_summary=0").bind(&id).bind(&self.owner_id).bind(task).bind(date).bind(zone).bind(at).bind(task).bind(&self.owner_id).execute(&mut **tx).await.map_err(|e|e.to_string())?;
-                    sqlx::query_scalar("SELECT id FROM daily_plan_items WHERE owner_id=? AND task_id=? AND execution_date=?").bind(&self.owner_id).bind(task).bind(date).fetch_one(&mut **tx).await.map_err(|e|e.to_string())?
+                    let id: String = sqlx::query_scalar("SELECT id FROM daily_plan_items WHERE owner_id=? AND task_id=? AND execution_date=?").bind(&self.owner_id).bind(task).bind(date).fetch_one(&mut **tx).await.map_err(|e|e.to_string())?;
+                    // An undated Inbox task needs a history anchor, not a calendar arrangement.
+                    if saved_plan.is_none() {
+                        sqlx::query("UPDATE daily_plan_items SET removed=1 WHERE id=? AND owner_id=? AND EXISTS(SELECT 1 FROM tasks t WHERE t.id=daily_plan_items.task_id AND t.owner_id=daily_plan_items.owner_id AND t.project_id IS NULL)")
+                            .bind(&id).bind(&self.owner_id).execute(&mut **tx).await.map_err(|e|e.to_string())?;
+                    }
+                    id
                 }
             };
             sqlx::query("INSERT INTO execution_records(id,owner_id,task_id,plan_id,execution_date,time_zone,occurred_at) VALUES(?,?,?,?,?,?,?)").bind(operation).bind(&self.owner_id).bind(task).bind(plan).bind(date).bind(zone).bind(at).execute(&mut **tx).await.map_err(|e|e.to_string())?;

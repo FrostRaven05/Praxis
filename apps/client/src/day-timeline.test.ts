@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import type { DailyTask, WorkSnapshot, WorkTask } from "@praxis/application";
-import { dayTimeline, upcomingDayRows } from "./day-timeline";
+import { dayTimeline, recommendBacklog, upcomingDayRows } from "./day-timeline";
 
 const zone = "Asia/Hong_Kong";
 const date = "2026-10-11";
@@ -139,4 +139,36 @@ test("upcoming keeps daily schedules and deduplicates tasks with multiple date r
     ["scheduled", ["安排"]],
     ["both", ["计划", "截止"]],
   ]);
+});
+
+test("recommendations come from the whole backlog, skip scheduled/parent/inactive tasks, and rank by urgency", () => {
+  const tasks = [
+    task("plain"),
+    task("overdue", { deadline: { kind: "date", date: "2026-10-01" } }),
+    task("p1", { priority: 1 }),
+    task("parent"),
+    task("child", { parentId: "parent" }),
+    task("scheduled"),
+    task("done", { status: "completed" }),
+    task("waiting", { status: "waiting" }),
+    task("paused", { projectId: "paused-project" }),
+  ];
+  const snap = {
+    ...snapshot(tasks),
+    projects: [
+      {
+        id: "paused-project",
+        name: "paused",
+        status: "paused",
+        version: 0,
+        planVersion: 0,
+        focused: 0,
+        archivedAt: null,
+      },
+    ],
+  };
+  const result = recommendBacklog(snap, [scheduled], date, zone);
+  expect(result.map((r) => r.task.id)).toEqual(["overdue", "p1", "child", "plain"]);
+  expect(result[0]!.reasons).toContain("已逾期");
+  expect(recommendBacklog(snap, [scheduled], date, zone, 2)).toHaveLength(2);
 });

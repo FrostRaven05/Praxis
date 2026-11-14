@@ -207,8 +207,10 @@ function merge(
 export class EntityStore {
   readonly generation = randomUUID();
   private db: DatabaseSync;
-  constructor(path: string) {
-    this.db = new DatabaseSync(path);
+  private ownsDatabase: boolean;
+  constructor(path: string | DatabaseSync) {
+    this.ownsDatabase = typeof path === "string";
+    this.db = typeof path === "string" ? new DatabaseSync(path) : path;
     this.db
       .exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;
  CREATE TABLE IF NOT EXISTS sync_entities(owner TEXT NOT NULL,id TEXT NOT NULL,payload TEXT NOT NULL,PRIMARY KEY(owner,id));
@@ -223,7 +225,7 @@ export class EntityStore {
       .get(owner);
   }
   close() {
-    this.db.close();
+    if (this.ownsDatabase) this.db.close();
   }
   private seedCaptures() {
     this.db.exec("BEGIN IMMEDIATE");

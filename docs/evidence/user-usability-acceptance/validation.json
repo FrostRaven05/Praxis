@@ -1,0 +1,37 @@
+{
+  "completedAt": "2026-10-18T15:58:03.901Z",
+  "scope": "Windows desktop",
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "applicationTests": {
+    "passed": 160,
+    "failed": 0
+  },
+  "nativeTests": {
+    "passed": 148,
+    "failed": 0
+  },
+  "desktopFlows": {
+    "passed": 12,
+    "failed": 0,
+    "result": "result.json"
+  },
+  "manualRestartCheck": "Project and undated Inbox task retained after restarting the isolated native application; checked with computer-use before final completion-icon adjustment",
+  "isolated": true,
+  "captureSimplification": {
+    "testedAt": "2026-10-18T16:00:33.033Z",
+    "changes": [
+      "Removed the toolbar Add task button",
+      "Removed the capture outer border, background and focus shadow; kept the input"
+    ],
+    "typecheck": "passed",
+    "desktopBuild": "passed",
+    "desktopFlows": {
+      "passed": 12,
+      "errors": []
+    },
+    "visualCheck": "00-simple-capture.png",
+    "release": ".tools/releases/user-usability/Praxis.exe",
+    "sha256": "c5b5171c0a1ddec81606ab3301f6890f94cb6ad86a45fc4b2cc12570ecca0054"
+  }
+}

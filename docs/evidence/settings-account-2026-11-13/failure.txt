@@ -1,0 +1,15 @@
+Error: expect(locator).toBeFocused() failed
+
+Locator:  getByRole('main', { name: '账号登录页', exact: true }).getByLabel('邮箱', { exact: true })
+Expected: focused
+Received: inactive
+Timeout:  5000ms
+
+Call log:
+  - Expect "to.be.focused" with timeout 5000ms
+  - waiting for getByRole('main', { name: '账号登录页', exact: true }).getByLabel('邮箱', { exact: true })
+    9 × locator resolved to <input value="" required="" type="email" aria-label="邮箱" maxlength="254" inputmode="email" spellcheck="false" placeholder="请输入邮箱" autocapitalize="none" autocomplete="username"/>
+      - unexpected value "inactive"
+
+    at Proxy.<anonymous> (C:\Project\01Project\Praxis\node_modules\.pnpm\playwright@1.58.2\node_modules\playwright\lib\matchers\expect.js:213:24)
+    at file:///C:/Project/01Project/Praxis/.scratch/settings-account-ui-smoke.mjs:61:23

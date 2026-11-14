@@ -57,7 +57,7 @@ export function TaskPanelIcon({
       ) : name === "criteria" ? (
         <path d="m3 7 2 2 3-3M11 7h10m-18 9 2 2 3-3M11 16h10" />
       ) : name === "close" ? (
-        <path d="m9 5 7 7-7 7" />
+        <path d="m6 6 12 12M18 6 6 18" />
       ) : name === "inbox" ? (
         <>
           <path d="M4 4h16v16H4Z" />

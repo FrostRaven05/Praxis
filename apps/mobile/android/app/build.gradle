@@ -4,7 +4,8 @@ android {
     namespace = "com.praxis.mobile"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.praxis.mobile"
+        // Isolated native acceptance never replaces the user's installed package.
+        applicationId project.findProperty('praxisIsolatedQa') == 'true' ? 'com.praxis.mobile.qa' : 'com.praxis.mobile'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

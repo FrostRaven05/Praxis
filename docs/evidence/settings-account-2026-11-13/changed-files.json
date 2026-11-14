@@ -1,0 +1,27 @@
+[
+  {
+    "after": "b4bd30d659c47509ae6837039b3b2c414869861891839fbe43bd04ab734672fd",
+    "file": "apps/client/src/SettingsView.tsx",
+    "before": "f6e0697ece1a3dc010bc322e4c18edf140aee73b5022b2a9e5533afcbf2f0407"
+  },
+  {
+    "after": "784315674f5fd59f64ea8e42db85677fe6a2b354fc66a8408d4a5e2fb6063fa6",
+    "file": "apps/client/src/AccountPanel.tsx",
+    "before": "d4bdfe6a5b6ace420f6801885c7fe9a5e91334ae6766bdc999939657c7b4e076"
+  },
+  {
+    "after": "3e7074872e6ed01676dd5d4b911ff154dfb38febae8c6e353db540986bad545a",
+    "file": "apps/client/src/account.css",
+    "before": "8131aa5aac99f38a0d72ec7c8f529abe035f1e6f183c297fd82c411a2885169b"
+  },
+  {
+    "after": "235928c0359d1eba4ff77d1c51bb8f1862f9c8776d4ec699964e4b0d0903ad62",
+    "file": "apps/client/src/App.tsx",
+    "before": "49852e1176629b22f511c5009cec19418921390b1544300f7407028b5c618ec1"
+  },
+  {
+    "after": "3905a69c88ded5bcf9c570a1c25499f4c2d23f9257f908d48097ac1bcdcb15d5",
+    "file": "apps/client/src/mobile/MobileApp.tsx",
+    "before": "d504829b8e1fba0bb3f2bfdd0d60fc657bfe35b160db23e5c2a56c1c6361d45a"
+  }
+]

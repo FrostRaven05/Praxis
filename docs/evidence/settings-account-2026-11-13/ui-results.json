@@ -1,0 +1,23 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-12T16:47:24.310Z",
+  "checks": [
+    "desktop: backup card removed; theme/archive retained; account is visible at bottom left",
+    "desktop: dedicated login page, two standard fields, no dialog/sidebar, default focus and no horizontal overflow",
+    "desktop: email validity prevents submission; password visibility preserves input; failed authentication preserves fields and feedback",
+    "desktop: registration toggles required nickname/password rules; closing returns to the previous app and clears password",
+    "desktop: signed-in identity uses display name/email and a separate account page with logout; no credentials form",
+    "desktop: expired session offers reauthentication without losing local access",
+    "desktop: successful authentication clears password, restarts the workspace once and leaves retry available",
+    "desktop: dark theme/reduced motion and small viewport keep login usable",
+    "mobile: dedicated login page, two standard fields, no dialog/sidebar, default focus and no horizontal overflow",
+    "mobile: email validity prevents submission; password visibility preserves input; failed authentication preserves fields and feedback",
+    "mobile: registration toggles required nickname/password rules; closing returns to the previous app and clears password",
+    "mobile: signed-in identity uses display name/email and a separate account page with logout; no credentials form",
+    "mobile: expired session offers reauthentication without losing local access",
+    "mobile: successful authentication clears password, restarts the workspace once and leaves retry available",
+    "mobile: dark theme/reduced motion and small viewport keep login usable"
+  ],
+  "errors": [],
+  "scope": "Real App/MobileApp and forms; synthetic account/native adapters; no real credentials or user databases"
+}

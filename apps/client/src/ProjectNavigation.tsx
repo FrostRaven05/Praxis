@@ -5,14 +5,18 @@ export function ProjectNavigation({
   revision,
   disabled,
   selectedId,
+  overviewSelected,
   onSelect,
   onCreate,
+  onList,
 }: {
   revision: number;
   disabled: boolean;
   selectedId: string | null;
+  overviewSelected: boolean;
   onSelect: (id: string) => void;
   onCreate: () => void;
+  onList: () => void;
 }) {
   const { items, error, loading, reload } = useProjectList(revision);
   const visible = items.filter(
@@ -22,7 +26,17 @@ export function ProjectNavigation({
     <section className="sidebar-projects" aria-label="项目导航">
       <div className="sidebar-project-heading">
         <h2>
-          项目 <span className="sidebar-project-count">{visible.length}</span>
+          <button
+            type="button"
+            className="project-list-link"
+            aria-label="项目总览"
+            aria-current={overviewSelected ? "page" : undefined}
+            title="查看全部项目"
+            disabled={disabled}
+            onClick={onList}
+          >
+            项目 <span className="sidebar-project-count">{visible.length}</span>
+          </button>
         </h2>
         <button
           className="new-project-button"

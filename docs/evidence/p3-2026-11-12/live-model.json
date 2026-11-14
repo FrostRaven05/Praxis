@@ -1,0 +1,33 @@
+{
+  "executedAt": "2026-11-11T16:24:51.474Z",
+  "syntheticOnly": true,
+  "businessTaskWrites": false,
+  "configured": true,
+  "provider": "deepseek",
+  "model": "deepseek-flash",
+  "cases": [
+    {
+      "name": "personal-flat-decompose",
+      "passed": true,
+      "status": "ready",
+      "model": "deepseek-flash",
+      "steps": 5,
+      "notesAndDateSupported": true,
+      "existingTaskMatched": false,
+      "error": null,
+      "durationMs": 3482
+    },
+    {
+      "name": "personal-todo-readonly",
+      "passed": true,
+      "status": "ready",
+      "model": "deepseek-flash",
+      "steps": 0,
+      "notesAndDateSupported": true,
+      "existingTaskMatched": true,
+      "error": null,
+      "durationMs": 3647
+    }
+  ],
+  "passed": true
+}

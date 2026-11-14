@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useContext, useEffect, useId, useRef, useState } from "react";
 import {
   calendarDate,
   taskStates,
@@ -9,6 +9,9 @@ import {
 import { workspace } from "./storage";
 import { TaskDetailsButton } from "./TaskDetailsButton";
 import { TaskActionMenu } from "./TaskActionMenu";
+import { TaskCompletionButton } from "./TaskCompletionButton";
+import { animateTaskCompletion } from "./task-completion-motion";
+import { ProjectTaskPanelContext } from "./project-task-panel-context";
 
 const columns = ["todo", "in_progress", "blocked", "completed"];
 type StatusAction = Extract<WorkspaceAction, { kind: "status" }>;
@@ -33,6 +36,7 @@ export function KanbanView({
   onBusyChange?: (busy: boolean) => void;
   disabled?: boolean;
 }) {
+  const taskPanel = useContext(ProjectTaskPanelContext);
   const leaves = projectTree(tasks).filter((task) => !task.hasChildren);
   const [transition, setTransition] = useState<{
     task: ProjectTask;
@@ -80,12 +84,14 @@ export function KanbanView({
     setBusy(true);
     setPending(change);
     setError("");
+    let clearMotion = () => {};
     try {
       // Keep the original version and date when retrying an uncertain reply.
       // If only the refresh failed, retry the read without repeating the write.
       if (!change.committed) {
         await workspace.execute(change.action);
         change.committed = true;
+        if (change.action.status === "completed") clearMotion = await animateTaskCompletion(change.action.taskId);
       }
       await onSaved();
       setPending(null);
@@ -94,6 +100,7 @@ export function KanbanView({
     } catch (failure) {
       setError(errorText(failure));
     } finally {
+      clearMotion();
       busyRef.current = false;
       setBusy(false);
     }
@@ -140,6 +147,7 @@ export function KanbanView({
         key={task.taskId}
         draggable={!locked && task.status !== "cancelled"}
         data-task-id={task.taskId}
+        data-completion-row=""
         onDragStart={(event) => {
           if (locked || busyRef.current || task.status === "cancelled") {
             event.preventDefault();
@@ -156,22 +164,16 @@ export function KanbanView({
       >
         <div className="kanban-card-heading">
           {task.status !== "cancelled" ? (
-            <button
-              type="button"
+            <TaskCompletionButton
               className="kanban-completion-toggle"
-              aria-label={task.status === "completed" ? "撤销完成" : "标为完成"}
-              aria-pressed={task.status === "completed"}
+              completed={task.status === "completed"}
               title={task.title}
               disabled={locked}
-              onClick={() =>
+              busy={busy && pending?.action.taskId === task.taskId}
+              onToggle={() =>
                 choose(task, task.status === "completed" ? "todo" : "completed")
               }
-            >
-              <svg viewBox="0 0 24 24" aria-hidden="true">
-                <circle cx="12" cy="12" r="9" />
-                {task.status === "completed" && <path d="m7.5 12 3 3 6-6" />}
-              </svg>
-            </button>
+            />
           ) : (
             <span className="kanban-cancelled-mark" aria-label="已取消">
               −
@@ -182,6 +184,7 @@ export function KanbanView({
             disabled={locked}
             label={task.title}
             className="kanban-task-title"
+            completionTitle
           />
           <TaskActionMenu
             label={"更多操作：" + task.title}
@@ -201,6 +204,10 @@ export function KanbanView({
                 </button>
               ) : (
                 <>
+                  <button type="button" disabled={!taskPanel || taskPanel.disabled} onClick={(event) => {
+                    close();
+                    if (taskPanel) void taskPanel.open(task.taskId, event.currentTarget);
+                  }}>打开任务详情</button>
                   {columns
                     .filter((status) => status !== task.status)
                     .map((status) => (

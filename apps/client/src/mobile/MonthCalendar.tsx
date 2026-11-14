@@ -36,7 +36,9 @@ export function MonthCalendar({
             }}
           />
         </label>
-        <button onClick={() => onChoose(today)}>今天</button>
+        <button className="pm-month-today" onClick={() => onChoose(today)}>
+          今天
+        </button>
         <button
           aria-label="下个月"
           onClick={() => onChoose(shiftMonth(date, 1))}
@@ -61,25 +63,20 @@ export function MonthCalendar({
               className={`pm-month-day${day === date ? " selected" : ""}${day.slice(0, 7) !== date.slice(0, 7) ? " outside" : ""}`}
               aria-label={`${day}${day === today ? " 今天" : ""}，${roots.length} 项任务`}
               aria-pressed={day === date}
+              aria-current={day === today ? "date" : undefined}
               onClick={() => onChoose(day)}
             >
               <span
                 className={
-                  day === today ? "pm-month-number today" : "pm-month-number"
+                  day === today ? "pm-month-number is-today" : "pm-month-number"
                 }
               >
                 {Number(day.slice(-2))}
               </span>
               <span className="pm-month-snippets">
-                {roots.slice(0, 2).map((task) => (
-                  <span
-                    key={task.id}
-                    className={task.data.status === "completed" ? "done" : ""}
-                  >
-                    {String(task.data.title || "未命名任务")}
-                  </span>
-                ))}
-                {roots.length > 2 && <small>+{roots.length - 2} 项</small>}
+                {roots.length > 0 && (
+                  <span className="pm-month-count">{roots.length} 项</span>
+                )}
               </span>
             </button>
           );

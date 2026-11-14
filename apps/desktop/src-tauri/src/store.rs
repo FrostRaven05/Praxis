@@ -1,3 +1,8 @@
+mod ai_context;
+mod cultivation;
+pub use cultivation::CultivationCommand;
+mod ai;
+pub use ai::{AiApplyCommand, AiApplyReceipt};
 mod reviews;
 mod trash;
 mod views;
@@ -171,6 +176,28 @@ impl Store {
             .connect_with(options)
             .await
             .map_err(|error| error.to_string())?;
+        // Inspect existing pages before migrations or background writes. Keep damaged
+        // files intact so recovery can use an explicit, verified backup.
+        if existed {
+            match sqlx::query_scalar::<_, String>("PRAGMA quick_check")
+                .fetch_all(&pool)
+                .await
+            {
+                Ok(rows) if rows.len() == 1 && rows[0] == "ok" => {}
+                Ok(_) => {
+                    pool.close().await;
+                    return Err("DATABASE_CORRUPT".into());
+                }
+                Err(error) => {
+                    pool.close().await;
+                    let message = error.to_string();
+                    if message.contains("(code: 11)") || message.contains("malformed") {
+                        return Err(format!("DATABASE_CORRUPT: {message}"));
+                    }
+                    return Err(message);
+                }
+            }
+        }
         if existed {
             let version: i64 = sqlx::query_scalar(
                 "SELECT COALESCE(MAX(version),0) FROM _sqlx_migrations WHERE success=1",
@@ -214,6 +241,19 @@ impl Store {
     /// All four records are committed on the same SQLite connection.
     pub async fn capture(&self, command: &CaptureCommand) -> StoreResult<DailyTask> {
         validate(command)?;
+        self.capture_validated(command).await
+    }
+
+    pub async fn capture_on_date(&self, command: &CaptureCommand) -> StoreResult<DailyTask> {
+        if command.title.trim().is_empty() { return Err("请填写任务标题".into()); }
+        validate_command_context(
+            [&command.operation_id, &command.task_id, &command.plan_id],
+            &command.execution_date, &command.time_zone, &command.occurred_at, false,
+        )?;
+        self.capture_validated(command).await
+    }
+
+    async fn capture_validated(&self, command: &CaptureCommand) -> StoreResult<DailyTask> {
         let payload = serde_json::to_string(command).map_err(|error| error.to_string())?;
         let mut tx = self.pool.begin().await.map_err(|error| error.to_string())?;
         let existing: Option<String> = sqlx::query_scalar(
@@ -454,6 +494,12 @@ fn validate_context(
     time_zone: &str,
     occurred_at: &str,
 ) -> StoreResult<()> {
+    validate_command_context(ids, execution_date, time_zone, occurred_at, true)
+}
+
+fn validate_command_context(
+    ids: [&str; 3], execution_date: &str, time_zone: &str, occurred_at: &str, require_event_day: bool,
+) -> StoreResult<()> {
     for id in ids {
         Uuid::parse_str(id).map_err(|_| "Invalid identifier")?;
     }
@@ -461,7 +507,7 @@ fn validate_context(
     let time_zone: Tz = time_zone.parse().map_err(|_| "Invalid time zone")?;
     let instant =
         DateTime::parse_from_rfc3339(occurred_at).map_err(|_| "Invalid event timestamp")?;
-    if instant
+    if require_event_day && instant
         .with_timezone(&time_zone)
         .format("%Y-%m-%d")
         .to_string()
@@ -472,5 +518,5 @@ fn validate_context(
     Ok(())
 }
 
-pub mod lan;
 pub mod entities;
+pub mod lan;

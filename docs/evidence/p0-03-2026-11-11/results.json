@@ -1,0 +1,141 @@
+{
+  "date": "2026-11-11",
+  "stage": "P0-03",
+  "scope": "personal-only for entire product",
+  "passed": true,
+  "typecheckExitCode": 0,
+  "typescriptExitCode": 0,
+  "typescriptFilesPassed": 49,
+  "typescriptTestsPassed": 285,
+  "newTypescriptTests": 10,
+  "nativeExitCode": 0,
+  "nativeTestsPassed": 179,
+  "newNativeTests": 3,
+  "clientBuildExitCode": 0,
+  "apiBuildExitCode": 0,
+  "formatChecksPassed": true,
+  "checkedPreExistingFiles": 529,
+  "expectedExistingChanges": [
+    {
+      "path": "apps/client/src/mobile/MobileApp.tsx",
+      "beforeSha256": "A6EFD4B19D9D9E329F7BDC85B6AE98F327AD4EE5DE67CE005160864FB19F1BBB",
+      "afterSha256": "E3DA37868605FE1E640AF7D441E23F5FA9FF7F2AEAD0BBF531DC3BC574E9BB1F"
+    },
+    {
+      "path": "apps/client/src/ProductivityView.tsx",
+      "beforeSha256": "BFEBCA39317E73154E0D6AA7C7E9DBC6C44E7AAF0E4D529094C4DC8F078D56BD",
+      "afterSha256": "A4ACDBD7B836457C14AB88E44713CF795E183F429AC6C0242C70B6CF55422EAF"
+    },
+    {
+      "path": "apps/client/src/ProjectsView.tsx",
+      "beforeSha256": "00E45F7C35339E6E7B2F50F068A61E1A87119E090811CB2C77CFCA681AB39BA3",
+      "afterSha256": "A9E225FC40AA3A2D2DB164E9766D66AD186D49DD9CA48A6D28D18CE83CEFFCA0"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/entities.rs",
+      "beforeSha256": "10C4495ACD1F79AA99944B855C7957CB941E4BEBF289F2BEDFF1D2455FF4B21C",
+      "afterSha256": "01E26FD46B8328818A65A4BA3B895759B4B9136E5CECB9FA818FA74CA6E1B9BF"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/productivity.rs",
+      "beforeSha256": "D9F7083FCAD77F9087868A5B37AD4DEB34AD0EE364345E3AEBA484C09B853B99",
+      "afterSha256": "1BABCE97E55A6EBF1728F1529BCCE18BB2CFB55367BCB43789F747F20D13C1A0"
+    },
+    {
+      "path": "docs/mvp-development-plan-2026-11-09.md",
+      "beforeSha256": "B9611560D0EBBC98B207BC73AB56402E7D201BED4F912C43C37601A19F7813FE",
+      "afterSha256": "F131F524DA451275D374F9B91FFB10C465A13FD6FEF5B1363257957AECF91E6F"
+    },
+    {
+      "path": "packages/application/src/index.ts",
+      "beforeSha256": "552D8262FE4D4FCA6A8E9BFA4DCA85515D420EF6704CA13FDFBAE7A3C1ACEF8E",
+      "afterSha256": "08F8039030E6B49FA34C5A4ADD82894C0AF1091734C72A0CF60A64EA3C2CFC86"
+    },
+    {
+      "path": "packages/application/src/productivity.ts",
+      "beforeSha256": "72A1991CBE9FF670F177AA2FA7D2DB66E476E44E096AC80E17AE8088FDF433F5",
+      "afterSha256": "5FBC0B77AD43D7C89B73865FDDA7D2784C4C2ED731010C4206498ED225A01EBA"
+    },
+    {
+      "path": "packages/storage-mobile/src/index.ts",
+      "beforeSha256": "613E32973CE522B1AB13DE21227F449A9A697CC3F07AF69674EC552479F72944",
+      "afterSha256": "EEC2983582F805510805F5928948BD9F07C0A259D0F3E0570D0F6E5646976439"
+    },
+    {
+      "path": "packages/storage-mobile/src/workspace.ts",
+      "beforeSha256": "874B74A95107AE64BE989F6D3AF22B7E7BF5326C26FD83014A3B2A0F1892DAE1",
+      "afterSha256": "95EED862589E2CD8AC9A6171F3065C3D33BF0F8999B79C88686D89A44AFA4F6C"
+    }
+  ],
+  "unexpectedExistingChanges": [],
+  "newFiles": [
+    {
+      "path": "packages/application/src/personal-tasks.ts",
+      "sha256": "C95E364EDB2D0D870B937CC2013578C768E265AABE8F1DB146105AD555E98370"
+    },
+    {
+      "path": "packages/application/src/personal-tasks.test.ts",
+      "sha256": "A4EFAF9F0418F459582C9556AA816C6E53DFA4BDDCBCFEC9368E50A683F7A7E7"
+    },
+    {
+      "path": "packages/storage-mobile/src/personal-tasks.ts",
+      "sha256": "B26E0B8395A84AD67870681D7A632B989AFEA6004AD5D6DDACD51B3BBCE3958E"
+    },
+    {
+      "path": "apps/client/src/personal-task-adapters.ts",
+      "sha256": "2E0BCFCE51E9E82682C676EFD8A44C74A7B53CAD3278ECC87B943EA7536D9120"
+    },
+    {
+      "path": "apps/client/src/personal-task-adapters.test.ts",
+      "sha256": "421A64C9A1C65CF06F2444AE087899F66BA491696C5EC6BCCCB466D650DD534B"
+    },
+    {
+      "path": "apps/client/src/personal-task-storage.ts",
+      "sha256": "2517D1CCEB8770E077D847A805141964282819951CAE25720CA21DC5DC7E195F"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/personal_queries.rs",
+      "sha256": "AF875612C46545A3AE09874140748FA92FC33AFD8720C91C3677AB0D9C7935B8"
+    },
+    {
+      "path": "docs/p0/personal-task-interface.md",
+      "sha256": "C8A85C4B0D42CB461A694FD521DE893F18CAC8BD40818BF0F7E177F7B276D399"
+    },
+    {
+      "path": "docs/p0/implementation-p0-03.md",
+      "sha256": "9B8B8EBDE468980E7B3E43DEAF85694FABF6ED907F72C5D082EEED970EA1205D"
+    }
+  ],
+  "migrationFilesChanged": false,
+  "databaseSchemaVersions": {
+    "desktop": 25,
+    "mobile": 5
+  },
+  "realUserDataRead": false,
+  "realUserMigration": false,
+  "deployed": false,
+  "mobileVerification": "Host SQLite and real MobileStorage transactions; Android device UI acceptance remains P4",
+  "nativeVerification": "Real temporary Store, personal snapshot, entity replication, P0-02 upgrades/restore and full native suite",
+  "checks": [
+    "All personal tasks without Today membership",
+    "Same identity for list/detail/project changes",
+    "Raw waiting/blocked/cancelled projection",
+    "Date and instant timezone/DST boundaries",
+    "Flat and legacy-leaf progress",
+    "Unknown completion date preserved on edits/sync",
+    "Known completion timestamp preserved across sync",
+    "Native CAS independent of wire version",
+    "Account/workspace and transactional preview guards",
+    "Frozen unknown-result retry",
+    "Unknown fields and same-day typed deadline edits retained"
+  ],
+  "completedTasks": 3,
+  "pendingTasks": 15,
+  "nextTask": "P1-01",
+  "brokenDocumentLinks": [],
+  "buildWarnings": [
+    "Client dynamic/static import chunk notices",
+    "Client chunks over 500 kB",
+    "Native incremental hard-link fallback and linker messages"
+  ]
+}

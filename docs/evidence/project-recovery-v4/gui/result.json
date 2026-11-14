@@ -1,0 +1,6 @@
+{
+  "testedAt": "2026-10-25T16:21:55.443Z",
+  "checks": [],
+  "errors": [],
+  "error": "Error: Desktop verification cannot connect to the local debug port: EACCES. Error: browserType.connectOverCDP: connect EACCES 127.0.0.1:1393\nCall log:\n\u001b[2m  - <ws preparing> retrieving websocket url from http://127.0.0.1:1393\u001b[22m\n"
+}

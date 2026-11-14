@@ -1,0 +1,731 @@
+{
+  "auditedAt": "2026-11-12T15:13:13.652Z",
+  "clientTimeZone": "Asia/Hong_Kong",
+  "auditKind": "read-only source protection and evidence count verification",
+  "passed": true,
+  "baseline": {
+    "path": ".scratch/remaining-mvp-baseline/pre-existing-files.json",
+    "sha256": "e1821eb931c11caedb2579e369fdb23963fb4c80f05cc27d858392eb38c30710",
+    "files": 565
+  },
+  "source": {
+    "passed": true,
+    "unchangedCount": 538,
+    "modifiedCount": 27,
+    "addedCount": 25,
+    "missing": [],
+    "unexpectedModified": [],
+    "unexpectedAdded": [],
+    "modified": [
+      {
+        "file": "apps/api/src/ai-contract.ts",
+        "beforeSha256": "76d16ea06c5f2420a7e41498076e6e2aad89a78b5c6121b468fe5a10d78500fc",
+        "currentSha256": "f47ab7b567bc494a7aebaa813cd10ed2b3c38b973a2fec812788e7776aa39f9f",
+        "expected": true,
+        "reason": "P3 personal AI request/result contracts"
+      },
+      {
+        "file": "apps/api/src/ai.ts",
+        "beforeSha256": "c2fe318357672ffcfe9c189ce059377f8501aa316c0ed4606012a91a6d638b72",
+        "currentSha256": "bb5845a9ac0ff057329f572f38d224ca025882ad832b65f00e3afa76882a22c2",
+        "expected": true,
+        "reason": "P3 personal generation and read-only suggestion constraints"
+      },
+      {
+        "file": "apps/client/src/PersonalProjectList.tsx",
+        "beforeSha256": "6c2db04c10a4b6db0840749c5286f9c153f160a30fa58f7b28b9a9f53b5bb33c",
+        "currentSha256": "f4d53f7a40d74d362745e0c61f1f9cbc40523232104846ac8df77ac5d9de01fc",
+        "expected": true,
+        "reason": "P1-04 shared progress and empty/completed feedback"
+      },
+      {
+        "file": "apps/client/src/PersonalTodoHome.tsx",
+        "beforeSha256": "1003a2781583e863333c322dcfa53f729e876d04b052db97af211d34627422ba",
+        "currentSha256": "fa2842f1690ee3f31c808aae404e42e6ceb710d2e9e8b8f7b966c591ce1ff5da",
+        "expected": true,
+        "reason": "P1-04 recovery/undo, P2 growth and P3 assistant integration"
+      },
+      {
+        "file": "apps/client/src/ai-mobile-adapter.test.ts",
+        "beforeSha256": "ee135e1977320b684177ef8214761a6384f94e5dc962b41a2501bef91746c74c",
+        "currentSha256": "f5a19f9e526ab11dddecbe1760c64b0c86595da5d0b7e6e471539c4f4cd4caa9",
+        "expected": true,
+        "reason": "P3 mobile adoption and compatibility regression"
+      },
+      {
+        "file": "apps/client/src/ai-mobile-adapter.ts",
+        "beforeSha256": "c04037a8d72e4e44473f36f6847c7d83b12fe5168ce83016739aacea263b03f7",
+        "currentSha256": "c4b4b256f065bdab3d8900f4a54c0c2a1ce004145a0edd3631c55657ef6be1a8",
+        "expected": true,
+        "reason": "P3 stable personal adoption/receipt behavior"
+      },
+      {
+        "file": "apps/client/src/personal-task-adapters.test.ts",
+        "beforeSha256": "bdce148bbc25dda48b8a8e712294c26ee5ca8f388176d5c0f097df1fcafb3a3f",
+        "currentSha256": "240415c08809815090f295fce58b5dbe7a87c9ed9199c2a1343a168a619377d5",
+        "expected": true,
+        "reason": "P1-04 recovery/CAS/receipt regression"
+      },
+      {
+        "file": "apps/client/src/personal-task-adapters.ts",
+        "beforeSha256": "b65ef1b1a4aafa0a0ff8a9bf4bd435774cb00b7792c6ef52e7c68a8e2c1de268",
+        "currentSha256": "9709b9e573cd97c2f6759b063cb7cce76af0a1ea3cf0bb18b05dd796dfec5a70",
+        "expected": true,
+        "reason": "P1-04 native/mobile recovery and undo adapters"
+      },
+      {
+        "file": "apps/client/src/personal-task-storage.ts",
+        "beforeSha256": "994e985223914eca865cf99eaa406a51749116d3816c349999bef26221e2607c",
+        "currentSha256": "2aec13191e2e94d5429236095b13175b36c67398faf4357f6e5ba9265acde503",
+        "expected": true,
+        "reason": "P1-04 trusted recovery bridge wiring"
+      },
+      {
+        "file": "apps/client/src/personal-todo.css",
+        "beforeSha256": "53670f7935b52574c13d7041172193d053dea5f84c2a5025e280cfd556b3961a",
+        "currentSha256": "a03df3e0db74606726f997623ef93497327c271be14c320e182738fb7bf61717",
+        "expected": true,
+        "reason": "P1-04/P1-05 recovery and shared page layout"
+      },
+      {
+        "file": "apps/desktop/src-tauri/src/store/ai.rs",
+        "beforeSha256": "44d70545e749d452018caa9188def626e5c559bf2f91477f0166b32e3fe0ed66",
+        "currentSha256": "f54ae6e124007fb1c8f447a8774d1d94ff6f3a634f366b4e28a3e5862140c2f5",
+        "expected": true,
+        "reason": "P3 personal adoption using existing transactions"
+      },
+      {
+        "file": "apps/desktop/src-tauri/tests/ai.rs",
+        "beforeSha256": "3efdeda534c84078020a37b64f88cf804f8d670dabf7dc7a891e4df9317f9627",
+        "currentSha256": "d6eb19c2c29f6a475b61f43ac05ca0a764bba231023012638de7ddd12e6a3153",
+        "expected": true,
+        "reason": "P3 native personal adoption regression"
+      },
+      {
+        "file": "docs/mvp-development-plan-2026-11-09.md",
+        "beforeSha256": "14e420cbba25e5e0475c0b5953ef65e04395571b4ba689db1241406789b801f0",
+        "currentSha256": "868c5a87d21c57eacc8a7797911d5d09202d6165a8d79b8591d9e620ac732639",
+        "expected": true,
+        "reason": "Authorized final task/evidence status update"
+      },
+      {
+        "file": "packages/application/src/personal-tasks.ts",
+        "beforeSha256": "b70fd492df94842dac8b2e1357db79ab71bc57e729037328c34691731ea7f4ee",
+        "currentSha256": "48dee9544426abc407e42a1ddba907f3f3c82695ea77565b6042e686ced6ac1f",
+        "expected": true,
+        "reason": "P1-04 versioned deletion/restoration/undo contract"
+      },
+      {
+        "file": "scripts/fixtures/personal-inline-scenario.mjs",
+        "beforeSha256": "a601dd74560ae34672218cebc6469ca9983ade15b32c9353d347dc653aa290da",
+        "currentSha256": "5d478c3cc0b6c014446de15516aad5a192d407016ae67b975d88756ab9177671",
+        "expected": true,
+        "reason": "Regression selector scoped to completed section"
+      },
+      {
+        "file": "scripts/fixtures/personal-project-scenario.mjs",
+        "beforeSha256": "95a17ae3189e0b1176d937ffd2c3f1f36d1743a829081a9eca88b0cc5668bb33",
+        "currentSha256": "f5ff4dc9b29d866718204f5a8bf45c886b262999d67399d7062aebdd4668df21",
+        "expected": true,
+        "reason": "Regression navigation selector scoped to new primary project destination"
+      },
+      {
+        "file": "scripts/fixtures/personal-todo-browser.mjs",
+        "beforeSha256": "f59e6272fc551104e2b919cf276bf2915bc69e80d9017fbd3844242616bb5932",
+        "currentSha256": "9d4135fc01aaf9022cb08bce6c5a7fd4b6aa7624b31e02bf500af9e933f8caf1",
+        "expected": true,
+        "reason": "Isolated native/Capacitor/receipt/recovery test bridges"
+      },
+      {
+        "file": "scripts/personal-todo-smoke.mjs",
+        "beforeSha256": "771655e2424f302c8af43b11b6c49b6183c3f722040845cfa104b9a2c9da98a9",
+        "currentSha256": "aac9f9cff9318574f9e0e5670acca0dec12b46f96163d704aa508ffcae7b9aaa",
+        "expected": true,
+        "reason": "Isolated regression scenarios and metadata"
+      },
+      {
+        "file": "apps/client/src/App.tsx",
+        "beforeSha256": "5423c3c5ef3329af2e7be43890c9898ff08982b88104ecee16ff8f356010e431",
+        "currentSha256": "393b6009055f79d69be3d4779e357400cfd5e21ca7129c25e965f413b5c5ccbe",
+        "expected": true,
+        "reason": "P1-05 two primary destinations and P3 panel wiring"
+      },
+      {
+        "file": "apps/client/src/ProductivityView.tsx",
+        "beforeSha256": "a4acdbd7b836457c14ab88e44713cf795e183f429ac6c0242c70b6cf55422eaf",
+        "currentSha256": "b2da2edbbbd40774341a3c47dc4eb8f6e57fb3288236d332e8660cc20b801a44",
+        "expected": true,
+        "reason": "P1-05 preserved advanced/compatibility navigation"
+      },
+      {
+        "file": "apps/client/src/ProjectsView.tsx",
+        "beforeSha256": "73901f4244f686985a0d75442d3d2e7217c54ee5f7cca32db0d8f5e052bd87d4",
+        "currentSha256": "eb6b218cde735228c44785969ed75109a9f60e1c034937495d91e069769cad09",
+        "expected": true,
+        "reason": "P1-05 project/assistant and preserved legacy views"
+      },
+      {
+        "file": "apps/client/src/mobile/MobileApp.tsx",
+        "beforeSha256": "0b6811b7548751ee5546ed2adb668d52a32a3ce186df9f2481b43ec905aa95cc",
+        "currentSha256": "3c3707426bfdf2ca23a558b8ad4b65130e4f8eb8278197b129214ecd532e5b25",
+        "expected": true,
+        "reason": "P1-05 two primary destinations and P3 panel wiring"
+      },
+      {
+        "file": "apps/client/src/mobile/MobileNavIcon.tsx",
+        "beforeSha256": "ec481c8addbf50e71d8ed792bedb8a8ffd3db0f7cf7cc87702e0e385284cc414",
+        "currentSha256": "29df4906d21217cbee2e2b9d2cb9b50267e7d3a749b196924efb5f6f6278cdc6",
+        "expected": true,
+        "reason": "P1-05 project navigation icon"
+      },
+      {
+        "file": "apps/desktop/src-tauri/src/store/productivity.rs",
+        "beforeSha256": "697087ac542a4b32ff911e49c83bd48fe60b5f036a910cc4f17b97b0e4a7d325",
+        "currentSha256": "f63a9bce82868bd05366953078bf7faa4c627b4641579f2bcbbb818bdbeac769",
+        "expected": true,
+        "reason": "P1-04 original-fact undo within existing transaction"
+      },
+      {
+        "file": "apps/desktop/src-tauri/src/store/trash.rs",
+        "beforeSha256": "ebc1c6ce5310bfe22e572aa2063b5525e8a9fbbab95301618b741ebfd649935b",
+        "currentSha256": "f3588ba5228873daa5bf1eccdc64df4e8b5115a2c3dc9d06bd027439d9009f09",
+        "expected": true,
+        "reason": "P1-04 version-checked restoration and simple task eligibility"
+      },
+      {
+        "file": "apps/mobile/android/app/build.gradle",
+        "beforeSha256": "6a1f735bf719a8561cfe0425c5e1c292e809d23c6c15967711ba5ba5acafbf25",
+        "currentSha256": "97e113a0b9368cc1f39bedc9d1e491a1f74a85abf7e8a7afe8967b9e46fb434f",
+        "expected": true,
+        "reason": "Opt-in com.praxis.mobile.qa acceptance build; production package remains default"
+      },
+      {
+        "file": "packages/storage-mobile/src/workspace.ts",
+        "beforeSha256": "95eed862589e2cd8ac9a6171f3065c3d33bf0f8999b79c88686d89a44afa4f6c",
+        "currentSha256": "08cd0b488fb5d87829a671eea3ba383672206abfec7fc604a67e750e33a10360",
+        "expected": true,
+        "reason": "P1-04 transactional original completion-fact preservation"
+      }
+    ],
+    "added": [
+      {
+        "file": "apps/api/src/ai-personal.test.ts",
+        "currentSha256": "f506ef6287c5d38e5bd3abab05156854330a43bed317e7bb307bdc6ccd7028c5",
+        "expected": true,
+        "reason": "Authorized P1/P2/P3 regression tests"
+      },
+      {
+        "file": "apps/client/src/PersonalAgentPanel.tsx",
+        "currentSha256": "cd369f499553add7c662252744a6ac4e3930390507ec415df1f02a270a9a3f69",
+        "expected": true,
+        "reason": "Authorized P1/P2/P3 production module or UI"
+      },
+      {
+        "file": "apps/client/src/PersonalGrowthStrip.tsx",
+        "currentSha256": "705accb6de952d694fba97b4496ff05143d21837a91c8055a7483a84daee2f26",
+        "expected": true,
+        "reason": "Authorized P1/P2/P3 production module or UI"
+      },
+      {
+        "file": "apps/client/src/personal-agent-model.test.ts",
+        "currentSha256": "f339098c355401e8b22031285566c4500c19b26a94ebaea8d39e69d0f42a63aa",
+        "expected": true,
+        "reason": "Authorized P1/P2/P3 regression tests"
+      },
+      {
+        "file": "apps/client/src/personal-agent-model.ts",
+        "currentSha256": "bfcbde1a5d3854325a99e433424e25332c236de996256150c47ff7cfa76918f4",
+        "expected": true,
+        "reason": "Authorized P1/P2/P3 production module or UI"
+      },
+      {
+        "file": "apps/client/src/personal-agent-storage.ts",
+        "currentSha256": "87d4be48a376e17984b98a46ba4a9e6a6033120cf26abcb9bc7d65c1b2dd543c",
+        "expected": true,
+        "reason": "Authorized P1/P2/P3 production module or UI"
+      },
+      {
+        "file": "apps/client/src/personal-agent.css",
+        "currentSha256": "acac83aeedc10f9eb2f31b525333c9b8313452c54701cf21015bfbe6b00681d9",
+        "expected": true,
+        "reason": "Authorized P1/P2/P3 production module or UI"
+      },
+      {
+        "file": "apps/client/src/personal-growth-settings.test.ts",
+        "currentSha256": "2e5baf79e23b1f5de2148bc4330ba31f6ed6ae59092ec30f34730d764a8a3e4f",
+        "expected": true,
+        "reason": "Authorized P1/P2/P3 regression tests"
+      },
+      {
+        "file": "apps/client/src/personal-growth-settings.ts",
+        "currentSha256": "e3e6739014171e8831bed1f33267f1c2439ee0f0957cc359d4b2221539d2913f",
+        "expected": true,
+        "reason": "Authorized P1/P2/P3 production module or UI"
+      },
+      {
+        "file": "apps/client/src/personal-growth-storage.test.ts",
+        "currentSha256": "2f74c74e85aaccefa96ab5b82d4cddbcfc10c9a0c033c98a5de0938ab63dbdee",
+        "expected": true,
+        "reason": "Authorized P1/P2/P3 regression tests"
+      },
+      {
+        "file": "apps/client/src/personal-growth.css",
+        "currentSha256": "42d417e7e47417ca3ca3788b93b15a78c4ff9735331caca7237eee7cf1085d70",
+        "expected": true,
+        "reason": "Authorized P1/P2/P3 production module or UI"
+      },
+      {
+        "file": "apps/client/src/personal-shell.css",
+        "currentSha256": "fcb1b8004813f8963cc5ea04f96d8e8db02d6a6008dc0e47771090f9b63edcbf",
+        "expected": true,
+        "reason": "Authorized P1/P2/P3 production module or UI"
+      },
+      {
+        "file": "apps/desktop/src-tauri/tests/personal_recovery.rs",
+        "currentSha256": "9c44be6dc605df858686c32df24d9fa963242ccb4026abfee22eba2b09e6329a",
+        "expected": true,
+        "reason": "Authorized P1/P2/P3 regression tests"
+      },
+      {
+        "file": "docs/p1/implementation-p1-04.md",
+        "currentSha256": "0503a08f48be19df662fe76b2f8c51206f8c9a1d7d5726a3728251f04cd5583b",
+        "expected": true,
+        "reason": "Authorized implementation/verification documentation"
+      },
+      {
+        "file": "docs/p1/implementation-p1-05.md",
+        "currentSha256": "d467c62e631e7663b9c314ac5b55c9aabb42944fbefb86e8abd16ed194a513f8",
+        "expected": true,
+        "reason": "Authorized implementation/verification documentation"
+      },
+      {
+        "file": "docs/p2/implementation-personal-growth.md",
+        "currentSha256": "593601159b86a2d6a8319c8454e3bbf6cbf89509530dfaa0ff833c41787bfa4d",
+        "expected": true,
+        "reason": "Authorized implementation/verification documentation"
+      },
+      {
+        "file": "docs/p3/implementation-p3-01-04.md",
+        "currentSha256": "8a4eae443d5508b3f424625d81ef4dba1dc825f2074ea5ab3dd29cdd26c9c4ea",
+        "expected": true,
+        "reason": "Authorized implementation/verification documentation"
+      },
+      {
+        "file": "docs/p4/personal-mvp-acceptance-2026-11-12.md",
+        "currentSha256": "95178c737675f763900c0a0a8045cad1fc4f1d70b61f66bef9e654103e7787a9",
+        "expected": true,
+        "reason": "Authorized implementation/verification documentation"
+      },
+      {
+        "file": "packages/application/src/personal-growth.test.ts",
+        "currentSha256": "afd07b42d253966a2692eda956f7d479bc3cf1232dbb3c1712aaf72a8b6af290",
+        "expected": true,
+        "reason": "Authorized P1/P2/P3 regression tests"
+      },
+      {
+        "file": "packages/application/src/personal-growth.ts",
+        "currentSha256": "e38d84632ada7854e579950e759fbd2e4dd59c1613c70a9b25acf38b25613c57",
+        "expected": true,
+        "reason": "Authorized P1/P2/P3 production module or UI"
+      },
+      {
+        "file": "scripts/fixtures/remaining-mvp-scenario.mjs",
+        "currentSha256": "550163a507037eead90c0f146bc1e538281033942d6b0e92231c8d699c05a9b1",
+        "expected": true,
+        "reason": "Authorized isolated/live/native acceptance tooling"
+      },
+      {
+        "file": "scripts/personal-agent-live-smoke.mjs",
+        "currentSha256": "de1be1c25f7f27ce1d3199d1075286016ef6bd63ede192b6ea6721836030ed9b",
+        "expected": true,
+        "reason": "Authorized isolated/live/native acceptance tooling"
+      },
+      {
+        "file": "scripts/personal-growth-smoke.mjs",
+        "currentSha256": "bfa3fb20e3e66a86b51c546fbf0245de6c0eb0a19fa4962e19b9bf9a8a637a14",
+        "expected": true,
+        "reason": "Authorized isolated/live/native acceptance tooling"
+      },
+      {
+        "file": "scripts/personal-native-acceptance.mjs",
+        "currentSha256": "d026e90340938867969701504784baf4af6c8549ad84827794a2d38945908913",
+        "expected": true,
+        "reason": "Authorized isolated/live/native acceptance tooling"
+      },
+      {
+        "file": "scripts/remaining-mvp-smoke.mjs",
+        "currentSha256": "ced17637d3fda92f951dd837c4764117e80293117cad4ea6085bc86520b6356a",
+        "expected": true,
+        "reason": "Authorized isolated/live/native acceptance tooling"
+      }
+    ]
+  },
+  "schema": {
+    "baselineMigrationFiles": 25,
+    "unchangedMigrationFiles": 25,
+    "modifiedMigrations": [],
+    "newMigrations": [],
+    "migrationFiles": [
+      "apps/desktop/src-tauri/migrations/0024_ai_planner.sql",
+      "apps/desktop/src-tauri/migrations/0025_cultivation_rewards.sql",
+      "apps/desktop/src-tauri/migrations/0001_capture.sql",
+      "apps/desktop/src-tauri/migrations/0002_completion.sql",
+      "apps/desktop/src-tauri/migrations/0003_edit.sql",
+      "apps/desktop/src-tauri/migrations/0004_planning.sql",
+      "apps/desktop/src-tauri/migrations/0005_projects.sql",
+      "apps/desktop/src-tauri/migrations/0006_task_details.sql",
+      "apps/desktop/src-tauri/migrations/0007_subtasks.sql",
+      "apps/desktop/src-tauri/migrations/0008_project_workspace.sql",
+      "apps/desktop/src-tauri/migrations/0009_day_periods.sql",
+      "apps/desktop/src-tauri/migrations/0010_capture_records.sql",
+      "apps/desktop/src-tauri/migrations/0011_productivity.sql",
+      "apps/desktop/src-tauri/migrations/0012_trash.sql",
+      "apps/desktop/src-tauri/migrations/0013_recurrence.sql",
+      "apps/desktop/src-tauri/migrations/0014_habits.sql",
+      "apps/desktop/src-tauri/migrations/0016_views.sql",
+      "apps/desktop/src-tauri/migrations/0017_recurrence_rules.sql",
+      "apps/desktop/src-tauri/migrations/0018_reviews.sql",
+      "apps/desktop/src-tauri/migrations/0019_trash_retention.sql",
+      "apps/desktop/src-tauri/migrations/0020_lan_sync.sql",
+      "apps/desktop/src-tauri/migrations/0021_lan_entities.sql",
+      "apps/desktop/src-tauri/migrations/0022_rule_sync_fields.sql",
+      "apps/desktop/src-tauri/migrations/0023_habit_daily_plans.sql",
+      "packages/storage-mobile/src/migration.ts"
+    ],
+    "ddlOccurrencesInChangedOrNewProductionSources": [
+      {
+        "file": "apps/api/src/ai.ts",
+        "line": 473,
+        "kind": "CREATE TABLE",
+        "expectedLegacyInitializer": true,
+        "evidence": "docs/implementation-ai-planner-v1.md:27 documents the pre-existing ai_runs store"
+      }
+    ],
+    "unexpectedDdl": [],
+    "conclusion": "No migration source changes or new migration files observed; native schema 25 and mobile schema 5 remain the established baseline. The only literal DDL occurrence in changed production code is the documented pre-existing ai_runs initializer."
+  },
+  "evidence": {
+    "countsAccurate": true,
+    "typescript": {
+      "files": 57,
+      "passed": 329,
+      "source": "typescript-tests.txt"
+    },
+    "rust": {
+      "passed": 185,
+      "reportedSuites": 32,
+      "source": "native-tests.txt"
+    },
+    "browser": {
+      "passed": 86,
+      "runs": [
+        {
+          "directory": "todo-regression",
+          "passed": true,
+          "checks": 14,
+          "errors": [],
+          "executedAt": "2026-11-12T14:54:52.308Z"
+        },
+        {
+          "directory": "project-regression",
+          "passed": true,
+          "checks": 16,
+          "errors": [],
+          "executedAt": "2026-11-12T14:55:46.500Z"
+        },
+        {
+          "directory": "inline-regression",
+          "passed": true,
+          "checks": 28,
+          "errors": [],
+          "executedAt": "2026-11-12T14:56:13.707Z"
+        },
+        {
+          "directory": "browser",
+          "passed": true,
+          "checks": 28,
+          "errors": [],
+          "executedAt": "2026-11-12T14:56:34.442Z"
+        }
+      ],
+      "aggregateMatches": true
+    },
+    "notReexecutedByThisAudit": true
+  },
+  "git": {
+    "available": true,
+    "head": "ae726139e27109a76ea0c171a3a15e3172aa96d1",
+    "statusShort": [
+      "M  .gitignore",
+      " M Praxis_DEV_PLAN_v0.1.md",
+      " M Praxis_SPEC_v0.1.md",
+      "MM README.md",
+      " M Spec.md",
+      " M apps/api/package.json",
+      " M apps/api/src/accounts.ts",
+      " M apps/api/src/entities.ts",
+      " M apps/api/src/main.ts",
+      " M apps/api/src/server.ts",
+      " M apps/api/src/store.ts",
+      " M apps/client/src/AccountPanel.tsx",
+      " M apps/client/src/App.tsx",
+      " M apps/client/src/DateStrip.tsx",
+      " M apps/client/src/InboxTaskPanel.tsx",
+      " M apps/client/src/InboxView.tsx",
+      " M apps/client/src/ProductivityView.tsx",
+      " M apps/client/src/ProjectContextPanel.tsx",
+      " M apps/client/src/ProjectLifecycle.tsx",
+      " M apps/client/src/ProjectNavigation.tsx",
+      " M apps/client/src/ProjectTaskPanel.tsx",
+      " M apps/client/src/ProjectsView.tsx",
+      " M apps/client/src/RepeatView.tsx",
+      " M apps/client/src/SearchViews.tsx",
+      " M apps/client/src/SettingsView.tsx",
+      " M apps/client/src/TaskDetailPanel.tsx",
+      " M apps/client/src/TaskDetailsButton.tsx",
+      " M apps/client/src/TaskPanelIcon.tsx",
+      " M apps/client/src/account.css",
+      " M apps/client/src/daily-preparation.ts",
+      " M apps/client/src/main.tsx",
+      " M apps/client/src/mobile/Inbox.tsx",
+      " M apps/client/src/mobile/MobileApp.tsx",
+      " M apps/client/src/mobile/MobileDrawer.tsx",
+      " M apps/client/src/mobile/MobileNavIcon.tsx",
+      " M apps/client/src/mobile/MonthCalendar.tsx",
+      " M apps/client/src/mobile/mobile-dashboard.css",
+      " M apps/client/src/mobile/mobile-drawer.css",
+      " M apps/client/src/mobile/mobile.css",
+      " M apps/client/src/mobile/quick-inbox.css",
+      " M apps/client/src/modern.css",
+      " M apps/client/src/search-views.css",
+      " M apps/client/src/storage.ts",
+      " M apps/client/src/theme.css",
+      " M apps/client/src/todoist.css",
+      " M apps/client/src/useProjectList.ts",
+      "M  apps/desktop/src-tauri/src/accounts.rs",
+      " M apps/desktop/src-tauri/src/lib.rs",
+      " M apps/desktop/src-tauri/src/store.rs",
+      " M apps/desktop/src-tauri/src/store/entities.rs",
+      " M apps/desktop/src-tauri/src/store/inbox.rs",
+      " M apps/desktop/src-tauri/src/store/lan.rs",
+      " M apps/desktop/src-tauri/src/store/productivity.rs",
+      " M apps/desktop/src-tauri/src/store/trash.rs",
+      " M apps/desktop/src-tauri/src/store/workspace.rs",
+      " M apps/mobile/android/app/build.gradle",
+      "MM apps/mobile/android/app/src/main/java/com/praxis/mobile/LanSyncPlugin.java",
+      " M package.json",
+      " M packages/application/src/capture-today.test.ts",
+      " M packages/application/src/capture-today.ts",
+      " M packages/application/src/index.ts",
+      " M packages/application/src/productivity.ts",
+      " M packages/storage-mobile/src/index.ts",
+      " M packages/storage-mobile/src/workspace.ts",
+      "?? .codex/",
+      "?? .dockerignore",
+      "?? .scratch/ai-agent-save-20261025/",
+      "?? .scratch/ai-java-check/",
+      "?? .scratch/mvp-m0-baseline/",
+      "?? .scratch/mvp-m1-01-baseline/",
+      "?? .scratch/p0-02-baseline/",
+      "?? .scratch/p0-03-baseline/",
+      "?? .scratch/p1-01-baseline/",
+      "?? .scratch/p1-01-vite-cache/",
+      "?? .scratch/p1-02-baseline/",
+      "?? .scratch/p1-03-baseline/",
+      "?? .scratch/p1-04-model-review.mjs",
+      "?? .scratch/p2-growth-vite-cache/",
+      "?? .scratch/p4-native-GwdfWi/",
+      "?? .scratch/p4-native-W8aDKZ/",
+      "?? .scratch/p4-native-X4HFNh/",
+      "?? .scratch/p4-native-p6r7HZ/",
+      "?? .scratch/p4-native-wCcivS/",
+      "?? .scratch/product-ux-20261025/",
+      "?? .scratch/product-ux-save-20261025/",
+      "?? .scratch/recovery-review-vite-cache/",
+      "?? .scratch/remaining-built-desktop.exe",
+      "?? .scratch/remaining-mvp-baseline/",
+      "?? .scratch/remaining-mvp-delivery/",
+      "?? .scratch/remaining-mvp-device/",
+      "?? .scratch/remaining-mvp-final-check.mjs",
+      "?? .scratch/remaining-mvp-source-audit.mjs",
+      "?? CONTEXT.md",
+      "?? Dockerfile",
+      "?? apps/api/scripts/",
+      "?? apps/api/src/admin-web/",
+      "?? apps/api/src/admin.test.ts",
+      "?? apps/api/src/admin.ts",
+      "?? apps/api/src/ai-contract.ts",
+      "?? apps/api/src/ai-personal.test.ts",
+      "?? apps/api/src/ai-provider.test.ts",
+      "?? apps/api/src/ai-recovery.test.ts",
+      "?? apps/api/src/ai.test.ts",
+      "?? apps/api/src/ai.ts",
+      "?? apps/api/src/m0-isolation.test.ts",
+      "?? apps/api/src/personal-scope.test.ts",
+      "?? apps/client/src/ActionNotice.tsx",
+      "?? apps/client/src/AiContextPreview.tsx",
+      "?? apps/client/src/AiPlannerPanel.tsx",
+      "?? apps/client/src/CultivationPanel.tsx",
+      "?? apps/client/src/PersonalAgentPanel.tsx",
+      "?? apps/client/src/PersonalGrowthStrip.tsx",
+      "?? apps/client/src/PersonalProjectForm.tsx",
+      "?? apps/client/src/PersonalProjectList.tsx",
+      "?? apps/client/src/PersonalTaskComposer.tsx",
+      "?? apps/client/src/PersonalTaskInlineEditor.tsx",
+      "?? apps/client/src/PersonalTodoHome.tsx",
+      "?? apps/client/src/WorkTaskProperties.tsx",
+      "?? apps/client/src/action-notice.css",
+      "?? apps/client/src/ai-context-mobile.test.ts",
+      "?? apps/client/src/ai-context-mobile.ts",
+      "?? apps/client/src/ai-mobile-adapter.test.ts",
+      "?? apps/client/src/ai-mobile-adapter.ts",
+      "?? apps/client/src/ai-planner-model.test.ts",
+      "?? apps/client/src/ai-planner-model.ts",
+      "?? apps/client/src/ai-planner.css",
+      "?? apps/client/src/ai-storage.ts",
+      "?? apps/client/src/cultivation-goal-draft.test.ts",
+      "?? apps/client/src/cultivation-goal-draft.ts",
+      "?? apps/client/src/cultivation-model.test.ts",
+      "?? apps/client/src/cultivation-model.ts",
+      "?? apps/client/src/cultivation.css",
+      "?? apps/client/src/mobile/QuickTaskEntry.tsx",
+      "?? apps/client/src/mobile/quick-task-entry.css",
+      "?? apps/client/src/personal-agent-model.test.ts",
+      "?? apps/client/src/personal-agent-model.ts",
+      "?? apps/client/src/personal-agent-storage.ts",
+      "?? apps/client/src/personal-agent.css",
+      "?? apps/client/src/personal-growth-settings.test.ts",
+      "?? apps/client/src/personal-growth-settings.ts",
+      "?? apps/client/src/personal-growth-storage.test.ts",
+      "?? apps/client/src/personal-growth.css",
+      "?? apps/client/src/personal-project-adapters.test.ts",
+      "?? apps/client/src/personal-project-adapters.ts",
+      "?? apps/client/src/personal-project-storage.ts",
+      "?? apps/client/src/personal-projects.css",
+      "?? apps/client/src/personal-shell.css",
+      "?? apps/client/src/personal-task-adapters.test.ts",
+      "?? apps/client/src/personal-task-adapters.ts",
+      "?? apps/client/src/personal-task-editor.test.ts",
+      "?? apps/client/src/personal-task-editor.ts",
+      "?? apps/client/src/personal-task-inline.css",
+      "?? apps/client/src/personal-task-storage.ts",
+      "?? apps/client/src/personal-todo.css",
+      "?? apps/client/src/redesign.css",
+      "?? apps/client/src/task-editor.css",
+      "?? apps/client/src/useImeSubmit.ts",
+      "?? apps/desktop/src-tauri/migrations/0024_ai_planner.sql",
+      "?? apps/desktop/src-tauri/migrations/0025_cultivation_rewards.sql",
+      "?? apps/desktop/src-tauri/src/ai_gateway.rs",
+      "?? apps/desktop/src-tauri/src/store/ai.rs",
+      "?? apps/desktop/src-tauri/src/store/ai_context.rs",
+      "?? apps/desktop/src-tauri/src/store/cultivation.rs",
+      "?? apps/desktop/src-tauri/tests/ai.rs",
+      "?? apps/desktop/src-tauri/tests/corruption.rs",
+      "?? apps/desktop/src-tauri/tests/m0_baseline.rs",
+      "?? apps/desktop/src-tauri/tests/personal_compatibility.rs",
+      "?? apps/desktop/src-tauri/tests/personal_inline_tasks.rs",
+      "?? apps/desktop/src-tauri/tests/personal_projects.rs",
+      "?? apps/desktop/src-tauri/tests/personal_queries.rs",
+      "?? apps/desktop/src-tauri/tests/personal_recovery.rs",
+      "?? apps/desktop/src-tauri/tests/usability.rs",
+      "?? compose.yaml",
+      "?? control-audit/",
+      "?? deploy/",
+      "?? docs/ai-agent-integration-design-2026-10-25.md",
+      "?? docs/ai-cultivation-progress.md",
+      "?? docs/archive/",
+      "?? docs/deploy-ecs.md",
+      "?? docs/evidence/admin-ecs/",
+      "?? docs/evidence/admin/",
+      "?? docs/evidence/ai-cultivation-latest/",
+      "?? docs/evidence/ai-deepseek/",
+      "?? docs/evidence/ai-planner-v1/",
+      "?? docs/evidence/calendar-appearance/",
+      "?? docs/evidence/cultivation-layout/",
+      "?? docs/evidence/cultivation-rewards-v3/",
+      "?? docs/evidence/desktop-usability/",
+      "?? docs/evidence/desktop-ux-audit/",
+      "?? docs/evidence/domain-https/",
+      "?? docs/evidence/ecs-clients/",
+      "?? docs/evidence/ecs-deployment.json",
+      "?? docs/evidence/m0-2026-11-10/",
+      "?? docs/evidence/m1-01-2026-11-10/",
+      "?? docs/evidence/mobile-quick-task/",
+      "?? docs/evidence/p0-02-2026-11-11/",
+      "?? docs/evidence/p0-03-2026-11-11/",
+      "?? docs/evidence/p1-01-2026-11-11/",
+      "?? docs/evidence/p1-02-2026-11-11/",
+      "?? docs/evidence/p1-03-2026-11-11/",
+      "?? docs/evidence/p1-04-2026-11-12/",
+      "?? docs/evidence/p2-2026-11-12/",
+      "?? docs/evidence/p3-2026-11-12/",
+      "?? docs/evidence/personal-scope-2026-11-10/",
+      "?? docs/evidence/project-recovery-v4/",
+      "?? docs/evidence/remaining-mvp-2026-11-12/",
+      "?? docs/evidence/self-cultivation-v2/",
+      "?? docs/evidence/user-usability-acceptance/",
+      "?? docs/evidence/user-usability-review-20261018/",
+      "?? docs/implementation-admin.md",
+      "?? docs/implementation-ai-planner-v1.md",
+      "?? docs/implementation-cultivation-rewards.md",
+      "?? docs/implementation-ecs-clients.md",
+      "?? docs/implementation-mobile-quick-task.md",
+      "?? docs/implementation-project-recovery.md",
+      "?? docs/m0/",
+      "?? docs/m1/",
+      "?? docs/mvp-development-plan-2026-11-09.md",
+      "?? docs/mvp-implementation-audit-2026-11-09.md",
+      "?? docs/p0/",
+      "?? docs/p1/",
+      "?? docs/p2/",
+      "?? docs/p3/",
+      "?? docs/p4/",
+      "?? docs/personal-scope-2026-11-10.md",
+      "?? docs/prd-mvp-v0.1.md",
+      "?? docs/product-ux-review-2026-10-25.md",
+      "?? packages/application/src/mvp/",
+      "?? packages/application/src/personal-growth.test.ts",
+      "?? packages/application/src/personal-growth.ts",
+      "?? packages/application/src/personal-projects.test.ts",
+      "?? packages/application/src/personal-projects.ts",
+      "?? packages/application/src/personal-tasks.test.ts",
+      "?? packages/application/src/personal-tasks.ts",
+      "?? packages/storage-mobile/src/personal-compatibility.test.ts",
+      "?? packages/storage-mobile/src/personal-tasks.ts",
+      "?? scripts/admin-ecs-smoke.mjs",
+      "?? scripts/admin-preview.mjs",
+      "?? scripts/admin-smoke.mjs",
+      "?? scripts/ai-live-smoke.mjs",
+      "?? scripts/cultivation-layout-smoke.mjs",
+      "?? scripts/desktop-usability-smoke.mjs",
+      "?? scripts/ecs-dual-client-smoke.mjs",
+      "?? scripts/fixtures/",
+      "?? scripts/native-ai-planner.mjs",
+      "?? scripts/open-usability-preview.ps1",
+      "?? scripts/personal-agent-live-smoke.mjs",
+      "?? scripts/personal-growth-smoke.mjs",
+      "?? scripts/personal-inline-smoke.mjs",
+      "?? scripts/personal-native-acceptance.mjs",
+      "?? scripts/personal-project-smoke.mjs",
+      "?? scripts/personal-todo-smoke.mjs",
+      "?? scripts/remaining-mvp-smoke.mjs",
+      "?? scripts/user-usability-acceptance.mjs",
+      "?? scripts/verify-m0.ps1"
+    ],
+    "diffShortStat": " 61 files changed, 2838 insertions(+), 1311 deletions(-)",
+    "note": "Git reports the whole already-dirty workspace; attribution below uses the independent 565-file SHA-256 baseline."
+  },
+  "boundaries": {
+    "noSourceMutationsByAudit": true,
+    "noRollbackOrGitMutationCommands": true,
+    "noEnvironmentValuesReadOrPrinted": true,
+    "excludedGeneratedAndEvidenceRoots": [
+      ".scratch/",
+      "docs/evidence/",
+      "control-audit/",
+      ".codex/"
+    ],
+    "deviceAndLiveModelAcceptance": "Not assessed by this source audit; parent task is still maintaining native/device evidence.",
+    "snapshotCaveat": "Authorized final plan/documentation or native acceptance script edits after auditedAt require rerunning this audit helper."
+  }
+}

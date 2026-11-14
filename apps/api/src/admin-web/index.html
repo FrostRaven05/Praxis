@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta
+      name="description"
+      content="Praxis 管理控制台，管理账号、查看同步数据与操作记录。"
+    />
+    <title>Praxis · 管理控制台</title>
+    <link rel="icon" type="image/svg+xml" href="/admin/favicon.svg" />
+    <link rel="stylesheet" href="/admin/admin.css" />
+    <script type="module" src="/admin/admin.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <div class="initial-loading" role="status">
+        正在连接 Praxis 管理控制台…
+      </div>
+    </div>
+    <dialog id="detail-dialog" aria-labelledby="detail-title"></dialog>
+    <dialog id="confirm-dialog" aria-labelledby="confirm-title"></dialog>
+    <div id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

@@ -1,0 +1,62 @@
+{
+    "date":  "2026-11-10",
+    "stage":  "M0",
+    "passed":  true,
+    "runDirectory":  ".scratch/mvp-m0-baseline/run-10616b7c3d6a4c7d9ef93cdb3ad63af0",
+    "steps":  [
+                  {
+                      "name":  "typecheck",
+                      "command":  "pnpm.cmd typecheck",
+                      "exitCode":  0
+                  },
+                  {
+                      "name":  "typescript",
+                      "command":  "pnpm.cmd test",
+                      "exitCode":  0
+                  },
+                  {
+                      "name":  "native",
+                      "command":  "pnpm.cmd test:native",
+                      "exitCode":  0
+                  }
+              ],
+    "typescriptTestsPassed":  "270",
+    "nativeTestsPassed":  174,
+    "protectedExistingFiles":  430,
+    "changedExistingFiles":  [
+
+                             ],
+    "acceptanceCases":  [
+                            "AC01",
+                            "AC02",
+                            "AC03",
+                            "AC04",
+                            "AC05",
+                            "AC06",
+                            "AC07",
+                            "AC08",
+                            "AC09",
+                            "AC10",
+                            "AC11",
+                            "AC12",
+                            "AC13",
+                            "AC14",
+                            "AC15",
+                            "AC16"
+                        ],
+    "badFixtureReferences":  [
+
+                             ],
+    "syntheticDatabase":  {
+                              "aiReceipts":  1,
+                              "allTablesEqualAfterRestore":  true,
+                              "claimedRewards":  1,
+                              "fixtureVersion":  "m0-fixtures-v1",
+                              "originalUnchanged":  true,
+                              "outboxRows":  10,
+                              "schemaVersion":  25,
+                              "synthetic":  true,
+                              "tables":  56
+                          },
+    "productAcceptance":  "M1-M5 pending; no real-user migration or UI release"
+}

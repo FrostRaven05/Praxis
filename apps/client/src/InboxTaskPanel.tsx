@@ -1,4 +1,5 @@
 import { RelatedRecords } from "./RelatedRecords";
+import { WorkTaskProperties } from "./WorkTaskProperties";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   TaskDetailEditor,
@@ -7,6 +8,7 @@ import {
   deadlineToLocal,
   parseMinutes,
   validCalendarDate,
+  taskStates,
   type InboxTask,
   type TaskDetails,
   type TaskDetailFields,
@@ -35,12 +37,20 @@ export function InboxTaskPanel({
   onReload,
   onClose,
   onLockedChange,
+  onComplete,
+  contextLabel = "收件箱",
+  projectName,
+  canSchedule = true,
 }: {
-  task: InboxTask;
+  task: InboxTask & { status?: string };
+  contextLabel?: string;
+  projectName?: string | undefined;
+  canSchedule?: boolean;
   onSaved: (date: string) => Promise<void>;
   onReload: () => Promise<void>;
   onClose: () => void;
   onLockedChange: (locked: boolean) => void;
+  onComplete: () => Promise<void>;
 }) {
   const [base, setBase] = useState<TaskDetails | null>(null);
   const [title, setTitle] = useState(task.title);
@@ -51,6 +61,7 @@ export function InboxTaskPanel({
   const [deadline, setDeadline] = useState("");
   const [estimate, setEstimate] = useState("");
   const [loading, setLoading] = useState(true);
+  const [propertiesBusy, setPropertiesBusy] = useState(false);
   const [readError, setReadError] = useState("");
   const [scheduling, setScheduling] = useState(false);
   const baseRef = useRef<TaskDetails | null>(null);
@@ -126,6 +137,8 @@ export function InboxTaskPanel({
     },
     validate: (value) => {
       if (!value.title.trim()) throw new Error("请填写任务标题");
+      if (value.date && !canSchedule)
+        throw new Error("含子任务的父任务请安排具体子任务。");
       if (value.date && !validCalendarDate(value.date))
         throw new Error("请选择有效的安排日期");
       parseMinutes(value.estimate);
@@ -213,14 +226,18 @@ export function InboxTaskPanel({
   const error = readError || autosave.error;
   const locked =
     loading ||
+    propertiesBusy ||
     !base ||
     scheduling ||
     !!(pending.current?.date && autosave.error);
   useEffect(() => {
-    onLockedChange(busy || dirty || loading || autosave.pending);
+    onLockedChange(
+      busy || dirty || loading || propertiesBusy || autosave.pending,
+    );
     return () => onLockedChange(false);
-  }, [busy, dirty, loading, autosave.pending, onLockedChange]);
+  }, [busy, dirty, loading, propertiesBusy, autosave.pending, onLockedChange]);
   async function close() {
+    if (propertiesBusy) return;
     if (!baseRef.current || (await autosave.flush())) onClose();
   }
   function changed<T>(setter: (value: T) => void, value: T, discrete = false) {
@@ -231,7 +248,7 @@ export function InboxTaskPanel({
     <aside
       id="inbox-task-panel"
       className="task-detail reference-task-panel inbox-task-panel"
-      aria-label="收件箱任务详情"
+      aria-label={`${contextLabel}任务详情`}
       onKeyDown={(event) => {
         if (
           event.nativeEvent.isComposing ||
@@ -249,9 +266,18 @@ export function InboxTaskPanel({
       }}
     >
       <header className="task-panel-toolbar">
-        <span className="task-status-pill">待办</span>
-        <span className="task-status-pill">收件箱</span>
+        <span className="task-status-pill">{taskStates[task.status ?? "todo"] ?? task.status}</span>
+        <span className="task-status-pill">{contextLabel}</span>
         <div className="task-panel-toolbar-actions">
+          <button
+            type="button"
+            aria-label={task.status === "completed" ? "撤销完成" : "标为完成"}
+            title={task.status === "completed" ? "撤销完成" : "标为完成"}
+            disabled={locked || busy || dirty}
+            onClick={() => void onComplete()}
+          >
+            <TaskPanelIcon name="check" />
+          </button>
           <button
             type="button"
             aria-label="关闭任务详情"
@@ -266,7 +292,7 @@ export function InboxTaskPanel({
         <form
           id="inbox-panel-editor"
           className="task-panel-form"
-          aria-label="编辑收件箱任务"
+          aria-label={`编辑${contextLabel}任务`}
           onSubmit={(event) => {
             event.preventDefault();
             void autosave.save();
@@ -304,7 +330,7 @@ export function InboxTaskPanel({
                 <button
                   type="button"
                   aria-pressed={date === today}
-                  disabled={locked}
+                  disabled={locked || !canSchedule || task.status === "completed"}
                   onClick={() => changed(setDate, today, true)}
                 >
                   今天
@@ -312,7 +338,7 @@ export function InboxTaskPanel({
                 <button
                   type="button"
                   aria-pressed={date === tomorrow(today)}
-                  disabled={locked}
+                  disabled={locked || !canSchedule || task.status === "completed"}
                   onClick={() => changed(setDate, tomorrow(today), true)}
                 >
                   明天
@@ -321,7 +347,7 @@ export function InboxTaskPanel({
                   value={date}
                   onChange={(value) => changed(setDate, value, true)}
                   label="安排日期"
-                  disabled={locked}
+                  disabled={locked || !canSchedule || task.status === "completed"}
                   className={
                     !!date && date !== today && date !== tomorrow(today)
                       ? "selected"
@@ -341,6 +367,7 @@ export function InboxTaskPanel({
                   没有日期
                 </button>
               </div>
+              {!canSchedule && <p className="field-help">含子任务的父任务请安排具体子任务。</p>}
             </div>
             <div className="task-panel-field">
               <TaskPanelIcon name="clock" />
@@ -358,69 +385,90 @@ export function InboxTaskPanel({
                 />
               </div>
             </div>
-            <div className="task-panel-field">
-              <TaskPanelIcon name="work" />
-              <div className="task-panel-field-body">
-                <label htmlFor="panel-estimate">预估工作量</label>
-                <div className="task-effort-editor">
-                  <div className="task-effort-options">
-                    {[15, 30, 60].map((minutes) => (
-                      <button
-                        key={minutes}
-                        type="button"
-                        aria-pressed={estimate === String(minutes)}
-                        onClick={() =>
-                          changed(setEstimate, String(minutes), true)
-                        }
-                      >
-                        {minutes} 分钟
-                      </button>
-                    ))}
+            <details className="task-panel-extra">
+              <summary>工作量、完成标准与重要标记</summary>
+              <div className="task-panel-field">
+                <TaskPanelIcon name="work" />
+                <div className="task-panel-field-body">
+                  <label htmlFor="panel-estimate">预估工作量</label>
+                  <div className="task-effort-editor">
+                    <div className="task-effort-options">
+                      {[15, 30, 60].map((minutes) => (
+                        <button
+                          key={minutes}
+                          type="button"
+                          aria-pressed={estimate === String(minutes)}
+                          onClick={() =>
+                            changed(setEstimate, String(minutes), true)
+                          }
+                        >
+                          {minutes} 分钟
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      id="panel-estimate"
+                      aria-label="预估工作量（分钟）"
+                      type="number"
+                      min={1}
+                      max={1440}
+                      value={estimate}
+                      placeholder="分钟"
+                      title="自定义分钟，留空表示未知"
+                      onChange={(event) =>
+                        changed(setEstimate, event.target.value)
+                      }
+                    />
                   </div>
-                  <input
-                    id="panel-estimate"
-                    aria-label="预估工作量（分钟）"
-                    type="number"
-                    min={1}
-                    max={1440}
-                    value={estimate}
-                    placeholder="分钟"
-                    title="自定义分钟，留空表示未知"
+                </div>
+              </div>
+              <div className="task-panel-field">
+                <TaskPanelIcon name="criteria" />
+                <div className="task-panel-field-body">
+                  <label htmlFor="panel-criteria">完成标准</label>
+                  <textarea
+                    id="panel-criteria"
+                    rows={2}
+                    value={criteria}
+                    placeholder="怎样算完成这项任务？"
                     onChange={(event) =>
-                      changed(setEstimate, event.target.value)
+                      changed(setCriteria, event.target.value)
                     }
                   />
                 </div>
               </div>
-            </div>
-            <div className="task-panel-field">
-              <TaskPanelIcon name="criteria" />
-              <div className="task-panel-field-body">
-                <label htmlFor="panel-criteria">完成标准</label>
-                <textarea
-                  id="panel-criteria"
-                  rows={2}
-                  value={criteria}
-                  placeholder="怎样算完成这项任务？"
-                  onChange={(event) => changed(setCriteria, event.target.value)}
-                />
+              <div className="task-panel-field">
+                <TaskPanelIcon name="check" />
+                <label className="task-panel-importance">
+                  <input
+                    type="checkbox"
+                    checked={important}
+                    onChange={(event) =>
+                      changed(setImportant, event.target.checked, true)
+                    }
+                  />
+                  重要任务
+                </label>
               </div>
-            </div>
-            <div className="task-panel-field">
-              <TaskPanelIcon name="check" />
-              <label className="task-panel-importance">
-                <input
-                  type="checkbox"
-                  checked={important}
-                  onChange={(event) =>
-                    changed(setImportant, event.target.checked, true)
-                  }
-                />
-                重要任务
-              </label>
-            </div>
+            </details>
           </fieldset>
         </form>
+        <WorkTaskProperties
+          taskId={task.taskId}
+          version={base?.version ?? task.version}
+          disabled={loading || busy || dirty || autosave.pending}
+          onSaved={onReload}
+          onBusyChange={setPropertiesBusy}
+        />
+        {projectName && (
+          <div className="task-panel-field">
+            <TaskPanelIcon name="folder" />
+            <div className="task-panel-field-body">
+              <span className="task-panel-field-label">所属项目</span>
+              <span>{projectName}</span>
+            </div>
+          </div>
+        )}
         {loading && (
           <p className="task-panel-feedback" role="status">
             正在读取任务详情…
@@ -445,6 +493,7 @@ export function InboxTaskPanel({
           </div>
         )}
       </div>
+
       <RelatedRecords targetType="task" targetId={task.taskId} />
       <footer className="task-panel-footer" role="status" aria-live="polite">
         <span>

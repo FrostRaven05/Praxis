@@ -14,7 +14,10 @@ export function DateStrip({
 }) {
   const value = new Date(date + "T12:00:00Z");
   const monday = shiftDate(date, -((value.getUTCDay() + 6) % 7));
-  const label = `${value.getUTCMonth() + 1}月${value.getUTCDate()}日 ${date === today ? "今天" : ["周日", "周一", "周二", "周三", "周四", "周五", "周六"][value.getUTCDay()]}`;
+  const weekdays = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+  const shortWeekdays = ["日", "一", "二", "三", "四", "五", "六"];
+  const weekday = weekdays[value.getUTCDay()];
+  const label = `${value.getUTCMonth() + 1}月${value.getUTCDate()}日 ${weekday}`;
   return (
     <div className="date-strip-row">
       <nav className="date-strip" aria-label="日期导航">
@@ -31,6 +34,7 @@ export function DateStrip({
         <div className="date-strip-days">
           {Array.from({ length: 7 }, (_, index) => {
             const item = shiftDate(monday, index);
+            const itemDate = new Date(item + "T12:00:00Z");
             return (
               <button
                 key={item}
@@ -41,7 +45,10 @@ export function DateStrip({
                 aria-current={item === today ? "date" : undefined}
                 onClick={() => onSelect(item)}
               >
-                {item === today ? "今" : item.slice(-2)}
+                <span className="date-strip-weekday" aria-hidden="true">
+                  {shortWeekdays[itemDate.getUTCDay()]}
+                </span>
+                <span className="date-strip-number">{item.slice(-2)}</span>
               </button>
             );
           })}
@@ -69,14 +76,11 @@ export function DateStrip({
       <button
         className="date-strip-today"
         title="回到今天"
-        disabled={disabled}
+        disabled={disabled || date === today}
         aria-label="回到今天"
         onClick={() => onSelect(today)}
       >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="4" fill="currentColor" stroke="none" />
-          <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
-        </svg>
+        今天
       </button>
     </div>
   );

@@ -1,0 +1,38 @@
+{
+  "date": "2026-11-12",
+  "timeZone": "Asia/Hong_Kong",
+  "passed": true,
+  "totalChecks": 86,
+  "runs": [
+    {
+      "directory": "todo-regression",
+      "executedAt": "2026-11-12T14:54:52.308Z",
+      "passed": true,
+      "groups": 14,
+      "errors": []
+    },
+    {
+      "directory": "project-regression",
+      "executedAt": "2026-11-12T14:55:46.500Z",
+      "passed": true,
+      "groups": 16,
+      "errors": []
+    },
+    {
+      "directory": "inline-regression",
+      "executedAt": "2026-11-12T14:56:13.707Z",
+      "passed": true,
+      "groups": 28,
+      "errors": []
+    },
+    {
+      "directory": "browser",
+      "executedAt": "2026-11-12T14:56:34.442Z",
+      "passed": true,
+      "groups": 28,
+      "errors": []
+    }
+  ],
+  "scope": "Latest real React App/MobileApp with isolated synthetic native/Capacitor bridges; does not replace native/device/network/model acceptance",
+  "selectorAdjustment": "Project regression mobile navigation now uses the primary navigation scope; original business assertions unchanged."
+}

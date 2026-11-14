@@ -1,1 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256"><rect x="8" y="8" width="240" height="240" rx="62" fill="#344c3c"/><path d="M80 192V64h59c35 0 52 17 52 45s-19 46-52 46h-29v37zm30-66h27c16 0 24-5 24-17s-8-16-24-16h-27z" fill="#f6f5f1"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <g transform="rotate(-4 512 512)">
+    <rect x="40" y="40" width="944" height="944" rx="189" fill="#b8432f"/>
+    <text x="519" y="797" text-anchor="middle" font-family="KaiTi, STKaiti, 楷体, serif" font-size="820" font-weight="700" fill="#fff6ea">P</text>
+  </g>
+</svg>

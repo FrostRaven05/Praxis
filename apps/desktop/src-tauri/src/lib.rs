@@ -1,3 +1,4 @@
+mod ai_gateway;
 mod lan_sync;
 pub mod store;
 #[tauri::command]
@@ -342,8 +343,8 @@ struct LocalDatabase {
     store: OnceCell<Store>,
 }
 
-mod theme_preferences;
 mod accounts;
+mod theme_preferences;
 use theme_preferences::{read_theme_color, save_theme_color};
 
 impl LocalDatabase {
@@ -353,6 +354,9 @@ impl LocalDatabase {
             .await
             .map_err(|error| {
                 self.record_error("open", operation_id, &error);
+                  if error.starts_with("DATABASE_CORRUPT") {
+                      return "本机数据库已损坏，原文件已保留。请从健康备份恢复后再打开，勿反复重试或清空数据。".to_owned();
+                  }
                 "无法打开本机数据库，请检查目录权限和磁盘空间后重试。".to_owned()
             })
     }
@@ -409,6 +413,15 @@ impl LocalDatabase {
 }
 
 #[tauri::command]
+async fn capture_task_on_date(
+    command: CaptureCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<DailyTask, String> {
+    database.get(Some(&command.operation_id)).await?.capture_on_date(&command).await
+        .map_err(|e| planning_error(&database, "capture-on-date", Some(&command.operation_id), e))
+}
+
+#[tauri::command]
 async fn capture_task(
     command: CaptureCommand,
     database: State<'_, LocalDatabase>,
@@ -441,10 +454,16 @@ async fn list_day(
 }
 
 #[tauri::command]
-async fn prepare_daily_tasks(database: State<'_, LocalDatabase>) -> Result<(), String> {
-    database
-        .get(None)
-        .await?
+async fn prepare_daily_tasks(
+    time_zone: Option<String>,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    let store = database.get(None).await?;
+    if let Some(zone) = time_zone {
+        store.initialize_workspace_zone(&zone).await
+            .map_err(|e| planning_error(&database, "workspace-default-zone", None, e))?;
+    }
+    store
         .prepare_daily_tasks(&chrono::Utc::now().to_rfc3339())
         .await
         .map_err(|e| planning_error(&database, "daily-rollover", None, e))
@@ -577,8 +596,15 @@ async fn schedule_task(
 }
 
 #[tauri::command]
-async fn accept_suggestion(command: store::ScheduleCommand, database: State<'_, LocalDatabase>) -> Result<(), String> {
-    database.get(Some(&command.operation_id)).await?.accept_suggestion(&command).await
+async fn accept_suggestion(
+    command: store::ScheduleCommand,
+    database: State<'_, LocalDatabase>,
+) -> Result<(), String> {
+    database
+        .get(Some(&command.operation_id))
+        .await?
+        .accept_suggestion(&command)
+        .await
 }
 
 #[tauri::command]
@@ -783,6 +809,36 @@ async fn backup_restore(
                 .to_string()
         })
 }
+
+#[tauri::command]
+async fn ai_project_snapshot(project_id:String,database:State<'_,LocalDatabase>)->Result<serde_json::Value,String>{
+    database.get(None).await?.ai_project_snapshot(&project_id).await.map_err(|e|match e.as_str(){"AI_PROJECT_TOO_LARGE"=>"此版本支持最多 100 项任务的项目，请先缩小项目范围。".into(),"AI_STALE_PROJECT"=>"项目已变化、暂停或归档，请重新打开进行中的项目。".into(),_=>"无法读取项目恢复资料，请重新打开项目后重试。".into()})
+}
+
+#[tauri::command]
+async fn ai_apply(command:store::AiApplyCommand,database:State<'_,LocalDatabase>)->Result<store::AiApplyReceipt,String>{
+    database.get(Some(&command.operation_id)).await?.ai_apply(&command).await.map_err(|error|{
+        database.record_error("ai_apply",Some(&command.operation_id),&error);
+        if error.starts_with("AI_"){error}else{"AI_APPLY_UNCONFIRMED".into()}
+    })
+}
+#[tauri::command]
+async fn ai_receipt(operation_id:String,database:State<'_,LocalDatabase>)->Result<Option<store::AiApplyReceipt>,String>{
+    database.get(None).await?.ai_receipt(&operation_id).await.map_err(|_|"AI_APPLY_UNCONFIRMED".into())
+}
+#[tauri::command]
+async fn ai_undo(operation_id:String,apply_operation_id:String,database:State<'_,LocalDatabase>)->Result<(),String>{
+    database.get(Some(&operation_id)).await?.ai_undo(&operation_id,&apply_operation_id).await.map_err(|error|{
+        database.record_error("ai_undo",Some(&operation_id),&error);
+        if error.starts_with("AI_"){error}else{"AI_APPLY_UNCONFIRMED".into()}
+    })
+}
+
+#[tauri::command]
+async fn cultivation_snapshot(database:State<'_,LocalDatabase>)->Result<serde_json::Value,String>{database.get(None).await?.cultivation_snapshot().await}
+#[tauri::command]
+async fn cultivation_command(command:store::CultivationCommand,database:State<'_,LocalDatabase>)->Result<(),String>{database.get(Some(&command.operation_id)).await?.cultivation_command(&command).await.map_err(|e|if e.contains("constraint")||e.contains("database"){"保存未确认，请重试同一操作。".into()}else{e})}
+
 pub fn run() {
     tauri::Builder::default()
         .setup(|app| {
@@ -806,8 +862,15 @@ pub fn run() {
                 lock: std::sync::Mutex::new(()),
             });
             let active = accounts::selected(&data_dir)?;
-            let workspace_dir = match &active { Some(account) => accounts::account_dir(&data_dir, account)?, None => data_dir.clone() };
-            app.manage(accounts::Accounts { root: data_dir.clone(), active, lock: tokio::sync::Mutex::new(()) });
+            let workspace_dir = match &active {
+                Some(account) => accounts::account_dir(&data_dir, account)?,
+                None => data_dir.clone(),
+            };
+            app.manage(accounts::Accounts {
+                root: data_dir.clone(),
+                active,
+                lock: tokio::sync::Mutex::new(()),
+            });
             app.manage(LocalDatabase {
                 path: store::backup::selected_database(&workspace_dir),
                 diagnostics_path: log_dir.join("storage-errors.jsonl"),
@@ -823,6 +886,13 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             read_theme_color,
             save_theme_color,
+            ai_gateway::ai_gateway_request,
+            cultivation_snapshot,
+            cultivation_command,
+            ai_project_snapshot,
+            ai_apply,
+            ai_receipt,
+            ai_undo,
             accounts::account_status,
             accounts::account_authenticate,
             accounts::account_logout,
@@ -859,6 +929,7 @@ pub fn run() {
             task_details,
             save_task_details,
             capture_task,
+            capture_task_on_date,
             list_day,
             prepare_daily_tasks,
             change_completion,

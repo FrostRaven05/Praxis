@@ -1,0 +1,31 @@
+{
+  "passed": false,
+  "error": "Error: locator.click: Error: strict mode violation: getByRole('button', { name: '日历', exact: true }) resolved to 2 elements:\n    1) <button type=\"button\" aria-label=\"日历\" class=\"pm-drawer-link\">…</button> aka getByRole('button', { name: '日历' }).first()\n    2) <button type=\"button\" aria-label=\"日历\" class=\"pm-drawer-link\">…</button> aka getByRole('region', { name: '更多功能' }).getByLabel('日历')\n\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: '日历', exact: true })\u001b[22m\n",
+  "checks": [
+    "desktop: two primary destinations and the default all-personal-task home are active; unknown historical completion contributes XP but not today",
+    "desktop: hiding growth and reducing motion keep inline task creation usable; the restore-growth control recovers the same scope's preference",
+    "desktop: completion and in-progress changes can be undone within ten seconds; XP and original completion facts return without duplicating the task",
+    "desktop: the ten-second undo prompt expires, while completed history remains available for an explicit reopen",
+    "desktop: an intervening edit invalidates the frozen undo basis instead of overwriting the newer notes or status",
+    "desktop: a lost completion response freezes navigation and replays the exact original receipt only once",
+    "desktop: soft-delete withdraws XP, unknown delete retries once, and undo restores the same completed task and its original completion date",
+    "desktop: after the undo prompt expires, deleted tasks remain recoverable; stale deleted versions reject, explicit reload then restores once",
+    "desktop: the unconfigured AI panel still exposes sourced read-only facts and up to three system suggestions; closing it makes no task changes",
+    "desktop: project list, empty detail and task list form the three core pages; all-complete/reopen progress updates without automatically ending the project",
+    "desktop: unconfigured project decomposition does not block manual entry; original hierarchy and task-detail compatibility interfaces remain reachable",
+    "desktop: previous daily/calendar functions remain in secondary navigation and can return to the personal home",
+    "desktop: small-screen/dark/reduced-motion layouts do not overflow and growth animation stays disabled",
+    "mobile: two primary destinations and the default all-personal-task home are active; unknown historical completion contributes XP but not today",
+    "mobile: hiding growth and reducing motion keep inline task creation usable; the restore-growth control recovers the same scope's preference",
+    "mobile: completion and in-progress changes can be undone within ten seconds; XP and original completion facts return without duplicating the task",
+    "mobile: the ten-second undo prompt expires, while completed history remains available for an explicit reopen",
+    "mobile: an intervening edit invalidates the frozen undo basis instead of overwriting the newer notes or status",
+    "mobile: a lost completion response freezes navigation and replays the exact original receipt only once",
+    "mobile: soft-delete withdraws XP, unknown delete retries once, and undo restores the same completed task and its original completion date",
+    "mobile: after the undo prompt expires, deleted tasks remain recoverable; stale deleted versions reject, explicit reload then restores once",
+    "mobile: the unconfigured AI panel still exposes sourced read-only facts and up to three system suggestions; closing it makes no task changes",
+    "mobile: project list, empty detail and task list form the three core pages; all-complete/reopen progress updates without automatically ending the project",
+    "mobile: unconfigured project decomposition does not block manual entry; original hierarchy and task-detail compatibility interfaces remain reachable"
+  ],
+  "errors": []
+}

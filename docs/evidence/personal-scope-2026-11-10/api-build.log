@@ -1,0 +1,2 @@
+���Զ� 'FileSystem' �ṩ����ִ�� InitializeDefaultDrives ����ʧ�ܡ�
+$ tsc -p tsconfig.json && node scripts/copy-admin.mjs

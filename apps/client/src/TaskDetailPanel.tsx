@@ -1,5 +1,5 @@
 import { RelatedRecords } from "./RelatedRecords";
-import { TaskTimeLink } from "./TaskTimeLink";
+import { WorkTaskProperties } from "./WorkTaskProperties";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   EditTask,
@@ -64,6 +64,7 @@ export function TaskDetailPanel({
   const [estimate, setEstimate] = useState("");
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [propertiesBusy, setPropertiesBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [composing, setComposing] = useState(false);
@@ -124,9 +125,9 @@ export function TaskDetailPanel({
     };
   }, []);
   useEffect(() => {
-    onBusyChange(busy);
+    onBusyChange(busy || propertiesBusy);
     return () => onBusyChange(false);
-  }, [busy, onBusyChange]);
+  }, [busy, propertiesBusy, onBusyChange]);
   function hasChanges() {
     const saved = baseRef.current;
     if (!saved) return false;
@@ -284,6 +285,7 @@ export function TaskDetailPanel({
   }
   flushRef.current = flush;
   async function close() {
+    if (propertiesBusy) return;
     if (!baseRef.current || (await flushRef.current())) onClose();
   }
   function changed<T>(setter: (value: T) => void, value: T, discrete = false) {
@@ -412,7 +414,7 @@ export function TaskDetailPanel({
           onCompositionStart={() => setComposing(true)}
           onCompositionEnd={() => setComposing(false)}
         >
-          <fieldset disabled={loading || !base}>
+          <fieldset disabled={loading || !base || propertiesBusy}>
             <div className="task-panel-intro">
               <label className="sr-only" htmlFor="panel-title">
                 任务标题
@@ -490,72 +492,84 @@ export function TaskDetailPanel({
                 />
               </div>
             </div>
-            <div className="task-panel-field">
-              <TaskPanelIcon name="work" />
-              <div className="task-panel-field-body">
-                <label htmlFor="panel-estimate">预估工作量</label>
-                <div className="task-effort-editor">
-                  <div className="task-effort-options">
-                    {[15, 30, 60].map((minutes) => (
-                      <button
-                        key={minutes}
-                        type="button"
-                        aria-pressed={estimate === String(minutes)}
-                        onClick={() =>
-                          changed(setEstimate, String(minutes), true)
-                        }
-                      >
-                        {minutes} 分钟
-                      </button>
-                    ))}
+            <details className="task-panel-extra">
+              <summary>工作量、完成标准与重要标记</summary>
+              <div className="task-panel-field">
+                <TaskPanelIcon name="work" />
+                <div className="task-panel-field-body">
+                  <label htmlFor="panel-estimate">预估工作量</label>
+                  <div className="task-effort-editor">
+                    <div className="task-effort-options">
+                      {[15, 30, 60].map((minutes) => (
+                        <button
+                          key={minutes}
+                          type="button"
+                          aria-pressed={estimate === String(minutes)}
+                          onClick={() =>
+                            changed(setEstimate, String(minutes), true)
+                          }
+                        >
+                          {minutes} 分钟
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      id="panel-estimate"
+                      aria-label="预估工作量（分钟）"
+                      type="number"
+                      min={1}
+                      max={1440}
+                      value={estimate}
+                      placeholder="分钟"
+                      title="自定义分钟，留空表示未知"
+                      onChange={(event) =>
+                        changed(setEstimate, event.target.value)
+                      }
+                    />
                   </div>
-                  <input
-                    id="panel-estimate"
-                    aria-label="预估工作量（分钟）"
-                    type="number"
-                    min={1}
-                    max={1440}
-                    value={estimate}
-                    placeholder="分钟"
-                    title="自定义分钟，留空表示未知"
+                </div>
+              </div>
+              <div className="task-panel-field">
+                <TaskPanelIcon name="criteria" />
+                <div className="task-panel-field-body">
+                  <label htmlFor="panel-criteria">完成标准</label>
+                  <textarea
+                    id="panel-criteria"
+                    rows={2}
+                    value={criteria}
+                    placeholder="怎样算完成这项任务？"
                     onChange={(event) =>
-                      changed(setEstimate, event.target.value)
+                      changed(setCriteria, event.target.value)
                     }
                   />
                 </div>
               </div>
-            </div>
-            <div className="task-panel-field">
-              <TaskPanelIcon name="criteria" />
-              <div className="task-panel-field-body">
-                <label htmlFor="panel-criteria">完成标准</label>
-                <textarea
-                  id="panel-criteria"
-                  rows={2}
-                  value={criteria}
-                  placeholder="怎样算完成这项任务？"
-                  onChange={(event) => changed(setCriteria, event.target.value)}
-                />
+              <div className="task-panel-field">
+                <TaskPanelIcon name="check" />
+                <label className="task-panel-importance">
+                  <input
+                    type="checkbox"
+                    checked={important}
+                    onChange={(event) =>
+                      changed(setImportant, event.target.checked, true)
+                    }
+                  />
+                  重要任务
+                </label>
               </div>
-            </div>
-            <div className="task-panel-field">
-              <TaskPanelIcon name="check" />
-              <label className="task-panel-importance">
-                <input
-                  type="checkbox"
-                  checked={important}
-                  onChange={(event) =>
-                    changed(setImportant, event.target.checked, true)
-                  }
-                />
-                重要任务
-              </label>
-            </div>
+            </details>
           </fieldset>
         </form>
+        <WorkTaskProperties
+          taskId={task.taskId}
+          version={base?.version ?? task.version ?? 0}
+          disabled={busy || dirty || loading}
+          onSaved={onUpdated}
+          onBusyChange={setPropertiesBusy}
+        />
         <fieldset
           className="task-panel-project-field"
-          disabled={busy || dirty || loading}
+          disabled={busy || dirty || loading || propertiesBusy}
         >
           <TaskPanelIcon name="folder" />
           <div className="task-panel-field-body">
@@ -595,11 +609,6 @@ export function TaskDetailPanel({
         )}
         <div className="task-panel-secondary">
           <RelatedRecords targetType="task" targetId={task.taskId} />
-          <TaskTimeLink
-            taskId={task.taskId}
-            disabled={busy || dirty}
-            showSummary
-          />
         </div>
       </div>
       <footer className="task-panel-footer" role="status" aria-live="polite">

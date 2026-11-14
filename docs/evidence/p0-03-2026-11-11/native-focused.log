@@ -1,0 +1,51 @@
+   Compiling praxis-desktop v0.1.0 (C:\Project\01Project\Praxis\apps\desktop\src-tauri)
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\praxis_desktop_lib-0fraqoia1443m\s-ho2ao9837k-1v1bk6x-working`
+
+warning: linker stdout: 正在创建库 C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\deps\praxis_desktop_lib.dll.lib 和对象 C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\deps\praxis_desktop_lib.dll.exp
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `praxis-desktop` (lib) generated 2 warnings
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\praxis_desktop-1ufkjqwnni38j\s-ho2aohhxhw-1yj4blk-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\personal_queries-25ix8x3991s07\s-ho2aohi0rb-1rovqza-working`
+
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\entities_identity_review-3id3vdu0j2xcx\s-ho2aohhvtb-0gya9nn-working`
+
+warning: `praxis-desktop` (test "personal_queries") generated 1 warning
+warning: `praxis-desktop` (bin "praxis-desktop") generated 1 warning
+warning: `praxis-desktop` (test "entities_identity_review") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 18.44s
+     Running tests\entities_identity_review.rs (apps\desktop\src-tauri\target\debug\deps\entities_identity_review-bc86dcf5a6f7ed94.exe)
+
+running 18 tests
+test acknowledged_entity_created_at_remains_immutable_during_local_editor_changes ... ok
+test native_label_name_collision_is_safe_and_does_not_stall_whole_batch ... ok
+test initial_settings_identity_does_not_manufacture_remote_settings_tombstone ... ok
+test same_habit_day_remote_identity_does_not_export_duplicate_live_checks ... ok
+test native_daily_plan_collision_preserves_existing_arrangement_and_accepts_remote_identity ... ok
+test preexisting_workspace_upload_receipts_quiesce_without_feedback_loop ... ok
+test bare_mobile_task_native_notes_and_remote_title_merge_without_false_conflict ... ok
+test legacy_null_date_projection_keeps_native_instant_extension_when_only_title_changes ... ok
+test remote_composite_key_daily_row_invalidates_stale_native_editor_version ... ok
+test legacy_capture_rebase_adopts_wire_creation_time_without_changing_native_creation_time ... ok
+test alias_tombstone_preserves_foreign_refs_and_last_alias_delete_with_live_refs_rolls_back ... ok
+test instant_time_attributes_survive_phone_title_edits_and_explicit_date_changes_are_applied ... ok
+test canonical_priorities_match_native_priority_labels_in_both_directions ... ok
+test mobile_habit_check_tombstone_retains_status_and_same_identity_restores_without_false_conflict ... ok
+test one_alias_tombstone_keeps_shared_native_row_and_never_revives_deleted_wire_identity ... ok
+test task_estimate_roundtrips_through_native_details_without_being_opaque ... ok
+test settings_collision_resolution_explicitly_adopts_remote_identity_and_keeps_local_value ... ok
+test legacy_capture_creation_normalization_preserves_real_business_conflicts_and_resolution ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.86s
+
+     Running tests\personal_queries.rs (apps\desktop\src-tauri\target\debug\deps\personal_queries-d2c5bbe798f667a3.exe)
+
+running 3 tests
+test personal_snapshot_reads_unplanned_identity_raw_waiting_and_typed_deadline_without_writing ... ok
+test personal_completion_replication_keeps_unknown_dates_and_uses_known_fact_time_not_last_edit_time ... ok
+test explicit_same_day_typed_deadline_edit_replaces_instant_but_title_only_edit_preserves_it ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s
+

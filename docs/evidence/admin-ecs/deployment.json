@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-18",
+  "baseUrl": "https://8.152.219.210",
+  "adminUrl": "https://8.152.219.210/admin",
+  "instanceId": "i-2zee4ny1lv9woz0s9jvk",
+  "container": "praxis-api-1",
+  "imageTag": "praxis-api:admin-20261018T114805Z",
+  "rollbackImageTag": "praxis-api:before-admin-20261018T114805Z",
+  "backupPath": "/opt/praxis/backups/before-admin-20261018T114805Z",
+  "countsBeforeAndAfter": {
+    "account_users": 3,
+    "account_sessions": 3,
+    "sync_entities": 15,
+    "sync_entity_changes": 11
+  },
+  "accountIdentitiesPreserved": true,
+  "databaseIntegrity": "ok",
+  "adminCredential": "independent random key; only SHA-256 hash on server; original key in owner-only ignored local handoff file",
+  "publicChecks": "verification.json",
+  "temporaryTestAccountAndDataRemoved": true,
+  "certificateRenewalTimerActive": true
+}

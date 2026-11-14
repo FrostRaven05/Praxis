@@ -1,0 +1,6 @@
+{
+  "passed": false,
+  "error": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByRole('region', { name: '个人待办', exact: true }).locator('.personal-todo-row').filter({ has: getByRole('region', { name: '个人待办', exact: true }).getByRole('button', { name: '中文组词', exact: true }) })\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"to.be.visible\" with timeout 5000ms\n  - waiting for getByRole('region', { name: '个人待办', exact: true }).locator('.personal-todo-row').filter({ has: getByRole('region', { name: '个人待办', exact: true }).getByRole('button', { name: '中文组词', exact: true }) })\n",
+  "checks": [],
+  "errors": []
+}

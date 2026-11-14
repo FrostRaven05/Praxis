@@ -42,6 +42,7 @@ import {
   type WorkspaceCommand,
 } from "./workspace";
 export * from "./workspace";
+export * from "./personal-tasks";
 import {
   calendarDate,
   type CaptureCommand,

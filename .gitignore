@@ -12,6 +12,8 @@ target/
 test-results/
 playwright-report/
 coverage/
+deploy/runtime/
+praxis-backup-*.tar.gz
 apps/desktop/src-tauri/gen/
 apps/desktop/src-tauri/icons/android/
 apps/desktop/src-tauri/icons/ios/

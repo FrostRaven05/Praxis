@@ -1,4 +1,5 @@
 import { calendarDate } from "./calendar-date";
+import { validCalendarDate } from "./edit-task";
 
 export interface CaptureCommand {
   operationId: string;
@@ -42,17 +43,25 @@ export interface TaskStorage {
 export class CaptureToday {
   private pending: CaptureCommand | undefined;
   private saving = false;
+  private requestedDate: string | undefined;
 
   constructor(private readonly storage: TaskStorage) {}
 
-  async add(title: string, timeZone: string): Promise<DailyTask> {
+  async add(
+    title: string,
+    timeZone: string,
+    executionDate?: string,
+  ): Promise<DailyTask> {
     const normalized = title.trim();
     if (!normalized) throw new Error("请填写任务标题");
+    if (executionDate !== undefined && !validCalendarDate(executionDate))
+      throw new Error("请选择有效的安排日期");
     if (this.saving) throw new Error("正在保存，请稍候");
     if (
       !this.pending ||
       this.pending.title !== normalized ||
-      this.pending.timeZone !== timeZone
+      this.pending.timeZone !== timeZone ||
+      this.requestedDate !== executionDate
     ) {
       const now = new Date();
       this.pending = {
@@ -60,10 +69,11 @@ export class CaptureToday {
         taskId: crypto.randomUUID(),
         planId: crypto.randomUUID(),
         title: normalized,
-        executionDate: calendarDate(now, timeZone),
+        executionDate: executionDate ?? calendarDate(now, timeZone),
         timeZone,
         occurredAt: now.toISOString(),
       };
+      this.requestedDate = executionDate;
     }
     this.saving = true;
     try {

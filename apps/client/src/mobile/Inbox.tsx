@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { AiPlannerPanel } from "../AiPlannerPanel";
+import { aiStorage, mobileAiContext } from "../ai-storage";
+import type { AiPlannerLaunch } from "../ai-planner-model";
 import { mobileStorage } from "../../../../packages/storage-mobile/src/native";
 import {
   WorkspaceRejectedError,
@@ -19,6 +22,7 @@ export function Inbox({
 }) {
   const [text, setText] = useState(""),
     [editing, setEditing] = useState<WorkspaceEntity | null>(null);
+  const [aiLaunch, setAiLaunch] = useState<AiPlannerLaunch | null>(null);
   const [source, setSource] = useState<WorkspaceEntity | null>(null),
     [target, setTarget] = useState<"task" | "record">("task");
   const [split, setSplit] = useState(false),
@@ -27,6 +31,7 @@ export function Inbox({
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<WorkspaceCommand | null>(null);
+  const [pendingAiUndo, setPendingAiUndo] = useState<string | null>(null);
   const saving = useRef(false),
     composing = useRef(false);
   const captures = snapshot.entities.filter(
@@ -36,9 +41,9 @@ export function Inbox({
     (e) => e.kind === "project" && !e.deleted && e.data.status === "active",
   );
   useEffect(() => {
-    onBusyChange?.(busy || !!text || !!source || !!pending);
+    onBusyChange?.(busy || !!text || !!source || !!pending || !!pendingAiUndo || !!aiLaunch);
     return () => onBusyChange?.(false);
-  }, [busy, text, source, pending, onBusyChange]);
+  }, [busy, text, source, pending, pendingAiUndo, aiLaunch, onBusyChange]);
   async function commit(command: WorkspaceCommand) {
     if (saving.current) return;
     saving.current = true;
@@ -128,7 +133,37 @@ export function Inbox({
       },
     ]);
   }
+  async function undoAiCapture(applyOperationId: string) {
+    if (saving.current) return;
+    saving.current = true;
+    setBusy(true);
+    setError("");
+    setPendingAiUndo(applyOperationId);
+    try {
+      await aiStorage.undoMobileApplication(applyOperationId);
+      setPendingAiUndo(null);
+      setNotice("已撤销这次 AI 采用，原文已恢复待处理。");
+      await refresh();
+    } catch (e) {
+      const code = e instanceof Error ? e.message : String(e);
+      if (code !== "AI_APPLY_UNCONFIRMED") setPendingAiUndo(null);
+      setError(code === "AI_UNDO_CONFLICT"
+        ? "步骤已有后续修改、安排或关联，无法整体撤销。原文和任务均已保留。"
+        : code === "AI_APPLY_UNCONFIRMED"
+          ? "撤销结果尚未确认，请重试查询；会复用同一次操作。"
+          : "无法撤销这次采用，请重新打开收集箱后重试。");
+    } finally {
+      saving.current = false;
+      setBusy(false);
+    }
+  }
   function undo(capture: WorkspaceEntity) {
+    const application = capture.data.aiApplication as { receipt?: { operationId?: string; undone?: boolean } } | undefined;
+    if (application?.receipt?.operationId && !application.receipt.undone) {
+      if (window.confirm("撤销这次 AI 采用？原文恢复待处理，尚未改动的步骤及奖励约定移入回收站。"))
+        void undoAiCapture(application.receipt.operationId);
+      return;
+    }
     const refs = (capture.data.outputs ?? []) as Output[];
     const referenced = (value: unknown, id: string): boolean =>
       value === id ||
@@ -188,12 +223,16 @@ export function Inbox({
       },
     ]);
   }
-  const disabled = busy || !!pending;
+  const disabled = busy || !!pending || !!pendingAiUndo || !!aiLaunch;
   return (
     <section className="pm-inbox">
+      {aiLaunch && <AiPlannerPanel launch={aiLaunch} onClose={() => { setAiLaunch(null); void refresh(); }} onApplied={() => refresh()} />}
       <p className="pm-local-note">原文先保存在本机；配对后通过局域网自动同步。</p>
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
+      {pendingAiUndo && !busy && (
+        <button onClick={() => void undoAiCapture(pendingAiUndo)}>重试确认 AI 撤销</button>
+      )}
       {pending && !busy && (
         <div>
           <p>上次保存结果未确认，请重试同一操作。</p>
@@ -365,6 +404,7 @@ export function Inbox({
                   预览澄清
                 </button>
               )}
+              {c.data.status !== "clarified" && <button type="button" className="ai-planner-launch" disabled={disabled || !!text || !!source} onClick={() => setAiLaunch({ mode: "clarify", input: String(c.data.rawText), context: mobileAiContext(snapshot, null, { id: c.id, version: c.version, rawText: String(c.data.rawText) }) })}>✦ 整理想法</button>}
             </div>
           </article>
         ))}

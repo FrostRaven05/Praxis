@@ -1,0 +1,24 @@
+{
+  "date": "2026-11-11",
+  "passed": true,
+  "environment": "headless Chromium; real App/MobileApp and personal modules; synthetic native/Capacitor test doubles, not device acceptance",
+  "checks": [
+    "desktop: shared project list uses leaf progress, empty/all-complete states, typed deadlines; old archived projects remain reachable",
+    "desktop: project cards fit the viewport in light/dark themes with reduced motion",
+    "desktop: only name is required; exactly three form fields; success opens the new project detail and empty progress",
+    "desktop: basic edits retain identity, old priority/lifecycle/recovery extensions and move the project to the top; compatibility editor remains reachable",
+    "desktop: unknown save result locks the draft and retries the exact project/operation/version/time without duplicates",
+    "desktop: definite rejection preserves editable input, permits cancel and creates no project",
+    "desktop: committed save plus failed refresh retries only the read and opens the same project",
+    "desktop: refresh after a reopen updates the same legacy leaf progress",
+    "mobile: shared project list uses leaf progress, empty/all-complete states, typed deadlines; old archived projects remain reachable",
+    "mobile: project cards fit the viewport in light/dark themes with reduced motion",
+    "mobile: only name is required; exactly three form fields; success opens the new project detail and empty progress",
+    "mobile: basic edits retain identity, old priority/lifecycle/recovery extensions and move the project to the top; compatibility editor remains reachable",
+    "mobile: unknown save result locks the draft and retries the exact project/operation/version/time without duplicates",
+    "mobile: definite rejection preserves editable input, permits cancel and creates no project",
+    "mobile: committed save plus failed refresh retries only the read and opens the same project",
+    "mobile: refresh after a reopen updates the same legacy leaf progress"
+  ],
+  "errors": []
+}

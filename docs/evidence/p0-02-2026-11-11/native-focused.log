@@ -1,0 +1,18 @@
+warning: linker stdout: 正在创建库 C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\deps\praxis_desktop_lib.dll.lib 和对象 C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\deps\praxis_desktop_lib.dll.exp
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `praxis-desktop` (lib) generated 1 warning
+   Compiling praxis-desktop v0.1.0 (C:\Project\01Project\Praxis\apps\desktop\src-tauri)
+warning: hard linking files in the incremental compilation cache failed. copying files instead. consider moving the cache directory to a file system which supports hard linking in session dir `\\?\C:\Project\01Project\Praxis\apps\desktop\src-tauri\target\debug\incremental\personal_compatibility-0vk8v5go79v27\s-ho2a42feca-1ickqey-working`
+
+warning: `praxis-desktop` (test "personal_compatibility") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.28s
+     Running tests\personal_compatibility.rs (apps\desktop\src-tauri\target\debug\deps\personal_compatibility-3648b6a544d1e345.exe)
+
+running 2 tests
+test personal_current_backup_keeps_legacy_data_ai_receipt_pending_conflict_and_task_identity ... ok
+test personal_v10_upgrade_keeps_ids_versions_queue_and_unknown_completion_date ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.53s
+

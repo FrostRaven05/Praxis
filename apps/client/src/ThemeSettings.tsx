@@ -86,7 +86,7 @@ export function ThemeSettings() {
             void choose(DEFAULT_THEME_COLOR);
           }}
         >
-          恢复冰蓝
+          恢复青玉
         </button>
       </div>
       {error ? (

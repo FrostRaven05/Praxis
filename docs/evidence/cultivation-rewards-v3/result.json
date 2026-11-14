@@ -1,0 +1,52 @@
+{
+  "testedAt": "2026-10-25T15:55:53.3576485Z",
+  "clientTimezone": "Asia/Hong_Kong",
+  "theme": "self-cultivation",
+  "schemaVersion": 25,
+  "changes": [
+    "persistent wish agreements with stable identity",
+    "specific root work-package binding",
+    "deterministic unlock and explicit claim",
+    "subtask and retry duplicate protection",
+    "preserved paused rewards",
+    "account-scoped settings and pending recovery"
+  ],
+  "checks": {
+    "aiNativeTests": 5,
+    "frontendBuild": "passed",
+    "cultivationDomainTests": 14,
+    "typescriptTestFiles": 41,
+    "embeddedDesktopBuild": "passed",
+    "typescriptTestsPassed": 217,
+    "schema24To25Upgrade": "passed",
+    "typecheck": "passed",
+    "nativeFullSuite": "passed"
+  },
+  "guiAcceptance": {
+    "reason": "local debug-port connection EACCES",
+    "evidence": "docs/evidence/ai-cultivation-latest/result.json",
+    "completedChecks": 0,
+    "status": "blocked"
+  },
+  "ai": {
+    "liveProviderResponseReceived": false,
+    "productionDeployed": false,
+    "networkError": "ENOTFOUND",
+    "deepseekEnvironmentDetected": true,
+    "processMatchesMachine": true
+  },
+  "artifact": {
+    "path": ".tools/releases/cultivation-rewards-v3/Praxis.exe",
+    "bytes": 30769664,
+    "sha256": "0B11D0AE0B92D4F6ECFA0B8C2E92900E1066F22F89073B1CD8B93E889D26B0B0"
+  },
+  "remaining": [
+    "mobile cultivation and cross-device growth sync",
+    "AI today capacity suggestions and weekly review",
+    "complete project recovery context",
+    "wish standalone editing archival and budgets",
+    "model usage and cost diagnostics",
+    "live AI and GUI acceptance",
+    "signed installer and Android device release acceptance"
+  ]
+}

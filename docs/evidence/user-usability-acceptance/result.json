@@ -1,0 +1,21 @@
+{
+  "testedAt": "2026-10-18T16:00:33.033Z",
+  "release": "C:\\Project\\01Project\\Praxis\\.tools\\releases\\user-usability\\Praxis.exe",
+  "isolated": true,
+  "workspace": "C:\\Project\\01Project\\Praxis\\.tools\\usability-acceptance-fIEdSr\\client",
+  "checks": [
+    "fresh workspace opens search directly with device timezone, no setup gate",
+    "one-click reschedule updates the selected date and input caption; compact date strip with inspector",
+    "single inline entry saves to the selected future date; duplicate Add button is removed",
+    "completion stays on the browsed future date and can be undone directly",
+    "Inbox inline entry saves an undated task and confirms the destination",
+    "Inbox row and side panel complete undated tasks; toast and completed list undo restore them without assigning today",
+    "advanced editor cancel and save preserve Inbox and reload the original side panel",
+    "fixed Search opens results in the first screen, filters expand on demand, closing a result preserves query and results",
+    "create a project with only a name, add a task, and return from advanced editing to that project",
+    "normal login exposes email and password; the configured service address remains available under Advanced",
+    "timezone and labels remain available in Advanced Settings; changes retain impact preview and can be cancelled",
+    "reload retains undated undone tasks and future-date tasks"
+  ],
+  "errors": []
+}

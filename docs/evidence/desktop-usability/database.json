@@ -1,0 +1,7 @@
+{
+  "testedAt": "2026-10-18T12:55:49.275Z",
+  "corruptCopyRecognized": true,
+  "misleadingEmptyStateRemoved": true,
+  "originalDatabaseUnchanged": true,
+  "recoveryDeferredByUser": true
+}

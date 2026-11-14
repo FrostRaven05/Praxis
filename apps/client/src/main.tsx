@@ -19,6 +19,9 @@ import "./project-gantt.css";
 import "./content.css";
 import "./modern.css";
 import "./polish.css";
+import "./redesign.css";
+import "./game.css";
+import "./xiuxian.css";
 import { initializeTheme } from "./theme-preferences";
 
 const root = document.getElementById("root");

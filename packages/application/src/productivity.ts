@@ -10,6 +10,11 @@ export interface WorkTask {
   parentId: string | null;
   sectionId: string | null;
   status: string;
+  /** Raw storage state and waiting flag are retained alongside the display state. */
+  rawStatus?: string;
+  waiting?: boolean;
+  statusReason?: string;
+  completionCriteria?: string;
   version: number;
   plan: TimeValue | null;
   deadline: TimeValue | null;
@@ -31,6 +36,10 @@ export interface WorkProject {
   planVersion: number;
   focused: number;
   archivedAt: string | null;
+  outcome?: string;
+  targetDate?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
 }
 export interface DayNote {
   date: string;

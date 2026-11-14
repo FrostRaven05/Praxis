@@ -1,0 +1,26 @@
+{
+  "title": {
+    "border": "0px",
+    "padding": "0px",
+    "background": "rgba(0, 0, 0, 0)"
+  },
+  "check": {
+    "width": "28px",
+    "height": "28px",
+    "border": "1px"
+  },
+  "width": 390,
+  "viewport": 390,
+  "rules": [
+    "* { box-sizing: border-box; }",
+    "button, input { font: inherit; }",
+    "button { cursor: pointer; }",
+    "button, input, select, textarea, summary { font-family: var(--font-ui); }",
+    "button { cursor: pointer; }",
+    "button, a, summary, input, textarea, select { transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out; }",
+    ".personal-todo-home .personal-todo-title { display: block; width: 100%; padding: 0px; border: 0px; text-align: left; font-style: inherit; font-variant: inherit; font-weight: inherit; font-stretch: inherit; font-size: inherit; font-family: inherit; font-optical-sizing: inherit; font-size-adjust: inherit; font-kerning: inherit; font-feature-settings: inherit; font-variation-settings: inherit; font-language-override: inherit; line-height: 1.55; color: var(--text-primary); background: transparent; overflow-wrap: anywhere; }",
+    ".pm-app .personal-todo-title { min-height: 28px; text-align: left; }",
+    ".pm-app button, .pm-app input, .pm-app select, .pm-app textarea { font: inherit; }",
+    ".pm-app button { cursor: pointer; min-height: 44px; border: 0px; background: transparent; color: inherit; touch-action: manipulation; }"
+  ]
+}

@@ -1,0 +1,105 @@
+$ vitest run
+
+ RUN  v3.2.7 C:/Project/01Project/Praxis
+
+ ✓ apps/api/src/store.test.ts (2 tests) 56ms
+ ✓ packages/storage-mobile/src/entity-sync.test.ts (16 tests) 140ms
+ ✓ apps/client/src/ai-mobile-adapter.test.ts (21 tests) 116ms
+stderr | packages/storage-mobile/src/captures.test.ts > rolls back a failed queue write and safely replays an unacknowledged commit
+{"event":"local_storage_error","stage":"capture","category":"capacity","code":null,"operationId":"6c388473-2d8e-438f-8eeb-b130fd019d0f"}
+
+stderr | packages/storage-mobile/src/captures.test.ts > rolls back a failed queue write and safely replays an unacknowledged commit
+{"event":"local_storage_error","stage":"capture","category":"storage","code":null,"operationId":"6c388473-2d8e-438f-8eeb-b130fd019d0f"}
+
+ ✓ packages/storage-mobile/src/captures.test.ts (2 tests) 226ms
+stderr | packages/storage-mobile/src/storage.test.ts > mobile adapter against actual host SQLite (not Android acceptance) > rolls back a failure after task insertion and allows retry
+{"event":"local_storage_error","stage":"capture","category":"constraint","code":null,"operationId":"21f1d140-d237-4df1-9f33-a64d009d4f13"}
+
+stderr | packages/storage-mobile/src/storage.test.ts > mobile adapter against actual host SQLite (not Android acceptance) > rejects changed payload and invalid date without extra writes
+{"event":"local_storage_error","stage":"capture","category":"storage","code":null,"operationId":"51439cbb-500c-41fd-b7f0-3a1908fb3417"}
+
+stderr | packages/storage-mobile/src/storage.test.ts > mobile adapter against actual host SQLite (not Android acceptance) > rejects changed payload and invalid date without extra writes
+{"event":"local_storage_error","stage":"capture","category":"storage","code":null,"operationId":"616d2fbb-e88b-4039-a1cc-88a049257ec6"}
+
+ ✓ apps/client/src/personal-task-adapters.test.ts (6 tests) 79ms
+stderr | packages/storage-mobile/src/storage.test.ts > runs the shared desktop/mobile storage contract
+{"event":"local_storage_error","stage":"capture","category":"storage","code":null,"operationId":"10000000-0000-4000-8000-000000000001"}
+
+stderr | packages/storage-mobile/src/storage.test.ts > runs the shared desktop/mobile storage contract
+{"event":"local_storage_error","stage":"capture","category":"constraint","code":null,"operationId":"10000000-0000-4000-8000-000000000002"}
+
+stderr | packages/storage-mobile/src/storage.test.ts > maps transaction-start failure and permits a subsequent retry
+{"event":"local_storage_error","stage":"capture","category":"busy","code":null,"operationId":"864a7b3e-be19-4fd5-8a73-b5ee87863627"}
+
+ ✓ packages/storage-mobile/src/storage.test.ts (6 tests) 698ms
+ ✓ packages/application/src/mvp/compatibility.test.ts (17 tests) 33ms
+ ✓ packages/storage-mobile/src/workspace.test.ts (14 tests) 88ms
+ ✓ apps/client/src/ai-context-mobile.test.ts (10 tests) 35ms
+ ✓ apps/api/src/ai-recovery.test.ts (10 tests) 675ms
+   ✓ accepts the new optional context through the authenticated run API  545ms
+ ✓ apps/api/src/server.test.ts (4 tests) 948ms
+   ✓ requires registered tokens and rejects forged device identities even on deprecated writes  557ms
+ ✓ apps/client/src/personal-project-adapters.test.ts (2 tests) 33ms
+ ✓ packages/application/src/capture-today.test.ts (6 tests) 31ms
+ ✓ packages/storage-mobile/src/personal-compatibility.test.ts (3 tests) 1478ms
+   ✓ upgrades mobile schema 2 through 5 while retaining old IDs, original text, plans, events and unsent outbox  444ms
+   ✓ roundtrips all mobile tables including desktop time precision, old states, unknown completion, pending and conflicts  403ms
+   ✓ keeps one task identity when changing personal project, rejects stale edits and does not merge separate account stores  629ms
+ ✓ apps/api/src/ai.test.ts (10 tests) 1242ms
+   ✓ reports disabled configuration and requires authentication  539ms
+   ✓ persists one generation per owner and request ID; rejects changed input and another owner  469ms
+ ✓ packages/application/src/personal-tasks.test.ts (4 tests) 30ms
+ ✓ packages/application/src/personal-projects.test.ts (7 tests) 32ms
+ ✓ apps/api/src/entities.test.ts (10 tests) 1407ms
+   ✓ commits related entities atomically, replays equivalent requests and isolates owners  534ms
+ ✓ apps/api/src/m0-isolation.test.ts (1 test) 1538ms
+   ✓ M0 baseline: three real local accounts keep colliding personal IDs isolated before project sharing exists  1537ms
+ ✓ apps/client/src/mobile/native-view-query.test.ts (5 tests) 27ms
+ ✓ packages/storage-mobile/src/lan.test.ts (5 tests) 29ms
+ ✓ apps/api/src/personal-scope.test.ts (2 tests) 1644ms
+   ✓ runs as personal management without team routes or schema initialization and preserves archived tables  682ms
+   ✓ keeps one personal project/task across two devices of the same account while isolating another account  961ms
+ ✓ apps/api/src/entity-mobile.test.ts (11 tests) 1646ms
+   ✓ synchronizes nested task trees and rejects an ancestor cycle atomically  566ms
+ ✓ apps/client/src/ai-planner-model.test.ts (13 tests) 22ms
+ ✓ apps/client/src/mobile/mobile-dashboard-model.test.ts (3 tests) 25ms
+ ✓ packages/application/src/productivity.test.ts (6 tests) 24ms
+ ✓ packages/application/src/calendar-date.test.ts (7 tests) 22ms
+ ✓ packages/application/src/completion.test.ts (2 tests) 23ms
+ ✓ apps/client/src/day-timeline.test.ts (4 tests) 24ms
+ ✓ apps/client/src/mobile/extras-model.test.ts (6 tests) 17ms
+ ✓ apps/api/src/ai-provider.test.ts (10 tests) 16ms
+ ✓ packages/application/src/subtasks.test.ts (2 tests) 14ms
+ ✓ apps/client/src/mobile/schedule-rules.test.ts (3 tests) 13ms
+ ✓ packages/application/src/planning.test.ts (3 tests) 8ms
+ ✓ apps/client/src/cultivation-model.test.ts (12 tests) 9ms
+ ✓ packages/application/src/edit-task.test.ts (2 tests) 6ms
+ ✓ packages/application/src/content.test.ts (2 tests) 7ms
+ ✓ packages/application/src/project-workspace.test.ts (5 tests) 8ms
+ ✓ apps/client/src/theme-preferences.test.ts (3 tests) 6ms
+ ✓ packages/application/src/task-details.test.ts (2 tests) 6ms
+ ✓ packages/application/src/projects.test.ts (1 test) 7ms
+ ✓ apps/client/src/cultivation-goal-draft.test.ts (6 tests) 6ms
+ ✓ apps/client/src/calendar-controls.test.ts (3 tests) 5ms
+ ✓ packages/application/src/day-schedule.test.ts (5 tests) 5ms
+ ✓ apps/client/src/mobile/sync-identity.test.ts (2 tests) 3ms
+ ✓ apps/client/src/mobile/habit-check-command.test.ts (1 test) 3ms
+ ✓ apps/client/src/mobile/mobile-inbox-model.test.ts (2 tests) 3ms
+ ✓ apps/client/src/desktop-drag.test.ts (1 test) 2ms
+ ✓ apps/client/src/mobile/record-links.test.ts (1 test) 3ms
+ ✓ apps/api/src/accounts.test.ts (4 tests) 3250ms
+   ✓ registers, normalizes email, rejects duplicate and wrong credentials, and revokes only the logged-out session  2103ms
+   ✓ isolates same-ID entities, feeds and snapshots by authenticated owner and refuses forged devices/owners  654ms
+   ✓ persists password hashes and session expiry across server restart without storing password or token  458ms
+ ✓ apps/api/src/admin.test.ts (9 tests) 4205ms
+   ✓ serves the console with CSP while denying unconfigured, unauthenticated and normal-user API access  915ms
+   ✓ paginates and filters real users, aggregates private entities without exposing contents or secrets  377ms
+   ✓ disables accounts atomically, rejects existing sessions and relogin, and requires fresh login after enabling  920ms
+   ✓ revokes one device without affecting another and supports revoking every login  626ms
+   ✓ rejects a login when the account is disabled during asynchronous password verification  427ms
+
+ Test Files  51 passed (51)
+      Tests  294 passed (294)
+   Start at  23:03:10
+   Duration  5.50s (transform 1.73s, setup 0ms, collect 11.35s, tests 19.97s, environment 8ms, prepare 13.78s)
+

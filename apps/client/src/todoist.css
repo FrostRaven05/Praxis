@@ -177,67 +177,67 @@
   margin-left: 5px;
   background: transparent;
   color: var(--text-tertiary);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 400;
 }
 .todoist-workspace .reference-day .task-item {
-  min-height: 48px;
+  min-height: 54px;
   padding: 4px 0;
-  gap: 5px;
+  gap: 6px;
 }
 .todoist-workspace .task-row {
-  min-height: 38px;
-  padding: 6px;
+  min-height: 44px;
+  padding: 8px 6px;
 }
 .todoist-workspace .reference-day .task-title {
-  font-size: 13px;
+  font-size: 15px;
   font-weight: 400;
 }
 .todoist-workspace .task-meta {
-  font-size: 11px;
-  line-height: 1.4;
+  font-size: 12px;
+  line-height: 1.5;
 }
 .todoist-workspace .task-item .task-drag-handle {
-  width: 12px;
-  opacity: 0;
+  width: 20px;
+  padding: 4px 2px;
+  opacity: 0.4;
 }
 .todoist-workspace .task-item:hover .task-drag-handle,
 .todoist-workspace .task-item:focus-within .task-drag-handle {
-  opacity: 0.7;
+  opacity: 0.9;
 }
 .workspace.todoist-workspace .completion-toggle {
-  width: 28px;
-  height: 28px;
-  min-height: 28px;
-  padding: 3px;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 4px;
   border: 0;
   border-radius: 50%;
   background: transparent;
 }
 .workspace.todoist-workspace .completion-toggle svg {
-  width: 21px;
-  height: 21px;
+  width: 23px;
+  height: 23px;
   stroke-width: 1.5;
 }
-.todoist-workspace .task-item .plan-controls,
-.todoist-workspace .task-item .task-action-trigger {
+.todoist-workspace .task-item .plan-controls {
   opacity: 0;
+}
+.todoist-workspace .task-item .task-action-trigger {
+  opacity: 1;
 }
 .todoist-workspace .task-item:hover .plan-controls,
 .todoist-workspace .task-item:focus-within .plan-controls,
 .todoist-workspace
   .task-item:has(.plan-controls [aria-pressed="true"])
-  .plan-controls,
-.todoist-workspace .task-item:hover .task-action-trigger,
-.todoist-workspace .task-item:focus-within .task-action-trigger,
-.todoist-workspace .task-action-trigger:has([aria-expanded="true"]) {
+  .plan-controls {
   opacity: 1;
 }
 .workspace.todoist-workspace .plan-controls button {
-  width: 28px;
-  height: 28px;
-  min-height: 28px;
-  padding: 4px;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 6px;
   background: transparent;
 }
 .task-action-trigger {
@@ -248,14 +248,18 @@
 .workspace.todoist-workspace .task-action-button {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
-  min-height: 28px;
-  padding: 4px;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 6px;
   border: 0;
-  border-radius: 5px;
+  border-radius: 8px;
   background: transparent;
   color: var(--text-secondary);
+}
+.task-action-button:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text-primary);
 }
 .task-action-button svg {
   width: 18px;
@@ -452,4 +456,3 @@
     opacity: 1;
   }
 }
-

@@ -1,11 +1,12 @@
 import { invoke, isTauri } from "@tauri-apps/api/core";
 
-export const DEFAULT_THEME_COLOR = "#BDE7EE";
+export const DEFAULT_THEME_COLOR = "#A6D6C3";
+const LEGACY_DEFAULT_THEME_COLOR = "#BDE7EE";
 export const THEME_COLORS = [
-  { name: "冰蓝", color: DEFAULT_THEME_COLOR, foreground: "#287F91" },
-  { name: "珊瑚红", color: "#D1453B", foreground: "#D1453B" },
-  { name: "鼠尾草绿", color: "#ADD8C6", foreground: "#397B61" },
-  { name: "雾紫", color: "#C8BDE8", foreground: "#7B60AE" },
+  { name: "青玉", color: DEFAULT_THEME_COLOR, foreground: "#2E7A64" },
+  { name: "朱砂", color: "#D1453B", foreground: "#D1453B" },
+  { name: "金丹", color: "#E8C77A", foreground: "#8A6414" },
+  { name: "紫府", color: "#C8BDE8", foreground: "#7B60AE" },
 ];
 const key = "praxis.theme.color";
 let current = DEFAULT_THEME_COLOR;
@@ -81,6 +82,7 @@ export function themeColorTokens(value: string) {
 }
 function apply(value: string) {
   current = normalizeThemeColor(value);
+  if (current === LEGACY_DEFAULT_THEME_COLOR) current = DEFAULT_THEME_COLOR;
   for (const [name, token] of Object.entries(themeColorTokens(current)))
     document.documentElement.style.setProperty(name, token);
   document.documentElement.dataset.themeColor = current;

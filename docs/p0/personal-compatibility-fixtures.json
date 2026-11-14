@@ -1,0 +1,96 @@
+{
+  "version": "personal-compatibility-v1",
+  "synthetic": true,
+  "clock": { "now": "2026-11-11T04:00:00Z", "timeZone": "Asia/Hong_Kong" },
+  "versions": {
+    "desktopLegacy": 10,
+    "desktopCurrent": 25,
+    "mobileLegacy": 2,
+    "mobileCurrent": 5,
+    "entityProtocol": 1,
+    "plannerDraft": 1
+  },
+  "project": {
+    "id": "11000000-0000-4000-8000-000000000001",
+    "name": "个人兼容样本",
+    "targetDate": "2026-12-01"
+  },
+  "secondProjectId": "11000000-0000-4000-8000-000000000002",
+  "independent": {
+    "id": "12000000-0000-4000-8000-000000000001",
+    "title": "保留个人任务身份",
+    "version": 7,
+    "notes": " 原文第一行\n第二行 😀 ",
+    "criteria": "保留旧完成标准",
+    "planDates": ["2026-11-08", "2026-11-10"],
+    "deadline": {
+      "kind": "instant",
+      "atUtc": "2026-11-11T02:00:00Z",
+      "displayTimezone": "America/Los_Angeles"
+    }
+  },
+  "dateTask": {
+    "id": "12000000-0000-4000-8000-000000000002",
+    "deadline": { "kind": "date", "date": "2026-11-12" }
+  },
+  "legacyTasks": [
+    {
+      "id": "13000000-0000-4000-8000-000000000001",
+      "title": "旧行动包",
+      "status": "todo",
+      "waiting": false,
+      "parentId": null,
+      "version": 3
+    },
+    {
+      "id": "13000000-0000-4000-8000-000000000002",
+      "title": "旧完成步骤",
+      "status": "completed",
+      "waiting": false,
+      "parentId": "13000000-0000-4000-8000-000000000001",
+      "version": 2
+    },
+    {
+      "id": "13000000-0000-4000-8000-000000000003",
+      "title": "等待原有反馈",
+      "status": "todo",
+      "waiting": true,
+      "parentId": "13000000-0000-4000-8000-000000000001",
+      "version": 4
+    },
+    {
+      "id": "13000000-0000-4000-8000-000000000004",
+      "title": "保留阻塞原因",
+      "status": "blocked",
+      "waiting": false,
+      "parentId": null,
+      "version": 5
+    },
+    {
+      "id": "13000000-0000-4000-8000-000000000005",
+      "title": "保留取消记录",
+      "status": "cancelled",
+      "waiting": false,
+      "parentId": null,
+      "version": 6
+    }
+  ],
+  "unknownCompletion": {
+    "id": "14000000-0000-4000-8000-000000000001",
+    "title": "历史完成但日期未知",
+    "version": 4
+  },
+  "deletedCreditTaskId": "14000000-0000-4000-8000-000000000002",
+  "reward": {
+    "id": "15000000-0000-4000-8000-000000000001",
+    "milestone": "旧个人成果",
+    "reward": "已领取的历史奖励",
+    "claimedAt": "2026-11-01T04:00:00Z"
+  },
+  "ai": {
+    "operationId": "16000000-0000-4000-8000-000000000001",
+    "runId": "16000000-0000-4000-8000-000000000002",
+    "projectId": "16000000-0000-4000-8000-000000000003",
+    "taskId": "16000000-0000-4000-8000-000000000004"
+  }
+}

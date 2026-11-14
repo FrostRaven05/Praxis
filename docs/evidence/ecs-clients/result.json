@@ -1,0 +1,17 @@
+{
+  "status": "passed",
+  "testedAt": "2026-10-18T11:20:04.204Z",
+  "baseUrl": "https://8.152.219.210",
+  "android": "Android 17 emulator-5554 (not a physical phone)",
+  "checks": [
+    "Both native clients default to the deployed IP HTTPS endpoint without a custom CA",
+    "Windows UI registration, logout and login through real HTTPS succeeded",
+    "Android UI logged into the same cloud account with the system certificate trust store",
+    "Windows UI task automatically appeared exactly once in Android UI through the ECS",
+    "Android UI task automatically arrived in the Windows native database through the ECS",
+    "Android completion of the Windows-created task synchronized back to Windows",
+    "Both apps retained their login and synchronized tasks after native process restart",
+    "Android logged out of the verification account and original local task list was preserved"
+  ],
+  "errors": []
+}

@@ -1,0 +1,45 @@
+{
+  "date": "2026-11-06",
+  "baseUrl": "https://todo.frostraven05.com",
+  "legacyBaseUrl": "https://8.152.219.210",
+  "icpRegistration": "陕ICP备2026010048号",
+  "icpSource": "provided by user",
+  "certificate": {
+    "sans": [
+      "todo.frostraven05.com",
+      "8.152.219.210"
+    ],
+    "notAfterUtc": "2026-11-13T05:24:39Z",
+    "lineage": "praxis-ecs-ip"
+  },
+  "checks": {
+    "domainAndIpPublicHttpsPassed": true,
+    "windowsAndroidEmulatorLoginAndSync": "passed",
+    "renewalTimerActive": true,
+    "renewalDryRun": "passed: certbot reconfigure staging renewal succeeded and saved webroot configuration",
+    "finalPublicDomainAndIpHealth": "passed",
+    "existingNginxWebsiteKeptRunning": true
+  },
+  "existingAccounts": "Existing signed-in accounts keep their endpoint and local workspace; no automatic address/workspace migration",
+  "serverBackup": "/opt/praxis/backups/tls-domain-20261106T142026Z",
+  "artifacts": {
+    "Praxis.exe": {
+      "path": ".tools\\releases\\domain-https\\Praxis.exe",
+      "sha256": "d12dd443a0907ae3101fa813b25a0dc580c89e4042170081a85786845da67e74",
+      "bytes": 30956032
+    },
+    "Praxis-android-debug.apk": {
+      "path": ".tools\\releases\\domain-https\\Praxis-android-debug.apk",
+      "sha256": "6070b33786ce676e1b6d14472d584b647f0cfe784d43c89274345b4f1174688a",
+      "bytes": 13997799
+    }
+  },
+  "renewal": {
+    "authenticator": "webroot",
+    "webroot": "/var/www/letsencrypt",
+    "nginxConfig": "/etc/nginx/conf.d/praxis-acme.conf",
+    "timer": "praxis-certificate-renew.timer",
+    "deployHook": "/opt/praxis/deploy/renew-certificate.sh"
+  },
+  "verifiedAt": "2026-11-06T14:38:52.219646+00:00"
+}

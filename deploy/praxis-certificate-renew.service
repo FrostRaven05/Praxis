@@ -1,0 +1,8 @@
+[Unit]
+Description=Renew Praxis HTTPS certificate
+After=network-online.target docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/praxis-certbot/bin/certbot renew --cert-name praxis-ecs-ip --quiet --deploy-hook /opt/praxis/deploy/renew-certificate.sh

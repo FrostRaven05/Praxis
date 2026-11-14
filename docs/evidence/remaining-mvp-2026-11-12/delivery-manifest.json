@@ -1,0 +1,25 @@
+{
+  "createdAt": "2026-11-12T23:09:15.8628123+08:00",
+  "artifacts": [
+    {
+      "file": "Praxis-personal-qa.exe",
+      "sha256": "7189b995b83e067441034ecff62a615ac2331ed08cb53f369017bf68f820c7a7",
+      "bytes": 31067648
+    },
+    {
+      "file": "Praxis-personal-qa.apk",
+      "sha256": "460fbbfb5e7f6f2c113c46680fcdb3b626802e4ef4b82b4788705250f7291ba4",
+      "bytes": 13887742
+    }
+  ],
+  "android": {
+    "versionCode": 1,
+    "applicationId": "com.praxis.mobile.qa",
+    "versionName": "1.0"
+  },
+  "desktop": {
+    "format": "Windows x64 standalone debug executable; WebView2 required",
+    "version": "0.1.0"
+  },
+  "releaseType": "isolated debug QA builds, not a production release"
+}

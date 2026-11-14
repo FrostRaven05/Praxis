@@ -1,0 +1,1727 @@
+{
+  "date": "2026-11-10",
+  "scope": "pre-existing source and configuration; no user databases",
+  "head": "ae726139e27109a76ea0c171a3a15e3172aa96d1",
+  "files": [
+    {
+      "path": ".gitignore",
+      "sha256": "d4af9663c8388052d3683aa91eb2e23d3a113487180a8dfbe6457a8910ce76fd"
+    },
+    {
+      "path": "apps/api/package.json",
+      "sha256": "56cbbd3da9f9dc17b4bfec2d753428d48ace502e567976a861a0df5f823060bd"
+    },
+    {
+      "path": "apps/api/scripts/copy-admin.mjs",
+      "sha256": "6b8bac8b42f913d48a13e99f4a1d49fadeef733e64bbeb2f523fd89123947881"
+    },
+    {
+      "path": "apps/api/src/accounts.test.ts",
+      "sha256": "afafb116d8358b72f05e18c8411fa79905b37bb9e7be939a5d12b278951b4836"
+    },
+    {
+      "path": "apps/api/src/accounts.ts",
+      "sha256": "d1917253946df8257c4981454e36e35c7e64bafd359cd80c9a45a8c9a2fb3059"
+    },
+    {
+      "path": "apps/api/src/admin-web/admin.css",
+      "sha256": "c72cfc4138023e18967c0ff18c428ba51ee57be62970e200690892c5ed653b24"
+    },
+    {
+      "path": "apps/api/src/admin-web/admin.js",
+      "sha256": "0a00defaf2d81b7820c017f223e33ecb66e4be5fa9c1939f31ae5b89692a561c"
+    },
+    {
+      "path": "apps/api/src/admin-web/favicon.svg",
+      "sha256": "7f49d229ce031a19c0fa8c87644e5fa6e1d4aad576471ae517e86b98421ccb44"
+    },
+    {
+      "path": "apps/api/src/admin-web/index.html",
+      "sha256": "96aa4c685e85976a01b71fe3b517fcbbfa861dc285429525203141ddf01fd392"
+    },
+    {
+      "path": "apps/api/src/admin.test.ts",
+      "sha256": "0e202cac88cb479a28a7e4c2f873a315f534e4d0ee3d039f959ea167271733a9"
+    },
+    {
+      "path": "apps/api/src/admin.ts",
+      "sha256": "f4e059dff5a2768bd3359245b13bf6de779f99475bbcbe9479a87722a63291a3"
+    },
+    {
+      "path": "apps/api/src/ai-contract.ts",
+      "sha256": "76d16ea06c5f2420a7e41498076e6e2aad89a78b5c6121b468fe5a10d78500fc"
+    },
+    {
+      "path": "apps/api/src/ai-provider.test.ts",
+      "sha256": "7357a1d10c9edf1cedb0247eb63c396174083b168afe9a5aab4bd30a039519d6"
+    },
+    {
+      "path": "apps/api/src/ai-recovery.test.ts",
+      "sha256": "c96b9f50bf8ff5edb403e88aa817b2377c1484603da954276b2b818f930f1a9f"
+    },
+    {
+      "path": "apps/api/src/ai.test.ts",
+      "sha256": "28215661d3e475f8d838295eb306f46e74950c38711e1b2c5c6d9710629d7ab2"
+    },
+    {
+      "path": "apps/api/src/ai.ts",
+      "sha256": "c2fe318357672ffcfe9c189ce059377f8501aa316c0ed4606012a91a6d638b72"
+    },
+    {
+      "path": "apps/api/src/entities.test.ts",
+      "sha256": "3852c66d012158355e58f531a16014019ee7fe355bd753cddaf92e940ad2362f"
+    },
+    {
+      "path": "apps/api/src/entities.ts",
+      "sha256": "aaa8070a3b5d3b13ce87eb09c1322f33268309ed5c1cc5284c78d4408aa03440"
+    },
+    {
+      "path": "apps/api/src/entity-mobile.test.ts",
+      "sha256": "dd7f7158aa3e6eeda3622e79775266dd504202abfe072fe999d6433c414d0703"
+    },
+    {
+      "path": "apps/api/src/entity-protocol.md",
+      "sha256": "9ca7383e78a18e4414754658f40b1fed7d9f29875b3345f931fc4d7475a347b8"
+    },
+    {
+      "path": "apps/api/src/entity-validation.ts",
+      "sha256": "8303081073b0ea5616d8dd6d734e526c857d50c789fb11f8cde836249382321c"
+    },
+    {
+      "path": "apps/api/src/main.ts",
+      "sha256": "e83cb5b6ecdeb1fc93bb23da12b5320db266ed09be39d1a3245020e31e8d7b63"
+    },
+    {
+      "path": "apps/api/src/server.test.ts",
+      "sha256": "6246c3b815cdd194ecf82606e00d602e6d3d3514e4373a17add71a1d022951c0"
+    },
+    {
+      "path": "apps/api/src/server.ts",
+      "sha256": "b7cd4a6583908251a1e1fe668fcacd1ddaf5e8dcfac1d2c136e187c1d885b675"
+    },
+    {
+      "path": "apps/api/src/store.test.ts",
+      "sha256": "24f69e37dcee1ff748a865c6fce2b3e8c81e85067615f669b3316eceb0173e22"
+    },
+    {
+      "path": "apps/api/src/store.ts",
+      "sha256": "14109abf1f2d75f72d4ee53c0abaffec4ceeec2669c2b664e3e23b72e875e7f8"
+    },
+    {
+      "path": "apps/api/tsconfig.json",
+      "sha256": "2aebdc059512e72886cfbdefed5bd94cc8fc616ec4a80a3b35785dd2c4168ebf"
+    },
+    {
+      "path": "apps/client/index.html",
+      "sha256": "964d5a881c757121b14e516afba01adb20077fef349b43e12af02fccff15aacc"
+    },
+    {
+      "path": "apps/client/package.json",
+      "sha256": "fe9d8970496073d81df7263796ba2fce738aa49c8b698322aa7478bbf2c998fa"
+    },
+    {
+      "path": "apps/client/src/account-storage.ts",
+      "sha256": "dd06ccb4802c6db8ca93d6e8bedb06a30db96889dd546ff96bfe1f705c652573"
+    },
+    {
+      "path": "apps/client/src/account.css",
+      "sha256": "8131aa5aac99f38a0d72ec7c8f529abe035f1e6f183c297fd82c411a2885169b"
+    },
+    {
+      "path": "apps/client/src/AccountPanel.tsx",
+      "sha256": "d4bdfe6a5b6ace420f6801885c7fe9a5e91334ae6766bdc999939657c7b4e076"
+    },
+    {
+      "path": "apps/client/src/action-notice.css",
+      "sha256": "697e70b03ef665647e684d16ea7897fc7f369e637335e85c2920314cde0eb7f0"
+    },
+    {
+      "path": "apps/client/src/ActionNotice.tsx",
+      "sha256": "e2401bcfc7fc854baf657faa66845f4f440546247cb71d7bd00f6f36bdbae1ac"
+    },
+    {
+      "path": "apps/client/src/ai-context-mobile.test.ts",
+      "sha256": "0ee719815d300e27a4a11f64cf0d6fa9797baa2259668231a8cc0b613b571561"
+    },
+    {
+      "path": "apps/client/src/ai-context-mobile.ts",
+      "sha256": "9d9a1f043800a829c74708568cb96fdd17b724cc53fffdebb288f16b8e23b885"
+    },
+    {
+      "path": "apps/client/src/ai-mobile-adapter.test.ts",
+      "sha256": "ee135e1977320b684177ef8214761a6384f94e5dc962b41a2501bef91746c74c"
+    },
+    {
+      "path": "apps/client/src/ai-mobile-adapter.ts",
+      "sha256": "c04037a8d72e4e44473f36f6847c7d83b12fe5168ce83016739aacea263b03f7"
+    },
+    {
+      "path": "apps/client/src/ai-planner-model.test.ts",
+      "sha256": "e14e069514c6f7091bcda12976914e8c2a885bb1106fbe5a30b5d0e51b5b0213"
+    },
+    {
+      "path": "apps/client/src/ai-planner-model.ts",
+      "sha256": "026ad83da62cc17fc9c9fb886ad23246d521c5cb5b6c1b1ba184794a462f5fe1"
+    },
+    {
+      "path": "apps/client/src/ai-planner.css",
+      "sha256": "4a41db544b681ebdfdeb061c9b7863988bcee29507a160b2993bb430a107d1cf"
+    },
+    {
+      "path": "apps/client/src/ai-storage.ts",
+      "sha256": "75036722d8f426960bea4fe09d09102e8499fa214930167515893aaca7d2a343"
+    },
+    {
+      "path": "apps/client/src/AiContextPreview.tsx",
+      "sha256": "a7fdf3c255329e1346095ed37ea2b0066e9c043131120f01c179aeb2f57c3c42"
+    },
+    {
+      "path": "apps/client/src/AiPlannerPanel.tsx",
+      "sha256": "85b8353540152b633419180187e20b1de3a86d3c284b2548cebb73070abdf44e"
+    },
+    {
+      "path": "apps/client/src/App.tsx",
+      "sha256": "fe3b63f86bf4285cd12c5b8e396cc03208179da0a4ed986de2d132f14a6bde40"
+    },
+    {
+      "path": "apps/client/src/BackupPanel.tsx",
+      "sha256": "543b874307e416af495ba677ba41eaaa2388938b2eb8fad6d5144988786e7566"
+    },
+    {
+      "path": "apps/client/src/calendar-controls.test.ts",
+      "sha256": "f75caf9f31924d11611fceeb715fb4511d7f513730632f8a70a8321a078fa357"
+    },
+    {
+      "path": "apps/client/src/calendar-controls.ts",
+      "sha256": "7e82fde72f19a1c2716cbab82570d8d52e550419c9939ac8750603887020ab70"
+    },
+    {
+      "path": "apps/client/src/compact.css",
+      "sha256": "bf7564a2eb932d01d2f790bd62295af3bf5f76b126c54e453e78b0e962db92f3"
+    },
+    {
+      "path": "apps/client/src/components.css",
+      "sha256": "a0268c06eaa9b74a2c59089b60665c5876a098cb989d05dc9d1ddba424c4579b"
+    },
+    {
+      "path": "apps/client/src/content-storage.ts",
+      "sha256": "0aac4fe0ea1545895a928931eefd4c0c84bb3deb74602005d25974e7985ed7f0"
+    },
+    {
+      "path": "apps/client/src/content.css",
+      "sha256": "d55e52177fc904d3936d4777d85a489edd5e22b5e8661226dcc1cbfea0104241"
+    },
+    {
+      "path": "apps/client/src/cultivation-goal-draft.test.ts",
+      "sha256": "15629b6b9e2f5a2d154fa058e38c1fbbdd425517b8e5064abdddcde6e7cb4053"
+    },
+    {
+      "path": "apps/client/src/cultivation-goal-draft.ts",
+      "sha256": "7d630a0d861796cd228c8892a23700da1c471cefcc4652212563b0ffbcddce4e"
+    },
+    {
+      "path": "apps/client/src/cultivation-model.test.ts",
+      "sha256": "dc2803dc9abe8343f945e5fe6238ff6a21fcec598d0f20b4701ab5ef55fca760"
+    },
+    {
+      "path": "apps/client/src/cultivation-model.ts",
+      "sha256": "95522e6069bd4d8727142700753c3ddfd5033394b3a05f3c25731236671e133b"
+    },
+    {
+      "path": "apps/client/src/cultivation.css",
+      "sha256": "e4cfb8c494a2d2d6b5c7d11337e8d43f81d105243e852a928c74f530fcc97e36"
+    },
+    {
+      "path": "apps/client/src/CultivationPanel.tsx",
+      "sha256": "7509f4ab7300141ffa207922a95ee19253a7746e81a1957bf92d27e29b480680"
+    },
+    {
+      "path": "apps/client/src/daily-preparation.ts",
+      "sha256": "b7214edacd1b1b0f97c14a66e68e809ea47e5115b1d26c81ac543ce939074678"
+    },
+    {
+      "path": "apps/client/src/DailyHabitTasks.tsx",
+      "sha256": "f5ecc94ba76946ad5d8066a9d75e25d40a138092b51638f45e6f165a5c4c8e10"
+    },
+    {
+      "path": "apps/client/src/date-picker.css",
+      "sha256": "585f5dcadc702c488f3e2205dcba0f0ed9285e94f973cfba247a7898b9788ec9"
+    },
+    {
+      "path": "apps/client/src/DatePicker.tsx",
+      "sha256": "1a9d080ffd140887ae7bf113157857b673de9d8e7414cf5c20f37cdad94cd46b"
+    },
+    {
+      "path": "apps/client/src/DateStrip.tsx",
+      "sha256": "68d0849ec43ea246e68b8807e3a8a6b2311ad2a0f49fe8be1ce853f3ea77aa82"
+    },
+    {
+      "path": "apps/client/src/day-timeline.test.ts",
+      "sha256": "bab9d50db1bc2ce93117df909cd6e5b43d292a10a71eecba8593a52c071700ad"
+    },
+    {
+      "path": "apps/client/src/day-timeline.ts",
+      "sha256": "d82e03c9f6e6e462b5a73a962528b3171e851a95a7858b1050d8ca98b453f8e2"
+    },
+    {
+      "path": "apps/client/src/desktop-drag.test.ts",
+      "sha256": "45d2565d96089f04a875aad12ae9949b93f5d830cd06333af7c15b29235d4a3c"
+    },
+    {
+      "path": "apps/client/src/env.d.ts",
+      "sha256": "65996936fbb042915f7b74a200fcdde7e410f32a669b1ab9597cfaa4b0faddb5"
+    },
+    {
+      "path": "apps/client/src/GanttView.tsx",
+      "sha256": "25b52faa29b56a9868b0e642f8591e832ee67185e2348c6dc75641d8c635b288"
+    },
+    {
+      "path": "apps/client/src/HabitDetailPanel.tsx",
+      "sha256": "17da07476da09b86808c9b318dc1296a2d2fbb678072db0e94330a77b55d14de"
+    },
+    {
+      "path": "apps/client/src/habits.css",
+      "sha256": "5f0a52c02a079a4f5e43a8ba81a86138f2a9e9f888f0ef2d96dd50431e7f3091"
+    },
+    {
+      "path": "apps/client/src/HabitsView.tsx",
+      "sha256": "ab16264b13bd036bcac8cdbd7d9edc053b636f0eaca1513c576d89ca3dab27a8"
+    },
+    {
+      "path": "apps/client/src/InboxTaskPanel.tsx",
+      "sha256": "2200f54733256cc6c28f0852f691355c526651cb48b61fa6cc536c41d0ca8f54"
+    },
+    {
+      "path": "apps/client/src/InboxView.tsx",
+      "sha256": "8e168d1b9b0969f539e95751905958f2961d5247acdfc3c20c9b669cb99b5b8b"
+    },
+    {
+      "path": "apps/client/src/interface.css",
+      "sha256": "5603ef3f30ebc6bc57c378a10c5c4a2d90b090e19b7e0bc82969ac02a292abcd"
+    },
+    {
+      "path": "apps/client/src/KanbanView.tsx",
+      "sha256": "b7a5863759ddf4e4b81465ff6caac69f1037a374a6e8b6edfabe4ed837a4e631"
+    },
+    {
+      "path": "apps/client/src/lan-sync.css",
+      "sha256": "ff6917aca232cc17ed0831ce3d461165e7657bd354f7acd878edf612feb1da43"
+    },
+    {
+      "path": "apps/client/src/LanSyncStatus.tsx",
+      "sha256": "3ac00e06a58edda14f98b25a6b49db1114764d28e9a7e8ef59c77febba8cf664"
+    },
+    {
+      "path": "apps/client/src/main.tsx",
+      "sha256": "06c379c7c20d5037d9c441fd079445df6849c9fdc6b00fb43df44ce6795fec5c"
+    },
+    {
+      "path": "apps/client/src/mobile-capture.css",
+      "sha256": "fb08724fef415f99c8e6f7dc7e745321d077218e9862617244f6b35b3680ed61"
+    },
+    {
+      "path": "apps/client/src/mobile/export-file.ts",
+      "sha256": "f650174e7f3032d9206c1c68b2d09c90116574a454e8d77ccec7fef191322be6"
+    },
+    {
+      "path": "apps/client/src/mobile/extras-model.test.ts",
+      "sha256": "3307d1c5f136b4f59c6c078f522f67c5423f45c2329e473ee6dca64e6722c55d"
+    },
+    {
+      "path": "apps/client/src/mobile/extras-model.ts",
+      "sha256": "2f5d2ad09e7c8947867736dd6f7bbdcdc67051ab3eaada3bbccf8dd43dc3fd2d"
+    },
+    {
+      "path": "apps/client/src/mobile/extras.css",
+      "sha256": "a6f8e3b0d866113ff8261128b5cc227917cb516bb106e363f8db9676e2d9850e"
+    },
+    {
+      "path": "apps/client/src/mobile/Extras.tsx",
+      "sha256": "946eae886540d6b20b96a1076e1250e9616db829dda821328c639b476b6f6a60"
+    },
+    {
+      "path": "apps/client/src/mobile/FocusView.tsx",
+      "sha256": "8206cff4a8ab62735bbe2870d6fe1004b0f7956a42f95a5956060e9c12fa1108"
+    },
+    {
+      "path": "apps/client/src/mobile/habit-check-command.test.ts",
+      "sha256": "9ade5c298a8eaea3539c0ed9613f2e0607e235f7f768ce98100b131e5d85e06b"
+    },
+    {
+      "path": "apps/client/src/mobile/habit-check-command.ts",
+      "sha256": "6dac6a5b4b269d8e43edd229e4f768edb19fc697416d79dea4d281166c31c1c4"
+    },
+    {
+      "path": "apps/client/src/mobile/Inbox.tsx",
+      "sha256": "3a99085a485c754a0c0872931f8ad51a39ae432b7dc19a0ee7dfdebdb5649f06"
+    },
+    {
+      "path": "apps/client/src/mobile/LanSyncPanel.tsx",
+      "sha256": "f4534ceec4b71fd31f4f678b7683737a4ba02e4e943e858dba284ab12eabdcda"
+    },
+    {
+      "path": "apps/client/src/mobile/mobile-dashboard-model.test.ts",
+      "sha256": "716f82c2d2afa57588031436a8ce515e095b38604b4aa9f37719f3c26e6e1f9b"
+    },
+    {
+      "path": "apps/client/src/mobile/mobile-dashboard-model.ts",
+      "sha256": "ae770f38fad10802afa0e279a06149bb9207d6f931f76aecac059fae29ba274b"
+    },
+    {
+      "path": "apps/client/src/mobile/mobile-dashboard.css",
+      "sha256": "9646c46bab41225fa7457ff8ee3391f9c9b25c839c7cef48d92a9043740018f2"
+    },
+    {
+      "path": "apps/client/src/mobile/mobile-drawer.css",
+      "sha256": "fac972fcecf23f5b74659ef77c72bddadfa4259b8eb80d9e92f2b91949474741"
+    },
+    {
+      "path": "apps/client/src/mobile/mobile-inbox-model.test.ts",
+      "sha256": "2daa2790f3d230432d0fac3ee79d67b870d4e7f7b6dd9e568c1f6dc16b5b4c0e"
+    },
+    {
+      "path": "apps/client/src/mobile/mobile-inbox-model.ts",
+      "sha256": "9113e2ba73b967ac1e345aca1ff8801d015671f17e46584ba648cdf089d09e04"
+    },
+    {
+      "path": "apps/client/src/mobile/mobile-polish.css",
+      "sha256": "47d8208ec58955a59d2169df93795f6eeb405c9a8e8d1838c213df2d8c326f5f"
+    },
+    {
+      "path": "apps/client/src/mobile/mobile.css",
+      "sha256": "2096b7539242bead989bc32eebcffab6f420f6395ba3de75bc6c32215e3605cc"
+    },
+    {
+      "path": "apps/client/src/mobile/MobileApp.tsx",
+      "sha256": "a6efd4b19d9d9e329f7bdc85b6ae98f327ad4ee5de67ce005160864fb19f1bbb"
+    },
+    {
+      "path": "apps/client/src/mobile/MobileDrawer.tsx",
+      "sha256": "545fe0b37cffab345d23e45b8df2561f0148c8aab47244be98f1b125dc50af53"
+    },
+    {
+      "path": "apps/client/src/mobile/MobileNavIcon.tsx",
+      "sha256": "6cc97649150ab4bd74120f2cc69c8f35b8e2b95b8debd1dce55a2d4053da18c2"
+    },
+    {
+      "path": "apps/client/src/mobile/MonthCalendar.tsx",
+      "sha256": "3497a6c59996879f6bc1be1a4b7b3c136002744758d73dfc1f292c07e9c0099a"
+    },
+    {
+      "path": "apps/client/src/mobile/native-view-query.test.ts",
+      "sha256": "f567e7021ee7ca2f9960e7ea4d3cb7f623d4f77b12f2b0a3f352973b33bb0edc"
+    },
+    {
+      "path": "apps/client/src/mobile/native-view-query.ts",
+      "sha256": "daaaa654fbbf8d7d06cbac73b84607776386039be57d97f89007338e0c22daef"
+    },
+    {
+      "path": "apps/client/src/mobile/quick-inbox.css",
+      "sha256": "5d9f7a5a1b98ca2cc30a13626b253d9b0e2a78cb07d6d46643688b4cd308d9f5"
+    },
+    {
+      "path": "apps/client/src/mobile/quick-task-entry.css",
+      "sha256": "6b772cb0da993b60abcbe3937334c8121dd7d2c7f618eb483c47e1fa0ea7884a"
+    },
+    {
+      "path": "apps/client/src/mobile/QuickInbox.tsx",
+      "sha256": "07e2bea3f225c442a13baa7e7a91f2014afec91c079222fec1a874807a312ddf"
+    },
+    {
+      "path": "apps/client/src/mobile/QuickTaskEntry.tsx",
+      "sha256": "21d455b4a18a6b840f95f0878d31a312c52b537a6cda914ec8f7b63027713d30"
+    },
+    {
+      "path": "apps/client/src/mobile/record-links.test.ts",
+      "sha256": "fd54628665e8ae2bb94b9b3f1ac29afcb9b2e5bf4fc24f5c14ed1e5a68414905"
+    },
+    {
+      "path": "apps/client/src/mobile/record-links.ts",
+      "sha256": "a7b89d4ed9a098b2af98d0519feec90b9eeed656d20eca4d1b4dcc7260405a44"
+    },
+    {
+      "path": "apps/client/src/mobile/ReviewHistory.tsx",
+      "sha256": "506af9a9ba35a882a749afa07961d1b82afc5dc76e9e1f137d9d146f6d0e89a7"
+    },
+    {
+      "path": "apps/client/src/mobile/schedule-rules.test.ts",
+      "sha256": "1a6f4b3565c7afccff97035c3e4bf6617064faa98751dcad3310bfe5761b42be"
+    },
+    {
+      "path": "apps/client/src/mobile/schedule-rules.ts",
+      "sha256": "b69ade53d43879071c05742f60f5a01fc25d9f140acb2ecbd50f847957062989"
+    },
+    {
+      "path": "apps/client/src/mobile/SearchPanel.tsx",
+      "sha256": "3d95a1e6d2d305b513b4c9847b0c074a399cdcfb4e95b119fe38056d4d0a59d3"
+    },
+    {
+      "path": "apps/client/src/mobile/StatisticsView.tsx",
+      "sha256": "55ded9a9ce75c6a18ea8b1a46acf2f3d0677ffe21537ba2a2765de0055f0a0b9"
+    },
+    {
+      "path": "apps/client/src/mobile/sync-identity.test.ts",
+      "sha256": "5ff52f1995771b900370a72c2c2b23b683bc925882f60e56c8ead2bda5f3103b"
+    },
+    {
+      "path": "apps/client/src/mobile/sync-identity.ts",
+      "sha256": "80552b366c6275df66188bad05bb25d4c6a16ddb0d877978204890795128285e"
+    },
+    {
+      "path": "apps/client/src/MobileCaptureView.tsx",
+      "sha256": "ccf1d7eca5f60fffce264eb15f08bde116a4e6c0567f93b88a1cf66bbf6942b1"
+    },
+    {
+      "path": "apps/client/src/modern.css",
+      "sha256": "6e7dd434eccb6e7ee501ce68f952c3a320e0600be8d1d92eda046c35c195f505"
+    },
+    {
+      "path": "apps/client/src/PlanControls.tsx",
+      "sha256": "748302d81f905f0132f7e0d3847e37018ad8bc5f72a847a04253be91f1e738cb"
+    },
+    {
+      "path": "apps/client/src/PlanningPanel.tsx",
+      "sha256": "af6f19275e890048c06008104faa5e93d8a0d9bfe4f25f8c15a785ad14911df7"
+    },
+    {
+      "path": "apps/client/src/polish.css",
+      "sha256": "f4523ed857d3b8f37ab2c92e3d187ababecd3abf6870dba4326f71da54a01a44"
+    },
+    {
+      "path": "apps/client/src/productivity.css",
+      "sha256": "a4bb0d7dce4d5dc99a842a3f37d2660cc350ab9cc455907e87aafb985a4b2685"
+    },
+    {
+      "path": "apps/client/src/ProductivityView.tsx",
+      "sha256": "bfebca39317e73154e0d6aa7c7e9dbc6c44e7aaf0e4d529094c4dc8f078d56bd"
+    },
+    {
+      "path": "apps/client/src/project-board.css",
+      "sha256": "b74483d1839651ad939749e51d4866c8983fcbf6726adec82339bf0bbfd44f22"
+    },
+    {
+      "path": "apps/client/src/project-gantt.css",
+      "sha256": "a20170a1c9cf6d2ba7ed8322a0062a9075e0b01e16aea2e76aac670b1c4e15e4"
+    },
+    {
+      "path": "apps/client/src/project-task-panel-context.ts",
+      "sha256": "c3e197898ffdfd0d41adba828b3016adc7ff87362e7683c37eb034ae690300b5"
+    },
+    {
+      "path": "apps/client/src/project-workspace.css",
+      "sha256": "2bd7ee801cd8d56827dcfaaa303283b3e6cac665a69c0c8658b1efb998ae8702"
+    },
+    {
+      "path": "apps/client/src/ProjectAssignment.tsx",
+      "sha256": "28439eca636ca6fab181419439f0f0e009df39f09b053fd6716cc4c8cb5dbde0"
+    },
+    {
+      "path": "apps/client/src/ProjectContextPanel.tsx",
+      "sha256": "992847fed107f533cebd499495a0284c58b6fd522f40ef4f4d21dc40b8b1365d"
+    },
+    {
+      "path": "apps/client/src/ProjectIcon.tsx",
+      "sha256": "cb25caa7508ef8618367d1c789dbacfb17257774b92aba98fe581ed02e5f315b"
+    },
+    {
+      "path": "apps/client/src/ProjectLifecycle.tsx",
+      "sha256": "3560ab8684ecc4a75095a84480a731b65c6e68f982ffc6754e3df954e7de800f"
+    },
+    {
+      "path": "apps/client/src/ProjectNavigation.tsx",
+      "sha256": "526a0d4e4a852f1e63da04cb8680d54615ef999134b41a8245c72519da3f580c"
+    },
+    {
+      "path": "apps/client/src/ProjectsView.tsx",
+      "sha256": "00e45f7c35339e6e7b2f50f068a61e1a87119e090811cb2c77cfca681ab39ba3"
+    },
+    {
+      "path": "apps/client/src/ProjectTaskList.tsx",
+      "sha256": "0c21192d2d4edd97e700dbf451ac20d419b70d8742add159cafb904032840ed6"
+    },
+    {
+      "path": "apps/client/src/ProjectTaskPanel.tsx",
+      "sha256": "72e6cc601bf9d28b41b5e1b70789eecd41842938d2b37c4a47de851292741241"
+    },
+    {
+      "path": "apps/client/src/redesign.css",
+      "sha256": "988231a2694ff7ebba692dd952fa9a7975ba308cdf282ac0aefff05402f8dceb"
+    },
+    {
+      "path": "apps/client/src/reference.css",
+      "sha256": "8a29349dce4441fff8bb1c802d85a2effbe102dffff698b1f0063fe9f46defeb"
+    },
+    {
+      "path": "apps/client/src/RelatedRecords.tsx",
+      "sha256": "c87376ec3eca1f519caadce988ff2d8263b73b1f1596b48c2f2e784e72c356e7"
+    },
+    {
+      "path": "apps/client/src/RepeatView.tsx",
+      "sha256": "66186bd578bc9a35358b9d61709ff0e183ab49b068a9eaab848efcfeba13ff74"
+    },
+    {
+      "path": "apps/client/src/reviews.css",
+      "sha256": "6d9a03c94b09c8dc46de34d59017faba3112cfcaa5e1babeb44e5c16c0cbd1e9"
+    },
+    {
+      "path": "apps/client/src/ReviewView.tsx",
+      "sha256": "9d87270d72c0d289a31e16534abf051aa4f09b57b189fdb3cd4681a7d1de2ab0"
+    },
+    {
+      "path": "apps/client/src/search-views.css",
+      "sha256": "e2869b77f780b886fa20bb40c07afce510a1e1fcee4ac4a0927199a11c3e91de"
+    },
+    {
+      "path": "apps/client/src/SearchViews.tsx",
+      "sha256": "656a3ca101a3c1515321be5ccca66c2da3e4e829db55b0ced629f75c63bcfefc"
+    },
+    {
+      "path": "apps/client/src/SettingsView.tsx",
+      "sha256": "565b78054381d989016273fc290be3f17cbdea2d8c677e2dda82a267c6610e1e"
+    },
+    {
+      "path": "apps/client/src/storage.ts",
+      "sha256": "3f060686a66e191a7b4758e16b4719a519b8f3178f62c98107907c19c69222b4"
+    },
+    {
+      "path": "apps/client/src/styles.css",
+      "sha256": "a2cb7d4ed094a85204a9cdcd15b457a0adffd8e75690240e1ed87213d99b7562"
+    },
+    {
+      "path": "apps/client/src/SubtaskComposer.tsx",
+      "sha256": "db8e33d155786b65e9a40b4dffd6f5bf434786177dc11dd189e16a12269ad4bf"
+    },
+    {
+      "path": "apps/client/src/SyncedNotes.tsx",
+      "sha256": "8638237da48db9eefb4a84b1fd26a77d2f15a602c3fcf780cc393fcfa0e63f00"
+    },
+    {
+      "path": "apps/client/src/task-editor.css",
+      "sha256": "07e50ec0abcfdc854c28d3d595a00d970923fc0e7e5d84149b20a57af6a7b916"
+    },
+    {
+      "path": "apps/client/src/TaskActionMenu.tsx",
+      "sha256": "483b5dcaa9a3a430a59f502aa2d4e9ddb31a86923423577325f1138cc967a269"
+    },
+    {
+      "path": "apps/client/src/TaskDetailPanel.tsx",
+      "sha256": "9d3d0aed64a36640f770a902b4ecc5d1b76f53510b7222ac9c0b210d806665b7"
+    },
+    {
+      "path": "apps/client/src/TaskDetailsButton.tsx",
+      "sha256": "47a70dec65b151f29fd5731ac0701abe9d106c74ad584d361bb7da237b9446df"
+    },
+    {
+      "path": "apps/client/src/TaskEditor.tsx",
+      "sha256": "d270c2f4cc97b69f05081338ba2e191e1a02c29a85669e5f2e3e77e74feca238"
+    },
+    {
+      "path": "apps/client/src/TaskMoveControls.tsx",
+      "sha256": "ea7ba75a05d2fb077b8089d414b9f6418250ab448ea2f08ec00433383184ca44"
+    },
+    {
+      "path": "apps/client/src/TaskPanelIcon.tsx",
+      "sha256": "99457fc9c4793d814b2d40862d4a3066bbf6ed766685a62bb9feb2e3e85e5f10"
+    },
+    {
+      "path": "apps/client/src/TaskTimeLink.tsx",
+      "sha256": "5ddc8e4234472ba461cc1dba796955e8344c14302d15f0005f181cef08b9548f"
+    },
+    {
+      "path": "apps/client/src/theme-preferences.test.ts",
+      "sha256": "eca71476254db2c8429fd10394774fa1899a823bc22aeeb86cdcfb2ab3ec21f5"
+    },
+    {
+      "path": "apps/client/src/theme-preferences.ts",
+      "sha256": "b764fcf72e26dc4a2eed26c47a2fff6221af5f2f668fb67ec26d47b39a1dfa93"
+    },
+    {
+      "path": "apps/client/src/theme-settings.css",
+      "sha256": "6280213b02927f47c6035e580bc0841958a2453fee01519e9f76906451316dd7"
+    },
+    {
+      "path": "apps/client/src/theme.css",
+      "sha256": "c71392d655ca0faabff4962a5fc314a3be9b3f746d9ff30a63d744afb8059913"
+    },
+    {
+      "path": "apps/client/src/ThemeSettings.tsx",
+      "sha256": "e1a38c6def724e651b603d963d8f0d0f845225bf21d6af5ad821990b12265cc9"
+    },
+    {
+      "path": "apps/client/src/TitleBar.tsx",
+      "sha256": "eff0deaa10748f39a0ec26de7071727e0f30744df229ff2907def3815468cfe9"
+    },
+    {
+      "path": "apps/client/src/todoist.css",
+      "sha256": "39135955ff57f77cbe3f25846b392c1a4b9971a8bd6467a1ed92e2a20fc40aae"
+    },
+    {
+      "path": "apps/client/src/TrashView.tsx",
+      "sha256": "312e013db7cbcd509f69533227614a581a1f95c39802b389b857a8ccad9109e5"
+    },
+    {
+      "path": "apps/client/src/useAnchoredPopover.ts",
+      "sha256": "73ca081bb587bca6655ac4de7bfbe501fdc6a13a07e99fad790d0b33534652dc"
+    },
+    {
+      "path": "apps/client/src/useAutosave.ts",
+      "sha256": "8fdb4fd7cf0790f214988bdb3a259e96c23b73f01d5f01b5c6a08f83b6b7b7f0"
+    },
+    {
+      "path": "apps/client/src/useLanRefresh.ts",
+      "sha256": "a7ef347b8bfe7479985643bfff56da2ab65051f68a89f0a8265414a358b2ea99"
+    },
+    {
+      "path": "apps/client/src/useProjectList.ts",
+      "sha256": "6ba6d13fbcd8f4ed65c6302f118ee858e831d7171791a5cb2f4f15bed396d155"
+    },
+    {
+      "path": "apps/client/src/WorkTaskProperties.tsx",
+      "sha256": "31b4e573fa65870319b8b21bc56f53bdad6540361743d80273b6d61e129540be"
+    },
+    {
+      "path": "apps/client/vite.config.ts",
+      "sha256": "5be0893944962efd57eeaa21a5a78315240a865872ca034e28ad68fffff026ae"
+    },
+    {
+      "path": "apps/desktop/icon.svg",
+      "sha256": "8ea486ab0845ddcf718a0853729c916c7b0a646b18fdd4dd4d4cbf0fd15fb94f"
+    },
+    {
+      "path": "apps/desktop/package.json",
+      "sha256": "407e1aa7bb4f64dd583b7fa96105f47dbfe86787f797092516389f3dc04d0c81"
+    },
+    {
+      "path": "apps/desktop/src-tauri/build.rs",
+      "sha256": "6aeeab41bc35efde4e3c2b644a6248f7fc06d24ae30b75c0d33491cbb0c1fa31"
+    },
+    {
+      "path": "apps/desktop/src-tauri/capabilities/default.json",
+      "sha256": "7eb964e6997e98ab96010acbeaf7ede3345b9aa4b134b4d7c11bd3e123e9310d"
+    },
+    {
+      "path": "apps/desktop/src-tauri/Cargo.lock",
+      "sha256": "4fcc6d0fa3002f3960b92429af97b5005b008022310729636e417d15d5030a9c"
+    },
+    {
+      "path": "apps/desktop/src-tauri/Cargo.toml",
+      "sha256": "a166bbd6a886ac263a9a1c7a41dd065aa695b92054b4929fba34a964b4a4ec8e"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/128x128.png",
+      "sha256": "2d665f87645701aa957f79a914b64f624573b1e4ff9e43e2cc985ff8193bb634"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/128x128@2x.png",
+      "sha256": "e10c3f7322617e005f9f641030d4fd440c9bde0f77fadc1ee3fa962ae1851e90"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/32x32.png",
+      "sha256": "4912d71954a6b4697c5129aff40d216500aea9256b9fdde787363c9131da7979"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/64x64.png",
+      "sha256": "418c52ccd0eef2a6b6d98071aca623cc9ab8265b2ab8e65f90e7db7fd7f0ff4d"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/icon.icns",
+      "sha256": "86ec22ba20a28c333e53d6219c7bf15267c7c0b67b0ab38a93e4d8d07e303495"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/icon.ico",
+      "sha256": "ca53f7a82aaa53cce85569e9be4b116c70586c8edbe3b172798817dbb53fa417"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/icon.png",
+      "sha256": "490da54d1074b046b7ad9bad9a769863462dc65901960c07227b2dd03c1ab294"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square107x107Logo.png",
+      "sha256": "df6f7eca727a68761e69fb6e338ab4c88205984999df962fe686feecada5bf33"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square142x142Logo.png",
+      "sha256": "d6b234612ff3bbf159f38d3b4a9a21d3ceffa4a7b63223f040c7786b3871c8a4"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square150x150Logo.png",
+      "sha256": "a63e7d03cdce71fa13ada2df31f68dd5c791e30937485ed20673b064c245b481"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square284x284Logo.png",
+      "sha256": "a22a4ce8e2f35c9e6c4542232487a30f053ac003bc59249d8c022d3795e05601"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square30x30Logo.png",
+      "sha256": "0ea90593b64533ad8e0790470fb01bdd4087cdd4cdff42efc16609273e025dae"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square310x310Logo.png",
+      "sha256": "fab88afd3d94ad754d2dce700ad14bafb988a8f28a7e55bb0b54b2a5f9555f7e"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square44x44Logo.png",
+      "sha256": "3130f0daa9d5908de3e97bd610aed37f3601b324ddb1121c0ed185f452165594"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square71x71Logo.png",
+      "sha256": "2698f253346c01c640ac6a75bb34d61c9d9ad71f5530f4f7d25d646a62a326b9"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/Square89x89Logo.png",
+      "sha256": "1010894495c7d1cc966834e69a8f706773e0e3440f4838e8ef294b24da78c49f"
+    },
+    {
+      "path": "apps/desktop/src-tauri/icons/StoreLogo.png",
+      "sha256": "651dcc7e8d7d5b962e01e898f6103021379eabfa5c55c5d439308ed1112b96a3"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0001_capture.sql",
+      "sha256": "c470320cef5e9e70054bdfffb6377132d7b23a044dce463da91e04a908456c0a"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0002_completion.sql",
+      "sha256": "2f87792133ba6800ac0a125257e26a0df44a877806e385985c378daa74ad3c9c"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0003_edit.sql",
+      "sha256": "e13d09898fd65a6c72b69bbf59f11269f337f9b752d6ece73ebe652227d33865"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0004_planning.sql",
+      "sha256": "01eedc23b654e9845945972eed3e8a6042bb272dcc36a44f65f068a26b62e3f7"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0005_projects.sql",
+      "sha256": "228c2fc17381bbcabf14767228b27f5ce6f86051126d5bb43a4472647ed22119"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0006_task_details.sql",
+      "sha256": "58d0e45c3d34a209e8a7a822943ee57f073ef1c0a6ee01507f0976ae37321f8c"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0007_subtasks.sql",
+      "sha256": "21518ce8d17273404ad60b8058ab69986ca1712c4f1068867158934205f557e8"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0008_project_workspace.sql",
+      "sha256": "7dd9c9def46cd85343783c568174cbed006db54c2abdcd82b73a4b5b49266a01"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0009_day_periods.sql",
+      "sha256": "0f99b7aaacaf52e1c5a3a4b52f6989078b657d1d2052cea4899e88a735625bea"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0010_capture_records.sql",
+      "sha256": "b66ccdb64fcd40c43e0c12d6381a30ee67f8f9e0161b5e414551df7cfb5b6de6"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0011_productivity.sql",
+      "sha256": "3f35093f9b07dfe350531ac80a931fee50bfc5f282d9e9b4ddf699f5154f376c"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0012_trash.sql",
+      "sha256": "ae480580d0f6a9c2a421a18a8578767d5e256d3c5103986bece97ecbca3d4228"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0013_recurrence.sql",
+      "sha256": "f13c6b719a0adff1404e10c1b020f091ba60363d94532933572fbcdd35bb6fdb"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0014_habits.sql",
+      "sha256": "110aff450231242133ffb6b7252d8e08f6a4f0b8b39d7501f34e7d90acb4a59c"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0016_views.sql",
+      "sha256": "64c110975bfbde176dc8e096191df143094b8b7c9d7cc3d1774b74c8b84a99ab"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0017_recurrence_rules.sql",
+      "sha256": "6b376ed7503710019de3055a6cbee8a2166460595a5d8f804a6db9b291f2c967"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0018_reviews.sql",
+      "sha256": "b7f089f320fcd85da19a902ebe3690c737bad4f78518b96a282b0b5d04c1d4c4"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0019_trash_retention.sql",
+      "sha256": "a5522303d53e4fed063d881f1edeb488a10938c015c89469a9ba86ae52031b96"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0020_lan_sync.sql",
+      "sha256": "9c7b039d3eee8e97de9ddb0d33a85f81a534c5dad33accf9a9f0ec04e54872a4"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0021_lan_entities.sql",
+      "sha256": "d0050e9017400a3f99ccdf0ed4cda82ec18a423ec6b617ec5bef833d27f7500d"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0022_rule_sync_fields.sql",
+      "sha256": "dd3726acdabb2298b75ee24c67d0f6ad959642426031809602b320708aa91509"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0023_habit_daily_plans.sql",
+      "sha256": "bf3ad53cf1f21a9206007632a482bc95f790159bc8ee0866a83a09d7a47d4b85"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0024_ai_planner.sql",
+      "sha256": "a3892220178c6da8f7af32452450b866444d641f1000b80438df9f5829f0e1e2"
+    },
+    {
+      "path": "apps/desktop/src-tauri/migrations/0025_cultivation_rewards.sql",
+      "sha256": "d3a43145fd38d4dc541d3c4dd5b5b37da3c0147652ca98e2ced8e5e0983003aa"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/accounts.rs",
+      "sha256": "c693dff4e5330370d634d3bde45439992240e1898e17041597be3b7c7368e814"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/ai_gateway.rs",
+      "sha256": "bb4e04d9795f9a73344717b497df19e809ed7e8e3045845a5bd970e2af257e0b"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/lan_sync.rs",
+      "sha256": "6aa3596e82386de5dfb5fb535a8c3c4f3ba4286cdc6c3e52c64c421dd493d442"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/lib.rs",
+      "sha256": "dc2f7d6a47ce82ed33fd3696cbb235392f8d1d9e7ef25eb3b8384316ca00d22b"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/main.rs",
+      "sha256": "fb66b9923c1a7785bf65208e9f7cb38775358c928842592e6ff8252a077ca4be"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store.rs",
+      "sha256": "c21a164f0c15da711ab0673650cedd2c0840ed62ede1ad22a3b2dbf840df5b13"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/ai_context.rs",
+      "sha256": "2883ffd5e4393f663c08548a75453eb1e968b8ad47419cefc5a9a92f838735af"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/ai.rs",
+      "sha256": "44d70545e749d452018caa9188def626e5c559bf2f91477f0166b32e3fe0ed66"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/backup.rs",
+      "sha256": "d81c154ae3c694661656abf3c0de6c65356fa9c7c5ddfdbcd4ce31df1a8df7ac"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/content.rs",
+      "sha256": "aec7eba9ce47b62cbfca15a7226321263dd0248b0f2940714d0ae200f1aa569d"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/cultivation.rs",
+      "sha256": "6ef5fbd5479e763b0dbb67fdaf23b0392b5f91069a42b8c860bf9ddbaefc8ab3"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/edit.rs",
+      "sha256": "fd51ea7cee70a363af0b0740f29a8f098c559b623352b2cbc830b8b995270ef9"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/entities.rs",
+      "sha256": "10c4495acd1f79aa99944b855c7957cb941e4bebf289f2bedff1d2455ff4b21c"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/entity_identity.rs",
+      "sha256": "cf7524dd854cb4d3fed659131ebfb4cdafd3c4fb4de6b85b62002b870d75785f"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/habits.rs",
+      "sha256": "e63593375008c2515db76ea27511a72ba160b9c9be9d8f22b73e0c4d3da9922a"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/inbox.rs",
+      "sha256": "95ebcb50a1e2dd98fc17f020e09e8785160eca720167ea8b47374d2e22f3fd9c"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/lan.rs",
+      "sha256": "76badfe36cc6cdc9d9ee5ad6d55738666410707ce0a6c7df620fbcf144553699"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/planning.rs",
+      "sha256": "adc1d1e5923a01942bf83d2b1120cb30dcaa0750f7abbeb6adf5dc9b6ae37543"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/productivity.rs",
+      "sha256": "d9f7083fcad77f9087868a5b37ad4deb34ad0ee364345e3aeba484c09b853b99"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/projects.rs",
+      "sha256": "e4739f344bd8d8a4918160c45e0c1da11e9bb71ee9766a74ebef52d6e042afc8"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/recurrence.rs",
+      "sha256": "71c0175185792a6c74d57935e8f823a53b11ed8ea268823ce43fa8f6a629d54e"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/reviews.rs",
+      "sha256": "c6c53912485316327cd0cc6c1df397e5ae59a84eb2781aa1c86a9bfefc126cbe"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/rollover.rs",
+      "sha256": "8c9a45360cedf45dd6348245599e7c7e88fa870f7fc39b93ad9cc0c0819deee1"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/subtasks.rs",
+      "sha256": "7a2803cb3242335711b07ff2d6c4a82122e5b4944269e6cf0ef022e444d6d825"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/task_details.rs",
+      "sha256": "977642343b38d417e55bc8487d1ee9947b3c43ff5d71fa1c91acce42f4633635"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/trash.rs",
+      "sha256": "ebc1c6ce5310bfe22e572aa2063b5525e8a9fbbab95301618b741ebfd649935b"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/views.rs",
+      "sha256": "1e14700c651878c1a41d880ac11a317ed744bdec2eaa5c58c836b435fe39e739"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/store/workspace.rs",
+      "sha256": "45d3d49b34a4bc789a4961f6e91fdac0e2e7f49e0fa91653ec60387ca785b4b9"
+    },
+    {
+      "path": "apps/desktop/src-tauri/src/theme_preferences.rs",
+      "sha256": "c6d6deab6a48843a8a41449314c712399eeaee3fcdb5ed0c071c34d95d9a1370"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tauri.conf.json",
+      "sha256": "753b646e13993da646b1dc36ddb5da14505f22bf5f775334a0b96cce1d8c3384"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/ai.rs",
+      "sha256": "3efdeda534c84078020a37b64f88cf804f8d670dabf7dc7a891e4df9317f9627"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/capture.rs",
+      "sha256": "b7b994ccbb2e596f0cf2001fda56f482ea67b49239e6b1a9d85a94307b983644"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/completion.rs",
+      "sha256": "1915783693655a4977d3fd855a62d1e5916b2ab7c3087475ed14fcf95805399b"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/content.rs",
+      "sha256": "92ac630c0013674edb2f4c0656727d93dba30d1d0e7fc4df254910828e4c6b9a"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/corruption.rs",
+      "sha256": "53c21a6d1c9962f4575c7fc73f2f35f066a2fe3f53414e766e737d5e3fc95256"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/edit.rs",
+      "sha256": "05a32dfef54b7c250f673c0a9ca80c54ec6a279fdaee578a36d131f363ce3e34"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/entities_contract_review.rs",
+      "sha256": "ac530a367aabc7d11d5a50b0ca2bc77219d8eb2b2bad686cf7540f0685acdbec"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/entities_identity_review.rs",
+      "sha256": "56a33707b24932650a2838c9edafd247c8a7f1f94d5541cc86f18dc7ece0fb23"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/entities_sync.rs",
+      "sha256": "1307d6ad37f723a233c315b41ce2fde527cc9ec9a6ed80b1e5afbd1406940e79"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/habit_arrangements.rs",
+      "sha256": "315fd054a7c66062318d0443c009104721e06c406e6901fab8fc5d6f79a182a6"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/habits.rs",
+      "sha256": "fd19aae8e714292a83229ca9a54a0a3cf8714efd3ed25e6a219320235173aea3"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/planning.rs",
+      "sha256": "7b962ccbfb56a642098c37bca34ac256db48ce0b7d2491dea775e8b5c01dd261"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/productivity.rs",
+      "sha256": "56cfc47946fcb044a3c41f8444e4aca8fcb1ee6cc6a206556677960c03c17315"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/project_workspace.rs",
+      "sha256": "f42bfde9bba86a3f4e416063527728a6edf8f9a1afa80276fe26ccb15e0aef01"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/projects.rs",
+      "sha256": "49fdc8f05a2f49a5741d62f3383c5fdbb09f90867fd4bdc2c6e105a31d905674"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/recurrence.rs",
+      "sha256": "9c6acd3f63735aa90168d4f6ba8c04e67f28d4cb7a40cfdb77b9599df9448fd7"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/reviews.rs",
+      "sha256": "ed66b34d936aee240f2762661b35feff0280d1e37d0c02d04ee8137dc13053ce"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/subtasks.rs",
+      "sha256": "b55f9f34fe390efbca9c2e68fdf44874803b05efdb5a78cb2870ce69de008040"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/suggestions.rs",
+      "sha256": "164dd1c54461fb35e9e64d1251905d28089ad772b7ffb77372cdf299fe8c26ed"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/task_details.rs",
+      "sha256": "2d76a4019e85b349d1e702d6cb6c73c957523bddc0339b15d9477beb5ecb355a"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/trash.rs",
+      "sha256": "45aea32b05efc7d26f5d9b625f308e2f72d2b1ad2c0e5a99910332fe5ad3bb0f"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/usability.rs",
+      "sha256": "5504f87e5053662c9a854b0fee87754aaffe3d2d19f1bde7b8f2bf67a9c94c6c"
+    },
+    {
+      "path": "apps/desktop/src-tauri/tests/views.rs",
+      "sha256": "26c9357f9da0e5866e9a5b98e6ff70e29710314614c45b2fd5af3824d46f6862"
+    },
+    {
+      "path": "apps/mobile/android/.gitignore",
+      "sha256": "065e4a92a240fe11a0ea230491ad9dabef143f5fd5a3e6884ad6f0395666a971"
+    },
+    {
+      "path": "apps/mobile/android/app/.gitignore",
+      "sha256": "99c54e51ee601a60fbde8016b2cbf717483bc2e92773be86c9247d02a7fa6ea4"
+    },
+    {
+      "path": "apps/mobile/android/app/build.gradle",
+      "sha256": "6a1f735bf719a8561cfe0425c5e1c292e809d23c6c15967711ba5ba5acafbf25"
+    },
+    {
+      "path": "apps/mobile/android/app/capacitor.build.gradle",
+      "sha256": "953e090dbd144d28fca49a23632e96482ffc7d94f7ee49a3d50e85ff8955b535"
+    },
+    {
+      "path": "apps/mobile/android/app/proguard-rules.pro",
+      "sha256": "1cf8c57e8f79c250b0af9c1a5a4edad71a5c348a79ab70243b6bae086c150ad2"
+    },
+    {
+      "path": "apps/mobile/android/app/src/androidTest/java/com/getcapacitor/myapp/ExampleInstrumentedTest.java",
+      "sha256": "b88679fbfe8747831519e458389408339446f9b0f0fb1b3b77dee4df648cf54b"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/AndroidManifest.xml",
+      "sha256": "67880ad9989710443abe80ee6db4c6ae50a0a6c7b9fd79f4d54c7a7e2de1b62c"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/java/com/praxis/mobile/LanSyncPlugin.java",
+      "sha256": "73f1180db991cf85b62f4b6029b6180f2853526fcafa4a1eccbaf7226682fb59"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/java/com/praxis/mobile/MainActivity.java",
+      "sha256": "358bc7f19773c51ddc8d5a7a3999533b2639e3af0885f32f00ece70d982ce1aa"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/drawable-land-hdpi/splash.png",
+      "sha256": "08cc34ad7713fe7ed58bceaa37b2387b670c53cd60264b4bd6442db3098e75dc"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/drawable-land-mdpi/splash.png",
+      "sha256": "5cf98b4451bd99b20df26f9e608a46946118be6b0ae90762f9ca1786a30c76ff"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/drawable-land-xhdpi/splash.png",
+      "sha256": "22f87e1e3bc89aa01a7dbc39c9a4db058cd0bf4ad3fe9f55712bf69eb997f4bf"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/drawable-land-xxhdpi/splash.png",
+      "sha256": "42aa26392546fcdee1b8d3ac6d4b41bfcceb41dc6a4f3a3c30c24a8a8f4db862"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/drawable-land-xxxhdpi/splash.png",
+      "sha256": "60393ce8636fd263e4e1fea3fd4ab2de948c6295e898fda9b50ac4e5283be809"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/drawable-port-hdpi/splash.png",
+      "sha256": "c5015f4ba3628392b538386c5e210f0b94f352a3160adab934fd0311972137ca"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/drawable-port-mdpi/splash.png",
+      "sha256": "07fa579e1c83e04ba7f9cbcbfcf41b68e15fe3638f2c44a04e58b809103e6b69"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/drawable-port-xhdpi/splash.png",
+      "sha256": "b73049cb37fe76d6c11b87a796766bf6af0c85483b31eb6a921657b0d764a4b9"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/drawable-port-xxhdpi/splash.png",
+      "sha256": "0c7f1212f25b7b90e9a6e1d320013e4ff3d3e03e634cbb07b7b7981cac51627f"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/drawable-port-xxxhdpi/splash.png",
+      "sha256": "3db071a03b2f8ffe0dfd4170fc59842d53cd15bba5e88af59401d58efabf7827"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml",
+      "sha256": "a8514094f754b099d3e55ce1d6e0b2de79db418b2eeacb0fc2a6bb0bfadef221"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/drawable/ic_launcher_background.xml",
+      "sha256": "718ba51adf166bb55c3e9936bb8199a0148457f7f0191aaa2f37a94f3159d6ec"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/drawable/splash.png",
+      "sha256": "5cf98b4451bd99b20df26f9e608a46946118be6b0ae90762f9ca1786a30c76ff"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/layout/activity_main.xml",
+      "sha256": "5d770feb791313b947020cbfc57e5c733c556dac5e9e49261a1190e527073253"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml",
+      "sha256": "9c3a7e0a6515c6e1a7ae834a9ae430311ebc3241f7b2e5e7f0460aa690709a7c"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml",
+      "sha256": "9c3a7e0a6515c6e1a7ae834a9ae430311ebc3241f7b2e5e7f0460aa690709a7c"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-hdpi/ic_launcher_foreground.png",
+      "sha256": "32baa10d2632a4417454a579f992bd640e0a3cec79321423559b2c9940de58a9"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png",
+      "sha256": "bfcc1b0fa931b14bb241372c76ab4f04374b67d02363c98d9cb12edfdacdf5f3"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "sha256": "72b71c3581ca3b5a23b1c168d69b9d855b3f184fa079902a01f088eb4f0607d5"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-mdpi/ic_launcher_foreground.png",
+      "sha256": "58e78a618778926b1f6d9472a6468de878de8530970934e94aab5ba4ba08cc00"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png",
+      "sha256": "0166fc333074c373fbd0ce6b5defd71552166165ac778121ca9c9dff6b83f0fc"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "sha256": "27ed3603010ebc278f64f8645741ab132ff517abb5308eb9df6c8e42a48956b2"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-xhdpi/ic_launcher_foreground.png",
+      "sha256": "6f88083b8166cc559102f7044688de7525287632ebe09ac45d001ac8bf4b3eae"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png",
+      "sha256": "40911a00922868686854a4804b93fd6e56b503664696de03f450bff690affb6d"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "sha256": "d35dbfff175b83c13ef59cf924abfc810f7b6a158595d7417c5498ea8c7c7ed1"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_foreground.png",
+      "sha256": "4a82bc1e9923576275869998925ce0ae021a79aa18b24a0dd87ad6b61ca85053"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png",
+      "sha256": "1ee4cd9ff371dcb2e3938097e434f6fb8731688ed7165e61fc63693ad5b2f455"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "sha256": "ed346eb1e3f0280f15709393705899b3ff55c20b88f4e0308006b3c33cf5fe14"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_foreground.png",
+      "sha256": "bd24fd383253bf8d43f0a81f11c071d76d1d555114376dd647cd9fb38fa0a9da"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png",
+      "sha256": "ab93096331e7cd8ec379f73f1e9adcaaa9ee1115c9f4ff10411a811fb9700174"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "sha256": "87cb2f2ffe992652bb4fa768c73719a37b5852ab17fbf8e170e888f7a42b0761"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/values/ic_launcher_background.xml",
+      "sha256": "cd40bafe618ff506f4088778b135cb4faa15f25e0c9b475e22d730c74b7be115"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/values/strings.xml",
+      "sha256": "0f1724bd2fdbd5efc2647bc432278c55cad2f5afe912a7522b5c3bd5012ffa2f"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/values/styles.xml",
+      "sha256": "18ebba36575e9461347ee67361b23caf095f158ee85dbefe1b83a4669ba5bd6c"
+    },
+    {
+      "path": "apps/mobile/android/app/src/main/res/xml/file_paths.xml",
+      "sha256": "a46ed43ef65c90cb6778f4581decf3556e3f0055aad8f36d69dae16f9a0e99aa"
+    },
+    {
+      "path": "apps/mobile/android/app/src/test/java/com/getcapacitor/myapp/ExampleUnitTest.java",
+      "sha256": "d4045ae8fac1f0807e6b24eb34e68409a9a235df9d1a3f896fb8c9a49424363d"
+    },
+    {
+      "path": "apps/mobile/android/build.gradle",
+      "sha256": "e2aa5075e1fcfd5e77c63eb8d662932b3c8586c927376b88a4986365af3b635f"
+    },
+    {
+      "path": "apps/mobile/android/capacitor.settings.gradle",
+      "sha256": "4a4a6497dd5757274b2c46c647343ee4899b66c22b0fef4012783c8dbc8c93e9"
+    },
+    {
+      "path": "apps/mobile/android/gradle.properties",
+      "sha256": "3bab15c5b8bc4c2f4b6cf525497d15ad4abca53a460e6dd2eb0f0135817d31e6"
+    },
+    {
+      "path": "apps/mobile/android/gradle/wrapper/gradle-wrapper.jar",
+      "sha256": "7d3a4ac4de1c32b59bc6a4eb8ecb8e612ccd0cf1ae1e99f66902da64df296172"
+    },
+    {
+      "path": "apps/mobile/android/gradle/wrapper/gradle-wrapper.properties",
+      "sha256": "9a479a85aa879bb55284fc16d0de5b81a745c3854f4e2d88c42e7debaf007435"
+    },
+    {
+      "path": "apps/mobile/android/gradlew",
+      "sha256": "b187b4c52e749f5760afdd6fadc31b2a98ad35fb249bf0dff03b72650f320409"
+    },
+    {
+      "path": "apps/mobile/android/gradlew.bat",
+      "sha256": "1d297e00bd21de3ace22b4d7f2de1f9dfa858883d66bbf7c1ccbecccec8f4f3b"
+    },
+    {
+      "path": "apps/mobile/android/settings.gradle",
+      "sha256": "6ce098d15ebd69b44c4ecd786bca1bdc366340d2459b2af4d7bb0ab317aa9669"
+    },
+    {
+      "path": "apps/mobile/android/variables.gradle",
+      "sha256": "83d502c9ed8fcf1dd4791482067abeedbebae49fafe9cd14a8a1f5891deb0d88"
+    },
+    {
+      "path": "apps/mobile/capacitor.config.ts",
+      "sha256": "78f348665adfcab54032847bc6c55f698b2d2a4483bfcc547bdae3987fb1e050"
+    },
+    {
+      "path": "apps/mobile/package.json",
+      "sha256": "25cccf7b487934b715c045c8cb9532a7b36da0abbfe67ebb3a60ad70ea3864a6"
+    },
+    {
+      "path": "DESIGN.md",
+      "sha256": "fac41922b286a5ea409c52c07307daa51fa45f326a924e66a356de6a417bba3e"
+    },
+    {
+      "path": "package.json",
+      "sha256": "445148b29c3db7deeaef3a59920620e581e92b1fad6201248ac8667193b49744"
+    },
+    {
+      "path": "packages/application/fixtures/capture-storage.json",
+      "sha256": "6d6ff512aa75e7055655e6746a02105262b6cc4907f8113eb6e31e08e9af9141"
+    },
+    {
+      "path": "packages/application/package.json",
+      "sha256": "41688a8dfa5fbdca696e16680fd71942553ea0874761f947cd6133c323cacc6f"
+    },
+    {
+      "path": "packages/application/src/calendar-date.test.ts",
+      "sha256": "f4f115d8eb2e0b0eaac3f07d38ae6bfff5a6b2524c17769c6f10a745a5d1bfc6"
+    },
+    {
+      "path": "packages/application/src/calendar-date.ts",
+      "sha256": "cb0eac4fcd2ab569f10182d92951b6d46c56e7eaedc80ee03102d32cc4218ef4"
+    },
+    {
+      "path": "packages/application/src/capture-today.test.ts",
+      "sha256": "dd416b9ae80e460c1ed778a4846f98d9ff07542b76e4a0e53a8d720d685dbf10"
+    },
+    {
+      "path": "packages/application/src/capture-today.ts",
+      "sha256": "8583e8a3a066e70efe0e4c4d7b6d09bc6812300cde3cbe404f41378970c9ce9e"
+    },
+    {
+      "path": "packages/application/src/completion.test.ts",
+      "sha256": "aa386e0cee9c8cab331620a4c745dac0953462f67fb42b6ad31f466205aa7bea"
+    },
+    {
+      "path": "packages/application/src/completion.ts",
+      "sha256": "186353dac450524502958a22d1dca2c8f171399388258e6f038a5523bea8cc1a"
+    },
+    {
+      "path": "packages/application/src/content.test.ts",
+      "sha256": "cc27218f1fc53e97788811036337deb6706a278860f593f1cc55aa739b700526"
+    },
+    {
+      "path": "packages/application/src/content.ts",
+      "sha256": "6c51ccaa04f87f582f751c120aa67b78e5e66a252bba5cc7e073f810d4861c73"
+    },
+    {
+      "path": "packages/application/src/day-schedule.test.ts",
+      "sha256": "f987909da8daf316122951b789c4f72708773c8b594a18188c499449d1871edf"
+    },
+    {
+      "path": "packages/application/src/day-schedule.ts",
+      "sha256": "3b1dae41b1581dae08b479d8e021647344f097b303a463193ce20f1e39f2d93f"
+    },
+    {
+      "path": "packages/application/src/edit-task.test.ts",
+      "sha256": "d79aa1c066c89dee89f6987fda0a45b5fcbbc11f89740cb5c85b0a1c08485761"
+    },
+    {
+      "path": "packages/application/src/edit-task.ts",
+      "sha256": "53094240032452f09b99503c8da8586b97b4b4717bbc948665d245d0b0f24f24"
+    },
+    {
+      "path": "packages/application/src/index.ts",
+      "sha256": "552d8262fe4d4fca6a8e9bfa4dca85515d420ef6704ca13fdfbae7a3c1acef8e"
+    },
+    {
+      "path": "packages/application/src/planning.test.ts",
+      "sha256": "732f6e876dc56c97495b8d145122e1739a47463cd13dbb3165bba423eae55235"
+    },
+    {
+      "path": "packages/application/src/planning.ts",
+      "sha256": "3f7e2ff59ed8b81681b27b6b543c54287b4375ec34aac4d33c44c44343ac93dc"
+    },
+    {
+      "path": "packages/application/src/productivity.test.ts",
+      "sha256": "d6743776ef07978acc444e4b4f55e9f18648923885551ec423c770ab25f25323"
+    },
+    {
+      "path": "packages/application/src/productivity.ts",
+      "sha256": "72a1991cbe9ff670f177aa2fa7d2db66e476e44e096ac80e17ae8088fdf433f5"
+    },
+    {
+      "path": "packages/application/src/project-workspace.test.ts",
+      "sha256": "1ceb165c2c6188775fbe2a9cc016cd35a9f9e4452036bd80a7ca54da0fcf5ec7"
+    },
+    {
+      "path": "packages/application/src/project-workspace.ts",
+      "sha256": "1a416696aabb7ca75c34d1e35e1cd355ed202cbbd59aadfa3156f8accb6c6f9c"
+    },
+    {
+      "path": "packages/application/src/projects.test.ts",
+      "sha256": "dbe3e465ccd172f3e9d1324e5016cd18622017560eb82e366e8c5d8a1b666678"
+    },
+    {
+      "path": "packages/application/src/projects.ts",
+      "sha256": "1ec6cb58ed2f175b9e85b98c2177c6d51b170a3800845089b35244ac01ecf930"
+    },
+    {
+      "path": "packages/application/src/retriable-commands.ts",
+      "sha256": "31d8876878a586c7a16586c45df69c21aee34fee9849a97bd664a8f0ef351517"
+    },
+    {
+      "path": "packages/application/src/subtasks.test.ts",
+      "sha256": "0b7086cbfec69a88baaa1cd143ca1d55a65018354c3dbb67225b159a6a74acf4"
+    },
+    {
+      "path": "packages/application/src/subtasks.ts",
+      "sha256": "2435fbc65534df0c3ec881a00a27a936163849000b462a261f2097d0646efa27"
+    },
+    {
+      "path": "packages/application/src/task-details.test.ts",
+      "sha256": "16622d7e2a889b934f641246921701eb5c458a11f1703dc193bf349fc9e7e8eb"
+    },
+    {
+      "path": "packages/application/src/task-details.ts",
+      "sha256": "cbe67bc68143eeb81c25d75b0baa767d7d308ad0cac8b6fac816133559423cc1"
+    },
+    {
+      "path": "packages/storage-mobile/package.json",
+      "sha256": "a5901b6ba5e3aa12dd80b9b9405d6e5b8b11b539733da2c44cf1f70b826a4bbb"
+    },
+    {
+      "path": "packages/storage-mobile/src/captures.test.ts",
+      "sha256": "42a61130b0499fca590e0189c898d2ef244440854754318e0dadbb52ac9477bb"
+    },
+    {
+      "path": "packages/storage-mobile/src/diagnostics.ts",
+      "sha256": "f1fb3c147e4089e3c96f0f0e93aaa5d9bd0c5ea6a30b50d89f3d54b8c98f594a"
+    },
+    {
+      "path": "packages/storage-mobile/src/entity-sync.test.ts",
+      "sha256": "4b57659736f0b892f253ed6d0b5ac696253d1fd54d1698cc261ed56d94339a2a"
+    },
+    {
+      "path": "packages/storage-mobile/src/entity-sync.ts",
+      "sha256": "a5a45b6a7e68e1f5251686861c919ed0e784a25bf2a5b9a2b66050ab831614cf"
+    },
+    {
+      "path": "packages/storage-mobile/src/index.ts",
+      "sha256": "613e32973ce522b1ab13de21227f449a9a697cc3f07af69674ec552479f72944"
+    },
+    {
+      "path": "packages/storage-mobile/src/lan.test.ts",
+      "sha256": "9232823fc64970fd703cab3486d47b75d748b82f60455214fd18d403ceac75ff"
+    },
+    {
+      "path": "packages/storage-mobile/src/lan.ts",
+      "sha256": "f4a0fa3f7f916256b6181bf185acb658a3021a2a758a37f297a5c67bad221868"
+    },
+    {
+      "path": "packages/storage-mobile/src/migration.ts",
+      "sha256": "354245eb4bb936b7ded46f669c53a38ded7ec504762aa30736a8e23cd2042d8a"
+    },
+    {
+      "path": "packages/storage-mobile/src/native.ts",
+      "sha256": "6b27a0fa3e13f54913713ca47af051c5cba02ebdffc65bafead7e49fcc4adc40"
+    },
+    {
+      "path": "packages/storage-mobile/src/storage.test.ts",
+      "sha256": "7c17ab01f68739c24357f700ff6631734c8d3e70baaf6c5104b585eb7ab8b114"
+    },
+    {
+      "path": "packages/storage-mobile/src/structured-review.ts",
+      "sha256": "f1c9f8488998a5c550c5894ad077eab579214d08b66d397f5d4d15c4f1af7089"
+    },
+    {
+      "path": "packages/storage-mobile/src/workspace.test.ts",
+      "sha256": "c73a1f7dfee1335f512ab24015241aede4296745d729fcf6fb1f542c0f24f26a"
+    },
+    {
+      "path": "packages/storage-mobile/src/workspace.ts",
+      "sha256": "874b74a95107ae64be989f6d3af22b7e7bf5326c26fd83014a3b2a0f1892dae1"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "sha256": "c472592f48b9cf4766e1918e4b57ffe258225a9b95c62bec0a92b482d5243261"
+    },
+    {
+      "path": "pnpm-workspace.yaml",
+      "sha256": "21417825f8ee4ea58653e65ffb9149afd6c2c1d3cf197eb09e9a275c20200250"
+    },
+    {
+      "path": "Praxis_DEV_PLAN_v0.1.md",
+      "sha256": "cba46801aa0645432bcf631de1e896b317b23308c7cdc831bc51c460b3902c6f"
+    },
+    {
+      "path": "Praxis_SPEC_v0.1.md",
+      "sha256": "4ece6a355089b7c6f885f78dcb9308b07cf22f0093b0323c91b7f5ab2413a330"
+    },
+    {
+      "path": "README.md",
+      "sha256": "6d663c7bd1fdcdb18b71b30e5261ef722dcc6bda6951601df46963c3b84ecc6e"
+    },
+    {
+      "path": "scripts/admin-ecs-smoke.mjs",
+      "sha256": "9e1f8f93771adaf9601e98a468de57c1591528a128257754e7a27b810f2c4638"
+    },
+    {
+      "path": "scripts/admin-preview.mjs",
+      "sha256": "13936c9a9a9d755984250250dceafecda42f9f09a7a663439da6494a8a874ede"
+    },
+    {
+      "path": "scripts/admin-smoke.mjs",
+      "sha256": "c3ad2d9fa483d68526d0fd92fddd5c555286963e79ec91c3dd879b7da78b3919"
+    },
+    {
+      "path": "scripts/ai-live-smoke.mjs",
+      "sha256": "b352231f3b13adb1e1647b1ff8fec7e5439e6e4f7ee3b37f3e1dc06e1d1cff8e"
+    },
+    {
+      "path": "scripts/allow-lan.ps1",
+      "sha256": "83e3859cf02bc9f131fc1cd889438ebba08ef044bfaba29262c2020d332d7a33"
+    },
+    {
+      "path": "scripts/android-sync-test.mjs",
+      "sha256": "d7732dac0e65d4df3674a27ec1fccecb8a8374061865ba94e95dd0309cc0433f"
+    },
+    {
+      "path": "scripts/android-test-confirmations.mjs",
+      "sha256": "ef1f9de9458b1a9e41130dcf390bc8f494d4aa5cc6fd343b4dcdf7e265884704"
+    },
+    {
+      "path": "scripts/check-lan-sync.mjs",
+      "sha256": "43a2fcc959bdca71b98cb34a70d083cc4826036fd316c6e889590ca4ae861cd9"
+    },
+    {
+      "path": "scripts/check-lan.mjs",
+      "sha256": "88b83cdc6a40dfb76837a5bb7c38f5770cd0323cd824dce7fd09bc1df64297fb"
+    },
+    {
+      "path": "scripts/check-project-navigation.mjs",
+      "sha256": "a5a695007405463acfc7368edcffcc240a7e8d7f7edae11c48501dc2fffa7364"
+    },
+    {
+      "path": "scripts/cultivation-layout-smoke.mjs",
+      "sha256": "e7d11ee5cbf5b1d5e11f98e5709b1f516cd237c38f606f3ea8cafe167d8633c0"
+    },
+    {
+      "path": "scripts/desktop-usability-smoke.mjs",
+      "sha256": "4ba2a448d9b426dec9102408b94e1eb1311309abf6d0ae7e54698956300e7116"
+    },
+    {
+      "path": "scripts/ecs-dual-client-smoke.mjs",
+      "sha256": "1a2446025d1e48246ef7457877520573e2eddb0c186565b36773f4356335c72f"
+    },
+    {
+      "path": "scripts/lan-dual-sync.mjs",
+      "sha256": "8c9f2b2ff63f8cc43dce287cf158ef6587a33a1fc8a68b78b160fab308f2650f"
+    },
+    {
+      "path": "scripts/lan-full-domains.mjs",
+      "sha256": "3217d1706c4f938340a055baacf8ed4ff4569919c23c6783f286abb67e05303c"
+    },
+    {
+      "path": "scripts/lan-full-faults.mjs",
+      "sha256": "601d73d7d249cc5c199c9964df0086efe6136b0e87c4c913f1d216a03f49a07d"
+    },
+    {
+      "path": "scripts/lan-full-sync.mjs",
+      "sha256": "7a735120e845199801dd4152a9d03488b31c0cd4ce1a59b13db9a001598f113a"
+    },
+    {
+      "path": "scripts/lan-full-views-drafts.mjs",
+      "sha256": "10ed90237c263ee22e57ebc06b3f19ed41643d056cbc18e0a20eafedbdfbc1fa"
+    },
+    {
+      "path": "scripts/lan-sync-recovery.mjs",
+      "sha256": "e45b5a3595346230f6a99ec7b4a874fc225539e30c9542c273f6ebf579351ae3"
+    },
+    {
+      "path": "scripts/mobile-accounts.mjs",
+      "sha256": "cbe9e9c8829208d9933067de374ee86635925c3810428fe54ca61f78cca2c661"
+    },
+    {
+      "path": "scripts/mobile-dashboard.mjs",
+      "sha256": "97b86b809055e3704dedba74bab7fa02d7f8dca8d2ae4acbf04d896a47bbd40a"
+    },
+    {
+      "path": "scripts/mobile-drawer.mjs",
+      "sha256": "4ce3d69c0dc91e1577755e4aaf5eaf1e2104769e8f63890530b0834fe414e0cd"
+    },
+    {
+      "path": "scripts/mobile-extras.mjs",
+      "sha256": "355bee93b44f10b0bcdc37db375f16e386dca6e528dcd083ebed39ad2d6cc885"
+    },
+    {
+      "path": "scripts/mobile-quick-inbox.mjs",
+      "sha256": "3a169b47dd074e08889a83b87bd6af4af18f021c127927800e7d73b73c1f00f7"
+    },
+    {
+      "path": "scripts/mobile-recovery.mjs",
+      "sha256": "314960929d0d365fd470ad406fb1286ff1da64a80eb7e537898ee5912a14cebe"
+    },
+    {
+      "path": "scripts/mobile-smoke.mjs",
+      "sha256": "8352583e2136f06c129007f6ffb3187d59cdb1c128a4cbae6e7a7fe53eeaae30"
+    },
+    {
+      "path": "scripts/mobile-theme-settings.mjs",
+      "sha256": "eec360f9c1b80a0609f9b4c0624fd257896f7df118e4552d225ba0201cb5273a"
+    },
+    {
+      "path": "scripts/native-accounts-suggestions.mjs",
+      "sha256": "fcd3de4e86ab907bd61733b9265c42d1cea6b86ec2735e0ee16db153f2599aac"
+    },
+    {
+      "path": "scripts/native-ai-planner.mjs",
+      "sha256": "4579b720604b028d22de99a30826cae2d97948ec7bc1c20286ca22b9b2fef703"
+    },
+    {
+      "path": "scripts/native-consistent-task-panels.mjs",
+      "sha256": "94c1c30171e1ab8cf453700e809c9ffb509505b9736953bc0490cca2971a5a9a"
+    },
+    {
+      "path": "scripts/native-daily-rollover-habits.mjs",
+      "sha256": "73eded7e1e4aa0a95ef35985f036f3d171331b489b333201c19ec798936c9c4f"
+    },
+    {
+      "path": "scripts/native-date-controls.mjs",
+      "sha256": "3e50780781245c4163cb6b7042d6ac108c84f5bb663b31a6f934fc9aa42b6330"
+    },
+    {
+      "path": "scripts/native-env.ps1",
+      "sha256": "4eac9a7e4e70e64a6c6bd493df4623bac3382af3668e5704c9d3d568fc82a7f5"
+    },
+    {
+      "path": "scripts/native-habit-drag.mjs",
+      "sha256": "7e89fa40b697293387356e0da90050b6edcc7e4d507873f9a514bd7941697d67"
+    },
+    {
+      "path": "scripts/native-p0.mjs",
+      "sha256": "4a582d7eedd487074e0723d10e90f8937194fb4e2dcab850516f9a98bffc6e0a"
+    },
+    {
+      "path": "scripts/native-p1.mjs",
+      "sha256": "0acffef7cd2f4e6d01dd3caee283996b7ca93b6072797b41e2c637cdd7f29356"
+    },
+    {
+      "path": "scripts/native-p2.mjs",
+      "sha256": "3605eb25e5646a28900e1fc749403e4ff478b0cfabfe502367d22fa2258d12a8"
+    },
+    {
+      "path": "scripts/native-project-drag.mjs",
+      "sha256": "290a79ba91b6f2cc2e789d2cd4e25d21c08762e90418873bd63e97afe351bbe0"
+    },
+    {
+      "path": "scripts/native-project-workspace.mjs",
+      "sha256": "e5b5b4e6a7320de4e9dc104d463a340bf4a65149fb4e96c8e4322de4a391d7bd"
+    },
+    {
+      "path": "scripts/native-readonly-habits.mjs",
+      "sha256": "8f87701f8ae8e88e6ef7e46bef02d3c482ce53827b9a081003ad5f583e365bfa"
+    },
+    {
+      "path": "scripts/native-sidebar-navigation.mjs",
+      "sha256": "64ab1b7c110ecf02bf1bbac52a09dfbcd42424048ff3df383e99711db450c17a"
+    },
+    {
+      "path": "scripts/native-smoke.mjs",
+      "sha256": "be6d835efbb252eeaafaec740b61352fe1c40b100f09c291700df170801796dd"
+    },
+    {
+      "path": "scripts/native-task-autosave.mjs",
+      "sha256": "8712908c6d7325722ba2626182ba2ae539e71a8865c60a7baf4685fc044fee40"
+    },
+    {
+      "path": "scripts/native-theme-settings.mjs",
+      "sha256": "8265144773106ce2837a550412eabb85aa2b0ae578efc44aad6fd748611f80c3"
+    },
+    {
+      "path": "scripts/open-usability-preview.ps1",
+      "sha256": "1d1ff23982fefd6217c64b06c55a2efec0c310383eb3d4544ae5b9b505228aa8"
+    },
+    {
+      "path": "scripts/pair-lan-clients.ps1",
+      "sha256": "0bc498bd1657de712e8f5e42fc9e4f12ec2c729b111156c8528213aa38aca481"
+    },
+    {
+      "path": "scripts/preview-desktop.ps1",
+      "sha256": "5e32497e3322e9a19e9ad773d931ecdbe0139270fed1184234156e76a4fa8c66"
+    },
+    {
+      "path": "scripts/setup-lan.mjs",
+      "sha256": "1cdea7ed2a83e5067974458d129cc4e2c03754d133fc62511a6fe32c07eade6c"
+    },
+    {
+      "path": "scripts/start-lan.ps1",
+      "sha256": "eaee9e035b87915f05c70aacd3d7935f01f153c02f6ddf07b08deb8198aed2b3"
+    },
+    {
+      "path": "scripts/stop-lan.ps1",
+      "sha256": "afd15c6f943c907058447548fe967a4200aa34c01195e8ef1026461e91441ca3"
+    },
+    {
+      "path": "scripts/test-native.ps1",
+      "sha256": "f6e5c1f45966d8740ff256dafa4b6adc53d50ef034b839f8fc644c010e8d254a"
+    },
+    {
+      "path": "scripts/user-usability-acceptance.mjs",
+      "sha256": "c7d4b647e74098866b2dcad2bf0055b652e53d809b415536f8f8c3f49c280f00"
+    },
+    {
+      "path": "Spec.md",
+      "sha256": "9e4474e0f2a8fdb5245e76fe51be7b762fe80594708c6c26f0f38f81c2d39312"
+    },
+    {
+      "path": "tsconfig.json",
+      "sha256": "5f8ca72f9bf431e9d9cbacb9914a48530b210592addc6c2cb3d4b820508eab79"
+    },
+    {
+      "path": "vitest.config.ts",
+      "sha256": "a6ac3598591d4df305d9e22095d2642e0b28ea8e9a67fbaa2127c7eb063a00f1"
+    }
+  ]
+}

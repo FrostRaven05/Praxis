@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "checkedAt": "2026-11-12T16:49:03.745Z",
+  "runtime": "Actual Windows Tauri/WebView2; isolated synthetic data",
+  "checks": [
+    "settings has no local backup card and retains theme settings",
+    "bottom-left account entry opens a dedicated page without sidebar or dialog",
+    "email is enabled and focused; no credentials submitted",
+    "task identity/version/status unchanged by navigation"
+  ],
+  "errors": [],
+  "executable": "C:/Project/01Project/Praxis/.tools/desktop-preview/login-page-20261113/Praxis.exe",
+  "dataDirectory": "C:\\Project\\01Project\\Praxis\\.scratch\\login-page-preview-12f520bb14504d919777777991c20abc"
+}

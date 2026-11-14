@@ -34,16 +34,34 @@ const derive = (password: string, salt: string) =>
 const emailKey = (email: string) => email.trim().toLowerCase();
 export class AccountStore {
   private db: DatabaseSync;
-  constructor(path: string) {
-    this.db = new DatabaseSync(path);
+  private ownsDatabase: boolean;
+  constructor(path: string | DatabaseSync) {
+    this.ownsDatabase = typeof path === "string";
+    this.db = typeof path === "string" ? new DatabaseSync(path) : path;
     this.db
       .exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;
       CREATE TABLE IF NOT EXISTS account_users(id TEXT PRIMARY KEY,email TEXT UNIQUE NOT NULL,display_name TEXT NOT NULL,salt TEXT NOT NULL,password_hash TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS account_sessions(token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL,device_id TEXT NOT NULL,expires_at INTEGER NOT NULL);
       CREATE INDEX IF NOT EXISTS account_session_user ON account_sessions(user_id,device_id);`);
+    const columns = new Set(
+      this.db
+        .prepare("PRAGMA table_info(account_users)")
+        .all()
+        .map((row) => String(row.name)),
+    );
+    for (const [name, definition] of Object.entries({
+      disabled: "INTEGER NOT NULL DEFAULT 0",
+      created_at: "TEXT",
+      last_login_at: "TEXT",
+    })) {
+      if (!columns.has(name))
+        this.db.exec(
+          `ALTER TABLE account_users ADD COLUMN ${name} ${definition}`,
+        );
+    }
   }
   close() {
-    this.db.close();
+    if (this.ownsDatabase) this.db.close();
   }
   async register(
     email: string,
@@ -67,8 +85,17 @@ export class AccountStore {
     )
       throw new AccountError("EMAIL_EXISTS");
     this.db
-      .prepare("INSERT INTO account_users VALUES(?,?,?,?,?)")
-      .run(user.id, user.email, user.displayName, salt, hash.toString("hex"));
+      .prepare(
+        "INSERT INTO account_users(id,email,display_name,salt,password_hash,created_at) VALUES(?,?,?,?,?,?)",
+      )
+      .run(
+        user.id,
+        user.email,
+        user.displayName,
+        salt,
+        hash.toString("hex"),
+        new Date().toISOString(),
+      );
     return this.session(user, deviceId);
   }
   async login(
@@ -85,6 +112,9 @@ export class AccountStore {
       : Buffer.alloc(64);
     if (!timingSafeEqual(hash, expected) || !row)
       throw new AccountError("INVALID_CREDENTIALS");
+    // Password derivation yields: an administrator may disable the account meanwhile.
+    if (this.isDisabled(String(row.id)))
+      throw new AccountError("ACCOUNT_DISABLED");
     return this.session(
       {
         id: String(row.id),
@@ -95,6 +125,9 @@ export class AccountStore {
     );
   }
   private session(user: AccountUser, deviceId: string): AccountSession {
+    this.db
+      .prepare("UPDATE account_users SET last_login_at=? WHERE id=?")
+      .run(new Date().toISOString(), user.id);
     const token = randomBytes(32).toString("hex"),
       expires = Date.now() + 30 * 86400000;
     this.db
@@ -113,7 +146,7 @@ export class AccountStore {
   identify(token: string) {
     const row = this.db
       .prepare(
-        "SELECT u.id,u.email,u.display_name,s.device_id,s.expires_at FROM account_sessions s JOIN account_users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>?",
+        "SELECT u.id,u.email,u.display_name,s.device_id,s.expires_at FROM account_sessions s JOIN account_users u ON u.id=s.user_id WHERE s.token_hash=? AND s.expires_at>? AND u.disabled=0",
       )
       .get(digest(token), Date.now());
     return row
@@ -134,5 +167,12 @@ export class AccountStore {
     this.db
       .prepare("DELETE FROM account_sessions WHERE token_hash=?")
       .run(digest(token));
+  }
+  isDisabled(ownerId: string) {
+    return (
+      this.db
+        .prepare("SELECT disabled FROM account_users WHERE id=?")
+        .get(ownerId)?.disabled === 1
+    );
   }
 }

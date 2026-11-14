@@ -1,0 +1,26 @@
+{
+  "date": "2026-11-10",
+  "scope": "personal-only for entire product",
+  "passed": true,
+  "typecheckExitCode": 0,
+  "apiBuildExitCode": 0,
+  "typescriptTestsPassed": 272,
+  "newPersonalTests": 2,
+  "archivedTeamTests": 26,
+  "archivedFiles": 9,
+  "archiveHashErrors": [],
+  "checkedExistingFiles": 437,
+  "expectedDocumentationChanges": [
+    "CONTEXT.md",
+    "Praxis_DEV_PLAN_v0.1.md",
+    "Praxis_SPEC_v0.1.md",
+    "README.md",
+    "Spec.md"
+  ],
+  "unexpectedExistingChanges": [],
+  "serverMatchesPreTeamBaseline": true,
+  "activeTeamModules": 0,
+  "staleTeamBuildArtifacts": 0,
+  "realUserMigration": false,
+  "deployed": false
+}

@@ -400,7 +400,14 @@ async fn snapshot(tx: &mut Transaction<'_, Sqlite>) -> StoreResult<BTreeMap<Stri
                     };
                     d = json!({"table":table,"row":row});
                 } else {
-                    d["desktop"] = row.clone();
+                    // Overlay current native fields while retaining opaque extensions
+                    // received from another version/device. Local identities/CAS stay local.
+                    let mut desktop = d.get("desktop").and_then(Value::as_object).cloned().unwrap_or_default();
+                    desktop.remove("owner_id");
+                    desktop.remove("plan_version");
+                    if *table != "habit_schedules" { desktop.remove("version"); }
+                    desktop.extend(row.as_object().unwrap().clone());
+                    d["desktop"] = Value::Object(desktop);
                     match *kind {
                         "capture" => {
                             overlay(&mut d, &row, &[("rawText", "raw_text"), ("state", "state")]);
@@ -443,6 +450,7 @@ async fn snapshot(tx: &mut Transaction<'_, Sqlite>) -> StoreResult<BTreeMap<Stri
                                     ("title", "title"),
                                     ("status", "status"),
                                     ("notes", "notes"),
+                                    ("completedAt", "completed_at"),
                                     ("completionCriteria", "completion_criteria"),
                                     ("estimatedMinutes", "default_estimated_minutes"),
                                     ("projectId", "project_id"),
@@ -865,6 +873,7 @@ async fn native_row(
                         ("title", "title"),
                         ("status", "status"),
                         ("notes", "notes"),
+                        ("completedAt", "completed_at"),
                         ("completionCriteria", "completion_criteria"),
                         ("estimatedMinutes", "default_estimated_minutes"),
                         ("projectId", "project_id"),
@@ -921,7 +930,13 @@ async fn native_row(
                                 .map(|row| val(row, b))
                                 .unwrap_or(&Value::Null),
                         );
-                        if s(&actual, "kind") == "instant"
+                        let typed_changed = d.get("desktop").and_then(|desktop| desktop.get(b)).is_some()
+                            && prior.as_ref().is_some_and(|wire| val(val(wire, "desktop"), b) != val(val(d, "desktop"), b));
+                        if typed_changed && time_date(&existing, &zone) == *date {
+                            // A new personal command can explicitly replace an instant with
+                            // a same-day date (or another instant). Unchanged extensions below
+                            // still preserve exact native precision for older phone editors.
+                        } else if s(&actual, "kind") == "instant"
                             && prior.as_ref().is_some_and(|wire| val(wire, a) == date)
                         {
                             // A phone edit of another field preserves the exact native instant,
@@ -1579,6 +1594,16 @@ async fn apply_relations(
     }
     if e.kind == "task" {
         if s(d, "status") == "completed" && !e.deleted {
+            let explicit_at = d.get("completedAt").or_else(|| d.get("desktop").and_then(|v| v.get("completed_at")));
+            let completed_at = match explicit_at {
+                Some(Value::Null) => None,
+                Some(Value::String(at)) => {
+                    DateTime::parse_from_rfc3339(at).map_err(|_| "完成时刻无效")?;
+                    Some(at.as_str())
+                }
+                Some(_) => return Err("完成时刻无效".into()),
+                None => Some(e.updated_at.as_str()), // Original feeds without a completion field.
+            };
             let existing: Option<String> = sqlx::query_scalar(
                 "SELECT id FROM execution_records WHERE task_id=? AND revoked_at IS NULL LIMIT 1",
             )
@@ -1590,15 +1615,15 @@ async fn apply_relations(
                 Some(id)
             } else {
                 let plan:Option<(String,String,String)>=sqlx::query_as("SELECT id,execution_date,time_zone FROM daily_plan_items WHERE task_id=? AND removed=0 ORDER BY execution_date DESC LIMIT 1").bind(&e.id).fetch_optional(&mut **tx).await.map_err(err)?;
-                if let Some((plan, date, zone)) = plan {
+                if let (Some((plan, date, zone)), Some(at)) = (plan, completed_at) {
                     let id = stable("completion", &json!([e.id, e.version]));
-                    sqlx::query("INSERT OR IGNORE INTO execution_records(id,owner_id,task_id,plan_id,execution_date,time_zone,occurred_at) VALUES(?,?,?,?,?,?,?)").bind(&id).bind(owner).bind(&e.id).bind(plan).bind(date).bind(zone).bind(&e.updated_at).execute(&mut **tx).await.map_err(err)?;
+                    sqlx::query("INSERT OR IGNORE INTO execution_records(id,owner_id,task_id,plan_id,execution_date,time_zone,occurred_at) VALUES(?,?,?,?,?,?,?)").bind(&id).bind(owner).bind(&e.id).bind(plan).bind(date).bind(zone).bind(at).execute(&mut **tx).await.map_err(err)?;
                     Some(id)
                 } else {
                     None
                 }
             };
-            sqlx::query("UPDATE tasks SET active_completion_id=?,completed_at=COALESCE(completed_at,?) WHERE id=?").bind(completion).bind(&e.updated_at).bind(&e.id).execute(&mut **tx).await.map_err(err)?;
+            sqlx::query("UPDATE tasks SET active_completion_id=?,completed_at=COALESCE(completed_at,?) WHERE id=?").bind(completion).bind(completed_at).bind(&e.id).execute(&mut **tx).await.map_err(err)?;
         } else if s(d, "status") != "completed" {
             sqlx::query(
                 "UPDATE execution_records SET revoked_at=? WHERE task_id=? AND revoked_at IS NULL",

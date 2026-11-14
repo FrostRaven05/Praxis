@@ -1,0 +1,70 @@
+{
+  "recordedAt": "2026-10-25T16:22:31.852834+00:00",
+  "scope": "project recovery context, scoped records, verified source references, optional available-time filter, atomic adoption read-set checks",
+  "theme": "self cultivation only; no pet",
+  "schemaVersion": 25,
+  "newMigration": false,
+  "tests": {
+    "typescript": {
+      "files": 43,
+      "passed": 252,
+      "failed": 0,
+      "log": "typescript-tests.log"
+    },
+    "rust": {
+      "status": "passed",
+      "scope": "full cargo test --locked -j 1 suite, including 5 new ai_context tests",
+      "resourceSetup": "jobs=1; RUST_MIN_STACK=33554432; workspace TEMP"
+    },
+    "typecheck": "passed",
+    "apiBuild": "passed",
+    "viteBuild": "passed",
+    "nativeEmbeddedFrontendBuild": "passed; --features tauri/custom-protocol",
+    "scriptSyntax": "passed",
+    "gitDiffWhitespace": "passed",
+    "formatting": "passed after formatting-only cleanup; production asset names unchanged"
+  },
+  "executable": {
+    "path": ".tools/releases/project-recovery-v4/Praxis.exe",
+    "bytes": 30956032,
+    "sha256": "2259a7f03096c98c111637b6f8acb7fc3c7d98b76fa27633a441325cabe56781",
+    "profile": "development; unsigned executable"
+  },
+  "gui": {
+    "status": "blocked",
+    "completedChecks": 0,
+    "reason": "local CDP connection EACCES",
+    "detail": "gui/result.json"
+  },
+  "liveProvider": {
+    "credentialVariable": "DEEPSEEK_API_KEY",
+    "credentialPresent": true,
+    "credentialValuePrintedOrSaved": false,
+    "probeStatus": "blocked: ENOTFOUND; no provider response",
+    "priorEvidence": "../ai-deepseek/result.json",
+    "newModelCallThisRecoveryRound": false,
+    "realGenerationQualityVerified": false
+  },
+  "productionDeployed": false,
+  "existingRunningAppReplaced": false,
+  "remaining": [
+    "existing-plan diff preview and selective edits",
+    "mobile cultivation and growth sync",
+    "cross-project daily capacity suggestions",
+    "evidence-based AI weekly review",
+    "usage and cost diagnostics",
+    "real-provider and native UI acceptance",
+    "signed installers"
+  ],
+  "frontendAssets": {
+    "assets\\ai-context-mobile-BKN9QS38.js": "c468e3fd8480e3992aebafcdfea84b02164bb419c61f9e719b7a8eb59c1ee98d",
+    "assets\\ai-mobile-adapter-AjtVLOhI.js": "78fd8a19be1df338638fda4ee45e8fcd4e3b12fa0a891e8c07aacd34ee424abc",
+    "assets\\index-9DKmt_Dg.css": "bb5f9a08a4eb1750e01ad10ea337ea8e505b8705dc5ab1f80f787d7019bdcaa6",
+    "assets\\index-Cj7vJgw4.js": "ab1b0d18fa3b52ec1c51ddf1db80c75640389ce94372932cc648c459ad4531e4",
+    "assets\\MobileApp-BTIl8_jt.js": "9047da27079af0d894247802e4b258701a67bb1ce6ce17e57463055810cbdc17",
+    "assets\\MobileApp-Du3YEK0W.css": "1e29d0d45c85e9af76dc03915fda5d42c56298ee75bbfea1c339f54bc0665f1f",
+    "assets\\web-BhRUchdQ.js": "347c2aaf3e41358f2f8ca4466d2995b6cbacfc528762b8126bb1a128c500ce2f",
+    "assets\\web-BOf_zJnU.js": "a6d977ad3b365a2e275263ead95c013c545bb439973909ac34149ae7bb98d249",
+    "index.html": "e412f330ae7a1d6ea7df3554ffbe9358128903dafda96735b1e6bcaf0753af5b"
+  }
+}
