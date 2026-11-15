@@ -1,0 +1,6 @@
+{
+  "archiveSha256": "6b9d92622d2a166cf86b5bf60f060c87c9377683c1caca50d63aa0dfe5ae20d2",
+  "files": 22,
+  "scope": "API source and admin assets; runtime, credentials, desktop/mobile source and production Compose excluded",
+  "includesModelUrlRestartRegressionFix": true
+}

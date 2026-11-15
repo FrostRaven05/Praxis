@@ -2,6 +2,7 @@ import { aiEnvironment } from "./ai.js";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readRelease, type AppRelease } from "./app-release.js";
 import { createServer } from "./server.js";
 import { createHash } from "node:crypto";
 
@@ -46,6 +47,8 @@ try {
       !/^[a-f0-9]{64}$/i.test(c.adminTokenHash))
   )
     throw new Error("invalid_admin_hash");
+  let release: AppRelease | undefined;
+  if (c.release !== undefined) release = readRelease(c.release);
   const adminTokenHash = adminToken
     ? createHash("sha256").update(adminToken).digest("hex")
     : typeof c.adminTokenHash === "string"
@@ -56,6 +59,7 @@ try {
     databasePath: resolve(root, c.databasePath),
     devices,
     ...(adminTokenHash ? { adminTokenHash } : {}),
+    ...(release ? { release } : {}),
     https: {
       key: readFileSync(resolve(root, c.keyPath)),
       cert: readFileSync(resolve(root, c.certPath)),

@@ -114,6 +114,10 @@ pub enum ProductivityAction {
         confirm_count: i64,
         expected_tasks: Vec<(String, i64)>,
     },
+    Reorder {
+        parent_id: String,
+        ordered_ids: Vec<String>,
+    },
     Project {
         id: String,
         expected_version: i64,
@@ -314,7 +318,8 @@ impl Store {
                         if parent_project != *project_id {
                             return Err("USER:子任务必须与父任务属于同一项目".into());
                         }
-                        sqlx::query("UPDATE tasks SET parent_task_id=?, section_id=? WHERE id=? AND owner_id=?").bind(parent).bind(parent_section).bind(id).bind(&self.owner_id).execute(&mut *tx).await.map_err(|e| e.to_string())?;
+                        let next_rank: i64 = sqlx::query_scalar("SELECT COALESCE(MAX(task_rank),-1)+1 FROM tasks WHERE owner_id=? AND parent_task_id=? AND deleted_at IS NULL AND id<>?").bind(&self.owner_id).bind(parent).bind(id).fetch_one(&mut *tx).await.map_err(|e| e.to_string())?;
+                        sqlx::query("UPDATE tasks SET parent_task_id=?, section_id=?, task_rank=? WHERE id=? AND owner_id=?").bind(parent).bind(parent_section).bind(next_rank).bind(id).bind(&self.owner_id).execute(&mut *tx).await.map_err(|e| e.to_string())?;
                     }
                 } else {
                     let old: Option<String> = sqlx::query_scalar(
@@ -683,6 +688,33 @@ impl Store {
                 }
                 entity = id.clone();
             }
+            ProductivityAction::Reorder {
+                parent_id,
+                ordered_ids,
+            } => {
+                if ordered_ids.is_empty() || ordered_ids.len() > 100 {
+                    return Err("USER:子任务数量无效".into());
+                }
+                let mut unique = ordered_ids.clone();
+                unique.sort();
+                unique.dedup();
+                if unique.len() != ordered_ids.len() {
+                    return Err("USER:子任务顺序重复".into());
+                }
+                let parent_ok: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM tasks WHERE id=? AND owner_id=? AND deleted_at IS NULL AND parent_task_id IS NULL)").bind(parent_id).bind(&self.owner_id).fetch_one(&mut *tx).await.map_err(|e| e.to_string())?;
+                if !parent_ok {
+                    return Err("USER:父任务不存在".into());
+                }
+                let mut current: Vec<String> = sqlx::query_scalar("SELECT id FROM tasks WHERE owner_id=? AND parent_task_id=? AND deleted_at IS NULL AND status<>'cancelled' ORDER BY task_rank,created_at,id").bind(&self.owner_id).bind(parent_id).fetch_all(&mut *tx).await.map_err(|e| e.to_string())?;
+                current.sort();
+                if current != unique {
+                    return Err("STATE_CONFLICT".into());
+                }
+                for (rank, child) in ordered_ids.iter().enumerate() {
+                    sqlx::query("UPDATE tasks SET task_rank=?,version=version+1 WHERE id=? AND owner_id=?").bind(rank as i64).bind(child).bind(&self.owner_id).execute(&mut *tx).await.map_err(|e| e.to_string())?;
+                }
+                entity = parent_id.clone();
+            }
             ProductivityAction::Project {
                 id,
                 expected_version,
@@ -851,6 +883,7 @@ impl Store {
                     &zone,
                     &c.occurred_at,
                     None,
+                    false,
                 )
                 .await?;
             }

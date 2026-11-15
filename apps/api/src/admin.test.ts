@@ -519,3 +519,385 @@ it("rolls back account changes and session deletion if their audit insert cannot
     db.close();
   }
 });
+
+it("saves model settings without returning the API key", async () => {
+  const app = setup(),
+    headers = await admin(app);
+  const saved = await app.inject({
+    method: "PUT",
+    url: "/admin/api/model",
+    headers,
+    payload: {
+      provider: "deepseek",
+      baseUrl: "https://api.deepseek.com",
+      model: "deepseek-flash",
+      apiKey: "secret-model-key",
+    },
+  });
+  expect(saved.statusCode).toBe(200);
+  const body = saved.json();
+  expect(body).toMatchObject({
+    provider: "deepseek",
+    model: "deepseek-flash",
+    hasApiKey: true,
+    enabled: true,
+    source: "saved",
+  });
+  expect(JSON.stringify(body)).not.toContain("secret-model-key");
+  const again = await app.inject({
+    method: "PUT",
+    url: "/admin/api/model",
+    headers,
+    payload: {
+      provider: "openai",
+      baseUrl: "https://api.openai.com/v1",
+      model: "gpt-4.1-mini",
+    },
+  });
+  expect(again.statusCode).toBe(200);
+  expect(again.json()).toMatchObject({
+    provider: "openai",
+    model: "gpt-4.1-mini",
+    hasApiKey: true,
+  });
+  expect(JSON.stringify(again.json())).not.toContain("secret-model-key");
+});
+
+it("requires admin authorization and an exact email confirmation to delete a user and only their cloud data", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "praxis-admin-delete-"));
+  directories.push(directory);
+  const path = join(directory, "api.db");
+  const app = setup(path),
+    user = await register(app),
+    other = await register(app, "other@example.com");
+  const headers = await admin(app);
+  const generation = (await app.inject({ url: "/health" })).json().generation;
+  const db = new DatabaseSync(path);
+  const url = `/admin/api/users/${user.user.id}`;
+  const payload = { email: user.user.email, reason: "删除测试账号" };
+  try {
+    for (const member of [user, other]) {
+      expect(
+        (
+          await app.inject({
+            method: "POST",
+            url: `/v1/entities/commands?generation=${generation}`,
+            headers: { authorization: `Bearer ${member.token}` },
+            payload: {
+              operationId: randomUUID(),
+              deviceId: member.deviceId,
+              changes: [
+                {
+                  id: randomUUID(),
+                  kind: "capture",
+                  expectedVersion: null,
+                  data: { rawText: "private data" },
+                  deleted: false,
+                  createdAt: new Date().toISOString(),
+                },
+              ],
+            },
+          })
+        ).statusCode,
+      ).toBe(200);
+      db.prepare("INSERT INTO captures VALUES(?,?,1,?,0,?)").run(
+        member.user.id,
+        randomUUID(),
+        "legacy data",
+        new Date().toISOString(),
+      );
+      db.prepare("INSERT INTO capture_changes VALUES(?,1,?,?,?,?)").run(
+        member.user.id,
+        member.deviceId,
+        randomUUID(),
+        "{}",
+        "{}",
+      );
+      db.prepare("INSERT INTO ai_runs VALUES(?,?,?,?)").run(
+        member.user.id,
+        randomUUID(),
+        "{}",
+        "{}",
+      );
+    }
+    for (const requestHeaders of [
+      {},
+      { authorization: `Bearer ${other.token}` },
+    ])
+      expect(
+        (
+          await app.inject({
+            method: "DELETE",
+            url,
+            headers: { ...csrf, ...requestHeaders },
+            payload,
+          })
+        ).statusCode,
+      ).toBe(401);
+    expect(
+      (
+        await app.inject({
+          method: "DELETE",
+          url,
+          headers: { cookie: headers.cookie },
+          payload,
+        })
+      ).statusCode,
+    ).toBe(403);
+    for (const invalid of [
+      { email: user.user.email },
+      { ...payload, reason: " " },
+      { ...payload, email: other.user.email },
+    ])
+      expect(
+        (await app.inject({ method: "DELETE", url, headers, payload: invalid }))
+          .statusCode,
+      ).toBe(400);
+    expect(
+      (
+        await app.inject({
+          method: "DELETE",
+          url: "/admin/api/users/not-a-uuid",
+          headers,
+          payload,
+        })
+      ).statusCode,
+    ).toBe(400);
+    const ownedTables = [
+      "sync_entities",
+      "sync_entity_versions",
+      "sync_entity_changes",
+      "sync_entity_upgrades",
+      "captures",
+      "capture_changes",
+    ];
+    for (const table of ownedTables)
+      expect(
+        Number(
+          db
+            .prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE owner=?`)
+            .get(user.user.id)?.n,
+        ),
+      ).toBeGreaterThan(0);
+    expect(
+      (await app.inject({ method: "DELETE", url, headers, payload }))
+        .statusCode,
+    ).toBe(204);
+    for (const [table, column] of [
+      ...ownedTables.map((table) => [table, "owner"]),
+      ["ai_runs", "owner_id"],
+      ["account_sessions", "user_id"],
+      ["account_users", "id"],
+    ]) {
+      expect(
+        db
+          .prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ${column}=?`)
+          .get(user.user.id)?.n,
+      ).toBe(0);
+      expect(
+        Number(
+          db
+            .prepare(`SELECT COUNT(*) AS n FROM ${table} WHERE ${column}=?`)
+            .get(other.user.id)?.n,
+        ),
+      ).toBeGreaterThan(0);
+    }
+    expect(
+      db
+        .prepare("SELECT id FROM account_deleted_users WHERE id=?")
+        .get(user.user.id)?.id,
+    ).toBe(user.user.id);
+    expect((await app.inject({ url, headers })).statusCode).toBe(404);
+    expect(
+      (await app.inject({ method: "DELETE", url, headers, payload }))
+        .statusCode,
+    ).toBe(404);
+    expect(
+      (
+        await app.inject({
+          url: "/v1/entities/snapshot",
+          headers: { authorization: `Bearer ${user.token}` },
+        })
+      ).statusCode,
+    ).toBe(401);
+    expect(
+      (await app.inject({ url: "/admin/api/overview", headers })).json(),
+    ).toMatchObject({ users: 1, entities: 1, operations: 1, activeDevices: 1 });
+    expect(
+      (
+        await app.inject({
+          method: "POST",
+          url: "/auth/login",
+          payload: {
+            email: user.user.email,
+            password,
+            deviceId: user.deviceId,
+          },
+        })
+      ).statusCode,
+    ).toBe(401);
+    // A stale configured pairing remains rejected after restart, without affecting other users.
+    await app.close();
+    const legacyToken = randomBytes(32).toString("hex");
+    const restarted = createServer({
+      databasePath: path,
+      adminTokenHash: tokenHash,
+      devices: [
+        {
+          ownerId: user.user.id,
+          deviceId: user.deviceId,
+          tokenHash: createHash("sha256").update(legacyToken).digest("hex"),
+        },
+      ],
+    });
+    servers.push(restarted);
+    expect(
+      (
+        await restarted.inject({
+          url: "/v1/entities/snapshot",
+          headers: { authorization: `Bearer ${legacyToken}` },
+        })
+      ).statusCode,
+    ).toBe(403);
+    const replacement = await register(restarted, user.user.email);
+    expect(replacement.user.id).not.toBe(user.user.id);
+    expect(
+      (
+        await restarted.inject({
+          url: "/v1/entities/snapshot",
+          headers: { authorization: `Bearer ${replacement.token}` },
+        })
+      ).json().entities,
+    ).toEqual([]);
+  } finally {
+    db.close();
+  }
+});
+
+it("rolls back every deletion when a database write fails", async () => {
+  const directory = await mkdtemp(
+    join(tmpdir(), "praxis-admin-delete-atomic-"),
+  );
+  directories.push(directory);
+  const path = join(directory, "api.db"),
+    app = setup(path),
+    user = await register(app),
+    headers = await admin(app);
+  const db = new DatabaseSync(path);
+  try {
+    db.prepare("INSERT INTO captures VALUES(?,?,1,?,0,?)").run(
+      user.user.id,
+      randomUUID(),
+      "keep me",
+      new Date().toISOString(),
+    );
+    db.exec(
+      "CREATE TRIGGER fail_delete BEFORE INSERT ON admin_audit WHEN NEW.action='delete_user' BEGIN SELECT RAISE(ABORT,'test failure'); END",
+    );
+    expect(
+      (
+        await app.inject({
+          method: "DELETE",
+          url: `/admin/api/users/${user.user.id}`,
+          headers,
+          payload: { email: user.user.email, reason: "must roll back" },
+        })
+      ).statusCode,
+    ).toBe(500);
+    expect(
+      db
+        .prepare("SELECT COUNT(*) AS n FROM captures WHERE owner=?")
+        .get(user.user.id)?.n,
+    ).toBe(1);
+    expect(
+      db.prepare("SELECT COUNT(*) AS n FROM account_deleted_users").get()?.n,
+    ).toBe(0);
+    expect(
+      (
+        await app.inject({
+          url: "/v1/account",
+          headers: { authorization: `Bearer ${user.token}` },
+        })
+      ).statusCode,
+    ).toBe(200);
+  } finally {
+    db.close();
+  }
+});
+
+it("does not issue an orphan session when a user is deleted during password verification", async () => {
+  const db = new DatabaseSync(":memory:");
+  const accounts = new AccountStore(db);
+  try {
+    const user = await accounts.register(
+      "deleted-race@example.com",
+      password,
+      "Race",
+      randomUUID(),
+    );
+    const pending = accounts.login(user.user.email, password, randomUUID());
+    db.prepare("DELETE FROM account_sessions WHERE user_id=?").run(
+      user.user.id,
+    );
+    db.prepare("DELETE FROM account_users WHERE id=?").run(user.user.id);
+    await expect(pending).rejects.toThrow("INVALID_CREDENTIALS");
+    expect(
+      db.prepare("SELECT COUNT(*) AS n FROM account_sessions").get()?.n,
+    ).toBe(0);
+  } finally {
+    db.close();
+  }
+});
+
+it("rejects unusable model URLs without poisoning settings across restart", async () => {
+  const directory = await mkdtemp(
+    join(tmpdir(), "praxis-admin-model-restart-"),
+  );
+  directories.push(directory);
+  const path = join(directory, "api.db");
+  const app = setup(path),
+    headers = await admin(app);
+  const settings = {
+    provider: "deepseek",
+    baseUrl: "https://api.deepseek.com",
+    model: "deepseek-flash",
+    apiKey: "isolated-test-model-key",
+  };
+  expect(
+    (
+      await app.inject({
+        method: "PUT",
+        url: "/admin/api/model",
+        headers,
+        payload: settings,
+      })
+    ).statusCode,
+  ).toBe(200);
+  for (const baseUrl of [
+    "https://api.deepseek.com?key=invalid",
+    "https://api.deepseek.com#invalid",
+  ]) {
+    const rejected = await app.inject({
+      method: "PUT",
+      url: "/admin/api/model",
+      headers,
+      payload: { ...settings, baseUrl },
+    });
+    expect(rejected.statusCode).toBe(400);
+  }
+  await app.close();
+  const reopened = setup(path),
+    session = await admin(reopened);
+  const result = await reopened.inject({
+    url: "/admin/api/model",
+    headers: session,
+  });
+  expect(result.statusCode).toBe(200);
+  expect(result.json()).toMatchObject({
+    baseUrl: settings.baseUrl,
+    model: settings.model,
+    enabled: true,
+    hasApiKey: true,
+  });
+  expect(result.body).not.toContain(settings.apiKey);
+});

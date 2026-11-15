@@ -563,7 +563,7 @@ export function AiPlannerPanel({
                 value={draft.input}
                 readOnly={!!source}
                 disabled={!loaded || locked}
-                placeholder="例如：想做一个摄影作品集，每周能投入两小时"
+                placeholder=""
                 onChange={(event) =>
                   update((current) => ({
                     ...current,
@@ -579,7 +579,7 @@ export function AiPlannerPanel({
                 maxLength={2000}
                 value={draft.constraints}
                 disabled={!loaded || locked}
-                placeholder="可用时间、期望结果、期限，或回答助手的问题"
+                placeholder=""
                 onChange={(event) =>
                   update((current) => ({
                     ...current,
@@ -597,7 +597,7 @@ export function AiPlannerPanel({
                 max={1440}
                 value={draft.availableMinutes ?? ""}
                 disabled={!loaded || locked}
-                placeholder="留空表示不限定时间"
+                placeholder=""
                 onChange={(event) =>
                   update((current) => ({
                     ...current,

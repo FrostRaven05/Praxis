@@ -460,3 +460,31 @@ async fn schema_ten_upgrade_maps_dates_preserves_legacy_history_and_backups() {
     assert_eq!(backup::list_backups(d.path()).unwrap().len(), 1);
     s.close().await;
 }
+#[tokio::test]
+async fn subtasks_append_then_keep_a_dragged_order() {
+    let (_d, s) = fixture().await;
+    let parent = id();
+    let first = id();
+    let second = id();
+    save(&s, task(&parent, None)).await;
+    let mut earlier = task(&first, None);
+    earlier["parentId"] = json!(parent);
+    save(&s, earlier).await;
+    let mut later = task(&second, None);
+    later["parentId"] = json!(parent);
+    save(&s, later).await;
+    assert!(
+        item(&s, &first).await["rank"].as_i64().unwrap()
+            < item(&s, &second).await["rank"].as_i64().unwrap()
+    );
+    save(
+        &s,
+        json!({"type":"reorder","parentId":parent,"orderedIds":[second, first]}),
+    )
+    .await;
+    assert!(
+        item(&s, &second).await["rank"].as_i64().unwrap()
+            < item(&s, &first).await["rank"].as_i64().unwrap()
+    );
+    s.close().await;
+}

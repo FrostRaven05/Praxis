@@ -1,5 +1,6 @@
 package com.praxis.mobile;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.security.keystore.KeyGenParameterSpec;
@@ -10,6 +11,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import org.json.JSONObject;
 import java.io.*;
 import java.net.URL;
+import android.net.Uri;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.security.cert.CertificateFactory;
@@ -90,6 +92,61 @@ import javax.net.ssl.*;
       } catch(Exception ignored){} finally {if(connection!=null)connection.disconnect();}
       if(!getContext().getSharedPreferences("lan-secure",Context.MODE_PRIVATE).edit().remove("account").commit())throw new Exception("Storage");call.resolve();
     }catch(Exception e){call.reject("无法退出账号。");}
+  }); }
+  @PluginMethod public void accountChangePassword(PluginCall call){ executor.execute(()->{
+    HttpsURLConnection connection=null;
+    try {
+      JSONObject current=config();
+      if(current==null||!current.has("user"))throw new Exception("Signed out");
+      String currentPassword=call.getString("currentPassword",""), next=call.getString("newPassword","");
+      if(currentPassword.length()<6||currentPassword.length()>128||next.length()<6||next.length()>128){call.reject("密码需为 6–128 个字符。");return;}
+      if(currentPassword.equals(next)){call.reject("新密码不能与当前密码相同。");return;}
+      JSONObject body=new JSONObject(); body.put("currentPassword",currentPassword); body.put("newPassword",next);
+      connection=(HttpsURLConnection)new URL(current.getString("baseUrl")+"/v1/account/password").openConnection();
+      trust(connection,current.optString("caPem",""));
+      connection.setInstanceFollowRedirects(false);connection.setConnectTimeout(10000);connection.setReadTimeout(15000);connection.setRequestMethod("POST");connection.setDoOutput(true);
+      connection.setRequestProperty("Content-Type","application/json");
+      connection.setRequestProperty("Authorization","Bearer "+current.getString("token"));
+      try(OutputStream out=connection.getOutputStream()){out.write(body.toString().getBytes(StandardCharsets.UTF_8));}
+      body.remove("currentPassword"); body.remove("newPassword");
+      int code=connection.getResponseCode();
+      if(code==204){call.resolve();return;}
+      String error=response(connection).optString("error","");
+      call.reject(error.equals("INVALID_CREDENTIALS")?"当前密码不正确，或登录已失效。":error.equals("PASSWORD_UNCHANGED")?"新密码不能与当前密码相同。":error.equals("ACCOUNT_DISABLED")?"账号已停用。":"暂时无法修改密码。");
+    } catch(Exception e){call.reject("无法修改密码，请检查网络后重试。");}
+    finally {if(connection!=null)connection.disconnect();}
+  }); }
+  @PluginMethod public void appReleaseCheck(PluginCall call){ executor.execute(()->{
+    HttpsURLConnection connection=null;
+    try {
+      JSONObject current=config();
+      String base=current!=null&&current.has("baseUrl")?current.getString("baseUrl"):"https://todo.frostraven05.com";
+      String version="0.1.0";
+      try { version=getContext().getPackageManager().getPackageInfo(getContext().getPackageName(),0).versionName; } catch(Exception ignored){}
+      connection=(HttpsURLConnection)new URL(base+"/app/release").openConnection();
+      trust(connection,current==null?"":current.optString("caPem",""));
+      connection.setInstanceFollowRedirects(false);connection.setConnectTimeout(10000);connection.setReadTimeout(15000);connection.setRequestMethod("GET");
+      int code=connection.getResponseCode();
+      JSObject result=new JSObject(); result.put("current",version==null?"0.1.0":version);
+      if(code==404){result.put("release",JSONObject.NULL);call.resolve(result);return;}
+      if(code!=200){call.reject("暂时无法检查更新。");return;}
+      result.put("release",response(connection));
+      call.resolve(result);
+    } catch(Exception e){call.reject("暂时无法检查更新。");}
+    finally {if(connection!=null)connection.disconnect();}
+  }); }
+  @PluginMethod public void appReleaseOpen(PluginCall call){ executor.execute(()->{
+    try {
+      String url=call.getString("url","");
+      JSONObject current=config();
+      String base=current!=null&&current.has("baseUrl")?current.getString("baseUrl"):"https://todo.frostraven05.com";
+      URL target=new URL(url), origin=new URL(base);
+      if(!"https".equals(target.getProtocol())||target.getUserInfo()!=null||!target.getHost().equals(origin.getHost()))throw new Exception("url");
+      Intent view=new Intent(Intent.ACTION_VIEW,Uri.parse(target.toString()));
+      view.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      getContext().startActivity(view);
+      call.resolve();
+    } catch(Exception e){call.reject("无法打开下载页面。");}
   }); }
   private SecretKey key() throws Exception {
     KeyStore ks=KeyStore.getInstance("AndroidKeyStore");

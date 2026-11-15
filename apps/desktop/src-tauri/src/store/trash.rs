@@ -222,7 +222,11 @@ impl Store {
                         .await
                         .map_err(|e| e.to_string())?;
                     }
-                    if t.parent_task_id.is_some() {
+                    // Detach project trees before changing ownership; row triggers validate both ends.
+                    if t.parent_task_id.is_some()
+                        && (!selected.contains(&t.id)
+                            || (target_type == "project" && mode == "detach"))
+                    {
                         run(
                             &mut tx,
                             "UPDATE tasks SET parent_task_id=NULL,version=version+1 WHERE id=?",

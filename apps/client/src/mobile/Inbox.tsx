@@ -28,7 +28,6 @@ export function Inbox({
   const [split, setSplit] = useState(false),
     [projectId, setProjectId] = useState("");
   const [error, setError] = useState(""),
-    [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false);
   const [pending, setPending] = useState<WorkspaceCommand | null>(null);
   const [pendingAiUndo, setPendingAiUndo] = useState<string | null>(null);
@@ -56,7 +55,6 @@ export function Inbox({
       setText("");
       setEditing(null);
       setSource(null);
-      setNotice("已保存到本机");
       await refresh();
     } catch (e) {
       if (e instanceof WorkspaceRejectedError) setPending(null);
@@ -142,7 +140,6 @@ export function Inbox({
     try {
       await aiStorage.undoMobileApplication(applyOperationId);
       setPendingAiUndo(null);
-      setNotice("已撤销这次 AI 采用，原文已恢复待处理。");
       await refresh();
     } catch (e) {
       const code = e instanceof Error ? e.message : String(e);
@@ -229,7 +226,6 @@ export function Inbox({
       {aiLaunch && <AiPlannerPanel launch={aiLaunch} onClose={() => { setAiLaunch(null); void refresh(); }} onApplied={() => refresh()} />}
       <p className="pm-local-note">原文先保存在本机；配对后通过局域网自动同步。</p>
       {error && <p role="alert">{error}</p>}
-      {notice && <p role="status">{notice}</p>}
       {pendingAiUndo && !busy && (
         <button onClick={() => void undoAiCapture(pendingAiUndo)}>重试确认 AI 撤销</button>
       )}

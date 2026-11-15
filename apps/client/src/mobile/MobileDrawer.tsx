@@ -167,7 +167,9 @@ export function MobileDrawer(props: Props) {
             </div>
           </section>
           <div className="pm-drawer-primary">
-            {link("todos", "杂事", <TaskPanelIcon name="check" />)}
+            {link("tasks", "清单", <TaskPanelIcon name="check" />)}
+            {link("todos", "杂事", <TaskPanelIcon name="inbox" />)}
+            {link("focus", "专注", <TaskPanelIcon name="clock" />)}
           </div>
           <section
             className="pm-drawer-group"

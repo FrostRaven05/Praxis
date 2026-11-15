@@ -45,7 +45,6 @@ export function PersonalAgentPanel({
     [error, setError] = useState(""),
     [notice, setNotice] = useState(""),
     [enabled, setEnabled] = useState(false),
-    [aiHint, setAiHint] = useState(""),
     [loading, setLoading] = useState(true),
     [stale, setStale] = useState(false);
   const fail = (e: unknown) => (e instanceof Error ? e.message : String(e));
@@ -153,9 +152,8 @@ export function PersonalAgentPanel({
         try {
           const service = await port.status();
           if (alive.current) setEnabled(service.enabled);
-        } catch (e) {
-          if (alive.current)
-            setAiHint(fail(e).replace(/[。.]+$/, ""));
+        } catch {
+          /* 未连接时不额外提示 */
         }
       } catch (e) {
         if (alive.current) setError(fail(e));
@@ -476,11 +474,6 @@ export function PersonalAgentPanel({
           {snapshot.facts.truncated
             ? "该项目超过本版AI的100项安全读取和采用边界。请手动添加任务或拆分项目；原任务、草稿和采用回执均保留。"
             : "该项目当前不可新增AI任务，可先恢复项目或核对历史采用回执。"}
-        </p>
-      )}
-      {!enabled && !loading && !error && (
-        <p className="personal-agent-hint">
-          {aiHint ? `${aiHint}。` : "AI 暂未连接。"}以上指引不依赖 AI。
         </p>
       )}
       {draft && (

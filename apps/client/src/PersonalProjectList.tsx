@@ -49,10 +49,9 @@ function ProjectProgress({
               aria-label="完成比例"
             />
           )}
-          <span className={p.overdue ? "personal-project-overdue" : ""}>
-            逾期 {p.overdue}
-          </span>
-          {p.mode === "legacy-tree" && <small>按有效叶子任务统计</small>}
+          {p.overdue ? (
+            <span className="personal-project-overdue">逾期 {p.overdue}</span>
+          ) : null}
         </>
       ) : (
         <span role="alert">{row.error}，请打开原项目检查。</span>
@@ -103,12 +102,6 @@ export function PersonalProjectList({
           />
           显示已归档项目
         </label>
-      )}
-      {!visible.length && (
-        <div className="personal-project-empty">
-          <span aria-hidden="true">⛰️</span>
-          <p>还没有项目，创建第一个项目来拆解任务吧。</p>
-        </div>
       )}
       {visible.map((row) => (
         <article

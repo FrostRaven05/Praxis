@@ -141,7 +141,7 @@ test("upcoming keeps daily schedules and deduplicates tasks with multiple date r
   ]);
 });
 
-test("recommendations come from the whole backlog, skip scheduled/parent/inactive tasks, and rank by urgency", () => {
+test("suggestions list parent tasks from active projects and miscellaneous work, and skip subtasks", () => {
   const tasks = [
     task("plain"),
     task("overdue", { deadline: { kind: "date", date: "2026-10-01" } }),
@@ -152,6 +152,9 @@ test("recommendations come from the whole backlog, skip scheduled/parent/inactiv
     task("done", { status: "completed" }),
     task("waiting", { status: "waiting" }),
     task("paused", { projectId: "paused-project" }),
+    task("doing", { status: "in_progress", projectId: "live-project" }),
+    task("live-parent", { status: "in_progress", projectId: "live-project" }),
+    task("live-child", { parentId: "live-parent", projectId: "live-project" }),
   ];
   const snap = {
     ...snapshot(tasks),
@@ -165,10 +168,22 @@ test("recommendations come from the whole backlog, skip scheduled/parent/inactiv
         focused: 0,
         archivedAt: null,
       },
+      {
+        id: "live-project",
+        name: "进行中的项目",
+        status: "active",
+        version: 0,
+        planVersion: 0,
+        focused: 0,
+        archivedAt: null,
+      },
     ],
   };
-  const result = recommendBacklog(snap, [scheduled], date, zone);
-  expect(result.map((r) => r.task.id)).toEqual(["overdue", "p1", "child", "plain"]);
+  const result = recommendBacklog(snap, [scheduled], date, zone, 30);
+  expect(result.map((r) => r.task.id)).toEqual(["overdue", "doing", "live-parent", "p1", "parent", "plain"]);
+  expect(result.find((row) => row.task.id === "doing")?.reasons).toContain("进行中");
+  expect(result.find((row) => row.task.id === "live-parent")?.reasons).toContain("进行中");
+  expect(result.some((row) => row.task.parentId)).toBe(false);
   expect(result[0]!.reasons).toContain("已逾期");
   expect(recommendBacklog(snap, [scheduled], date, zone, 2)).toHaveLength(2);
 });

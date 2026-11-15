@@ -413,7 +413,7 @@ input[type="checkbox"] {
   position: absolute;
   top: 0;
   right: 0;
-  background: var(--surface);
+  background: transparent;
   pointer-events: auto;
 }
 .desktop-shell .window-error {

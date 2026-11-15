@@ -9,6 +9,10 @@ read -r admin_hash
 [[ $(id -u) = 0 && -f "$root/compose.yaml" && -f "$root/deploy/runtime/config/server.json" ]] || exit 1
 [[ -f "$source_archive" ]] || exit 1
 cd "$root"
+compose_before=$(sha256sum compose.yaml | cut -d' ' -f1)
+check_https() {
+  docker exec "$1" node -e 'const fs=require("node:fs"),https=require("node:https");const c=JSON.parse(fs.readFileSync("/config/server.json","utf8"));https.get({host:"127.0.0.1",port:c.port,path:process.argv[1],ca:fs.readFileSync("/config/health-ca.crt"),servername:c.healthServerName},r=>{r.resume();process.exitCode=r.statusCode===Number(process.argv[2])?0:1}).on("error",()=>process.exitCode=1)' "$2" "$3"
+}
 stamp=$(date -u +%Y%m%dT%H%M%SZ)
 backup="$root/backups/before-admin-$stamp"
 release=$(mktemp -d "$root/.admin-release-XXXXXX")
@@ -30,6 +34,46 @@ PY
 )
 echo 'Building updated API and administration console; current service remains running.'
 docker build --build-arg "NODE_IMAGE=$node_image" -t "praxis-api:admin-$stamp" "$release"
+
+# Exercise migrations against a consistent copy before exposing the new image.
+# The candidate has no published port and never opens the live database.
+preflight="praxis-api-preflight-$stamp"
+cleanup_preflight() { docker rm -f "$preflight" >/dev/null 2>&1 || true; }
+trap cleanup_preflight EXIT
+mkdir -p "$backup/preflight/config" "$backup/preflight/data"
+cp -a deploy/runtime/config/. "$backup/preflight/config/"
+python3 - "$backup/preflight" <<'PY'
+import json, pathlib, sqlite3, sys
+destination = pathlib.Path(sys.argv[1])
+config = json.loads(pathlib.Path('deploy/runtime/config/server.json').read_text())
+relative = pathlib.PurePosixPath(config['databasePath']).relative_to('/data')
+source = (pathlib.Path('deploy/runtime/data') / str(relative)).resolve()
+source.relative_to(pathlib.Path('deploy/runtime/data').resolve())
+target = destination / 'data' / str(relative)
+target.parent.mkdir(parents=True, exist_ok=True)
+with sqlite3.connect(source.as_uri()+'?mode=ro', uri=True) as live:
+    with sqlite3.connect(target) as copy:
+        live.backup(copy)
+        assert copy.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+PY
+chown -R 1000:1000 "$backup/preflight/config" "$backup/preflight/data"
+docker run -d --name "$preflight" --read-only --cap-drop ALL --security-opt no-new-privileges:true \
+  -v "$backup/preflight/config:/config:ro" -v "$backup/preflight/data:/data" "praxis-api:admin-$stamp" > /dev/null
+preflight_ready=0
+for attempt in $(seq 1 15); do
+  if check_https "$preflight" /health 200 2>/dev/null; then
+    preflight_ready=1
+    break
+  fi
+  sleep 2
+done
+if [[ $preflight_ready != 1 ]]; then
+  docker logs --tail 15 "$preflight"
+  echo 'Candidate did not pass the copied-database startup check; current service was not changed.' >&2
+  exit 1
+fi
+cleanup_preflight
+echo 'Candidate passed copied-database migration and HTTPS startup checks.'
 
 python3 - "$backup" <<'PY'
 import pathlib, sys, tarfile
@@ -83,6 +127,7 @@ with sqlite3.connect(database) as db:
 pathlib.Path(sys.argv[1]).write_text(json.dumps(result))
 PY
 tar -xzf "$source_archive" -C "$root"
+[[ $(sha256sum compose.yaml | cut -d' ' -f1) = "$compose_before" ]] || { echo 'Refusing to change the current production port/proxy configuration.' >&2; exit 1; }
 # Only the administrator hash enters the server config; the original key stays with the owner.
 printf '%s\n' "$admin_hash" | python3 -c 'import json,os,pathlib,sys; p=pathlib.Path("deploy/runtime/config/server.json"); s=p.stat(); c=json.loads(p.read_text()); c["adminTokenHash"]=sys.stdin.readline().strip(); t=p.with_suffix(".admin-tmp"); t.write_text(json.dumps(c,indent=2)+"\n"); os.chown(t,s.st_uid,s.st_gid); os.chmod(t,0o600); os.replace(t,p)'
 docker tag "praxis-api:admin-$stamp" "$old_tag"
@@ -90,16 +135,15 @@ docker compose up -d --no-build api
 
 ready=0
 for attempt in $(seq 1 30); do
-  if curl --fail --silent --cacert deploy/runtime/config/health-ca.crt --connect-to 8.152.219.210:443:127.0.0.1:443 https://8.152.219.210/health > "$backup/health.json"; then
+  if check_https praxis-api-1 /health 200 2>/dev/null; then
     ready=1
     break
   fi
   sleep 2
 done
 [[ $ready = 1 ]]
-curl --fail --silent --cacert deploy/runtime/config/health-ca.crt --connect-to 8.152.219.210:443:127.0.0.1:443 https://8.152.219.210/admin > /dev/null
-status=$(curl --silent --output /dev/null --write-out '%{http_code}' --cacert deploy/runtime/config/health-ca.crt --connect-to 8.152.219.210:443:127.0.0.1:443 https://8.152.219.210/admin/api/overview)
-[[ $status = 401 ]]
+check_https praxis-api-1 /admin 200
+check_https praxis-api-1 /admin/api/overview 401
 python3 - "$backup/before.json" "$backup/after.json" <<'PY'
 import hashlib, json, pathlib, sqlite3, sys
 before = json.loads(pathlib.Path(sys.argv[1]).read_text())

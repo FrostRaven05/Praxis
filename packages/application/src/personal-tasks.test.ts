@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   personalDeadlineGroup,
   personalTaskProgress,
+  listedPersonalTasks,
   personalTaskQuery,
   personalTaskStatus,
 } from "./personal-tasks";
@@ -65,6 +66,32 @@ describe("personal queries from a single account snapshot", () => {
     expect(q.groups.today[0]).toBe(q.task("project"));
     expect(q.completed.map((t) => t.id)).toEqual(["done"]);
     expect(input).toEqual(before);
+  });
+  it("keeps a miscellaneous task off the miscellaneous list after it is placed on today", () => {
+    const input = work([
+      task("stay"),
+      task("placed"),
+      task("later"),
+      task("project", { projectId: "p" }),
+    ]);
+    input.legacyPlans = [
+      { taskId: "placed", date: "2026-11-11", focus: 0, rank: 0 },
+      { taskId: "later", date: "2026-11-12", focus: 0, rank: 1 },
+      { taskId: "project", date: "2026-11-11", focus: 0, rank: 2 },
+    ];
+    const miscellaneous = personalTaskQuery(
+      { ...input, tasks: listedPersonalTasks(input, null, now) },
+      now,
+    );
+    expect(miscellaneous.list(null).map((item) => item.id)).toEqual([
+      "stay",
+      "later",
+    ]);
+    const project = personalTaskQuery(
+      { ...input, tasks: listedPersonalTasks(input, "p", now) },
+      now,
+    );
+    expect(project.list("p").map((item) => item.id)).toEqual(["project"]);
   });
   it("retains waiting/blocked/cancelled semantics and lets terminal facts win over stale waiting flags", () => {
     expect(personalTaskStatus("todo", true)).toMatchObject({

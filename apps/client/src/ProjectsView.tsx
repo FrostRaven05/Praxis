@@ -170,7 +170,7 @@ export function ProjectsView({
                 key={form === "new" ? "new" : selectedId}
                 initial={form === "edit" ? (selected ?? null) : null}
                 createSave={() => desktopProjectSave(form === "edit" ? (selected ?? null) : null)}
-                modal={form === "edit"}
+                modal
                 onBusyChange={setFormLocked}
                 onCancel={() => setForm(null)}
                 onSaved={async id => {
@@ -208,24 +208,23 @@ export function ProjectsView({
                         type="button"
                         className="project-settings-button"
                         aria-label="项目设置"
+                        title="项目设置"
                         disabled={locked || loading}
                         onClick={() => setForm("edit")}
                       >
                         <ProjectIcon name="settings" />
-                        设置
                       </button>
                     </div>
                     {selected.outcome && (
                       <p className="project-outcome">{selected.outcome}</p>
                     )}
                     {selected.targetDate && <small>目标日期 {selected.targetDate}</small>}
+                    {work && <PersonalProjectProgress work={work} projectId={selected.id} />}
                   </div>
-                  {work && <PersonalProjectProgress work={work} projectId={selected.id} />}
                   <div className="project-summary-aside">
                     {onOpenPersonalAgent && (
                       <div className="ai-planner-launch-group">
                         <button type="button" className="ai-planner-launch" disabled={locked || loading || (selected.status !== undefined && selected.status !== "active")} onClick={() => onOpenPersonalAgent("decompose",selected.id)}>✦ 拆成步骤</button>
-                        <button type="button" className="ai-planner-launch" disabled={locked || loading} onClick={() => onOpenPersonalAgent("next",selected.id)}>✦ 下一步建议</button>
                       </div>
                     )}
                     <div className="project-view-controls">
@@ -335,7 +334,7 @@ export function ProjectsView({
                 </div>
               </>
             )}
-            {!form && !selected && work && (
+            {!selected && work && (
               <PersonalProjectList work={work} disabled={locked || loading} onOpen={setSelectedId} onCreate={() => setForm("new")} onEdit={id => {if(!items.some(p=>p.id===id)){setError("项目资料已变化，请重新读取后编辑");return;}setSelectedId(id);setForm("edit");}} />
             )}
           </div>

@@ -38,9 +38,9 @@ impl Store {
         let payload = serde_json::to_string(c).map_err(|e| e.to_string())?;
         let mut tx = self.pool.begin().await.map_err(|e| e.to_string())?;
         if !replay(&mut tx, &self.owner_id, &c.operation_id, "accept_suggestion", &payload).await? {
-            let allowed: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM tasks t WHERE t.id=? AND t.owner_id=? AND t.version=? AND t.deleted_at IS NULL AND t.status IN('todo','in_progress','blocked','waiting') AND NOT EXISTS(SELECT 1 FROM tasks child WHERE child.parent_task_id=t.id AND child.owner_id=t.owner_id AND child.deleted_at IS NULL) AND (t.project_id IS NULL OR EXISTS(SELECT 1 FROM projects pr WHERE pr.id=t.project_id AND pr.owner_id=t.owner_id AND pr.status='active' AND pr.archived_at IS NULL)))")
+            let allowed: bool = sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM tasks t WHERE t.id=? AND t.owner_id=? AND t.version=? AND t.deleted_at IS NULL AND t.parent_task_id IS NULL AND t.status IN('todo','in_progress','blocked','waiting') AND (t.project_id IS NULL OR EXISTS(SELECT 1 FROM projects pr WHERE pr.id=t.project_id AND pr.owner_id=t.owner_id AND pr.status='active' AND pr.archived_at IS NULL)))")
                 .bind(&c.task_id).bind(&self.owner_id).bind(c.expected_version).fetch_one(&mut *tx).await.map_err(|e| e.to_string())?;
-            if !allowed { return Err("任务已变化，请重新读取后转换；仅支持活跃项目中的未完成叶子任务。".into()); }
+            if !allowed { return Err("任务已变化，请重新读取后转换；只安排父任务。".into()); }
             let original_plan: Option<String> = sqlx::query_scalar("SELECT plan_value FROM tasks WHERE id=? AND owner_id=?").bind(&c.task_id).bind(&self.owner_id).fetch_one(&mut *tx).await.map_err(|e| e.to_string())?;
             sqlx::query("INSERT INTO daily_plan_items(id,owner_id,task_id,execution_date,time_zone,created_at,estimated_minutes,day_period,day_rank) SELECT ?,owner_id,id,?,?,?,default_estimated_minutes,'morning',(SELECT COALESCE(MAX(day_rank),0)+1 FROM daily_plan_items WHERE owner_id=? AND execution_date=? AND day_period='morning' AND removed=0) FROM tasks WHERE id=? AND owner_id=? ON CONFLICT(owner_id,task_id,execution_date) DO UPDATE SET removed=0,is_summary=0,time_zone=excluded.time_zone")
                 .bind(&c.plan_id).bind(&c.execution_date).bind(&c.time_zone).bind(&c.occurred_at).bind(&self.owner_id).bind(&c.execution_date).bind(&c.task_id).bind(&self.owner_id).execute(&mut *tx).await.map_err(|e| e.to_string())?;
@@ -116,7 +116,7 @@ impl Store {
         )
         .await?
         {
-            let allowed:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM tasks t WHERE t.id=? AND t.owner_id=? AND t.version=? AND t.status IN('todo','in_progress','blocked') AND NOT EXISTS(SELECT 1 FROM tasks child WHERE child.parent_task_id=t.id AND child.owner_id=t.owner_id) AND NOT EXISTS(SELECT 1 FROM daily_plan_items p WHERE p.task_id=t.id AND p.owner_id=t.owner_id AND p.is_summary=0 AND p.removed=0))")
+            let allowed:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM tasks t WHERE t.id=? AND t.owner_id=? AND t.version=? AND t.parent_task_id IS NULL AND t.status IN('todo','in_progress','blocked') AND NOT EXISTS(SELECT 1 FROM daily_plan_items p WHERE p.task_id=t.id AND p.owner_id=t.owner_id AND p.is_summary=0 AND p.removed=0))")
  .bind(&c.task_id).bind(&self.owner_id).bind(c.expected_version).fetch_one(&mut *tx).await.map_err(|e|e.to_string())?;
             if !allowed {
                 return Err("STATE_CONFLICT".into());

@@ -1,0 +1,64 @@
+{
+  "temporaryUserAndAllOwnedRowsRemoved": {
+    "account_users": 0,
+    "account_sessions": 0,
+    "sync_entities": 0,
+    "sync_entity_versions": 0,
+    "sync_entity_changes": 0,
+    "sync_entity_upgrades": 0,
+    "captures": 0,
+    "capture_changes": 0,
+    "ai_runs": 0
+  },
+  "deletedUserIdRetainedToBlockLegacyCredentials": true,
+  "deletionAuditRetained": true,
+  "originalUsers": 8,
+  "currentUsers": 8,
+  "originalUserAndCloudRowsUnchangedSinceDeployment": {
+    "account_users": true,
+    "sync_entities": false,
+    "sync_entity_versions": false,
+    "sync_entity_changes": false,
+    "sync_entity_upgrades": true,
+    "captures": true,
+    "capture_changes": true,
+    "ai_runs": true
+  },
+  "changesSinceDeployment": {
+    "sync_entities": [
+      {
+        "ownerHash": "8ad899dca356",
+        "beforeRows": 88,
+        "afterRows": 90,
+        "removedOrReplacedRows": 1,
+        "newOrReplacedRows": 3
+      }
+    ],
+    "sync_entity_versions": [
+      {
+        "ownerHash": "8ad899dca356",
+        "beforeRows": 101,
+        "afterRows": 105,
+        "removedOrReplacedRows": 0,
+        "newOrReplacedRows": 4
+      }
+    ],
+    "sync_entity_changes": [
+      {
+        "ownerHash": "8ad899dca356",
+        "beforeRows": 33,
+        "afterRows": 35,
+        "removedOrReplacedRows": 0,
+        "newOrReplacedRows": 2
+      }
+    ]
+  },
+  "originalSyncHistoryRetained": {
+    "sync_entity_versions": true,
+    "sync_entity_changes": true
+  },
+  "originalEntityIdsRetained": true,
+  "updatedEntitiesWithPreservedVersionHistory": 1,
+  "databaseIntegrity": "ok",
+  "containerAndRenewal": "\"healthy\" \"sha256:f822edf5058674b6d7df6a9982eed6be179c0a9d3b8bd50897bb9033004e0469\"\nactive"
+}

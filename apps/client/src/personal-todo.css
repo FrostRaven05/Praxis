@@ -168,6 +168,50 @@
   background: transparent;
   overflow-wrap: anywhere;
 }
+.personal-todo-home .personal-todo-row:has(.personal-todo-objective) {
+  align-items: flex-start;
+}
+.personal-todo-home .personal-todo-row:has(.personal-todo-objective) > .completion-toggle,
+.personal-todo-home .personal-todo-row:has(.personal-todo-objective) > .personal-todo-check {
+  margin-top: 6px;
+}
+.personal-todo-objective {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.45;
+}
+.personal-todo-objective-kicker {
+  flex-shrink: 0;
+  color: var(--primary-text);
+  font-weight: 600;
+}
+.personal-todo-objective-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.personal-todo-today {
+  flex-shrink: 0;
+  min-height: 28px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--primary-text);
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.personal-todo-today:disabled {
+  opacity: 0.5;
+}
 .personal-todo-meta {
   display: flex;
   align-items: baseline;

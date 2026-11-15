@@ -74,10 +74,6 @@ export function withNoteBody(value: string, body: string) {
   });
 }
 
-export function noteCardText(value: string) {
-  return notePlainText(value).replace(/\s+/g, " ").trim();
-}
-
 export function notePlainText(value: string) {
   const note = readNoteDocument(value);
   return [note.subtitle.trim(), ...note.blocks.flatMap((block) =>

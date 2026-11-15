@@ -57,7 +57,7 @@ export function BackupPanel() {
     setNotice("");
     try {
       await invoke<string>("backup_create");
-      setNotice("备份已创建");
+      setNotice("");
       await reload();
     } catch (e) {
       setError(contentError(e));

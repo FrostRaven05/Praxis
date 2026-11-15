@@ -23,6 +23,7 @@ import {
 import { TaskDescription, TaskSubtitle } from "./TaskDescription";
 import { TaskProjectControl } from "./TaskProjectControl";
 import { TaskSubtasks } from "./TaskSubtasks";
+import { TaskPanelActions } from "./TaskPanelActions";
 
 const scheduleEditor = new EditTask(editStorage);
 const detailsEditor = new TaskDetailEditor(taskDetailsStorage);
@@ -40,6 +41,7 @@ export function TaskDetailPanel({
   onUpdated,
   onPersisted,
   onClose,
+  onDelete,
   onBusyChange,
   onDirtyChange,
   scheduleTimeZone,
@@ -50,6 +52,7 @@ export function TaskDetailPanel({
   onPersisted: () => Promise<void>;
   onClose: () => void;
   onComplete: () => Promise<void>;
+  onDelete?: () => Promise<void>;
   onProject: (id: string) => void;
   onBusyChange: (busy: boolean) => void;
   onDirtyChange: (dirty: boolean) => void;
@@ -68,6 +71,7 @@ export function TaskDetailPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [composing, setComposing] = useState(false);
+  const [subtaskRevision, setSubtaskRevision] = useState(0);
   const immediate = useRef(false);
   const inFlight = useRef<Promise<boolean> | null>(null);
   const baseRef = useRef(base);
@@ -378,12 +382,13 @@ export function TaskDetailPanel({
         />
         <div className="task-panel-toolbar-actions">
           <button
+            className="task-panel-dismiss"
             aria-label="关闭任务详情"
             title="收起详情"
             disabled={busy}
             onClick={() => void close()}
           >
-            <TaskPanelIcon name="close" />
+            <TaskPanelIcon name="chevron" />
           </button>
         </div>
       </header>
@@ -452,9 +457,6 @@ export function TaskDetailPanel({
                   }
                 />
               </div>
-              {task.status === "completed" && (
-                <p className="field-help">已完成任务保留原安排日期。</p>
-              )}
             </div>
             <div className="task-panel-field task-reminder">
               <TaskPanelIcon name="clock" />
@@ -471,9 +473,10 @@ export function TaskDetailPanel({
               />
             </div>
             <TaskSubtasks
+              key={`${task.taskId}:${subtaskRevision}`}
               taskId={task.taskId}
               disabled={loading || !base}
-              onChanged={() => void onUpdated()}
+              onChanged={() => onPersisted()}
             />
             <TaskWorkload
               estimate={estimate}
@@ -518,6 +521,30 @@ export function TaskDetailPanel({
           </span>
         </footer>
       )}
+      <TaskPanelActions
+        taskId={task.taskId}
+        disabled={loading || !base || busy}
+        {...(onDelete ? { onDelete } : {})}
+        onClose={onClose}
+        onChanged={async () => {
+          setSubtaskRevision((value) => value + 1);
+          await onPersisted();
+        }}
+        onRefined={(value) => {
+          setTitle(value.title);
+          setNotes(value.notes);
+          if (baseRef.current) {
+            const next = {
+              ...baseRef.current,
+              title: value.title,
+              notes: value.notes,
+              version: baseRef.current.version + 1,
+            };
+            baseRef.current = next;
+            setBase(next);
+          }
+        }}
+      />
     </aside>
   );
 }

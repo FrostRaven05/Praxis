@@ -94,6 +94,27 @@ export function personalTaskProgress(
     allTasksCompleted: total > 0 && total === done,
   };
 }
+/** 杂事 already on today's schedule stay in 今日 and leave the miscellaneous list. */
+export function listedPersonalTasks(
+  work: WorkSnapshot,
+  projectId: string | null,
+  now: Date,
+  fallbackZone = "UTC",
+) {
+  const zone = work.settings[0]?.timeZone ?? fallbackZone;
+  const today = calendarDate(now, zone);
+  const placedToday =
+    projectId === null
+      ? new Set(
+          work.legacyPlans
+            .filter((plan) => plan.date === today)
+            .map((plan) => plan.taskId),
+        )
+      : null;
+  return work.tasks.filter(
+    (task) => task.projectId === projectId && !placedToday?.has(task.id),
+  );
+}
 export function personalDeadlineGroup(
   value: TimeValue | null,
   now: Date,
@@ -194,7 +215,8 @@ export type PersonalTaskChange =
   | { type: "undoStatus"; operationId: string }
   | { type: "delete" }
   | { type: "restore" }
-  | { type: "move"; projectId: string | null; confirmDescendants?: boolean };
+  | { type: "move"; projectId: string | null; confirmDescendants?: boolean }
+  | { type: "reorder"; orderedIds: string[] };
 export interface PersonalTaskBase {
   scopeKey: string;
   work: WorkSnapshot;
@@ -393,11 +415,19 @@ export function createPersonalTasks<Command>(
             !change.confirmDescendants
           )
             throw Error("请先确认移动全部子任务");
-        } else if (
-          change.type === "delete" &&
-          subtree(base.work.tasks, taskId).length > 1
-        ) {
-          throw Error("请先处理子任务，再删除这个任务");
+        } else if (change.type === "reorder") {
+          if (!task || task.parentId) throw Error("只能排序子任务");
+          const live = base.work.tasks
+            .filter((item) => item.parentId === taskId && item.status !== "cancelled")
+            .map((item) => item.id)
+            .sort();
+          const given = [...change.orderedIds].sort();
+          if (
+            live.length !== given.length ||
+            live.some((id, index) => id !== given[index]) ||
+            new Set(change.orderedIds).size !== change.orderedIds.length
+          )
+            throw Error("子任务已变化，请重新读取后再排序");
         }
       } catch (error) {
         throw new PersonalTaskRejectedError(error);

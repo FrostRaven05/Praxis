@@ -15,6 +15,7 @@ export function PersonalTaskDetails({
   onRefresh,
   onClose,
   onComplete,
+  onDelete,
   onOpenProject,
   onLockedChange,
 }: {
@@ -23,13 +24,13 @@ export function PersonalTaskDetails({
   onRefresh: () => Promise<PersonalTaskRead>;
   onClose: () => void;
   onComplete: () => Promise<void>;
+  onDelete?: () => Promise<void>;
   onOpenProject: (id: string) => void;
   onLockedChange: (locked: boolean) => void;
 }) {
   const zone = base.work.settings[0]?.timeZone ?? base.fallbackZone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   const today = calendarDate(new Date(), zone);
   const project = base.work.projects.find((project) => project.id === task.projectId);
-  const canSchedule = !base.work.tasks.some((other) => other.parentId === task.id);
   const dates = base.work.legacyPlans
     .filter((plan) => plan.taskId === task.id)
     .map((plan) => plan.date)
@@ -92,6 +93,7 @@ export function PersonalTaskDetails({
       }}
       onClose={onClose}
       onComplete={onComplete}
+      {...(onDelete ? { onDelete } : {})}
       onProject={onOpenProject}
       onBusyChange={setContentBusy}
       onDirtyChange={setContentDirty}
@@ -102,7 +104,6 @@ export function PersonalTaskDetails({
       contextLabel={task.projectId ? "项目" : "杂事"}
       projectId={task.projectId}
       projectName={project?.name ?? null}
-      canSchedule={canSchedule}
       task={{taskId: task.id, title: task.title, version: task.version, createdAt: task.createdAt, status: task.status}}
       onSaved={async () => { await onRefresh(); }}
       onReload={async () => {
@@ -112,6 +113,7 @@ export function PersonalTaskDetails({
       onClose={onClose}
       onLockedChange={setContentLocked}
       onComplete={onComplete}
+      {...(onDelete ? { onDelete } : {})}
     />
   );
 }

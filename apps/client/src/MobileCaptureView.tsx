@@ -22,7 +22,6 @@ export function MobileCaptureView({
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [notice, setNotice] = useState("");
   const pending = useRef<SaveCaptureCommand | null>(null);
   const saving = useRef(false);
   const composing = useRef(false);
@@ -63,7 +62,6 @@ export function MobileCaptureView({
     saving.current = true;
     setBusy(true);
     setError("");
-    setNotice("");
     pending.current ??= {
       operationId: crypto.randomUUID(),
       id: editing?.id ?? crypto.randomUUID(),
@@ -76,7 +74,6 @@ export function MobileCaptureView({
       pending.current = null;
       setText("");
       setEditing(null);
-      setNotice("已保存到本机");
       await refresh();
     } catch (e) {
       if (e instanceof CaptureRejectedError) pending.current = null;
@@ -142,7 +139,6 @@ export function MobileCaptureView({
             onClick={() => {
               setEditing(null);
               setError("");
-              setNotice("原文已保留，点击保存到本机可建立新的收集项。");
             }}
           >
             另存原文
@@ -162,7 +158,6 @@ export function MobileCaptureView({
         )}
       </form>
       {error && <p role="alert">{error}</p>}
-      {notice && <p role="status">{notice}</p>}
       {pending.current && !busy && (
         <p>
           上次保存结果尚未确认，请重试同一操作。原文暂时锁定，避免重复或覆盖。
@@ -197,7 +192,6 @@ export function MobileCaptureView({
                   setEditing(item);
                   setText(item.rawText);
                   setError("");
-                  setNotice("");
                 }}
               >
                 编辑原文

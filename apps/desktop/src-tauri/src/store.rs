@@ -438,6 +438,7 @@ impl Store {
                 &command.time_zone,
                 &command.occurred_at,
                 Some(&command.plan_id),
+                false,
             )
             .await?;
             sqlx::query("INSERT INTO domain_events(id,owner_id,task_id,kind,occurred_at,payload) VALUES (?,?,?,?,?,?)")

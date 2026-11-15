@@ -1,4 +1,4 @@
-import { useContext, useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   calendarDate,
   taskStates,
@@ -8,10 +8,8 @@ import {
 } from "@praxis/application";
 import { workspace } from "./storage";
 import { TaskDetailsButton } from "./TaskDetailsButton";
-import { TaskActionMenu } from "./TaskActionMenu";
 import { TaskCompletionButton } from "./TaskCompletionButton";
 import { animateTaskCompletion } from "./task-completion-motion";
-import { ProjectTaskPanelContext } from "./project-task-panel-context";
 
 const columns = ["todo", "in_progress", "blocked", "completed"];
 type StatusAction = Extract<WorkspaceAction, { kind: "status" }>;
@@ -36,7 +34,6 @@ export function KanbanView({
   onBusyChange?: (busy: boolean) => void;
   disabled?: boolean;
 }) {
-  const taskPanel = useContext(ProjectTaskPanelContext);
   const leaves = projectTree(tasks).filter((task) => task.depth === 0);
   const [transition, setTransition] = useState<{
     task: ProjectTask;
@@ -186,60 +183,6 @@ export function KanbanView({
             className="kanban-task-title"
             completionTitle
           />
-          <TaskActionMenu
-            label={"更多操作：" + task.title}
-            disabled={locked}
-            className="kanban-card-actions"
-          >
-            {(close) =>
-              task.status === "cancelled" ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    close();
-                    choose(task, "restore");
-                  }}
-                >
-                  恢复任务
-                </button>
-              ) : (
-                <>
-                  <button type="button" disabled={!taskPanel || taskPanel.disabled} onClick={(event) => {
-                    close();
-                    if (taskPanel) void taskPanel.open(task.taskId, event.currentTarget);
-                  }}>打开任务详情</button>
-                  {columns
-                    .filter((status) => status !== task.status)
-                    .map((status) => (
-                      <button
-                        key={status}
-                        type="button"
-                        onClick={() => {
-                          close();
-                          choose(task, status);
-                        }}
-                      >
-                        {status === "completed"
-                          ? "标为完成"
-                          : "移到" + taskStates[status]}
-                      </button>
-                    ))}
-                  {task.status !== "completed" && (
-                    <button
-                      type="button"
-                      className="kanban-cancel-action"
-                      onClick={() => {
-                        close();
-                        choose(task, "cancelled");
-                      }}
-                    >
-                      取消任务
-                    </button>
-                  )}
-                </>
-              )
-            }
-          </TaskActionMenu>
         </div>
         {(parent || task.executionDate || task.important || tasks.some((child) => child.parentTaskId === task.taskId)) && (
           <div className="kanban-card-meta">

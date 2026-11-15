@@ -11,17 +11,16 @@ import { HabitDetailPanel } from "./HabitDetailPanel";
 import type { Row as HabitRow } from "./HabitsView";
 import { DateStrip } from "./DateStrip";
 import { ProjectNavigation } from "./ProjectNavigation";
-import { ProjectIcon } from "./ProjectIcon";
 import { projectStates, taskStates } from "@praxis/application";
 import { TaskDetailPanel } from "./TaskDetailPanel";
 import { TaskPanelIcon } from "./TaskPanelIcon";
 import { TaskCompletionButton } from "./TaskCompletionButton";
 import { TaskCompletionTitle } from "./TaskCompletionTitle";
 import { animateTaskCompletion } from "./task-completion-motion";
-import { ActionNotice } from "./ActionNotice";
 import { PomodoroDock } from "./PomodoroDock";
+import { assignPomodoroTask, readPomodoroState, writePomodoroState } from "./pomodoro";
 import { personalTasks } from "./personal-task-storage";
-import { noteCardText } from "./task-note";
+import { noteSubtitle } from "./task-note";
 import { ProjectsView } from "./ProjectsView";
 import { InboxView } from "./InboxView";
 import { MobileCaptureView } from "./MobileCaptureView";
@@ -29,6 +28,7 @@ import { planning } from "./PlanningPanel";
 import { PlanControls } from "./PlanControls";
 import { App as NativeApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
+import { createPortal } from "react-dom";
 import {
   useCallback,
   useEffect,
@@ -56,7 +56,7 @@ import {
   type DayPeriod,
   type PlanChange,
   type WorkTask,
-  type TimeValue,
+  timeDay,
 } from "@praxis/application";
 import {
   nativeAvailable,
@@ -173,21 +173,39 @@ export function App() {
   const [changingId, setChangingId] = useState<string | null>(null);
   const [changeError, setChangeError] = useState("");
   const [showCompleted, setShowCompleted] = useState(false);
-  const [notice, setNotice] = useState<{
-    message: string;
-    destination?: string;
-  }>({ message: "" });
-  const [completionUndo, setCompletionUndo] = useState<DailyTask | null>(null);
-  useEffect(() => {
-    setNotice({ message: "" });
-    setCompletionUndo(null);
-  }, [view]);
   const completedItems = items.filter((item) => item.status === "completed");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [loadError, setLoadError] = useState("");
   const [saveError, setSaveError] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [taskMenu, setTaskMenu] = useState<{
+    id: string;
+    title: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  useEffect(() => {
+    if (!taskMenu) return;
+    const close = () => setTaskMenu(null);
+    const outside = (event: PointerEvent) => {
+      if (
+        event.target instanceof Element &&
+        event.target.closest(".task-list-menu")
+      )
+        return;
+      close();
+    };
+    const escape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") close();
+    };
+    window.addEventListener("pointerdown", outside);
+    window.addEventListener("keydown", escape);
+    return () => {
+      window.removeEventListener("pointerdown", outside);
+      window.removeEventListener("keydown", escape);
+    };
+  }, [taskMenu]);
   const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
   useEffect(() => {
     setSelectedHabitId(null);
@@ -301,11 +319,6 @@ export function App() {
     };
   }, [refresh, recoveryDate, workspaceZone]);
 
-  function openInbox() {
-    if (projectBusy || detailBusy || planningBusy || inboxBusy) return;
-    setSelectedId(null);
-    setView("inbox");
-  }
   const quickCapture = useCallback(() => {
     if (
       projectBusy ||
@@ -583,7 +596,6 @@ export function App() {
       setDay(current);
       const task = await todayTasks.add(title, current.timeZone, displayedDate);
       setTitle("");
-      setCompletionUndo(null);
       // A refresh failure must not imply that the successful save failed.
       setRecoveryDate(
         task.executionDate !== current.date ? task.executionDate : null,
@@ -639,13 +651,6 @@ export function App() {
         day.timeZone,
       );
       if (updated.status === "completed") clearMotion = await animateTaskCompletion(item.taskId);
-      setCompletionUndo(updated.status === "completed" ? updated : null);
-      setNotice({
-        message:
-          updated.status === "completed"
-            ? `已完成「${updated.title}」`
-            : `已撤销完成「${updated.title}」`,
-      });
       setSelectedId(null);
       await refresh(displayedDate);
     } catch (error) {
@@ -677,22 +682,6 @@ export function App() {
     setWorkSearchRevision((n) => n + 1);
     setView("day");
     setRecoveryDate(date === localDay(day.timeZone).date ? null : date);
-  }
-
-  function taskCreated(title: string, plan: TimeValue | null) {
-    setCompletionUndo(null);
-    const date =
-      plan?.kind === "date"
-        ? plan.date
-        : plan?.kind === "instant"
-          ? calendarDate(new Date(plan.atUtc), day.timeZone)
-          : null;
-    setNotice({
-      message: date
-        ? `「${title}」已添加到 ${date}`
-        : `「${title}」已保存到收件箱`,
-      destination: date ?? "inbox",
-    });
   }
 
   function rowDragProps(key: string, canArrange = true) {
@@ -766,7 +755,7 @@ export function App() {
     );
   }
   function taskRow(item: DailyTask, reasons: string[] = []) {
-    const description = noteCardText(item.notes ?? "");
+    const subtitle = noteSubtitle(item.notes ?? "").trim();
     const canArrange =
       desktopAvailable &&
       ["todo", "in_progress", "blocked"].includes(item.status);
@@ -777,6 +766,16 @@ export function App() {
         data-plan-id={item.planId}
         data-completion-row=""
         className={`task-item${item.status === "completed" ? " completed" : ""}${draggingId === item.planId ? " is-dragging" : ""}${targeted ? " drop-" + dropTarget.position : ""}`}
+        onContextMenu={(event) => {
+          if (!desktopAvailable || planLocked) return;
+          event.preventDefault();
+          setTaskMenu({
+            id: item.taskId,
+            title: item.title,
+            x: event.clientX,
+            y: event.clientY,
+          });
+        }}
         {...rowDragProps(item.planId, canArrange)}
       >
         {canArrange && (
@@ -834,7 +833,7 @@ export function App() {
               )}
               <TaskCompletionTitle taskId={item.taskId}>{item.title}</TaskCompletionTitle>
             </span>
-            {description && <span className="task-card-note">{description}</span>}
+            {subtitle && <span className="task-card-note">{subtitle}</span>}
             <span className="task-meta">
               {reasons
                 .filter((reason) => reason !== "当日安排")
@@ -889,6 +888,7 @@ export function App() {
           items,
           displayedDate,
           content.zone,
+          30,
         )
       : [];
     const projectNames = new Map(
@@ -927,7 +927,7 @@ export function App() {
               setTitle(event.target.value);
               setSaveError("");
             }}
-            placeholder={`添加${displayedDate === day.date ? "今日" : displayedDate}任务，按回车保存`}
+            placeholder={`添加${displayedDate === day.date ? "今日" : displayedDate}任务`}
             autoComplete="off"
             disabled={
               saving ||
@@ -948,15 +948,16 @@ export function App() {
         {!loading && recommendations.length > 0 && (
           <section
             className="timeline-attention today-recommendations"
-            aria-label="推荐候选"
+            aria-label="建议任务"
           >
             <h2>
-              推荐 <span>{recommendations.length}</span>
+              建议任务 <span>{recommendations.length}</span>
             </h2>
             <ul className="task-suggestions">
               {recommendations.map((row) => {
-                const projectName = row.task.projectId ? projectNames.get(row.task.projectId) : null;
-                const attention = row.reasons.find((reason) => ["已逾期", "今日截止", "即将截止", "到期跟进", "P1"].includes(reason));
+                const projectName = row.task.projectId ? projectNames.get(row.task.projectId) : "杂事";
+                const attention = row.reasons.find((reason) => ["已逾期", "今日截止", "即将截止", "进行中", "到期跟进", "P1"].includes(reason));
+                const keptDate = timeDay(row.task.deadline, content!.zone) ?? timeDay(row.task.plan, content!.zone);
                 return (
                 <li key={row.task.id} data-task-id={row.task.id}>
                   <span className="task-suggestion-title" title={row.task.title}>
@@ -964,6 +965,9 @@ export function App() {
                     {projectName && projectName.trim() !== row.task.title.trim() && (
                       <small> · {projectName}</small>
                     )}
+                  </span>
+                  <span className="task-suggestion-date" title="沿用原日期">
+                    {keptDate ?? "没有日期"}
                   </span>
                   {attention && <span className="task-suggestion-reason">{attention}</span>}
                   <button
@@ -1156,18 +1160,6 @@ export function App() {
     );
   }
 
-  if (accountOpen)
-    return (
-      <AccountPage
-        onBack={() => setAccountOpen(false)}
-        initialSection={settingsSection}
-        revision={projectRevision}
-        onOpenProject={(id) => {
-          setAccountOpen(false);
-          openProject(id);
-        }}
-      />
-    );
   return (
     <main
       className="workspace reference-workspace todoist-workspace modern-workspace"
@@ -1212,22 +1204,27 @@ export function App() {
           />
         )}
         {desktopAvailable && (
-          <div className="sidebar-bottom">
+          <div className="sidebar-bottom sidebar-userbar">
+            <AccountButton disabled={projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty || (view === "day" && planLocked)} onClick={() => { setSettingsSection("account"); setAccountOpen(true); }} />
+            <LanSyncStatus onRefresh={synced} />
             <button
-              className="sidebar-settings"
+              type="button"
+              className="sidebar-more"
+              aria-label="设置"
+              title="设置"
               disabled={projectBusy || detailBusy || planningBusy || inboxBusy}
               onClick={openSettings}
             >
-              <ProjectIcon name="settings" />
-              设置
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9c.3.6.9 1 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z" />
+              </svg>
             </button>
-            <LanSyncStatus onRefresh={synced} />
-            <AccountButton disabled={projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty || (view === "day" && planLocked)} onClick={() => { setSettingsSection("account"); setAccountOpen(true); }} />
           </div>
         )}
       </aside>
       {view === "todos" ? (
-        <PersonalTodoHome revision={projectRevision} externalBusy={detailBusy || detailDirty || personalAgent!==null} onBusyChange={setInboxBusy} onOpenProject={openProject} focusRevision={captureFocusRevision} onChanged={projectsChanged} onOpenAgent={()=>setPersonalAgent({mode:"next"})} />
+        <PersonalTodoHome revision={projectRevision} externalBusy={detailBusy || detailDirty || personalAgent!==null} onBusyChange={setInboxBusy} onOpenProject={openProject} focusRevision={captureFocusRevision} onChanged={projectsChanged} />
       ) : view === "day" && desktopAvailable ? (
         <ProductivityView
           renderToday={renderDailyView}
@@ -1260,7 +1257,6 @@ export function App() {
           searchRevision={workSearchRevision}
           onChanged={workChanged}
           onBusyChange={setInboxBusy}
-          onTaskCreated={taskCreated}
         />
       ) : view === "projects" ? (
         <ProjectsView
@@ -1363,32 +1359,62 @@ export function App() {
         />
       )}
       <PomodoroDock />
-      {view !== "inbox" && (
-        <ActionNotice
-          message={notice.message}
-          actionLabel={
-            completionUndo
-              ? "撤销"
-              : notice.destination === "inbox"
-                ? "查看收件箱"
-                : "查看日期"
-          }
-          onAction={
-            completionUndo
-              ? () => void changeStatus(completionUndo)
-              : notice.destination
-                ? () =>
-                    notice.destination === "inbox"
-                      ? openInbox()
-                      : selectDate(notice.destination!)
-                : undefined
-          }
-          disabled={
-            changingId !== null || planningBusy || inboxBusy || detailBusy
-          }
-          onDismiss={() => {
-            setNotice({ message: "" });
-            setCompletionUndo(null);
+      {taskMenu &&
+        createPortal(
+          <div
+            className="task-action-popover task-list-menu"
+            role="menu"
+            style={{ left: taskMenu.x, top: taskMenu.y }}
+          >
+            {items.find((item) => item.taskId === taskMenu.id)?.status !==
+              "completed" && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  const menu = taskMenu;
+                  setTaskMenu(null);
+                  writePomodoroState(
+                    assignPomodoroTask(
+                      readPomodoroState(),
+                      { id: menu.id, title: menu.title },
+                      Date.now(),
+                    ),
+                  );
+                }}
+              >
+                用番茄钟执行
+              </button>
+            )}
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => {
+                const menu = taskMenu;
+                setTaskMenu(null);
+                void personalTasks
+                  .read()
+                  .then((current) =>
+                    personalTasks.change(current, menu.id, { type: "delete" }),
+                  )
+                  .then(() => refresh(displayedDate))
+                  .catch((error) => setChangeError(message(error)));
+              }}
+            >
+              删除任务
+            </button>
+          </div>,
+          document.body,
+        )}
+      {accountOpen && (
+        <AccountPage
+          modal
+          onBack={() => setAccountOpen(false)}
+          initialSection={settingsSection}
+          revision={projectRevision}
+          onOpenProject={(id) => {
+            setAccountOpen(false);
+            openProject(id);
           }}
         />
       )}

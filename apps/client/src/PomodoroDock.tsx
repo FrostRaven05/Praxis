@@ -60,7 +60,11 @@ function barLabel(state: PomodoroState) {
   return "开始计时";
 }
 
-export function PomodoroDock() {
+export function PomodoroDock({
+  variant = "dock",
+}: {
+  variant?: "dock" | "page";
+} = {}) {
   const dock = useRef<HTMLDivElement>(null);
   const stateRef = useRef<PomodoroState | null>(null);
   const [now, setNow] = useState(() => Date.now());
@@ -184,7 +188,138 @@ export function PomodoroDock() {
     void playPomodoroAmbience(next);
   }
 
-  if (!state.enabled) return null;
+  if (variant !== "page" && !state.enabled) return null;
+
+  if (variant === "page") {
+    return (
+      <div
+        className="pomodoro-page"
+        ref={dock}
+        onPointerDown={() => warmPomodoroAudio()}
+      >
+        <p className="sr-only" role="status">
+          {statusLabel(state, finished)}，今日完成 {state.completedCount} 个番茄。{announce}
+        </p>
+        <section className="pomodoro-page-card" aria-label="番茄钟">
+          <p className="pomodoro-clock" role="timer">
+            {clock}
+          </p>
+          <p className="pomodoro-page-status">{statusLabel(state, finished)}</p>
+          {state.task && (
+            <p className="pomodoro-task" title={state.task.title}>
+              {state.task.title}
+            </p>
+          )}
+          <p className="pomodoro-page-count">今天已完成 {state.completedCount} 个番茄</p>
+          <div className="pomodoro-modes" role="group" aria-label="番茄钟模式">
+            {pomodoroModes.map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                className={mode === activeMode ? "is-selected" : undefined}
+                aria-pressed={mode === activeMode}
+                disabled={locked}
+                onClick={() => {
+                  setFinished(null);
+                  commit(selectPomodoroMode(state, mode));
+                }}
+              >
+                {pomodoroModeLabels[mode]}
+              </button>
+            ))}
+          </div>
+          {!locked && (
+            <div className="pomodoro-settings">
+              {pomodoroModes.map((mode) => (
+                <div key={mode}>
+                  <span>{pomodoroModeLabels[mode]}</span>
+                  <button
+                    type="button"
+                    aria-label={`${pomodoroModeLabels[mode]}减少五分钟`}
+                    onClick={() =>
+                      commit(
+                        setPomodoroDuration(
+                          state,
+                          mode,
+                          state.durations[mode] - 5,
+                        ),
+                      )
+                    }
+                  >
+                    −
+                  </button>
+                  <b>{state.durations[mode]} 分钟</b>
+                  <button
+                    type="button"
+                    aria-label={`${pomodoroModeLabels[mode]}增加五分钟`}
+                    onClick={() =>
+                      commit(
+                        setPomodoroDuration(
+                          state,
+                          mode,
+                          state.durations[mode] + 5,
+                        ),
+                      )
+                    }
+                  >
+                    +
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          <div className="pomodoro-page-controls">
+            {locked && (
+              <button
+                type="button"
+                className="pomodoro-end"
+                onClick={() => {
+                  setFinished(null);
+                  commit(stopPomodoro(state));
+                }}
+              >
+                结束
+              </button>
+            )}
+            <button type="button" className="pomodoro-go" onClick={begin}>
+              {running ? <PauseIcon /> : <PlayIcon />}
+              {barLabel(state)}
+            </button>
+          </div>
+          <div className="pomodoro-noise-wrap">
+            {soundsOpen && (
+              <div className="pomodoro-sounds" role="menu" aria-label="白噪音">
+                {ambiences.map((item) => (
+                  <button
+                    key={item}
+                    type="button"
+                    role="menuitemradio"
+                    aria-checked={sound === item}
+                    onClick={() => chooseSound(item)}
+                  >
+                    {pomodoroAmbienceLabels[item]}
+                  </button>
+                ))}
+                <button type="button" role="menuitem" onClick={() => chooseSound(null)}>
+                  关闭
+                </button>
+              </div>
+            )}
+            <button
+              type="button"
+              className="pomodoro-noise"
+              aria-pressed={sound !== null}
+              aria-expanded={soundsOpen}
+              onClick={() => setSoundsOpen((open) => !open)}
+            >
+              <SpeakerIcon />
+              {sound ? pomodoroAmbienceLabels[sound] : "白噪音"}
+            </button>
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -273,6 +408,11 @@ export function PomodoroDock() {
           <p className="pomodoro-clock" role="timer">
             {clock}
           </p>
+          {state.task && (
+            <p className="pomodoro-task" title={state.task.title}>
+              {state.task.title}
+            </p>
+          )}
           <div className="pomodoro-noise-wrap">
             {soundsOpen && (
               <div className="pomodoro-sounds" role="menu" aria-label="白噪音">

@@ -455,7 +455,7 @@ export class AiService {
     { owner: string; abort: AbortController; done: Promise<void> }
   >();
   private generate: AiOptions["generate"];
-  readonly model: string | null;
+  model: string | null;
   constructor(
     private db: DatabaseSync,
     private options: AiOptions = {},
@@ -490,6 +490,44 @@ export class AiService {
         this.save(row.owner_id, run);
       }
     }
+  }
+  configure(next: {
+    provider: "openai" | "deepseek";
+    baseUrl: string;
+    model: string;
+    apiKey: string;
+  }) {
+    const options = {
+      ...this.options,
+      provider: next.provider,
+      baseUrl: next.baseUrl,
+      model: next.model,
+      apiKey: next.apiKey,
+    };
+    const generate = options.generate ?? modelGenerator(options);
+    this.options = options;
+    this.generate = generate;
+    this.model = next.model;
+  }
+  /** Server-side copy for saving a new model without asking for the key again. */
+  credentials(): {
+    provider: "openai" | "deepseek";
+    baseUrl: string;
+    model: string;
+    apiKey: string;
+  } | null {
+    const apiKey = this.options.apiKey;
+    const baseUrl = this.options.baseUrl;
+    const model = this.options.model ?? this.model;
+    if (!apiKey || !baseUrl || !model) return null;
+    return {
+      provider:
+        this.options.provider ??
+        (isDeepSeek(this.options) ? "deepseek" : "openai"),
+      baseUrl,
+      model,
+      apiKey,
+    };
   }
   status() {
     return {
@@ -683,6 +721,10 @@ export class AiService {
       this.active.get(owner + ":" + id)?.abort.abort("cancel");
     }
     return run;
+  }
+  abortOwner(owner: string) {
+    for (const value of this.active.values())
+      if (value.owner === owner) value.abort.abort("account-deleted");
   }
   async close() {
     for (const value of this.active.values()) value.abort.abort("shutdown");

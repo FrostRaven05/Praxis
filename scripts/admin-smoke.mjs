@@ -47,6 +47,10 @@ try {
   await page.getByLabel("管理密钥", { exact: true }).fill(token);
   await page.getByRole("button", { name: "进入控制台" }).click();
   await page.getByText("还没有注册用户", { exact: true }).waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: "操作日志", exact: true }).count(),
+    0,
+  );
   check("管理员登录与真实空状态");
   await page.screenshot({
     path: join(evidence, "overview-empty.png"),
@@ -165,23 +169,74 @@ try {
 
   for (const [label, heading] of [
     ["同步数据", "同步数据"],
-    ["操作日志", "操作日志"],
     ["系统状态", "系统状态"],
   ]) {
     await page.getByRole("button", { name: label, exact: true }).click();
     await page.getByRole("heading", { name: heading, exact: true }).waitFor();
     if (label === "同步数据")
       await page
-        .getByRole("heading", { name: "同步累计", exact: true })
-        .waitFor();
-    if (label === "操作日志")
-      await page
-        .getByText("本地浏览器验收：恢复测试账号", { exact: true })
+        .getByRole("heading", { name: "数据分类", exact: true })
         .waitFor();
     if (label === "系统状态")
-      await page.getByText("Node.js", { exact: true }).waitFor();
+      await page.getByText("正常运行", { exact: true }).waitFor();
+    await page.screenshot({
+      path: join(evidence, label === "同步数据" ? "sync.png" : "system.png"),
+      fullPage: true,
+    });
     check(`${label}页面`);
   }
+  await page.getByRole("button", { name: "数据概览", exact: true }).click();
+  await page.getByRole("button", { name: "模型设置", exact: true }).click();
+  await page.getByLabel("服务", { exact: true }).selectOption("openai");
+  assert.equal(
+    await page.getByLabel("接口地址", { exact: true }).inputValue(),
+    "https://api.openai.com/v1",
+  );
+  assert.equal(await page.getByLabel("模型", { exact: true }).inputValue(), "");
+  await page.getByLabel("服务", { exact: true }).selectOption("deepseek");
+  await page.getByLabel("模型", { exact: true }).fill("admin-browser-smoke");
+  await page
+    .getByLabel("接口地址", { exact: true })
+    .fill("https://model-smoke.example.invalid");
+  await page
+    .getByLabel("API 密钥", { exact: true })
+    .fill(randomBytes(24).toString("hex"));
+  await page
+    .getByRole("button", { name: "显示 API 密钥", exact: true })
+    .click();
+  assert.equal(
+    await page.getByLabel("API 密钥", { exact: true }).getAttribute("type"),
+    "text",
+  );
+  await page
+    .getByRole("button", { name: "隐藏 API 密钥", exact: true })
+    .click();
+  await page.getByRole("button", { name: "保存模型设置", exact: true }).click();
+  await page.getByText("模型设置已保存。", { exact: true }).waitFor();
+  await page.reload();
+  await page.getByLabel("模型", { exact: true }).waitFor();
+  assert.equal(
+    await page.getByLabel("模型", { exact: true }).inputValue(),
+    "admin-browser-smoke",
+  );
+  assert.equal(
+    await page.getByLabel("API 密钥", { exact: true }).inputValue(),
+    "",
+  );
+  // Blank key saves keep the existing credential and custom provider values.
+  await page.getByLabel("服务", { exact: true }).selectOption("openai");
+  assert.equal(
+    await page.getByLabel("接口地址", { exact: true }).inputValue(),
+    "https://model-smoke.example.invalid",
+  );
+  assert.equal(
+    await page.getByLabel("模型", { exact: true }).inputValue(),
+    "admin-browser-smoke",
+  );
+  await page.getByRole("button", { name: "保存模型设置", exact: true }).click();
+  await page.getByText("模型设置已保存。", { exact: true }).waitFor();
+  await page.screenshot({ path: join(evidence, "model.png"), fullPage: true });
+  check("模型设置保存、刷新保持与密钥不回显（无外部模型请求）");
   await page.getByRole("button", { name: "数据概览", exact: true }).click();
   await page.getByText("当前服务共 14 个注册账号", { exact: true }).waitFor();
   await page.setViewportSize({ width: 390, height: 844 });
@@ -201,6 +256,81 @@ try {
   await page.getByRole("button", { name: "用户管理", exact: true }).click();
   await page.getByRole("textbox", { name: "搜索用户" }).waitFor();
   check("390px 手机布局与折叠导航");
+  for (const width of [390, 320]) {
+    await page.setViewportSize({ width, height: 844 });
+    for (const [label, selector, shot] of [
+      ["模型设置", "#model-form", "model"],
+      ["同步数据", ".metrics-three", "sync"],
+      ["系统状态", ".system-body", "system"],
+    ]) {
+      await page.getByRole("button", { name: "展开导航", exact: true }).click();
+      await page.getByRole("button", { name: label, exact: true }).click();
+      await page.locator(selector).waitFor();
+      assert.ok(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+        `${width}px ${label}无横向滚动`,
+      );
+      await page.screenshot({
+        path: join(evidence, `${shot}-${width}.png`),
+        fullPage: true,
+      });
+    }
+  }
+  check("模型、同步和系统页的 390px / 320px 布局");
+  await page.setViewportSize({ width: 1440, height: 1060 });
+  await page.getByRole("button", { name: "用户管理", exact: true }).click();
+  await page.getByRole("textbox", { name: "搜索用户" }).fill("member01");
+  await page.getByText("共 1 条记录 · 每页 12 条", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "查看详情" }).click();
+  await page.getByRole("button", { name: "删除用户", exact: true }).click();
+  await page.getByRole("button", { name: "取消", exact: true }).click();
+  assert.ok(
+    await page
+      .getByRole("button", { name: "删除用户", exact: true })
+      .isVisible(),
+  );
+  await page.getByRole("button", { name: "删除用户", exact: true }).click();
+  await page
+    .getByLabel("输入用户邮箱以确认", { exact: true })
+    .fill("wrong@example.test");
+  await page
+    .getByLabel("操作原因", { exact: false })
+    .fill("本地验收：删除测试用户");
+  await page.getByRole("button", { name: "确认删除用户", exact: true }).click();
+  await page
+    .getByText("邮箱与所选用户不一致，请重新输入。", { exact: true })
+    .waitFor();
+  await page
+    .getByLabel("输入用户邮箱以确认", { exact: true })
+    .fill("member01@example.test");
+  await page.screenshot({
+    path: join(evidence, "delete-confirm.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "确认删除用户", exact: true }).click();
+  await page.locator("#detail-dialog").waitFor({ state: "hidden" });
+  await page.getByText("未找到匹配用户", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "数据概览", exact: true }).click();
+  await page.getByText("当前服务共 13 个注册账号", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "用户管理", exact: true }).click();
+  await page.getByRole("button", { name: "下一页", exact: true }).click();
+  await page.getByText("2 / 2", { exact: true }).waitFor();
+  await page.getByRole("button", { name: "查看详情" }).click();
+  const lastEmail = await page
+    .locator("#detail-dialog .user-email")
+    .textContent();
+  await page.getByRole("button", { name: "删除用户", exact: true }).click();
+  await page.getByLabel("输入用户邮箱以确认", { exact: true }).fill(lastEmail);
+  await page
+    .getByLabel("操作原因", { exact: false })
+    .fill("本地验收：末页删除");
+  await page.getByRole("button", { name: "确认删除用户", exact: true }).click();
+  await page.getByText("1 / 1", { exact: true }).waitFor();
+  await page.getByText("共 12 条记录 · 每页 12 条", { exact: true }).waitFor();
+  check("删除取消、邮箱确认、删除后关闭详情和末页自动回退");
+  await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "展开导航", exact: true }).click();
   await page.getByRole("button", { name: "退出登录", exact: true }).click();
   await page

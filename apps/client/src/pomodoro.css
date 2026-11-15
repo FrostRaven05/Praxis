@@ -62,6 +62,16 @@
   font-variant-numeric: tabular-nums;
   line-height: 1;
 }
+.workspace .pomodoro-dock .pomodoro-task {
+  max-width: 180px;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .pomodoro-noise-wrap {
   position: relative;
 }
@@ -132,8 +142,8 @@
   font-size: 13px;
 }
 .workspace .pomodoro-dock .pomodoro-modes button.is-selected {
-  background: var(--cinnabar, #b8432f);
-  color: #fff6ea;
+  background: var(--primary);
+  color: var(--on-primary);
   font-weight: 700;
 }
 .workspace .pomodoro-dock .pomodoro-gear {
@@ -262,7 +272,141 @@
     color: var(--text-secondary);
   }
   .workspace .pomodoro-dock .pomodoro-modes button.is-selected {
-    background: var(--cinnabar, #b8432f);
-    color: #fff6ea;
+    background: var(--primary);
+    color: var(--on-primary);
   }
+}
+
+.pomodoro-page {
+  display: flex;
+  justify-content: center;
+  padding: 20px 16px 8px;
+}
+.pomodoro-page-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: min(100%, 420px);
+  padding: 28px 16px 20px;
+  border: 1px solid color-mix(in srgb, var(--primary-text) 16%, transparent);
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--primary) 28%, var(--surface));
+}
+.pomodoro-page .pomodoro-clock {
+  margin: 0;
+  color: var(--primary-text);
+  font-size: 64px;
+  font-weight: 760;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.pomodoro-page-status,
+.pomodoro-page-count,
+.pomodoro-page .pomodoro-task {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.pomodoro-page .pomodoro-task {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pomodoro-page .pomodoro-modes,
+.pomodoro-page .pomodoro-settings,
+.pomodoro-page-controls {
+  width: 100%;
+}
+.pomodoro-page .pomodoro-modes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.pm-app .pomodoro-page .pomodoro-modes button,
+.pm-app .pomodoro-page .pomodoro-settings button,
+.pm-app .pomodoro-page .pomodoro-noise,
+.pm-app .pomodoro-page .pomodoro-end {
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-secondary);
+}
+.pm-app .pomodoro-page .pomodoro-modes button {
+  min-height: 36px;
+  padding: 4px 0;
+  font-size: 13px;
+}
+.pm-app .pomodoro-page .pomodoro-modes button.is-selected {
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 700;
+}
+.pomodoro-page .pomodoro-settings {
+  display: grid;
+  gap: 8px;
+}
+.pomodoro-page .pomodoro-settings div {
+  grid-template-columns: 4.5em 36px 1fr 36px;
+}
+.pm-app .pomodoro-page .pomodoro-settings button {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+}
+.pomodoro-page-controls {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+.pm-app .pomodoro-page .pomodoro-go,
+.pm-app .pomodoro-page .pomodoro-end {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 14px;
+  font-size: 16px;
+  font-weight: 750;
+}
+.pm-app .pomodoro-page .pomodoro-go {
+  background: var(--primary-text);
+  color: #fff;
+}
+.pm-app .pomodoro-page .pomodoro-go svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+.pm-app .pomodoro-page .pomodoro-noise {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 12px;
+  font-size: 13px;
+}
+.pm-app .pomodoro-page .pomodoro-noise[aria-pressed="true"] {
+  background: var(--primary-text);
+  color: var(--surface);
+}
+.pm-app .pomodoro-page .pomodoro-noise svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+.pm-app .pomodoro-page .pomodoro-sounds {
+  z-index: 2;
+}
+.pm-app .pomodoro-page .pomodoro-sounds button {
+  min-height: 36px;
+  background: transparent;
+  color: var(--text-primary);
+  text-align: left;
 }

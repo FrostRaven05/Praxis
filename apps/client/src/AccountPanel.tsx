@@ -7,18 +7,10 @@ import {
 import { ThemeSettings } from "./ThemeSettings";
 import { ProjectIcon } from "./ProjectIcon";
 import { useProjectList } from "./useProjectList";
-import {
-  clampPomodoroMinutes,
-  readPomodoroState,
-  setPomodoroDuration,
-  stopPomodoro,
-  writePomodoroState,
-  type PomodoroMode,
-  type PomodoroState,
-} from "./pomodoro";
+import { AppUpdate } from "./AppUpdate";
 import "./account.css";
 
-export type SettingsSection = "account" | "pomodoro" | "appearance" | "general";
+export type SettingsSection = "account" | "appearance" | "general";
 
 export function AccountButton({
   onClick,
@@ -52,35 +44,9 @@ export function AccountButton({
       onClick={onClick}
       aria-label={`账号：${status?.user?.displayName || "未登录"}`}
     >
-      <span className="account-avatar" aria-hidden="true">
-        {status?.user ? (
-          Array.from(status.user.displayName)[0]
-        ) : (
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.6"
-          >
-            <circle cx="12" cy="8" r="3.5" />
-            <path d="M5 21v-2a7 7 0 0 1 14 0v2" />
-          </svg>
-        )}
-      </span>
       <span className="account-button-text">
         <strong>{status?.user?.displayName || "未登录"}</strong>
-        <small>{status?.user?.email || "登录以同步"}</small>
       </span>
-      <svg
-        className="account-button-arrow"
-        viewBox="0 0 20 20"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        aria-hidden="true"
-      >
-        <path d="m8 5 5 5-5 5" />
-      </svg>
     </button>
   );
 }
@@ -103,11 +69,13 @@ export function AccountPage({
   initialSection = "account",
   revision = 0,
   onOpenProject,
+  modal = false,
 }: {
   onBack: () => void;
   initialSection?: SettingsSection;
   revision?: number;
   onOpenProject?: (id: string) => void;
+  modal?: boolean;
 }) {
   const [status, setStatus] = useState<AccountStatus | null>(null);
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -120,11 +88,17 @@ export function AccountPage({
   const [switching, setSwitching] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [passwordOpen, setPasswordOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [nextPassword, setNextPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+  const [passwordNotice, setPasswordNotice] = useState("");
   const saving = useRef(false);
   const emailInput = useRef<HTMLInputElement>(null);
   const id = useId();
   const [section, setSection] = useState<SettingsSection>(initialSection);
-  const [pomodoro, setPomodoro] = useState<PomodoroState>(() => readPomodoroState());
   const projects = useProjectList(revision);
   async function read() {
     try {
@@ -151,11 +125,22 @@ export function AccountPage({
   }, [status]);
   useEffect(() => {
     const back = () => {
-      if (!saving.current && !switching) onBack();
+      if (!saving.current && !switching && !passwordBusy) onBack();
     };
     window.addEventListener("praxis-account-back", back);
     return () => window.removeEventListener("praxis-account-back", back);
-  }, [onBack, switching]);
+  }, [onBack, switching, passwordBusy]);
+  useEffect(() => {
+    if (!modal) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || saving.current || switching || passwordBusy)
+        return;
+      event.preventDefault();
+      onBack();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [modal, onBack, switching, passwordBusy]);
   async function run(action: () => Promise<void>) {
     if (saving.current) return;
     saving.current = true;
@@ -173,27 +158,36 @@ export function AccountPage({
       setBusy(false);
     }
   }
+  async function changePassword(event: { preventDefault(): void }) {
+    event.preventDefault();
+    if (passwordBusy || nextPassword !== confirmPassword) {
+      if (nextPassword !== confirmPassword)
+        setPasswordError("两次输入的新密码不一致。");
+      return;
+    }
+    setPasswordBusy(true);
+    setPasswordError("");
+    setPasswordNotice("");
+    try {
+      await accountStorage.changePassword(currentPassword, nextPassword);
+      setCurrentPassword("");
+      setNextPassword("");
+      setConfirmPassword("");
+      setPasswordOpen(false);
+      setPasswordNotice(
+        "密码已更改。这台设备保持登录，其他设备需要重新登录。",
+      );
+    } catch (e) {
+      setPasswordError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setPasswordBusy(false);
+    }
+  }
   function switchMode() {
     setMode(mode === "login" ? "register" : "login");
     setPassword("");
     setShowPassword(false);
     setError("");
-  }
-  function publishPomodoro(next: PomodoroState) {
-    setPomodoro(next);
-    writePomodoroState(next);
-  }
-  function togglePomodoro() {
-    const current = readPomodoroState();
-    publishPomodoro(
-      current.enabled
-        ? { ...stopPomodoro(current), enabled: false }
-        : { ...current, enabled: true },
-    );
-  }
-  function changeMinutes(mode: PomodoroMode, raw: string) {
-    const minutes = clampPomodoroMinutes(Number(raw));
-    publishPomodoro(setPomodoroDuration(readPomodoroState(), mode, minutes));
   }
   const expired = status?.expiresAt
     ? Date.parse(status.expiresAt) <= Date.now()
@@ -215,17 +209,17 @@ export function AccountPage({
   );
   const nav = [
     ["account", "账户与安全"],
-    ["pomodoro", "番茄"],
     ["appearance", "外观"],
     ["general", "通用"],
   ] as const;
-  return (
+  const shell = (
     <main
       className="settings-shell"
       aria-label="设置"
       onKeyDown={(e) => {
         e.stopPropagation();
-        if (e.key === "Escape" && !saving.current && !switching) onBack();
+        if (e.key === "Escape" && !saving.current && !switching && !passwordBusy)
+          onBack();
       }}
     >
       <header className="settings-shell-bar">
@@ -234,7 +228,7 @@ export function AccountPage({
           type="button"
           className="settings-shell-close"
           aria-label="关闭设置"
-          disabled={busy || switching}
+          disabled={busy || switching || passwordBusy}
           onClick={onBack}
         >
           ×
@@ -259,13 +253,6 @@ export function AccountPage({
       <section aria-labelledby={`${id}-auth-heading`}>
         <header className="settings-pane-heading">
           <h2 id={`${id}-auth-heading`}>账户与安全</h2>
-          <p>
-            {signedIn
-              ? "管理个人资料与登录。"
-              : mode === "login"
-                ? "登录后同步项目、任务与每一步进展。"
-                : "创建账号并登录。"}
-          </p>
         </header>
         {signedIn ? (
           <>
@@ -285,16 +272,101 @@ export function AccountPage({
               <button
                 type="button"
                 className="settings-row"
-                disabled={unavailable}
+                aria-expanded={passwordOpen}
+                disabled={unavailable || passwordBusy}
+                onClick={() => {
+                  setPasswordOpen(!passwordOpen);
+                  setPasswordError("");
+                }}
+              >
+                <span>密码</span>
+                <span className="settings-row-action">
+                  更改登录密码
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    aria-hidden="true"
+                  >
+                    <path d="m9 6 6 6-6 6" />
+                  </svg>
+                </span>
+              </button>
+              {passwordOpen && (
+                <form
+                  className="settings-password-form settings-auth"
+                  onSubmit={(event) => void changePassword(event)}
+                >
+                  <label>
+                    当前密码
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      maxLength={128}
+                      autoComplete="current-password"
+                      value={currentPassword}
+                      onChange={(event) => setCurrentPassword(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    新密码
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      maxLength={128}
+                      autoComplete="new-password"
+                      placeholder="6–128 个字符"
+                      value={nextPassword}
+                      onChange={(event) => setNextPassword(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    再次输入新密码
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      maxLength={128}
+                      autoComplete="new-password"
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                    />
+                  </label>
+                  <div className="settings-password-actions">
+                    <button className="account-submit" type="submit" disabled={passwordBusy}>
+                      {passwordBusy ? "正在保存…" : "保存密码"}
+                    </button>
+                    <button
+                      type="button"
+                      className="settings-row-button"
+                      disabled={passwordBusy}
+                      onClick={() => setPasswordOpen(false)}
+                    >
+                      取消
+                    </button>
+                  </div>
+                </form>
+              )}
+              <button
+                type="button"
+                className="settings-row"
+                disabled={unavailable || passwordBusy}
                 onClick={() => void run(accountStorage.logout)}
               >
                 <span>退出登录</span>
-                <small>返回本机</small>
               </button>
             </div>
-            <p className="account-note">
-              支持离线使用，联网后自动同步。退出后账号内的内容会保留。
-            </p>
+            {passwordNotice && (
+              <p className="account-note settings-password-note">{passwordNotice}</p>
+            )}
+            {passwordError && (
+              <p className="account-error" role="alert">
+                {passwordError}
+              </p>
+            )}
             {errorMessage}
           </>
         ) : (
@@ -304,6 +376,7 @@ export function AccountPage({
                 登录已到期，本机数据仍可使用。请重新登录继续同步。
               </p>
             )}
+            <div className="settings-auth">
             <form
               aria-label="用户登录与注册"
               onSubmit={(e) => {
@@ -432,19 +505,14 @@ export function AccountPage({
                       value={caPem}
                       maxLength={65536}
                       onChange={(e) => setCaPem(e.target.value)}
-                      placeholder="局域网自签名服务可填入 PEM 证书"
+                      placeholder=""
                     />
                   </label>
-                  <p className="account-note">
-                    已配对的服务会沿用已保存的证书。
-                  </p>
                 </details>
               </fieldset>
             </form>
             {errorMessage}
-            <p className="account-privacy-note">
-              本机已有内容独立保留，登录后进入账号工作空间。
-            </p>
+            </div>
           </>
         )}
         {!accountAvailable && (
@@ -466,64 +534,10 @@ export function AccountPage({
         )}
       </section>
       )}
-      {section === "pomodoro" && (
-        <section aria-labelledby={`${id}-pomodoro-heading`}>
-          <header className="settings-pane-heading">
-            <h2 id={`${id}-pomodoro-heading`}>番茄</h2>
-            <p>安排专注与休息时间。</p>
-          </header>
-          <h3 className="settings-group-title">专注计时</h3>
-          <div className="settings-rows">
-            <div className="settings-row">
-              <span>番茄功能开关</span>
-              <button
-                type="button"
-                className="settings-switch"
-                role="switch"
-                aria-checked={pomodoro.enabled}
-                onClick={togglePomodoro}
-              >
-                <span />
-              </button>
-            </div>
-            <label className="settings-row">
-              <span>番茄时长</span>
-              <span className="settings-minutes">
-                <input
-                  type="number"
-                  min={1}
-                  max={180}
-                  aria-label="番茄时长"
-                  disabled={!pomodoro.enabled}
-                  value={pomodoro.durations.focus}
-                  onChange={(event) => changeMinutes("focus", event.target.value)}
-                />
-                分钟
-              </span>
-            </label>
-            <label className="settings-row">
-              <span>休息时长</span>
-              <span className="settings-minutes">
-                <input
-                  type="number"
-                  min={1}
-                  max={180}
-                  aria-label="休息时长"
-                  disabled={!pomodoro.enabled}
-                  value={pomodoro.durations.short}
-                  onChange={(event) => changeMinutes("short", event.target.value)}
-                />
-                分钟
-              </span>
-            </label>
-          </div>
-        </section>
-      )}
       {section === "appearance" && (
         <section aria-labelledby={`${id}-theme-heading`}>
           <header className="settings-pane-heading">
             <h2 id={`${id}-theme-heading`}>外观</h2>
-            <p>选择强调色，背景与正文保持不变。</p>
           </header>
           <ThemeSettings />
         </section>
@@ -532,8 +546,8 @@ export function AccountPage({
         <section aria-labelledby={`${id}-general-heading`}>
           <header className="settings-pane-heading">
             <h2 id={`${id}-general-heading`}>通用</h2>
-            <p>已归档的项目保存在这里。</p>
           </header>
+          <AppUpdate />
           <h3 className="settings-group-title">归档项目</h3>
           {projects.error ? (
             <p className="account-error" role="alert">
@@ -568,6 +582,23 @@ export function AccountPage({
       </div>
     </main>
   );
+  if (!modal) return shell;
+  return (
+    <div
+      className="settings-dialog-layer"
+      onMouseDown={(event) => {
+        if (
+          event.target === event.currentTarget &&
+          !saving.current &&
+          !switching &&
+          !passwordBusy
+        )
+          onBack();
+      }}
+    >
+      {shell}
+    </div>
+  );
 }
 
 function SettingsNavIcon({ name }: { name: SettingsSection }) {
@@ -578,13 +609,6 @@ function SettingsNavIcon({ name }: { name: SettingsSection }) {
     strokeWidth: 1.7,
     "aria-hidden": true as const,
   };
-  if (name === "pomodoro")
-    return (
-      <svg {...common}>
-        <circle cx="12" cy="13" r="7" />
-        <path d="M12 13V9M9 3h6" />
-      </svg>
-    );
   if (name === "appearance")
     return (
       <svg {...common}>

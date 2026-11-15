@@ -58,8 +58,6 @@ export function ProjectNavigation({
         <p className="sidebar-project-message" role="status">
           正在读取…
         </p>
-      ) : !loading && visible.length === 0 ? (
-        <p className="sidebar-project-message">还没有项目，点击新建开始。</p>
       ) : null}
       <nav className="sidebar-project-list" aria-label="项目列表">
         {visible.map((project) => (

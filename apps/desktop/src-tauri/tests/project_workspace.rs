@@ -225,6 +225,55 @@ async fn subtree_move_checks_cycles_converts_parent_and_preserves_identity() {
         0
     );
 }
+#[tokio::test]
+async fn parent_task_can_move_between_board_columns() {
+    let (_d, s, p, ids) = fixture().await;
+    let child = id();
+    s.add_subtasks(&AddSubtasksCommand {
+        operation_id: id(),
+        parent_task_id: ids[0].clone(),
+        expected_version: version(&s, &ids[0]).await,
+        confirm_summary_plan: false,
+        tasks: vec![NewProjectTask {
+            task_id: child.clone(),
+            title: "叶子".into(),
+        }],
+        occurred_at: AT.into(),
+    })
+    .await
+    .unwrap();
+    let moved = status(&s, &ids[0], "in_progress", "").await;
+    s.project_workspace(&moved).await.unwrap();
+    s.project_workspace(&moved).await.unwrap();
+    let rows = s.project_tasks(&p).await.unwrap();
+    assert_eq!(
+        rows.iter().find(|r| r.task_id == ids[0]).unwrap().status,
+        "in_progress"
+    );
+    assert_eq!(
+        rows.iter().find(|r| r.task_id == child).unwrap().status,
+        "todo"
+    );
+    s.project_workspace(&status(&s, &ids[0], "blocked", "等待资料").await)
+        .await
+        .unwrap();
+    let rows = s.project_tasks(&p).await.unwrap();
+    let parent = rows.iter().find(|r| r.task_id == ids[0]).unwrap();
+    assert_eq!(parent.status, "blocked");
+    assert_eq!(parent.status_reason, "等待资料");
+    assert_eq!(
+        rows.iter().find(|r| r.task_id == child).unwrap().status,
+        "todo"
+    );
+    assert_eq!(
+        s.project_workspace(&status(&s, &ids[0], "completed", "").await)
+            .await
+            .unwrap_err(),
+        "USER:请先明确处理未结束子任务"
+    );
+    assert!(s.execution_history(&ids[0]).await.unwrap().is_empty());
+    assert!(s.list_day("2026-09-19").await.unwrap().is_empty());
+}
 fn entries(ids: &[String]) -> Vec<ScheduleEntry> {
     vec![
         ScheduleEntry {

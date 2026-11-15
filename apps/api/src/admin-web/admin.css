@@ -272,7 +272,7 @@ a {
   font-size: 10px;
 }
 .content {
-  max-width: 1560px;
+  max-width: 1320px;
   padding: 34px 37px 22px;
   margin: auto;
 }
@@ -400,15 +400,6 @@ h1 {
   display: flex;
   align-items: center;
   gap: 7px;
-}
-.metric-foot .pill {
-  white-space: nowrap;
-  flex-shrink: 0;
-  font-size: 10px;
-  padding: 2px 6px;
-  background: #edf8f4;
-  color: #428c72;
-  border-radius: 3px;
 }
 .metric:nth-child(2) .metric-icon {
   background: #f1effa;
@@ -1287,5 +1278,100 @@ dialog::backdrop {
   *::after {
     animation: none !important;
     transition: none !important;
+  }
+}
+.settings-panel {
+  max-width: 760px;
+}
+.settings-panel .panel-head {
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.model-form {
+  padding: 4px 24px 0;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.field-help,
+.muted {
+  color: #7b8c98;
+  font-size: 11px;
+  line-height: 1.8;
+}
+.field-help {
+  margin-top: 7px;
+}
+.secret-input {
+  position: relative;
+}
+.secret-input .form-input {
+  padding-right: 62px;
+}
+.secret-input .icon-button {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--accent);
+  font-size: 12px;
+  min-height: 32px;
+}
+.form-footer {
+  border-top: 1px solid var(--line);
+  margin-top: 24px;
+  padding: 20px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.metrics-three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+th.numeric,
+td.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.delete-user {
+  margin-right: auto;
+}
+.destructive-copy {
+  color: #a34d46;
+}
+.dialog-actions {
+  flex-wrap: wrap;
+}
+.button.danger:hover {
+  color: #a43232;
+  background: #fff2f0;
+  border-color: #dcaeaa;
+}
+@media (max-width: 560px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .model-form {
+    padding: 0 18px;
+  }
+  .form-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .form-footer .button {
+    width: 100%;
+  }
+  .metrics-three {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .metrics-three .metric:last-child {
+    grid-column: 1 / -1;
+  }
+  .delete-user {
+    margin-right: 0;
   }
 }

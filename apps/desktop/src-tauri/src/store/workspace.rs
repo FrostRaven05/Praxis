@@ -59,6 +59,14 @@ pub struct ScheduleEntry {
 fn user(message: &str) -> String {
     format!("USER:{message}")
 }
+fn db_message(error: sqlx::Error) -> String {
+    let text = error.to_string();
+    text.rsplit(") ")
+        .next()
+        .filter(|message| message.starts_with('请'))
+        .map(user)
+        .unwrap_or(text)
+}
 impl Store {
     pub async fn project_workspace(&self, c: &WorkspaceCommand) -> StoreResult<()> {
         validate_operation(&c.operation_id, &c.occurred_at)?;
@@ -286,6 +294,7 @@ impl Store {
                     time_zone,
                     &c.occurred_at,
                     None,
+                    true,
                 )
                 .await?;
                 sqlx::query("UPDATE tasks SET waiting=? WHERE id=? AND owner_id=?")
@@ -392,7 +401,8 @@ impl Store {
         }
         Ok(())
     }
-    // Both daily completion and board transitions use this transactional writer.
+    // Daily completion and board transitions share this writer.
+    // A parent can change board columns; that move does not create its own execution fact.
     pub(super) async fn apply_task_status(
         &self,
         tx: &mut Tx<'_>,
@@ -404,6 +414,7 @@ impl Store {
         zone: &str,
         at: &str,
         preferred_plan: Option<&str>,
+        allow_summary: bool,
     ) -> StoreResult<()> {
         let saved_plan: Option<String> =
             sqlx::query_scalar("SELECT plan_value FROM tasks WHERE id=? AND owner_id=?")
@@ -420,8 +431,30 @@ impl Store {
         .fetch_one(&mut **tx)
         .await
         .map_err(|e| e.to_string())?;
-        if summary {
+        if summary && !allow_summary {
             return Err("SUMMARY_TASK".into());
+        }
+        if summary {
+            if ["in_progress", "completed"].contains(&target) {
+                let blocked:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM task_dependencies d JOIN tasks p ON p.id=d.predecessor_id AND p.owner_id=d.owner_id WHERE d.task_id=? AND d.owner_id=? AND p.status<>'completed')").bind(task).bind(&self.owner_id).fetch_one(&mut **tx).await.map_err(|e|e.to_string())?;
+                if blocked {
+                    return Err(user("前置任务尚未完成，请先完成前置任务"));
+                }
+            }
+            sqlx::query("UPDATE tasks SET status=?,status_reason=?,version=version+1 WHERE id=? AND owner_id=?").bind(target).bind(if target=="blocked"||target=="cancelled"{reason}else{""}).bind(task).bind(&self.owner_id).execute(&mut **tx).await.map_err(db_message)?;
+            sqlx::query("UPDATE tasks SET plan_value=?,completed_at=? WHERE id=? AND owner_id=?")
+                .bind(saved_plan)
+                .bind(if target == "completed" {
+                    Some(at)
+                } else {
+                    None
+                })
+                .bind(task)
+                .bind(&self.owner_id)
+                .execute(&mut **tx)
+                .await
+                .map_err(|e| e.to_string())?;
+            return Ok(());
         }
         if ["in_progress", "completed"].contains(&target) {
             let blocked:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM task_dependencies d JOIN tasks p ON p.id=d.predecessor_id AND p.owner_id=d.owner_id WHERE d.task_id=? AND d.owner_id=? AND p.status<>'completed')").bind(task).bind(&self.owner_id).fetch_one(&mut **tx).await.map_err(|e|e.to_string())?;

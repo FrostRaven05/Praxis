@@ -1028,22 +1028,24 @@ export function Extras({
     <section
       className={`mobile-extras${["stats", "focus", "settings"].includes(section) ? " pm-dashboard" : ""}`}
     >
-      <h2>
-        {
+      {section !== "settings" && (
+        <h2>
           {
-            habits: "习惯",
-            repeat: "重复任务",
-            records: "记录",
-            templates: "策略与决策",
-            review: "每周回顾",
-            search: "搜索与筛选",
-            trash: "回收站",
-            settings: "设置",
-            stats: "进度统计",
-            focus: "专注计时",
-          }[section]
-        }
-      </h2>
+            {
+              habits: "习惯",
+              repeat: "重复任务",
+              records: "记录",
+              templates: "策略与决策",
+              review: "每周回顾",
+              search: "搜索与筛选",
+              trash: "回收站",
+              settings: "设置",
+              stats: "进度统计",
+              focus: "专注计时",
+            }[section]
+          }
+        </h2>
+      )}
       {reviewTarget && (
         <div role="alertdialog" aria-label="替换未保存回顾" className="mx-form">
           <p>

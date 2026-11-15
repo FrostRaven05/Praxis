@@ -7,6 +7,7 @@ import { mobileProjectSave } from "../personal-project-storage";
 import { LanSyncPanel } from "./LanSyncPanel";
 import { useLanRefresh } from "../useLanRefresh";
 import { PersonalTodoHome } from "../PersonalTodoHome";
+import { PomodoroDock } from "../PomodoroDock";
 import { useEffect, useRef, useState } from "react";
 import type {
   WorkspaceEntity,
@@ -30,7 +31,7 @@ import "./mobile-polish.css";
 
 const labels: Record<string, string> = {
   todos: "杂事",
-  tasks: "任务清单",
+  tasks: "清单",
   calendar: "日历",
   projects: "项目",
   stats: "数据复盘",
@@ -72,15 +73,9 @@ export function MobileApp() {
     [projectFilter, setProjectFilter] = useState(""),
     [searchQuery, setSearchQuery] = useState("");
   const [basicProject, setBasicProject] = useState(false);
-  const [notice, setNotice] = useState("");
   const [personalAgent, setPersonalAgent] = useState<{mode:"decompose"|"next";projectId?:string}|null>(null);
   const [agentTask, setAgentTask] = useState<string|null>(null);
   useEffect(()=>{if(!personalAgent && agentTask){setAgentTask(null);void openTodoTask(agentTask);}},[personalAgent,agentTask]);
-  useEffect(() => {
-    if (!notice) return;
-    const timer = window.setTimeout(() => setNotice(""), 3500);
-    return () => window.clearTimeout(timer);
-  }, [notice]);
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [section, projectFilter]);
@@ -116,6 +111,13 @@ export function MobileApp() {
     const open = () => { if (!draftActive.current) setAccountOpen(true); };
     window.addEventListener("praxis-open-account", open);
     return () => window.removeEventListener("praxis-open-account", open);
+  }, []);
+  useEffect(() => {
+    const openFocus = () => {
+      if (!draftActive.current) setSection("focus");
+    };
+    window.addEventListener("praxis-pomodoro", openFocus);
+    return () => window.removeEventListener("praxis-pomodoro", openFocus);
   }, []);
   async function refresh(background = false, reportFailure = false) {
     if (background && draftActive.current) return;
@@ -388,18 +390,6 @@ export function MobileApp() {
       pending.current ??= command;
       await mobileStorage.workspaceCommand(pending.current);
       pending.current = null;
-      if (entity.kind === "task" && !entity.version && !deleted) {
-        const planned = String(data.executionDate ?? "");
-        setNotice(
-          !planned
-            ? "已添加到收件箱"
-            : planned === today
-              ? "已添加到今天"
-              : planned === shifted(today, 1)
-                ? "已添加到明天"
-                : `已添加到 ${planned}`,
-        );
-      }
       setEditing(null);
       setOrganizing(null);
       await refresh();
@@ -436,7 +426,6 @@ export function MobileApp() {
     if (!canNavigate()) return;
     setBasicProject(kind === "project");
     setError("");
-    setNotice("");
     setEditing({
       id: crypto.randomUUID(),
       kind,
@@ -697,7 +686,7 @@ export function MobileApp() {
           <p className="pm-empty">正在读取本机数据…</p>
         ) : (
           <>
-            {section==="todos" && <PersonalTodoHome embedded revision={snapshot.entities.map(e=>`${e.id}:${e.version}:${e.deleted}`).join("|")} externalBusy={personalAgent!==null || busy || editing!==null || organizing!==null || pending.current!==null} onBusyChange={setChildBusy} onOpenProject={id=>{if(canNavigate()){setProjectFilter(id);setSection("projects");}}} onChanged={()=>void refresh()} onOpenAgent={()=>{if(canNavigate())setPersonalAgent({mode:"next"});}} />}
+            {section==="todos" && <PersonalTodoHome embedded revision={snapshot.entities.map(e=>`${e.id}:${e.version}:${e.deleted}`).join("|")} externalBusy={personalAgent!==null || busy || editing!==null || organizing!==null || pending.current!==null} onBusyChange={setChildBusy} onOpenProject={id=>{if(canNavigate()){setProjectFilter(id);setSection("projects");}}} onChanged={()=>void refresh()} />}
             {["tasks", "calendar"].includes(section) && (
               <>
                 {section === "calendar" && (
@@ -788,7 +777,7 @@ export function MobileApp() {
                       <PersonalProjectProgress work={mobilePersonalWork(snapshot, timeZone)} projectId={projectFilter} />
                       <button className="pm-secondary" disabled={busy || childBusy || !!editing} onClick={()=>{if(canNavigate()){setBasicProject(true);setEditing(projects.find(p=>p.id===projectFilter)!);}}}>编辑基本信息</button>
                     </div>
-                    <div className="ai-planner-launch-group">{(["decompose", "next"] as const).map(mode => <button key={mode} type="button" className="ai-planner-launch" disabled={busy || childBusy || !!editing || !!organizing} onClick={()=>{if(canNavigate())setPersonalAgent({mode,projectId:projectFilter});}}>✦ {mode === "decompose" ? "拆成步骤" : "下一步建议"}</button>)}</div>
+                    <div className="ai-planner-launch-group"><button type="button" className="ai-planner-launch" disabled={busy || childBusy || !!editing || !!organizing} onClick={()=>{if(canNavigate())setPersonalAgent({mode:"decompose",projectId:projectFilter});}}>✦ 拆成步骤</button></div>
                     <PersonalTodoHome key={projectFilter} projectId={projectFilter} embedded
                       revision={snapshot.entities.map(e=>`${e.id}:${e.version}:${e.deleted}`).join("|")}
                       externalBusy={personalAgent!==null || busy || editing!==null || organizing!==null || pending.current!==null}
@@ -813,7 +802,8 @@ export function MobileApp() {
                 onBusyChange={setChildBusy}
               />
             )}
-            {!["todos", "tasks", "calendar", "projects", "inbox"].includes(section) && (
+            {section === "focus" && <PomodoroDock variant="page" />}
+            {!["todos", "tasks", "calendar", "projects", "inbox", "focus"].includes(section) && (
               <Extras
                 section={section as ExtraSection}
                 searchQuery={searchQuery}
@@ -848,8 +838,11 @@ export function MobileApp() {
       )}
       <nav className="pm-bottom" aria-label="主导航">
         {[
-          ["todos", "待办"],
+          ["tasks", "清单"],
+          ["todos", "杂事"],
+          ["focus", "专注"],
           ["projects", "项目"],
+          ["settings", "我的"],
         ].map(([key, label]) => (
           <button
             key={key}
@@ -870,7 +863,7 @@ export function MobileApp() {
           onCancel={() => setEditing(null)}
           onSaved={async id => {
             await refresh(false, true);
-            setEditing(null);setSection("projects");setProjectFilter(id);setNotice("项目已保存");
+            setEditing(null);setSection("projects");setProjectFilter(id);
           }} />
       )}
       {editing && !(editing.kind === "project" && basicProject) && (
@@ -906,11 +899,6 @@ export function MobileApp() {
           }}
           onSave={(entity, data, deleted) => void save(entity, data, deleted)}
         />
-      )}
-      {notice && (
-        <div className="pm-entry-notice" role="status">
-          {notice}
-        </div>
       )}
     </div>
   );

@@ -1,0 +1,26 @@
+{
+  "verifiedAt": "2026-11-14T15:09:16.897Z",
+  "baseUrl": "https://todo.frostraven05.com",
+  "checks": {
+    "publicHttpsWithCertificateValidation": true,
+    "adminPage": true,
+    "adminAssetsMatchRelease": true,
+    "unauthenticatedAdminRejected": true,
+    "adminBrowserLogin": true,
+    "secureAdminCookie": true,
+    "allAdminViews": true,
+    "modelSettingsReadWithoutExposingKey": true,
+    "adminLogoutRevokesSession": true,
+    "noBrowserErrors": true,
+    "normalUserCannotAccessAdmin": true,
+    "registrationAndEntitySync": true,
+    "testUserDisableEnableRevokesPreviousLogin": true,
+    "testDeviceSessionRevocation": true,
+    "userLoginAndLogout": true
+  },
+  "browserErrors": [],
+  "testAccountCleanup": "passed: temporary account, sessions and sync data removed by exact account ID",
+  "databaseIntegrityAfterCleanup": "ok",
+  "containerHealthy": true,
+  "certificateRenewalTimerActive": true
+}

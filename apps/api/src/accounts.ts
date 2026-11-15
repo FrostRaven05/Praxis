@@ -42,6 +42,7 @@ export class AccountStore {
       .exec(`PRAGMA journal_mode=WAL; PRAGMA synchronous=FULL; PRAGMA busy_timeout=5000;
       CREATE TABLE IF NOT EXISTS account_users(id TEXT PRIMARY KEY,email TEXT UNIQUE NOT NULL,display_name TEXT NOT NULL,salt TEXT NOT NULL,password_hash TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS account_sessions(token_hash TEXT PRIMARY KEY,user_id TEXT NOT NULL,device_id TEXT NOT NULL,expires_at INTEGER NOT NULL);
+      CREATE TABLE IF NOT EXISTS account_deleted_users(id TEXT PRIMARY KEY);
       CREATE INDEX IF NOT EXISTS account_session_user ON account_sessions(user_id,device_id);`);
     const columns = new Set(
       this.db
@@ -125,9 +126,11 @@ export class AccountStore {
     );
   }
   private session(user: AccountUser, deviceId: string): AccountSession {
-    this.db
+    const updated = this.db
       .prepare("UPDATE account_users SET last_login_at=? WHERE id=?")
       .run(new Date().toISOString(), user.id);
+    // Password hashing can finish after an administrator deletes the account.
+    if (!updated.changes) throw new AccountError("INVALID_CREDENTIALS");
     const token = randomBytes(32).toString("hex"),
       expires = Date.now() + 30 * 86400000;
     this.db
@@ -168,11 +171,59 @@ export class AccountStore {
       .prepare("DELETE FROM account_sessions WHERE token_hash=?")
       .run(digest(token));
   }
+  async changePassword(
+    token: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const identity = this.identify(token);
+    if (!identity) throw new AccountError("INVALID_CREDENTIALS");
+    const row = this.db
+      .prepare(
+        "SELECT salt,password_hash,disabled FROM account_users WHERE id=?",
+      )
+      .get(identity.ownerId);
+    const hash = await derive(
+      currentPassword,
+      String(row?.salt ?? "0".repeat(64)),
+    );
+    const expected = row
+      ? Buffer.from(String(row.password_hash), "hex")
+      : Buffer.alloc(64);
+    if (
+      !row ||
+      expected.length !== hash.length ||
+      !timingSafeEqual(hash, expected)
+    )
+      throw new AccountError("INVALID_CREDENTIALS");
+    if (row.disabled === 1) throw new AccountError("ACCOUNT_DISABLED");
+    if (currentPassword === newPassword)
+      throw new AccountError("PASSWORD_UNCHANGED");
+    const salt = randomBytes(32).toString("hex");
+    const next = await derive(newPassword, salt);
+    this.db.exec("BEGIN IMMEDIATE");
+    try {
+      this.db
+        .prepare("UPDATE account_users SET salt=?,password_hash=? WHERE id=?")
+        .run(salt, next.toString("hex"), identity.ownerId);
+      this.db
+        .prepare(
+          "DELETE FROM account_sessions WHERE user_id=? AND token_hash<>?",
+        )
+        .run(identity.ownerId, digest(token));
+      this.db.exec("COMMIT");
+    } catch (error) {
+      this.db.exec("ROLLBACK");
+      throw error;
+    }
+  }
   isDisabled(ownerId: string) {
     return (
       this.db
-        .prepare("SELECT disabled FROM account_users WHERE id=?")
-        .get(ownerId)?.disabled === 1
+        .prepare(
+          "SELECT 1 FROM account_users WHERE id=? AND disabled=1 UNION ALL SELECT 1 FROM account_deleted_users WHERE id=? LIMIT 1",
+        )
+        .get(ownerId, ownerId) !== undefined
     );
   }
 }

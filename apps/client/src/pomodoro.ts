@@ -35,6 +35,7 @@ export type PomodoroState = {
   completedDate: string;
   completedCount: number;
   enabled: boolean;
+  task: { id: string; title: string } | null;
 };
 
 export type PomodoroTick = {
@@ -64,6 +65,7 @@ export function createPomodoroState(now: number): PomodoroState {
     completedDate: pomodoroDay(now),
     completedCount: 0,
     enabled: true,
+    task: null,
   };
 }
 
@@ -159,6 +161,18 @@ export function pausePomodoro(state: PomodoroState, now: number): PomodoroState 
   };
 }
 
+export function assignPomodoroTask(
+  state: PomodoroState,
+  task: { id: string; title: string },
+  now: number,
+): PomodoroState {
+  const current = withPomodoroDay(
+    { ...stopPomodoro(state), task, mode: "focus" },
+    now,
+  );
+  return startPomodoro(current, now);
+}
+
 export function stopPomodoro(state: PomodoroState): PomodoroState {
   if (state.phase.kind === "idle") return state;
   return { ...state, mode: state.phase.mode, phase: { kind: "idle" } };
@@ -210,6 +224,16 @@ export function restorePomodoroState(
         ? Math.floor(value.completedCount)
         : 0,
     enabled: value.enabled !== false,
+    task:
+      value.task &&
+      typeof value.task === "object" &&
+      typeof (value.task as { id?: unknown }).id === "string" &&
+      typeof (value.task as { title?: unknown }).title === "string"
+        ? {
+            id: (value.task as { id: string }).id,
+            title: (value.task as { title: string }).title,
+          }
+        : null,
   };
   if (value.phase && typeof value.phase === "object") {
     const phase = value.phase as Record<string, unknown>;

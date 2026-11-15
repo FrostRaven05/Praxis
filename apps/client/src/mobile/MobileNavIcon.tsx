@@ -21,8 +21,13 @@ export function MobileNavIcon({ name }: { name: MobileIconName }) {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      {name === "tasks" || name === "todos" ? (
+      {name === "tasks" ? (
         <path d="M4 6h2m4 0h10M4 12h2m4 0h10M4 18h2m4 0h10" />
+      ) : name === "todos" ? (
+        <>
+          <path d="M6 3.5h8l4 4V20a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4.5a1 1 0 0 1 1-1Z" />
+          <path d="M14 3.5V8h4.5M8 12.5h8M8 16.5h5" />
+        </>
       ) : name === "projects" ? (
         <path d="M3 7V5h6l2 2h10v13H3V7Z" />
       ) : name === "calendar" ? (

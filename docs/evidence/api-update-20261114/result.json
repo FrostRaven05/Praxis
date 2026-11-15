@@ -1,0 +1,19 @@
+{
+  "completedAt": "2026-11-14T15:11:08.398046+00:00",
+  "baseUrl": "https://todo.frostraven05.com",
+  "apiTestsPassed": 78,
+  "localBrowserChecksPassed": 12,
+  "publicChecksPassed": 15,
+  "adminCredentialRotated": true,
+  "oldAdminCredentialAndSessionsRejected": true,
+  "userDataPreserved": true,
+  "preflightWithDatabaseCopy": true,
+  "productionProxyAndPortsPreserved": true,
+  "temporaryTestAccountRemoved": true,
+  "containerHealthy": true,
+  "features": [
+    "admin model settings",
+    "persistent server-side model configuration without credential echo",
+    "invalid model URL rejection preserving restart safety"
+  ]
+}

@@ -13,7 +13,8 @@ export function TaskPanelIcon({
     | "sun"
     | "sync"
     | "search"
-    | "branch";
+    | "branch"
+    | "chevron";
 }) {
   return (
     <svg
@@ -43,7 +44,10 @@ export function TaskPanelIcon({
         </>
       ) : name === "sync" ? (
         <>
-          <path d="M20 7a9 9 0 0 0-15-2L3 7m0-5v5h5M4 17a9 9 0 0 0 15 2l2-2m0 5v-5h-5" />
+          <path d="M21 12a9 9 0 0 0-9-9 9 9 0 0 0-6.7 3L3 8" />
+          <path d="M3 3v5h5" />
+          <path d="M3 12a9 9 0 0 0 9 9 9 9 0 0 0 6.7-3L21 16" />
+          <path d="M21 21v-5h-5" />
         </>
       ) : name === "box" ? (
         <rect x="4" y="4" width="16" height="16" rx="3" />
@@ -58,6 +62,8 @@ export function TaskPanelIcon({
         <path d="m3 7 2 2 3-3M11 7h10m-18 9 2 2 3-3M11 16h10" />
       ) : name === "close" ? (
         <path d="m6 6 12 12M18 6 6 18" />
+      ) : name === "chevron" ? (
+        <path d="m9 6 6 6-6 6" />
       ) : name === "inbox" ? (
         <>
           <path d="M4 4h16v16H4Z" />

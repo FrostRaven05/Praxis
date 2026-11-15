@@ -4,6 +4,7 @@ import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import { EntityStore, entityKinds, type EntityCommand } from "./entities.js";
 import { CaptureStore, StoreError, type CaptureCommand } from "./store.js";
 import { AccountStore, AccountError } from "./accounts.js";
+import { readRelease, type AppRelease } from "./app-release.js";
 import { DatabaseSync } from "node:sqlite";
 import { registerAdmin } from "./admin.js";
 
@@ -18,6 +19,7 @@ export interface ServerOptions {
   devices: DeviceCredential[];
   adminTokenHash?: string;
   https?: { key: string | Buffer; cert: string | Buffer };
+  release?: unknown;
 }
 const uuid =
   "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
@@ -75,14 +77,16 @@ export function createServer(options: ServerOptions): FastifyInstance {
   const store = new CaptureStore(database);
   const entities = new EntityStore(database);
   const accounts = new AccountStore(database);
+  const release: AppRelease = readRelease(options.release);
+  const ai = new AiService(database, options.ai);
   registerAdmin(app, database, {
     tokenHash: options.adminTokenHash,
     secureCookies: Boolean(options.https),
     generation: entities.generation,
     configuredDevices: credentials.length,
+    ai,
   });
   const identities = new WeakMap<FastifyRequest, DeviceCredential>();
-  const ai = new AiService(database, options.ai);
   const windows = new Map<string, { start: number; count: number }>();
   app.addHook("onClose", async () => {
     await ai.close();
@@ -93,14 +97,19 @@ export function createServer(options: ServerOptions): FastifyInstance {
   });
   app.addHook("onRequest", async (request, reply) => {
     const path = request.url.split("?")[0];
-    if (path === "/auth/register" || path === "/auth/login") {
+    if (
+      path === "/auth/register" ||
+      path === "/auth/login" ||
+      path === "/app/release"
+    ) {
       const now = Date.now();
       for (const [key, window] of windows)
         if (now - window.start >= 900000) windows.delete(key);
-      const key = `auth:${request.ip}`,
+      const key = `${path === "/app/release" ? "release" : "auth"}:${request.ip}`,
         window = windows.get(key);
+      const limit = path === "/app/release" ? 60 : 20;
       if (!window) windows.set(key, { start: now, count: 1 });
-      else if (++window.count > 20)
+      else if (++window.count > limit)
         return reply
           .code(429)
           .header("Retry-After", "900")
@@ -144,7 +153,9 @@ export function createServer(options: ServerOptions): FastifyInstance {
             ? 409
             : error.message === "ACCOUNT_DISABLED"
               ? 403
-              : 401,
+              : error.message === "PASSWORD_UNCHANGED"
+                ? 400
+                : 401,
         )
         .send({ error: error.message });
     if (error instanceof StoreError)
@@ -248,6 +259,34 @@ export function createServer(options: ServerOptions): FastifyInstance {
     accounts.logout(request.headers.authorization!.slice(7));
     return reply.code(204).send();
   });
+  app.post<{ Body: { currentPassword: string; newPassword: string } }>(
+    "/v1/account/password",
+    {
+      schema: {
+        body: {
+          type: "object",
+          additionalProperties: false,
+          required: ["currentPassword", "newPassword"],
+          properties: {
+            currentPassword: { type: "string", minLength: 6, maxLength: 128 },
+            newPassword: { type: "string", minLength: 6, maxLength: 128 },
+          },
+        },
+      },
+      bodyLimit: 4096,
+    },
+    async (request, reply) => {
+      await accounts.changePassword(
+        request.headers.authorization!.slice(7),
+        request.body.currentPassword,
+        request.body.newPassword,
+      );
+      return reply.code(204).header("Cache-Control", "no-store").send();
+    },
+  );
+  app.get("/app/release", async (_request, reply) =>
+    reply.header("Cache-Control", "no-store").send(release),
+  );
   app.post<{ Body: CaptureCommand }>(
     "/v1/captures/commands",
     { schema: { body: commandSchema } },

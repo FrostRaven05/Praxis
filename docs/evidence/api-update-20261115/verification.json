@@ -1,0 +1,32 @@
+{
+  "verifiedAt": "2026-11-15T15:44:50.472Z",
+  "baseUrl": "https://todo.frostraven05.com",
+  "checks": {
+    "publicHttpsWithCertificateValidation": true,
+    "adminPage": true,
+    "adminAssetsMatchRelease": true,
+    "unauthenticatedAdminRejected": true,
+    "adminBrowserLogin": true,
+    "secureAdminCookie": true,
+    "allAdminViews": true,
+    "modelSettingsReadWithoutExposingKey": true,
+    "adminLogoutRevokesSession": true,
+    "noBrowserErrors": true,
+    "normalUserCannotAccessAdmin": true,
+    "registrationAndEntitySync": true,
+    "testUserDisableEnableRevokesPreviousLogin": true,
+    "testDeviceSessionRevocation": true,
+    "userLoginAndLogout": true,
+    "deleteRequiresAdminAndMatchingEmail": true,
+    "browserDeleteCancelKeepsUser": true,
+    "browserDeleteWrongEmailRejected": true,
+    "browserDeleteRemovesUserAndClosesDetail": true,
+    "deletedUserAllDevicesAndSyncRejected": true,
+    "deletedUserCannotReloginOrBeDeletedTwice": true,
+    "userDeletionAudited": true
+  },
+  "browserErrors": [],
+  "testAccountCleanup": "passed: deleted through production admin UI; all nine owned-table counts verified zero",
+  "databaseVerification": "database-verification.json",
+  "containerHealthy": true
+}

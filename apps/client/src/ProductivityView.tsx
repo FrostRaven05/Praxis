@@ -664,9 +664,7 @@ export function ProductivityView({
           {tab === "all" && (
             <>
               {data.tasks.map((t) => row(t))}
-              {!data.tasks.length && (
-                <p>还没有任务。在今日或收件箱输入任务，按回车添加。</p>
-              )}
+              {!data.tasks.length && <p>还没有任务。</p>}
             </>
           )}
           {tab === "projects" && (

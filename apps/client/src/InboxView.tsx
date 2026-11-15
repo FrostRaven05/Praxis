@@ -3,7 +3,6 @@ import { AiPlannerPanel } from "./AiPlannerPanel";
 import { desktopAiContext } from "./ai-storage";
 import type { AiPlannerLaunch } from "./ai-planner-model";
 import { TaskPanelIcon } from "./TaskPanelIcon";
-import { ActionNotice } from "./ActionNotice";
 import { readWork, sendWorkAction, openWorkTask } from "./ProductivityView";
 import {
   useCallback,
@@ -40,9 +39,7 @@ export function InboxView({
   const [aiOpening, setAiOpening] = useState(false);
   const [error, setError] = useState("");
   const [loadError, setLoadError] = useState("");
-  const [notice, setNotice] = useState("");
   const [completed, setCompleted] = useState<WorkTask[]>([]);
-  const [undoTask, setUndoTask] = useState<WorkTask | null>(null);
   const [confirmTask, setConfirmTask] = useState<{
     task: WorkTask;
     count: number;
@@ -127,12 +124,9 @@ export function InboxView({
     if (busyRef.current || panelLockedRef.current) return;
     changeBusy(true);
     setError("");
-    setNotice("");
     try {
       await planning.capture(title);
       setTitle("");
-      setUndoTask(null);
-      setNotice("已保存到收件箱");
       await refresh();
     } catch (error) {
       setError(message(error));
@@ -185,19 +179,8 @@ export function InboxView({
             ? confirmTask.expectedTasks
             : snapshot.tasks.map((t) => [t.id, t.version]),
       });
-      const after = await readWork();
       setConfirmTask(null);
       setSelectedId(null);
-      setUndoTask(
-        status === "completed"
-          ? (after.tasks.find((t) => t.id === id) ?? null)
-          : null,
-      );
-      setNotice(
-        status === "completed"
-          ? `已完成「${task.title}」`
-          : `已撤销完成「${task.title}」`,
-      );
       await refresh();
     } catch (e) {
       setError(message(e));
@@ -272,7 +255,7 @@ export function InboxView({
               setTitle(event.target.value);
               setError("");
             }}
-            placeholder="在此添加内容，按回车保存"
+            placeholder="添加内容"
           />
           {busy && (
             <span className="capture-status" role="status">
@@ -432,21 +415,6 @@ export function InboxView({
           </div>
         </div>
       )}
-      <ActionNotice
-        message={notice}
-        actionLabel="撤销"
-        onAction={
-          undoTask
-            ? () =>
-                void changeStatus(undoTask.id, "todo", false, undoTask.version)
-            : undefined
-        }
-        disabled={locked}
-        onDismiss={() => {
-          setNotice("");
-          setUndoTask(null);
-        }}
-      />
     </section>
   );
 }

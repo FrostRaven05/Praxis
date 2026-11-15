@@ -42,10 +42,10 @@
 }
 .workspace.modern-workspace .brand-mark {
   border-radius: 6px;
-  background: var(--cinnabar);
-  color: #fff6ea;
+  background: color-mix(in srgb, var(--primary-light) 34%, #140f0d);
+  color: #fff;
   font-family: var(--font-title);
-  box-shadow: inset 0 0 0 2px rgb(255 240 220 / 35%);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--primary-light) 48%, #fff);
   transform: rotate(-4deg);
 }
 .workspace.modern-workspace .brand-dot {
@@ -895,117 +895,6 @@
 }
 .workspace.modern-workspace .simple-project-workspace .project-board .kanban-card:last-child {
   margin-bottom: 0;
-}
-.workspace.modern-workspace .personal-todo-home .personal-subtask-toggle,
-.workspace.modern-workspace .personal-todo-home .personal-subtask-toggle:hover:not(:disabled),
-.workspace.modern-workspace .personal-todo-home .personal-subtask-add,
-.workspace.modern-workspace .personal-todo-home .personal-subtask-add:hover:not(:disabled) {
-  display: inline-flex;
-  width: auto;
-  min-height: 22px;
-  margin: 2px 0 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-tertiary);
-  font-size: 12px;
-  font-weight: 500;
-}
-.workspace.modern-workspace .personal-todo-home .personal-subtasks {
-  display: grid;
-  gap: 2px;
-  margin: 4px 0 0;
-  padding: 0;
-  list-style: none;
-}
-.workspace.modern-workspace .personal-todo-home .personal-subtasks li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 28px;
-}
-.workspace.modern-workspace .personal-todo-home .personal-subtasks .personal-todo-check,
-.workspace.modern-workspace .personal-todo-home .personal-subtasks .personal-todo-check:hover:not(:disabled) {
-  width: 14px;
-  height: 14px;
-  min-height: 14px;
-  margin: 0;
-  padding: 0;
-  border-width: 1.5px;
-  transform: none;
-  font-size: 9px;
-}
-.workspace.modern-workspace .personal-todo-home .personal-subtasks .personal-subtask-title,
-.workspace.modern-workspace .personal-todo-home .personal-subtasks .personal-subtask-title:hover:not(:disabled) {
-  flex: 1;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-secondary);
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.4;
-  text-align: left;
-}
-.workspace.modern-workspace .personal-todo-home .personal-subtasks li.completed .personal-subtask-title {
-  color: var(--text-tertiary);
-  text-decoration: line-through;
-}
-.workspace.modern-workspace .personal-todo-home .personal-subtask-delete,
-.workspace.modern-workspace .personal-todo-home .personal-subtask-delete:hover:not(:disabled) {
-  width: auto;
-  min-height: 22px;
-  padding: 0 4px;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-tertiary);
-  font-size: 12px;
-  opacity: 0;
-}
-.workspace.modern-workspace .personal-todo-home .personal-subtasks li:hover .personal-subtask-delete,
-.workspace.modern-workspace .personal-todo-home .personal-subtasks li:focus-within .personal-subtask-delete {
-  opacity: 1;
-}
-.workspace.modern-workspace .personal-todo-home .personal-subtasks input,
-.workspace.modern-workspace .personal-todo-home .personal-subtasks input:hover,
-.workspace.modern-workspace .personal-todo-home .personal-subtasks input:focus,
-.workspace.modern-workspace .personal-todo-home .personal-subtasks input:focus-visible {
-  width: 100%;
-  min-height: 28px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-primary);
-  font-size: 13px;
-}
-.workspace.modern-workspace .personal-todo-home .personal-todo-row:has(.personal-subtask-add, .personal-subtasks, .personal-subtask-toggle),
-.workspace.modern-workspace .personal-todo-home .personal-todo-row:has(.personal-subtask-add, .personal-subtasks, .personal-subtask-toggle):hover,
-.workspace.modern-workspace .personal-todo-home .personal-todo-row:has(.personal-subtask-add, .personal-subtasks, .personal-subtask-toggle):focus-within,
-.workspace.modern-workspace .simple-project-workspace .personal-todo-home.is-project-tasks .personal-todo-row:has(.personal-subtasks),
-.workspace.modern-workspace .simple-project-workspace .personal-todo-home.is-project-tasks .personal-todo-row:has(.personal-subtasks):hover,
-.workspace.modern-workspace .simple-project-workspace .personal-todo-home.is-project-tasks .personal-todo-row:has(.personal-subtasks):focus-within {
-  align-items: flex-start;
-}
-.workspace.modern-workspace .personal-todo-home .personal-todo-row:has(.personal-subtask-add, .personal-subtasks, .personal-subtask-toggle) > .completion-toggle,
-.workspace.modern-workspace .personal-todo-home .personal-todo-row:has(.personal-subtask-add, .personal-subtasks, .personal-subtask-toggle) > .personal-todo-check {
-  margin-top: 8px;
-}
-.workspace.modern-workspace .simple-project-workspace .personal-todo-home.is-project-tasks .personal-todo-row:has(.personal-subtask-add, .personal-subtasks, .personal-subtask-toggle),
-.workspace.modern-workspace .simple-project-workspace .personal-todo-home.is-project-tasks .personal-todo-row:has(.personal-subtask-add, .personal-subtasks, .personal-subtask-toggle):hover,
-.workspace.modern-workspace .simple-project-workspace .personal-todo-home.is-project-tasks .personal-todo-row:has(.personal-subtask-add, .personal-subtasks, .personal-subtask-toggle):focus-within {
-  align-items: flex-start;
-}
-.workspace.modern-workspace .simple-project-workspace .personal-todo-home.is-project-tasks .personal-todo-row:has(.personal-subtask-add, .personal-subtasks, .personal-subtask-toggle) > .personal-todo-check,
-.workspace.modern-workspace .simple-project-workspace .personal-todo-home.is-project-tasks .personal-todo-row:has(.personal-subtask-add, .personal-subtasks, .personal-subtask-toggle) > .completion-toggle,
-.workspace.modern-workspace .simple-project-workspace .personal-todo-home.is-project-tasks .personal-todo-row:has(.personal-subtask-add, .personal-subtasks, .personal-subtask-toggle) > .task-action-trigger {
-  margin-top: 1px;
 }
 .workspace.modern-workspace .simple-project-workspace .personal-todo-home.is-project-tasks .task-action-button,
 .workspace.modern-workspace .simple-project-workspace .personal-todo-home.is-project-tasks .task-action-button:hover:not(:disabled),

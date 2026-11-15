@@ -1,0 +1,18 @@
+{
+  "completedAt": "2026-11-15T15:47:17.670583+00:00",
+  "baseUrl": "https://todo.frostraven05.com",
+  "image": "praxis-api:admin-20261115T154216Z",
+  "apiTests": 84,
+  "localBrowserChecks": 13,
+  "publicChecks": 22,
+  "apiBuild": "passed",
+  "typecheck": "passed",
+  "adminKeyChanged": false,
+  "deletedOnlyAcceptanceFixtures": true,
+  "originalUsersPreserved": 8,
+  "originalSyncHistoryRetained": true,
+  "databaseIntegrity": "ok",
+  "containerHealthy": true,
+  "productionProxyAndPortsPreserved": true,
+  "backup": "/opt/praxis/backups/before-admin-20261115T154216Z"
+}

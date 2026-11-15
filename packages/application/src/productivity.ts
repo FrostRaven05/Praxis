@@ -145,7 +145,7 @@ export function dayRows(
       .sort((a, b) => a.rank - b.rank)
       .map((p) => p.taskId);
   const rows = s.tasks
-    .filter((t) => !terminal(t))
+    .filter((t) => !terminal(t) && !t.parentId)
     .map((task) => {
       const reasons: string[] = [];
       if (actual && overdue(task.deadline, now, zone)) reasons.push("真实逾期");

@@ -228,12 +228,13 @@ export function ProjectTaskPanel({
         <div className="task-panel-toolbar-actions">
           <button
             type="button"
+            className="task-panel-dismiss"
             aria-label="关闭任务详情"
             title="收起详情"
             disabled={autosave.busy}
             onClick={() => void close()}
           >
-            <TaskPanelIcon name="close" />
+            <TaskPanelIcon name="chevron" />
           </button>
         </div>
       </header>

@@ -183,7 +183,7 @@ export function TaskDescription({
         aria-label="任务描述"
         aria-disabled={disabled || undefined}
         contentEditable={disabled ? "false" : "true"}
-        data-placeholder="添加描述，可插入图片"
+        data-placeholder="添加描述"
         suppressContentEditableWarning
         onInput={publish}
         onPaste={(event) => {

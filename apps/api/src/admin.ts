@@ -2,12 +2,14 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { readFileSync } from "node:fs";
 import type { DatabaseSync } from "node:sqlite";
 import type { FastifyInstance } from "fastify";
+import type { AiService } from "./ai.js";
 
 interface AdminOptions {
   tokenHash: string | undefined;
   secureCookies: boolean;
   generation: string;
   configuredDevices: number;
+  ai: AiService;
 }
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
@@ -49,7 +51,21 @@ export function registerAdmin(
   const startedAt = Date.now();
   db.exec(`CREATE TABLE IF NOT EXISTS admin_sessions(token_hash TEXT PRIMARY KEY, credential_hash TEXT NOT NULL, expires_at INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS admin_audit(id INTEGER PRIMARY KEY AUTOINCREMENT, action TEXT NOT NULL, target_id TEXT, reason TEXT NOT NULL, created_at TEXT NOT NULL);
-    CREATE INDEX IF NOT EXISTS admin_audit_time ON admin_audit(created_at);`);
+    CREATE INDEX IF NOT EXISTS admin_audit_time ON admin_audit(created_at);
+    CREATE TABLE IF NOT EXISTS admin_ai_settings(id INTEGER PRIMARY KEY CHECK (id=1), provider TEXT NOT NULL, base_url TEXT NOT NULL, model TEXT NOT NULL, api_key TEXT NOT NULL, updated_at TEXT NOT NULL);`);
+  const savedModel = db
+    .prepare(
+      "SELECT provider, base_url AS baseUrl, model, api_key AS apiKey FROM admin_ai_settings WHERE id=1",
+    )
+    .get() as
+    | {
+        provider: "openai" | "deepseek";
+        baseUrl: string;
+        model: string;
+        apiKey: string;
+      }
+    | undefined;
+  if (savedModel) options.ai.configure(savedModel);
   const audit = (action: string, target: string | null, reason: string) =>
     db
       .prepare(
@@ -359,6 +375,59 @@ export function registerAdmin(
       }
     },
   );
+  app.delete<{
+    Params: { id: string };
+    Body: { email: string; reason: string };
+  }>(
+    "/admin/api/users/:id",
+    {
+      schema: {
+        params: idParams,
+        body: {
+          type: "object",
+          additionalProperties: false,
+          required: ["email", "reason"],
+          properties: {
+            email: { type: "string", minLength: 1, maxLength: 254 },
+            reason: reasonProperty,
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const id = request.params.id;
+      const user = db
+        .prepare("SELECT email FROM account_users WHERE id=?")
+        .get(id);
+      if (!user) return reply.code(404).send({ error: "USER_NOT_FOUND" });
+      if (request.body.email.trim().toLowerCase() !== user.email)
+        return reply.code(400).send({ error: "EMAIL_CONFIRMATION_MISMATCH" });
+      db.exec("BEGIN IMMEDIATE");
+      try {
+        // Keep only the ID to block legacy paired credentials after account deletion.
+        db.prepare("INSERT INTO account_deleted_users(id) VALUES(?)").run(id);
+        for (const table of [
+          "sync_entity_versions",
+          "sync_entity_changes",
+          "sync_entities",
+          "sync_entity_upgrades",
+          "capture_changes",
+          "captures",
+        ])
+          db.prepare(`DELETE FROM ${table} WHERE owner=?`).run(id);
+        db.prepare("DELETE FROM ai_runs WHERE owner_id=?").run(id);
+        db.prepare("DELETE FROM account_sessions WHERE user_id=?").run(id);
+        db.prepare("DELETE FROM account_users WHERE id=?").run(id);
+        audit("delete_user", id, request.body.reason.trim());
+        db.exec("COMMIT");
+      } catch (error) {
+        db.exec("ROLLBACK");
+        throw error;
+      }
+      options.ai.abortOwner(id);
+      return reply.code(204).send();
+    },
+  );
   app.get<{ Querystring: { page?: string } }>(
     "/admin/api/audit",
     {
@@ -398,4 +467,100 @@ export function registerAdmin(
       Number(db.prepare("PRAGMA page_size").get()?.page_size ?? 0),
     checkedAt: new Date().toISOString(),
   }));
+  const modelView = () => {
+    const saved = db
+      .prepare(
+        "SELECT provider, base_url AS baseUrl, model, updated_at AS updatedAt FROM admin_ai_settings WHERE id=1",
+      )
+      .get() as
+      | {
+          provider: string;
+          baseUrl: string;
+          model: string;
+          updatedAt: string;
+        }
+      | undefined;
+    const live = options.ai.status();
+    const current = options.ai.credentials();
+    return {
+      provider: saved?.provider ?? current?.provider ?? "deepseek",
+      baseUrl: saved?.baseUrl ?? current?.baseUrl ?? "https://api.deepseek.com",
+      model: saved?.model ?? live.model ?? "deepseek-flash",
+      hasApiKey: Boolean(saved || current?.apiKey),
+      enabled: live.enabled,
+      source: saved ? "saved" : current ? "environment" : "none",
+      updatedAt: saved?.updatedAt ?? null,
+    };
+  };
+  app.get("/admin/api/model", async () => modelView());
+  app.put<{
+    Body: {
+      provider: "openai" | "deepseek";
+      baseUrl: string;
+      model: string;
+      apiKey?: string;
+    };
+  }>(
+    "/admin/api/model",
+    {
+      schema: {
+        body: {
+          type: "object",
+          additionalProperties: false,
+          required: ["provider", "baseUrl", "model"],
+          properties: {
+            provider: { type: "string", enum: ["openai", "deepseek"] },
+            baseUrl: { type: "string", minLength: 8, maxLength: 300 },
+            model: { type: "string", minLength: 1, maxLength: 200 },
+            apiKey: { type: "string", minLength: 1, maxLength: 500 },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      let baseUrl: URL;
+      try {
+        baseUrl = new URL(request.body.baseUrl.trim());
+      } catch {
+        return reply.code(400).send({ error: "INVALID_REQUEST" });
+      }
+      if (
+        baseUrl.protocol !== "https:" ||
+        baseUrl.username ||
+        baseUrl.password ||
+        baseUrl.search ||
+        baseUrl.hash
+      )
+        return reply.code(400).send({ error: "INVALID_REQUEST" });
+      const model = request.body.model.trim();
+      if (!model) return reply.code(400).send({ error: "INVALID_REQUEST" });
+      const savedKey = (
+        db.prepare("SELECT api_key FROM admin_ai_settings WHERE id=1").get() as
+          { api_key: string } | undefined
+      )?.api_key;
+      const apiKey =
+        request.body.apiKey?.trim() ||
+        savedKey ||
+        options.ai.credentials()?.apiKey;
+      if (!apiKey) return reply.code(400).send({ error: "INVALID_REQUEST" });
+      const next = {
+        provider: request.body.provider,
+        baseUrl: baseUrl.toString().replace(/\/$/, ""),
+        model,
+        apiKey,
+      };
+      db.prepare(
+        "INSERT INTO admin_ai_settings(id,provider,base_url,model,api_key,updated_at) VALUES(1,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET provider=excluded.provider, base_url=excluded.base_url, model=excluded.model, api_key=excluded.api_key, updated_at=excluded.updated_at",
+      ).run(
+        next.provider,
+        next.baseUrl,
+        next.model,
+        next.apiKey,
+        new Date().toISOString(),
+      );
+      options.ai.configure(next);
+      audit("update_model", null, `${next.provider} / ${next.model}`);
+      return modelView();
+    },
+  );
 }

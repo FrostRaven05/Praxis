@@ -197,3 +197,66 @@ it("validates account input and limits authentication attempts", async () => {
     ).toBe(400);
   expect((await register(server, "valid@example.com")).statusCode).toBe(429);
 });
+it("changes the password, keeps this session, and signs out the other device", async () => {
+  const server = setup();
+  const first = (await register(server, "owner@example.com")).json<AccountSession>();
+  const second = (
+    await server.inject({
+      method: "POST",
+      url: "/auth/login",
+      payload: {
+        email: "owner@example.com",
+        password,
+        deviceId: randomUUID(),
+      },
+    })
+  ).json<AccountSession>();
+  const next = "a different long test password";
+  expect(
+    (
+      await server.inject({
+        method: "POST",
+        url: "/v1/account/password",
+        headers: headers(first),
+        payload: { currentPassword: "not the current password", newPassword: next },
+      })
+    ).json(),
+  ).toEqual({ error: "INVALID_CREDENTIALS" });
+  expect(
+    (
+      await server.inject({
+        method: "POST",
+        url: "/v1/account/password",
+        headers: headers(first),
+        payload: { currentPassword: password, newPassword: password },
+      })
+    ).json(),
+  ).toEqual({ error: "PASSWORD_UNCHANGED" });
+  const changed = await server.inject({
+    method: "POST",
+    url: "/v1/account/password",
+    headers: headers(first),
+    payload: { currentPassword: password, newPassword: next },
+  });
+  expect(changed.statusCode).toBe(204);
+  expect(
+    (await server.inject({ url: "/v1/account", headers: headers(first) })).statusCode,
+  ).toBe(200);
+  expect(
+    (await server.inject({ url: "/v1/account", headers: headers(second) })).statusCode,
+  ).toBe(401);
+  const login = (pass: string) =>
+    server.inject({
+      method: "POST",
+      url: "/auth/login",
+      payload: { email: "owner@example.com", password: pass, deviceId: second.deviceId },
+    });
+  expect((await login(password)).statusCode).toBe(401);
+  expect((await login(next)).statusCode).toBe(200);
+});
+it("publishes the app release without a login", async () => {
+  const server = setup();
+  const release = await server.inject({ url: "/app/release" });
+  expect(release.statusCode).toBe(200);
+  expect(release.json()).toMatchObject({ version: "0.1.0", windows: null, android: null });
+});

@@ -36,7 +36,6 @@ export function ThemeSettings() {
       <header className="settings-card-heading">
         <div>
           <h2 id="theme-heading">主题颜色</h2>
-          <p>选择强调色，背景与正文保持不变。</p>
         </div>
       </header>
       <div

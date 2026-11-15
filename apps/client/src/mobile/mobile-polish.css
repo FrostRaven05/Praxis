@@ -115,15 +115,19 @@
   border-top: 0;
   box-shadow: 0 -1px 0 var(--line), 0 -10px 28px -14px color-mix(in srgb, var(--text-primary) 16%, transparent);
 }
-.pm-app .pm-bottom button {
+.pm-app nav.pm-bottom button {
+  flex: 1;
+  min-width: 0;
   gap: 3px;
+  padding: 0;
+  font-size: 11px;
   font-weight: 500;
 }
-.pm-app .pm-bottom svg {
+.pm-app nav.pm-bottom svg {
   box-sizing: border-box;
-  width: 58px;
-  height: 32px;
-  padding: 4px 17px;
+  width: 44px;
+  height: 28px;
+  padding: 3px 10px;
   border-radius: 999px;
   transition: background 200ms var(--ease-out);
 }

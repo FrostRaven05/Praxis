@@ -60,9 +60,8 @@ export interface Recommendation {
 }
 
 /**
- * Recommend candidates from the whole backlog (all tasks are one data set).
- * Only unfinished leaf tasks in active projects that are not yet on the day.
- * Pure read: adding one to the day is a separate explicit user action.
+ * Suggested tasks for the day. The outside unit is the parent task:
+ * subtasks stay inside it and are not listed here.
  */
 export function recommendBacklog(
   snapshot: WorkSnapshot,
@@ -72,14 +71,30 @@ export function recommendBacklog(
   limit = 5,
 ): Recommendation[] {
   const onDay = new Set(scheduled.map((task) => task.taskId));
-  const parents = new Set(
-    snapshot.tasks.flatMap((task) => (task.parentId ? [task.parentId] : [])),
-  );
   const inactive = new Set(
     snapshot.projects
       .filter((p) => p.status !== "active" || p.archivedAt)
       .map((p) => p.id),
   );
+  const childrenOf = new Map<string, WorkTask[]>();
+  for (const task of snapshot.tasks) {
+    if (!task.parentId) continue;
+    const list = childrenOf.get(task.parentId) ?? [];
+    list.push(task);
+    childrenOf.set(task.parentId, list);
+  }
+  const underway = (task: WorkTask) => {
+    const seen = new Set<string>();
+    const stack = [task];
+    while (stack.length) {
+      const current = stack.pop();
+      if (!current || seen.has(current.id)) continue;
+      seen.add(current.id);
+      if (current.status === "in_progress") return true;
+      for (const child of childrenOf.get(current.id) ?? []) stack.push(child);
+    }
+    return false;
+  };
   const today = date;
   const soon = dateAfter(today, 3);
   const focus = new Set(
@@ -91,9 +106,9 @@ export function recommendBacklog(
   const result: Recommendation[] = [];
   for (const task of snapshot.tasks) {
     if (
+      task.parentId ||
       terminal(task) ||
       onDay.has(task.id) ||
-      parents.has(task.id) ||
       ["waiting", "blocked"].includes(task.status) ||
       (task.projectId && inactive.has(task.projectId))
     )
@@ -125,9 +140,9 @@ export function recommendBacklog(
       reasons.push("当日重点");
       score += 30;
     }
-    if (task.status === "in_progress") {
+    if (underway(task)) {
       reasons.push("进行中");
-      score += 20;
+      score += 70;
     }
     if (task.priority > 0 && task.priority < 4) {
       reasons.push(`P${task.priority}`);

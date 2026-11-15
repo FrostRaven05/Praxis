@@ -240,7 +240,7 @@ describe("personal task adapters", () => {
       f.db.close();
     }
   });
-  it("does not silently delete a legacy parent or restore changed deleted contents", async () => {
+  it("deletes a parent together with its children and does not restore changed deleted contents", async () => {
     const f = setup();
     try {
       await seed(f);
@@ -258,9 +258,10 @@ describe("personal task adapters", () => {
           }),
         ],
       });
-      await expect(
-        f.manager.change(await f.manager.read(), parent, { type: "delete" }),
-      ).rejects.toBeInstanceOf(PersonalTaskRejectedError);
+      await f.manager.change(await f.manager.read(), parent, { type: "delete" });
+      const removed = await f.manager.read();
+      expect(removed.query.task(parent)).toBeNull();
+      expect(removed.query.task(child)).toBeNull();
       await f.manager.change(await f.manager.read(), fixture.independent.id, {
         type: "delete",
       });

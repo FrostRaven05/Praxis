@@ -1,0 +1,29 @@
+{
+  "archiveSha256": "78f2926b8051aedfdfd5f242580da8b60f3af0c67ef96e86088b883d0ff71314",
+  "files": [
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "Dockerfile",
+    ".dockerignore",
+    "apps/api/package.json",
+    "apps/api/tsconfig.json",
+    "apps/api/scripts/copy-admin.mjs",
+    "apps/api/src/accounts.ts",
+    "apps/api/src/admin.ts",
+    "apps/api/src/ai-contract.ts",
+    "apps/api/src/ai.ts",
+    "apps/api/src/app-release.ts",
+    "apps/api/src/entities.ts",
+    "apps/api/src/entity-protocol.md",
+    "apps/api/src/entity-validation.ts",
+    "apps/api/src/main.ts",
+    "apps/api/src/server.ts",
+    "apps/api/src/store.ts",
+    "apps/api/src/admin-web/admin.css",
+    "apps/api/src/admin-web/admin.js",
+    "apps/api/src/admin-web/favicon.svg",
+    "apps/api/src/admin-web/index.html"
+  ],
+  "scope": "API and admin source only; no runtime data, credentials, Compose, desktop or mobile"
+}

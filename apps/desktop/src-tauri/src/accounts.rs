@@ -230,6 +230,183 @@ pub async fn account_logout(accounts: State<'_, Accounts>) -> Result<(), String>
 pub fn account_restart(app: tauri::AppHandle) {
     app.restart();
 }
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct PasswordChange {
+    pub current_password: String,
+    pub new_password: String,
+}
+fn endpoint(accounts: &Accounts) -> Result<(String, String), String> {
+    let Some(active) = &accounts.active else {
+        return Ok((DEFAULT_ACCOUNT_BASE_URL.to_string(), String::new()));
+    };
+    let pair = lan_sync::pairing(&account_dir(&accounts.root, active)?.join("lan-sync.dpapi"))?;
+    Ok((active.base_url.clone(), pair.ca_pem))
+}
+fn semver_ok(value: &str) -> bool {
+    let mut parts = value.split('.');
+    (0..3).all(|_| {
+        parts.next().is_some_and(|part| {
+            !part.is_empty() && part.len() <= 6 && part.bytes().all(|byte| byte.is_ascii_digit())
+        })
+    }) && parts.next().is_none()
+}
+fn release_asset(value: Option<&serde_json::Value>) -> serde_json::Value {
+    let Some(asset) = value else {
+        return serde_json::Value::Null;
+    };
+    let Some(url) = asset.get("url").and_then(|item| item.as_str()) else {
+        return serde_json::Value::Null;
+    };
+    let Some(sha256) = asset.get("sha256").and_then(|item| item.as_str()) else {
+        return serde_json::Value::Null;
+    };
+    let Ok(parsed) = reqwest::Url::parse(url) else {
+        return serde_json::Value::Null;
+    };
+    if parsed.scheme() != "https"
+        || parsed.host_str().is_none()
+        || !parsed.username().is_empty()
+        || parsed.password().is_some()
+        || sha256.len() != 64
+        || !sha256.bytes().all(|byte| byte.is_ascii_hexdigit())
+    {
+        return serde_json::Value::Null;
+    }
+    serde_json::json!({ "url": parsed.as_str(), "sha256": sha256 })
+}
+fn same_host(base: &str, url: &str) -> Result<String, String> {
+    let origin = reqwest::Url::parse(base).map_err(|_| "下载地址无效。")?;
+    let target = reqwest::Url::parse(url).map_err(|_| "下载地址无效。")?;
+    if target.scheme() != "https"
+        || target.host_str().is_none()
+        || target.host_str() != origin.host_str()
+        || target.port_or_known_default() != origin.port_or_known_default()
+        || !target.username().is_empty()
+        || target.password().is_some()
+    {
+        return Err("下载地址无效。".into());
+    }
+    Ok(target.to_string())
+}
+fn open_download(url: &str) -> Result<(), String> {
+    let mut command = if cfg!(windows) {
+        let mut command = std::process::Command::new("rundll32");
+        command.args(["url.dll,FileProtocolHandler", url]);
+        command
+    } else {
+        let mut command = std::process::Command::new("xdg-open");
+        command.arg(url);
+        command
+    };
+    command
+        .spawn()
+        .map(|_| ())
+        .map_err(|_| "无法打开下载页面。".into())
+}
+#[tauri::command]
+pub async fn account_change_password(
+    mut change: PasswordChange,
+    accounts: State<'_, Accounts>,
+) -> Result<(), String> {
+    let _guard = accounts.lock.lock().await;
+    let Some(active) = accounts.active.clone() else {
+        return Err("请先登录。".into());
+    };
+    let current_len = change.current_password.chars().count();
+    let new_len = change.new_password.chars().count();
+    if !(6..=128).contains(&current_len) || !(6..=128).contains(&new_len) {
+        return Err("密码需为 6–128 个字符。".into());
+    }
+    if change.current_password == change.new_password {
+        return Err("新密码不能与当前密码相同。".into());
+    }
+    let (base, ca_pem) = endpoint(&accounts)?;
+    let pair = lan_sync::pairing(&account_dir(&accounts.root, &active)?.join("lan-sync.dpapi"))?;
+    let mut body = serde_json::json!({
+        "currentPassword": change.current_password,
+        "newPassword": change.new_password,
+    });
+    let response = client(&ca_pem)?
+        .post(format!("{base}/v1/account/password"))
+        .bearer_auth(&pair.token)
+        .json(&body)
+        .send()
+        .await;
+    change.current_password.clear();
+    change.new_password.clear();
+    body["currentPassword"] = serde_json::Value::Null;
+    body["newPassword"] = serde_json::Value::Null;
+    let response = response.map_err(|_| "无法连接账号服务，请检查网络。")?;
+    if response.status().is_success() {
+        return Ok(());
+    }
+    let code = response
+        .json::<serde_json::Value>()
+        .await
+        .ok()
+        .and_then(|value| value.get("error").and_then(|item| item.as_str()).map(str::to_string))
+        .unwrap_or_default();
+    Err(match code.as_str() {
+        "INVALID_CREDENTIALS" => "当前密码不正确，或登录已失效。",
+        "PASSWORD_UNCHANGED" => "新密码不能与当前密码相同。",
+        "ACCOUNT_DISABLED" => "账号已停用。",
+        "RATE_LIMITED" => "尝试次数过多，请稍后重试。",
+        _ => "暂时无法修改密码。",
+    }
+    .into())
+}
+#[tauri::command]
+pub async fn app_release_check(
+    app: tauri::AppHandle,
+    accounts: State<'_, Accounts>,
+) -> Result<serde_json::Value, String> {
+    let _guard = accounts.lock.lock().await;
+    let current = app.package_info().version.to_string();
+    let (base, ca_pem) = endpoint(&accounts)?;
+    let response = client(&ca_pem)?
+        .get(format!("{base}/app/release"))
+        .send()
+        .await
+        .map_err(|_| "暂时无法检查更新。")?;
+    if response.status().as_u16() == 404 {
+        return Ok(serde_json::json!({ "current": current, "release": null }));
+    }
+    if !response.status().is_success() {
+        return Err("暂时无法检查更新。".into());
+    }
+    let body = response
+        .json::<serde_json::Value>()
+        .await
+        .map_err(|_| "更新信息无效。")?;
+    let version = body.get("version").and_then(|item| item.as_str()).unwrap_or("");
+    let minimum = body
+        .get("minimumVersion")
+        .and_then(|item| item.as_str())
+        .unwrap_or("");
+    let notes = body.get("notes").and_then(|item| item.as_str()).unwrap_or("");
+    if !semver_ok(version) || !semver_ok(minimum) || notes.chars().count() > 4000 {
+        return Err("更新信息无效。".into());
+    }
+    Ok(serde_json::json!({
+        "current": current,
+        "release": {
+            "version": version,
+            "notes": notes,
+            "publishedAt": body.get("publishedAt").and_then(|item| item.as_str()),
+            "minimumVersion": minimum,
+            "windows": release_asset(body.get("windows")),
+            "android": release_asset(body.get("android")),
+        }
+    }))
+}
+#[tauri::command]
+pub async fn app_release_open(accounts: State<'_, Accounts>, url: String) -> Result<(), String> {
+    let _guard = accounts.lock.lock().await;
+    let (base, _) = endpoint(&accounts)?;
+    let target = same_host(&base, &url)?;
+    open_download(&target)
+}
 
 #[cfg(test)]
 mod tests {

@@ -186,14 +186,14 @@
   font-size: 13px;
   line-height: 1.6;
 }
-.account-auth-card form,
-.account-auth-card fieldset {
+:is(.account-auth-card, .settings-auth) form,
+:is(.account-auth-card, .settings-auth) fieldset {
   min-width: 0;
   margin: 0;
   padding: 0;
   border: 0;
 }
-.account-auth-card label {
+:is(.account-auth-card, .settings-auth) label {
   display: grid;
   gap: 8px;
   margin: 18px 0 8px;
@@ -202,11 +202,11 @@
   font-weight: 500;
   line-height: 1.5;
 }
-.account-auth-card fieldset > label:first-child {
+:is(.account-auth-card, .settings-auth) fieldset > label:first-child {
   margin-top: 0;
 }
-.account-auth-card input,
-.account-auth-card textarea {
+:is(.account-auth-card, .settings-auth) input,
+:is(.account-auth-card, .settings-auth) textarea {
   box-sizing: border-box;
   display: block;
   width: 100%;
@@ -222,12 +222,12 @@
   font-weight: 400;
   line-height: 1.5;
 }
-.account-auth-card input::placeholder,
-.account-auth-card textarea::placeholder {
+:is(.account-auth-card, .settings-auth) input::placeholder,
+:is(.account-auth-card, .settings-auth) textarea::placeholder {
   color: var(--text-tertiary);
 }
-.account-auth-card input:focus,
-.account-auth-card textarea:focus {
+:is(.account-auth-card, .settings-auth) input:focus,
+:is(.account-auth-card, .settings-auth) textarea:focus {
   border-color: var(--primary-text);
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
@@ -237,7 +237,7 @@
 .account-password-field > input {
   padding-right: 46px;
 }
-.account-auth-card .account-password-toggle {
+:is(.account-auth-card, .settings-auth) .account-password-toggle {
   position: absolute;
   top: 4px;
   right: 4px;
@@ -260,7 +260,7 @@
   color: var(--primary-text);
   background: var(--selected);
 }
-.account-auth-card .account-submit {
+:is(.account-auth-card, .settings-auth) .account-submit {
   width: 100%;
   min-height: 44px;
   margin-top: 24px;
@@ -276,12 +276,12 @@
 .account-submit:hover:not(:disabled) {
   filter: brightness(0.92);
 }
-.account-auth-card button:disabled,
+:is(.account-auth-card, .settings-auth) button:disabled,
 .account-panel button:disabled {
   opacity: 0.55;
   cursor: default;
 }
-.account-auth-card button:focus-visible {
+:is(.account-auth-card, .settings-auth) button:focus-visible {
   outline: 2px solid var(--primary-text);
   outline-offset: 3px;
 }
@@ -295,7 +295,7 @@
   color: var(--text-secondary);
   font-size: 13px;
 }
-.account-auth-card .account-text-button {
+:is(.account-auth-card, .settings-auth) .account-text-button {
   min-height: 30px;
   padding: 3px;
   border: 0;
@@ -360,13 +360,41 @@
   min-height: 100dvh;
   background: var(--surface-card, #fff);
   color: var(--text-primary);
+  /* a plain sans face reads clearly at settings sizes */
+  font-family: "Microsoft YaHei UI", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  -webkit-font-smoothing: antialiased;
+}
+.settings-shell :is(h1, h2, h3, button, input, textarea, summary, small, strong, span, p, label) {
+  font-family: inherit;
 }
 .settings-shell-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   min-height: 56px;
-  padding: 0 18px 0 22px;
+  padding: 0 16px 0 22px;
+}
+.settings-dialog-layer {
+  position: fixed;
+  z-index: 900;
+  top: 32px;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: grid;
+  place-items: center;
+  padding: 28px 24px;
+  background: rgb(20 16 12 / 28%);
+}
+.settings-dialog-layer .settings-shell {
+  width: min(880px, 100%);
+  height: min(640px, 100%);
+  min-height: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgb(20 16 12 / 22%);
 }
 .settings-shell-bar h1 {
   margin: 0;
@@ -496,6 +524,71 @@ button.settings-row:hover:not(:disabled) {
   height: 16px;
   color: var(--primary-text);
 }
+.settings-row-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 400;
+}
+.settings-row-action svg {
+  width: 16px;
+  height: 16px;
+}
+.settings-row-actions {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 8px;
+  margin-left: auto;
+}
+.settings-row-button {
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid var(--hairline, var(--line));
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.settings-row-button:hover:not(:disabled) {
+  background: var(--row-hover, var(--surface-tertiary));
+}
+.settings-password-form {
+  padding: 4px 16px 16px;
+  border-bottom: 1px solid var(--hairline, var(--line));
+  background: var(--surface-card, #fff);
+}
+.settings-password-form > label:first-child {
+  margin-top: 8px;
+}
+.settings-password-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+.settings-password-form .account-submit {
+  width: auto;
+  min-width: 120px;
+  margin-top: 0;
+}
+.settings-password-note {
+  margin: 8px 0 0;
+}
+.settings-update-note {
+  margin: 0 0 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.settings-update-status {
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
 .settings-switch {
   width: 40px;
   height: 22px;
@@ -537,10 +630,10 @@ button.settings-row:hover:not(:disabled) {
   font: inherit;
   text-align: center;
 }
-.settings-shell-main form {
-  display: grid;
-  gap: 12px;
-  max-width: 420px;
+.settings-auth {
+  width: min(420px, 100%);
+  margin-top: 8px;
+  font-size: 14px;
 }
 .settings-shell .theme-settings {
   border: 0;
@@ -574,4 +667,72 @@ button.settings-row:hover:not(:disabled) {
   .settings-shell-main {
     padding: 8px 20px 32px;
   }
+}
+.workspace.modern-workspace .settings-shell .settings-shell-nav button,
+.workspace.modern-workspace .settings-shell .settings-shell-nav button:hover:not(:disabled),
+.workspace.modern-workspace .settings-shell .settings-shell-nav button:focus,
+.workspace.modern-workspace .settings-shell .settings-shell-nav button:focus-visible {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 36px;
+  margin: 0;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  background-color: transparent;
+  box-shadow: none;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 500;
+  text-align: left;
+}
+.workspace.modern-workspace .settings-shell .settings-shell-nav button:hover:not(:disabled) {
+  background-color: var(--row-hover);
+}
+.workspace.modern-workspace .settings-shell .settings-shell-nav button[aria-current="page"],
+.workspace.modern-workspace .settings-shell .settings-shell-nav button[aria-current="page"]:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--primary) 22%, var(--surface-card));
+  color: var(--primary-text);
+  box-shadow: none;
+}
+.workspace.modern-workspace .settings-shell .settings-shell-close,
+.workspace.modern-workspace .settings-shell .settings-shell-close:hover:not(:disabled),
+.workspace.modern-workspace .settings-shell .settings-shell-close:focus,
+.workspace.modern-workspace .settings-shell .settings-shell-close:focus-visible {
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  background-color: transparent;
+  box-shadow: none;
+  color: var(--text-secondary);
+  font-size: 20px;
+  line-height: 1;
+}
+.workspace.modern-workspace .settings-shell .settings-shell-close:hover:not(:disabled) {
+  color: var(--text-primary);
+}
+.settings-shell .settings-pane-heading p,
+.settings-shell .settings-row strong,
+.settings-shell .settings-row small,
+.settings-shell .settings-minutes,
+.settings-shell .account-note,
+.settings-shell .account-privacy-note,
+.settings-shell .account-mode-switch,
+.settings-shell .account-connection > summary {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.settings-shell .settings-row {
+  font-size: 15px;
+  font-weight: 500;
+}
+.settings-shell .settings-group-title {
+  font-size: 15px;
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
+  listedPersonalTasks,
   personalTaskQuery,
   PersonalTaskRejectedError,
   timeLabel,
@@ -15,8 +16,10 @@ import { TaskCompletionButton } from "./TaskCompletionButton";
 import { TaskCompletionTitle } from "./TaskCompletionTitle";
 import { animateTaskCompletion } from "./task-completion-motion";
 import { PersonalTaskDetails } from "./PersonalTaskDetails";
-import { noteCardText } from "./task-note";
+import { currentSubtask } from "./current-subtask";
+import { noteSubtitle } from "./task-note";
 import { desktopAvailable } from "./storage";
+import { assignPomodoroTask, readPomodoroState, writePomodoroState } from "./pomodoro";
 import type {
   PersonalTaskDraft,
   PersonalTaskReceipt,
@@ -74,7 +77,6 @@ export function PersonalTodoHome({
   onBusyChange,
   onOpenProject,
   onChanged,
-  onOpenAgent,
   focusRevision,
 }: {
   port?: PersonalTodoPort;
@@ -85,7 +87,6 @@ export function PersonalTodoHome({
   onBusyChange?: (busy: boolean) => void;
   onOpenProject: (id: string) => void;
   onChanged?: () => void;
-  onOpenAgent?: () => void;
   focusRevision?: number;
 }) {
   const [editing, setEditing] = useState<{
@@ -104,12 +105,8 @@ export function PersonalTodoHome({
     [stale, setStale] = useState(false);
   const [busy, setBusy] = useState(false),
     [pending, setPending] = useState<Attempt | null>(null),
-    [error, setError] = useState(""),
-    [notice, setNotice] = useState("");
+    [error, setError] = useState("");
   const [now, setNow] = useState(() => new Date());
-  const [folded, setFolded] = useState<Record<string, boolean>>({});
-  const [addingParent, setAddingParent] = useState<string | null>(null);
-  const [subtaskTitle, setSubtaskTitle] = useState("");
   const [undo, setUndo] = useState<{
     attempt: Attempt;
     expiresAt: number;
@@ -129,8 +126,7 @@ export function PersonalTodoHome({
     saving = useRef(false),
     attempt = useRef<Attempt | null>(null),
     needsRead = useRef(false),
-    heading = useRef<HTMLHeadingElement>(null),
-    subtaskDraft = useRef<{ parentId: string; taskId: string; title: string } | null>(null);
+    heading = useRef<HTMLHeadingElement>(null);
   const callbacks = useRef({
     onBusyChange,
     onChanged,
@@ -141,7 +137,7 @@ export function PersonalTodoHome({
     onBusyChange,
     onChanged,
     externalBusy,
-    draft: editing !== null || composerLocked || panelLocked || addingParent !== null,
+    draft: editing !== null || composerLocked || panelLocked,
   };
   const refresh = useCallback(async () => {
     if (
@@ -174,7 +170,6 @@ export function PersonalTodoHome({
         setSelectedId(null);
         setUndo(null);
         undoCandidate.current = null;
-        setNotice("");
         rejection.current = null;
       }
       knownScope.current = next.scopeKey;
@@ -276,15 +271,15 @@ export function PersonalTodoHome({
     return () => cancelAnimationFrame(frame);
   }, [focusRevision, loading]);
   useEffect(() => {
-    if (!externalBusy && !editing && !composerLocked && !panelLocked && !addingParent && needsRead.current)
+    if (!externalBusy && !editing && !composerLocked && !panelLocked && needsRead.current)
       void refresh();
-  }, [externalBusy, editing, composerLocked, panelLocked, addingParent, refresh]);
+  }, [externalBusy, editing, composerLocked, panelLocked, refresh]);
   useEffect(() => {
     onBusyChange?.(
-      busy || pending !== null || editing !== null || composerLocked || panelLocked || addingParent !== null,
+      busy || pending !== null || editing !== null || composerLocked || panelLocked,
     );
     return () => onBusyChange?.(false);
-  }, [busy, pending, editing, composerLocked, panelLocked, addingParent, onBusyChange]);
+  }, [busy, pending, editing, composerLocked, panelLocked, onBusyChange]);
   useEffect(() => {
     const prevent = (event: BeforeUnloadEvent) => {
       if (saving.current || attempt.current || callbacks.current.draft)
@@ -304,7 +299,6 @@ export function PersonalTodoHome({
     setBusy(true);
     setError("");
     rejection.current = null;
-    setNotice("");
     setUndo(null);
     undoCandidate.current = null;
     let committed = false;
@@ -337,9 +331,6 @@ export function PersonalTodoHome({
         setEditing(null);
         setSelectedId(null);
         callbacks.current.draft = false;
-        setNotice(
-          `${next.change.type === "edit" ? "已更新" : next.change.type === "delete" ? "已移到已删除任务" : next.change.type === "restore" ? "已恢复" : next.change.type === "undoStatus" ? "已撤销状态修改" : next.change.type === "status" && next.change.status === "completed" ? "已完成" : next.change.type === "status" && next.change.status === "in_progress" ? "已开始" : "已重新打开"}「${next.title}」`,
-        );
       }
     } catch (error) {
       if (error instanceof PersonalTaskRejectedError) {
@@ -365,50 +356,16 @@ export function PersonalTodoHome({
       clearMotion();
     }
   }
-  async function addSubtask(parent: WorkTask, title: string) {
-    if (!base || !port.create || saving.current || !title.trim()) return;
-    const same =
-      subtaskDraft.current?.parentId === parent.id &&
-      subtaskDraft.current.title === title.trim();
-    const draft = same
-      ? subtaskDraft.current!
-      : {
-          parentId: parent.id,
-          taskId: crypto.randomUUID(),
-          title: title.trim(),
-        };
-    subtaskDraft.current = draft;
-    saving.current = true;
-    setBusy(true);
-    setError("");
-    try {
-      await port.create(base, {
-        taskId: draft.taskId,
-        title: draft.title,
-        notes: "",
-        deadline: null,
-        projectId: parent.projectId,
-        parentId: parent.id,
-      });
-      subtaskDraft.current = null;
-      setSubtaskTitle("");
-      setAddingParent(parent.id);
-      if (alive.current) {
-        await refresh();
-        callbacks.current.onChanged?.();
-      }
-    } catch (error) {
-      if (alive.current) setError(message(error));
-    } finally {
-      saving.current = false;
-      if (alive.current) setBusy(false);
-    }
-  }
   const query = base
     ? personalTaskQuery(
         {
           ...base.work,
-          tasks: base.work.tasks.filter((t) => t.projectId === (projectId ?? null)),
+          tasks: listedPersonalTasks(
+            base.work,
+            projectId ?? null,
+            now,
+            base.fallbackZone,
+          ),
         },
         now,
         base.fallbackZone,
@@ -454,9 +411,6 @@ export function PersonalTodoHome({
   const menuTask = rowMenu
     ? query?.tasks.find((task) => task.id === rowMenu.id)
     : undefined;
-  const menuHasChildren = menuTask
-    ? query!.tasks.some((child) => child.parentId === menuTask.id)
-    : false;
   useLayoutEffect(() => {
     const panel = rowMenuPanel.current;
     if (!rowMenu || !panel) return;
@@ -477,10 +431,7 @@ export function PersonalTodoHome({
     return next;
   }
   function rooted<T extends { id: string; parentId: string | null }>(tasks: readonly T[]) {
-    return tasks.filter(
-      (task) =>
-        !task.parentId || !query!.tasks.some((parent) => parent.id === task.parentId),
-    );
+    return tasks.filter((task) => !task.parentId);
   }
   function openDetails(task: WorkTask) {
     if (useDailyActions) setSelectedId(selectedId === task.id ? null : task.id);
@@ -488,13 +439,9 @@ export function PersonalTodoHome({
   }
   function row(task: NonNullable<typeof query>["tasks"][number]) {
     const project = base?.work.projects.find((p) => p.id === task.projectId);
-    const description = noteCardText(task.notes);
-    const children = task.parentId
-      ? []
-      : query!.tasks.filter(
-          (child) => child.parentId === task.id && child.status !== "cancelled",
-        );
-    const hasChildren = query!.tasks.some((child) => child.parentId === task.id);
+    const subtitle = noteSubtitle(task.notes).trim();
+    const objective =
+      task.status === "completed" ? null : currentSubtask(query!.tasks, task.id);
     return (
       <li
         className={`personal-todo-row${useDailyActions ? " uses-daily-actions" : ""}${task.status === "completed" ? " completed" : ""}${selectedId === task.id ? " selected" : ""}`}
@@ -553,8 +500,16 @@ export function PersonalTodoHome({
             onClick={() => openDetails(task)}
           >
             <TaskCompletionTitle taskId={task.id}>{task.title}</TaskCompletionTitle>
+            {objective && (
+              <span className="personal-todo-objective">
+                <span className="personal-todo-objective-kicker">当前</span>
+                <span className="personal-todo-objective-title" title={objective.title}>
+                  {objective.title}
+                </span>
+              </span>
+            )}
           </button>
-          {description && <span className="task-card-note">{description}</span>}
+          {subtitle && <span className="task-card-note">{subtitle}</span>}
           <div className="personal-todo-meta">
             {task.status !== "todo" && (
               <span className="personal-todo-status" data-state={task.status}>
@@ -583,111 +538,6 @@ export function PersonalTodoHome({
               </button>
             ) : null}
           </div>
-          {!task.parentId && children.length > 0 && (
-            <button
-              type="button"
-              className="personal-subtask-toggle"
-              aria-expanded={!folded[task.id]}
-              onClick={() =>
-                setFolded((current) => ({
-                  ...current,
-                  [task.id]: !current[task.id],
-                }))
-              }
-            >
-              {folded[task.id] ? "展开" : "收起"}
-            </button>
-          )}
-          {!task.parentId && children.length === 0 && addingParent !== task.id && (
-            <button
-              type="button"
-              className="personal-subtask-add"
-              disabled={locked}
-              onClick={() => {
-                setAddingParent(task.id);
-                setSubtaskTitle("");
-              }}
-            >
-              添加子任务
-            </button>
-          )}
-          {!task.parentId &&
-            !folded[task.id] &&
-            (children.length > 0 || addingParent === task.id) && (
-              <ul className="personal-subtasks">
-                {children.map((child) => (
-                  <li key={child.id} className={child.status === "completed" ? "completed" : ""}>
-                    <button
-                      type="button"
-                      className="personal-todo-check"
-                      aria-label={`${child.status === "completed" ? "重新打开" : "完成"}：${child.title}`}
-                      aria-pressed={child.status === "completed"}
-                      disabled={locked}
-                      onClick={() =>
-                        base &&
-                        void perform({
-                          base,
-                          taskId: child.id,
-                          title: child.title,
-                          change: {
-                            type: "status",
-                            status: child.status === "completed" ? "todo" : "completed",
-                          },
-                        })
-                      }
-                    >
-                      {child.status === "completed" ? "✓" : ""}
-                    </button>
-                    <button
-                      type="button"
-                      className="personal-subtask-title"
-                      disabled={locked}
-                      onClick={() => openDetails(child)}
-                    >
-                      {child.title}
-                    </button>
-                    <button
-                      type="button"
-                      className="personal-subtask-delete"
-                      aria-label={`删除子任务：${child.title}`}
-                      disabled={locked}
-                      onClick={() =>
-                        base &&
-                        void perform({
-                          base,
-                          taskId: child.id,
-                          title: child.title,
-                          change: { type: "delete" },
-                        })
-                      }
-                    >
-                      删除
-                    </button>
-                  </li>
-                ))}
-                <li>
-                  <form
-                    onSubmit={(event) => {
-                      event.preventDefault();
-                      void addSubtask(task, subtaskTitle);
-                    }}
-                  >
-                    <input
-                      aria-label={`添加子任务：${task.title}`}
-                      placeholder="添加子任务"
-                      value={addingParent === task.id ? subtaskTitle : ""}
-                      disabled={locked}
-                      autoFocus={addingParent === task.id && children.length === 0}
-                      onFocus={() => setAddingParent(task.id)}
-                      onChange={(event) => {
-                        setAddingParent(task.id);
-                        setSubtaskTitle(event.target.value);
-                      }}
-                    />
-                  </form>
-                </li>
-              </ul>
-            )}
         </div>
         {useDailyActions ? null : (
         <div className="personal-task-row-actions">
@@ -722,12 +572,8 @@ export function PersonalTodoHome({
             type="button"
             className="personal-todo-delete"
             aria-label={`删除：${task.title}`}
-            disabled={locked || hasChildren}
-            title={
-              hasChildren
-                ? "请先处理子任务，再删除这个任务"
-                : "移到已删除任务，可恢复"
-            }
+            disabled={locked}
+            title="移到已删除任务，可恢复"
             onClick={() =>
               base &&
               void perform({
@@ -793,27 +639,12 @@ export function PersonalTodoHome({
               杂事
             </h1>
           )}
-          <p>
-            {loading
-              ? "正在读取个人任务…"
-              : query
-                ? `${total ? `尚有 ${total} 项任务待完成` : "暂无待办任务"}${stale ? "（上次读取）" : ""}`
-                : "尚未读取个人任务"}
-          </p>
+          {loading ? (
+            <p>正在读取个人任务…</p>
+          ) : !query ? (
+            <p>尚未读取个人任务</p>
+          ) : null}
         </div>
-        {onOpenAgent && !projectId && (
-          <div className="personal-todo-tools">
-            <button
-              type="button"
-              className="primary"
-              aria-label="下一步建议"
-              disabled={locked || loading}
-              onClick={onOpenAgent}
-            >
-              ✦ 下一步建议
-            </button>
-          </div>
-        )}
       </header>
       {base && port.create && (
         <PersonalTaskComposer
@@ -830,21 +661,15 @@ export function PersonalTodoHome({
             editing !== null
           }
           onDraftChange={setComposerLocked}
-          onCreated={(next, title) => {
+          onCreated={(next) => {
             rejection.current = null;
             setBase(next);
             setNow(new Date());
             setStale(false);
             setError("");
-            setNotice(`已添加「${title}」`);
             callbacks.current.onChanged?.();
           }}
         />
-      )}
-      {notice && (
-        <p className="personal-todo-notice" role="status">
-          {notice}
-        </p>
       )}
       {undo && undo.expiresAt > Date.now() && (
         <p className="personal-todo-notice" role="status">
@@ -1011,26 +836,22 @@ export function PersonalTodoHome({
                 role="menuitem"
                 onClick={() => {
                   setRowMenu(null);
-                  if (base)
-                    void perform({
-                      base,
-                      taskId: menuTask.id,
-                      title: menuTask.title,
-                      change: {
-                        type: "status",
-                        status: menuTask.status === "in_progress" ? "todo" : "in_progress",
-                      },
-                    });
+                  writePomodoroState(
+                    assignPomodoroTask(
+                      readPomodoroState(),
+                      { id: menuTask.id, title: menuTask.title },
+                      Date.now(),
+                    ),
+                  );
                 }}
               >
-                {menuTask.status === "in_progress" ? "设为待办" : "开始任务"}
+                用番茄钟执行
               </button>
             )}
             <button
               type="button"
               role="menuitem"
-              disabled={menuHasChildren}
-              title={menuHasChildren ? "请先处理子任务，再删除这个任务" : "移到已删除任务，可恢复"}
+              title="移到已删除任务，可恢复"
               onClick={() => {
                 setRowMenu(null);
                 if (base)
@@ -1056,6 +877,9 @@ export function PersonalTodoHome({
           onClose={() => setSelectedId(null)}
           onComplete={async () => {
             await perform({base, taskId: selectedTask.id, title: selectedTask.title, change: {type: "status", status: selectedTask.status === "completed" ? "todo" : "completed"}});
+          }}
+          onDelete={async () => {
+            await perform({base, taskId: selectedTask.id, title: selectedTask.title, change: { type: "delete" }});
           }}
           onOpenProject={onOpenProject}
           onLockedChange={setPanelLocked}

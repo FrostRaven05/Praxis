@@ -17,3 +17,30 @@ praxis-backup-*.tar.gz
 apps/desktop/src-tauri/gen/
 apps/desktop/src-tauri/icons/android/
 apps/desktop/src-tauri/icons/ios/
+
+# Local agent settings, temporary previews and machine-specific captures.
+/.codex/
+/.scratch/*
+!/.scratch/praxis-mvp/
+/control-audit/
+/NVIDIA Corporation/
+
+# Local credentials, signing material and distributable builds.
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.exe
+*.msi
+*.apk
+*.aab
+*.dmg
+*.ipa
+*.log
+
+# Operating system metadata.
+.DS_Store
+Thumbs.db
+Desktop.ini

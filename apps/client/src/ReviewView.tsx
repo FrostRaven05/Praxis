@@ -50,8 +50,7 @@ export function ReviewView({
     [busy, setBusy] = useState(false),
     [days, setDays] = useState(7),
     [draft, setDraft] = useState<Draft | null>(null),
-    [dirty, setDirty] = useState(false),
-    [saved, setSaved] = useState("");
+    [dirty, setDirty] = useState(false);
   const lock = useRef(false);
   useLanRefresh(
     () => invoke<Snapshot>("review_snapshot"),
@@ -99,20 +98,17 @@ export function ReviewView({
     if (dirty && !window.confirm("当前回顾尚未保存，放弃这些修改？")) return;
     setDraft(next);
     setDirty(false);
-    setSaved("");
     setError("");
   }
   function edit(patch: Partial<Draft>) {
     setDraft((d) => (d ? { ...d, ...patch } : null));
     setDirty(true);
-    setSaved("");
   }
   async function send(action: Record<string, unknown>) {
     if (lock.current) return;
     lock.current = true;
     setBusy(true);
     setError("");
-    setSaved("");
     try {
       const key = JSON.stringify(action);
       await retries.execute(
@@ -129,7 +125,6 @@ export function ReviewView({
         setDraft(null);
         setDirty(false);
       }
-      setSaved("已保存到本机");
       await refresh();
     } catch (e) {
       setError(String(e));
@@ -142,7 +137,6 @@ export function ReviewView({
     <section className="review-view" aria-label="项目检查与周回顾">
       <h2>项目检查与周回顾</h2>
       {error && <p role="alert">{error}</p>}
-      {saved && <p role="status">{saved}</p>}
       {!data ? (
         <p>正在读取本机记录…</p>
       ) : (

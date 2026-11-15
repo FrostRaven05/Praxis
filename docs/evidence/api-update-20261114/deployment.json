@@ -1,0 +1,9 @@
+{
+  "baseUrl": "https://todo.frostraven05.com",
+  "backup": "/opt/praxis/backups/before-admin-20261114T145715Z",
+  "newAdminCredentialAccepted": true,
+  "previousAdminCredentialRejected": true,
+  "previousAdminSessionRejected": true,
+  "privateCredentialFileUpdated": true,
+  "productionProxyAndPortsPreserved": true
+}

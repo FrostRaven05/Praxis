@@ -185,6 +185,12 @@ export function createDesktopPersonalTasks(
             confirmRelated: false,
             expectedTasks: versions(base.work),
           };
+        else if (change.type === "reorder")
+          action = {
+            type: "reorder",
+            parentId: taskId,
+            orderedIds: [...change.orderedIds],
+          };
         else
           action = {
             type: "move",
@@ -443,6 +449,39 @@ export function createMobilePersonalTasks(
               value?.kind === "instant" ? value.displayTimezone : null;
             data.desktop = desktop;
           }
+        } else if (change.type === "reorder") {
+          const live = source.snapshot.entities.filter(
+            (entity) =>
+              !entity.deleted &&
+              entity.kind === "task" &&
+              entity.data.parentId === taskId &&
+              entity.data.status !== "cancelled",
+          );
+          const ids = live.map((entity) => entity.id).sort();
+          const given = [...change.orderedIds].sort();
+          if (
+            ids.length !== given.length ||
+            ids.some((id, index) => id !== given[index])
+          )
+            throw new WorkspaceRejectedError("子任务已变化，请重新读取后再排序");
+          for (const [rank, id] of change.orderedIds.entries()) {
+            const entity = live.find((item) => item.id === id)!;
+            const desktop = {
+              ...((entity.data.desktop as Record<string, unknown> | undefined) ??
+                {}),
+              task_rank: rank,
+            };
+            command.changes.push({
+              id,
+              kind: "task",
+              expectedVersion: entity.version,
+              data: { ...entity.data, desktop },
+            });
+          }
+          return {
+            scopeKey: base.scopeKey,
+            command: JSON.parse(JSON.stringify(command)) as WorkspaceCommand,
+          };
         } else if (change.type === "status") {
           const desktop =
             (original.data.desktop as Record<string, unknown>) ?? {};

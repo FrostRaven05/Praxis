@@ -162,7 +162,7 @@ export function PersonalTaskComposer({
           ref={input}
           data-personal-capture
           aria-label={projectId ? "项目任务标题" : "新任务标题"}
-          placeholder="添加下一步，按回车保存"
+          placeholder="添加下一步"
           autoComplete="off"
           enterKeyHint="done"
           value={title}

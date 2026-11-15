@@ -112,6 +112,8 @@ async fn project_default_detaches_tree_preserves_records_and_unlinks() {
     let a = task(&s, "父", Some(&p)).await;
     let b = task(&s, "子", Some(&p)).await;
     parent(&mut db, &b, &a).await;
+    let leaf = task(&s, "孙", Some(&p)).await;
+    parent(&mut db, &leaf, &b).await;
     sqlx::query("INSERT INTO records(id,owner_id,title,body,record_type,created_at,updated_at) SELECT 'record',owner_id,'记录','保留正文','note','now','now' FROM local_profile").execute(&mut db).await.unwrap();
     sqlx::query("INSERT INTO record_links VALUES('record','project',?)")
         .bind(&p)
@@ -122,6 +124,18 @@ async fn project_default_detaches_tree_preserves_records_and_unlinks() {
     s.trash_command(&c).await.unwrap();
     assert_eq!(s.list_projects().await.unwrap().len(), 0);
     let snap = s.trash_snapshot().await.unwrap();
+    assert_eq!(snap["tasks"].as_array().unwrap().len(), 3);
+    for (child, parent) in [(&b, &a), (&leaf, &b)] {
+        assert_eq!(
+            snap["tasks"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|t| t["id"] == *child)
+                .unwrap()["parentTaskId"],
+            *parent
+        );
+    }
     assert!(snap["tasks"]
         .as_array()
         .unwrap()
@@ -143,6 +157,16 @@ async fn project_default_detaches_tree_preserves_records_and_unlinks() {
     );
     restore(&s, &c.operation_id).await;
     assert_eq!(s.list_projects().await.unwrap().len(), 1);
+    for (child, parent) in [(&b, &a), (&leaf, &b)] {
+        assert_eq!(
+            sqlx::query_scalar::<_, String>("SELECT parent_task_id FROM tasks WHERE id=?")
+                .bind(child)
+                .fetch_one(&mut db)
+                .await
+                .unwrap(),
+            *parent
+        );
+    }
     assert_eq!(
         sqlx::query_scalar::<_, i64>("SELECT count(*) FROM record_links")
             .fetch_one(&mut db)

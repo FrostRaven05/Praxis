@@ -149,10 +149,8 @@
   top: 0;
   z-index: 20;
   gap: 12px;
-  padding: 18px max(28px, calc((100% - var(--content-max)) / 2)) 14px;
-  background: color-mix(in srgb, var(--surface-canvas) 86%, transparent);
-  -webkit-backdrop-filter: saturate(1.4) blur(14px);
-  backdrop-filter: saturate(1.4) blur(14px);
+  padding: 44px max(28px, calc((100% - var(--content-max)) / 2)) 14px 28px;
+  background: var(--surface-canvas);
   border-bottom: 1px solid transparent;
 }
 .workspace.modern-workspace .timeline-navigation {
@@ -579,22 +577,31 @@
 }
 .workspace.modern-workspace .task-panel-toolbar-actions button,
 .workspace.modern-workspace .task-panel-toolbar-actions button:hover:not(:disabled),
-.workspace.modern-workspace .task-panel-toolbar-actions button:focus-visible {
+.workspace.modern-workspace .task-panel-toolbar-actions button:focus,
+.workspace.modern-workspace .task-panel-toolbar-actions button:focus-visible,
+.workspace.modern-workspace .reference-task-panel .task-panel-dismiss,
+.workspace.modern-workspace .reference-task-panel .task-panel-dismiss:hover:not(:disabled),
+.workspace.modern-workspace .reference-task-panel .task-panel-dismiss:focus,
+.workspace.modern-workspace .reference-task-panel .task-panel-dismiss:focus-visible {
   width: 32px;
   height: 32px;
   min-height: 32px;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: 8px;
+  outline: none;
   background: transparent;
-  color: var(--text-tertiary);
+  background-color: transparent;
+  color: var(--text-secondary);
   box-shadow: none;
   transition:
     background 140ms var(--ease-out),
     color 140ms var(--ease-out);
 }
-.workspace.modern-workspace .task-panel-toolbar-actions button:hover:not(:disabled) {
-  background: var(--row-hover);
+.workspace.modern-workspace .task-panel-toolbar-actions button:hover:not(:disabled),
+.workspace.modern-workspace .reference-task-panel .task-panel-dismiss:hover:not(:disabled) {
+  background: transparent;
+  background-color: transparent;
   color: var(--text-primary);
 }
 .workspace.modern-workspace .task-panel-intro {
@@ -653,7 +660,8 @@
 }
 .workspace.modern-workspace .task-panel-field,
 .workspace.modern-workspace .task-panel-project-field {
-  min-height: 0;
+  flex-shrink: 0;
+  min-height: min-content;
   gap: 14px;
   padding: 14px 24px;
   border-top: 1px solid var(--hairline);
@@ -840,7 +848,9 @@
     [class*="link"]
   ):not([class*="date-"]):not([class*="personal-todo-"]):not(
     .kanban-task-title
-  ):not(.personal-project-open) {
+  ):not(.personal-project-open):not(.task-panel-dismiss):not(
+    .task-description-image
+  ):not(.task-subtask-delete):not(.project-settings-button) {
   min-height: 36px;
   padding: 6px 14px;
   border: 1px solid var(--hairline);
@@ -869,7 +879,9 @@
     [class*="link"]
   ):not([class*="date-"]):not([class*="personal-todo-"]):not(
     .kanban-task-title
-  ):not(.personal-project-open):hover:not(:disabled) {
+  ):not(.personal-project-open):not(.task-panel-dismiss):not(
+    .task-description-image
+  ):not(.task-subtask-delete):not(.project-settings-button):hover:not(:disabled) {
   border-color: var(--accent-strong);
   background: var(--row-hover);
 }
@@ -1380,7 +1392,7 @@
 .workspace.modern-workspace .reference-task-panel .task-panel-form,
 .workspace.modern-workspace .reference-task-panel .task-panel-form > fieldset {
   display: flex;
-  flex: 1;
+  flex: 1 0 auto;
   flex-direction: column;
   min-height: 100%;
 }
@@ -1450,20 +1462,22 @@
 }
 .workspace.modern-workspace .simple-project-workspace .project-summary .project-heading {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 8px;
+  min-width: 0;
+  max-width: 100%;
   margin: 0;
 }
 .workspace.modern-workspace .simple-project-workspace .project-summary .project-settings-button,
 .workspace.modern-workspace .simple-project-workspace .project-summary .project-settings-button:hover:not(:disabled),
 .workspace.modern-workspace .simple-project-workspace .project-summary .project-settings-button:focus-visible {
   flex-shrink: 0;
-  width: auto;
+  width: 28px;
   height: 28px;
   min-height: 28px;
   margin-left: 2px;
-  padding: 0 10px;
+  padding: 0;
   border: 0;
   border-radius: 999px;
   background: var(--surface-tertiary);
@@ -1557,6 +1571,20 @@
 .workspace.modern-workspace .simple-project-workspace .project-summary .personal-project-progress {
   grid-column: auto;
 }
+.workspace.modern-workspace .simple-project-workspace .project-summary .project-heading h2 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary .project-settings-button .project-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+.workspace.modern-workspace .simple-project-workspace .project-summary .personal-project-progress {
+  width: 100%;
+}
 .workspace.modern-workspace .simple-project-workspace .project-summary-aside {
   display: flex;
   flex: 0 0 auto;
@@ -1637,6 +1665,12 @@
 }
 .workspace.modern-workspace .task-subtasks {
   align-items: flex-start;
+  flex-shrink: 0;
+  min-height: min-content;
+}
+.workspace.modern-workspace .task-subtasks .task-panel-field-body {
+  flex: 1 0 auto;
+  min-height: min-content;
 }
 .workspace.modern-workspace .task-subtasks > .task-panel-icon {
   margin-top: 8px;
@@ -1654,10 +1688,37 @@
   gap: 8px;
   min-height: 32px;
 }
+.workspace.modern-workspace .task-subtask-grip {
+  flex-shrink: 0;
+  width: 12px;
+  height: 18px;
+  cursor: grab;
+  background-image: radial-gradient(circle, var(--text-tertiary) 1.1px, transparent 1.2px);
+  background-size: 6px 6px;
+  background-position: 0 2px;
+  user-select: none;
+}
+.workspace.modern-workspace .task-subtask-grip:active {
+  cursor: grabbing;
+}
+.workspace.modern-workspace .task-subtask-list li.is-dragging {
+  opacity: 0.45;
+}
+.workspace.modern-workspace .task-subtask-list li.is-pending {
+  opacity: 0.7;
+}
+.workspace.modern-workspace .task-subtask-list li.drop-before {
+  box-shadow: inset 0 2px 0 var(--primary-text);
+}
+.workspace.modern-workspace .task-subtask-list li.drop-after {
+  box-shadow: inset 0 -2px 0 var(--primary-text);
+}
 .workspace.modern-workspace .reference-task-panel .task-subtask-check,
 .workspace.modern-workspace .reference-task-panel .task-subtask-check:hover:not(:disabled),
 .workspace.modern-workspace .reference-task-panel .task-subtask-delete,
-.workspace.modern-workspace .reference-task-panel .task-subtask-delete:hover:not(:disabled) {
+.workspace.modern-workspace .reference-task-panel .task-subtask-delete:hover:not(:disabled),
+.workspace.modern-workspace .reference-task-panel .task-subtask-delete:focus,
+.workspace.modern-workspace .reference-task-panel .task-subtask-delete:focus-visible {
   display: grid;
   place-items: center;
   width: 22px;
@@ -1706,9 +1767,73 @@
 }
 .workspace.modern-workspace .reference-task-panel .task-subtask-input::placeholder {
   color: var(--text-secondary);
+  opacity: 1;
 }
 .workspace.modern-workspace .task-subtasks [role="alert"] {
   margin: 0;
   color: var(--danger-text);
   font-size: 12px;
+}
+/* Sidebar footer: name on the left, sync status and the settings menu on the right. */
+.workspace.modern-workspace .sidebar-bottom.sidebar-userbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: auto;
+  padding: 10px 8px 12px;
+  border-top: 1px solid var(--line);
+}
+.workspace.modern-workspace .sidebar-userbar .sidebar-account,
+.workspace.modern-workspace .sidebar-userbar .sidebar-account:hover:not(:disabled),
+.workspace.modern-workspace .sidebar-userbar .sidebar-account:focus-visible {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  width: auto;
+  min-width: 0;
+  min-height: 36px;
+  margin: 0;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-primary);
+}
+.workspace.modern-workspace .sidebar-userbar .sidebar-account:hover:not(:disabled) {
+  background: var(--row-hover);
+}
+.workspace.modern-workspace .sidebar-userbar .account-button-text strong {
+  font-size: 14px;
+  font-weight: 650;
+  color: var(--text-primary);
+}
+.workspace.modern-workspace .sidebar-userbar .lan-sync .lan-sync-icon,
+.workspace.modern-workspace .sidebar-userbar .sidebar-more,
+.workspace.modern-workspace .sidebar-userbar .sidebar-more:hover:not(:disabled),
+.workspace.modern-workspace .sidebar-userbar .sidebar-more:focus-visible {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-secondary);
+}
+.workspace.modern-workspace .sidebar-userbar .lan-sync button.lan-sync-icon:hover,
+.workspace.modern-workspace .sidebar-userbar .sidebar-more:hover:not(:disabled) {
+  background: var(--row-hover);
+  color: var(--text-primary);
+}
+.workspace.modern-workspace .sidebar-userbar .sidebar-more svg {
+  width: 18px;
+  height: 18px;
+}
+.workspace.modern-workspace .sidebar-userbar .lan-sync-indicator {
+  right: 7px;
+  top: 7px;
 }

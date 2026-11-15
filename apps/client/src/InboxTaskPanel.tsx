@@ -24,6 +24,7 @@ import {
 import { TaskDescription, TaskSubtitle } from "./TaskDescription";
 import { TaskProjectControl } from "./TaskProjectControl";
 import { TaskSubtasks } from "./TaskSubtasks";
+import { TaskPanelActions } from "./TaskPanelActions";
 const editor = new TaskDetailEditor(taskDetailsStorage);
 const message = (error: unknown) =>
   error instanceof Error ? error.message : String(error);
@@ -42,20 +43,20 @@ export function InboxTaskPanel({
   onReload,
   onClose,
   onLockedChange,
+  onDelete,
   contextLabel = "收件箱",
-  canSchedule = true,
   projectId = null,
 }: {
   task: InboxTask & { status?: string };
   contextLabel?: string;
   projectName?: string | null;
   projectId?: string | null;
-  canSchedule?: boolean;
   onSaved: (date: string) => Promise<void>;
   onReload: () => Promise<void>;
   onClose: () => void;
   onLockedChange: (locked: boolean) => void;
   onComplete: () => Promise<void>;
+  onDelete?: () => Promise<void>;
 }) {
   const [base, setBase] = useState<TaskDetails | null>(null);
   const [title, setTitle] = useState(task.title);
@@ -68,6 +69,7 @@ export function InboxTaskPanel({
   const [loading, setLoading] = useState(true);
   const [readError, setReadError] = useState("");
   const [scheduling, setScheduling] = useState(false);
+  const [subtaskRevision, setSubtaskRevision] = useState(0);
   const baseRef = useRef<TaskDetails | null>(null);
   const pending = useRef<Pending | null>(null);
   const appliedDate = useRef("");
@@ -138,8 +140,6 @@ export function InboxTaskPanel({
     },
     validate: (value) => {
       if (!value.title.trim()) throw new Error("请填写任务标题");
-      if (value.date && !canSchedule)
-        throw new Error("含子任务的父任务请安排具体子任务。");
       if (value.date && !validCalendarDate(value.date))
         throw new Error("请选择有效的安排日期");
       parseMinutes(value.estimate);
@@ -270,11 +270,12 @@ export function InboxTaskPanel({
         <div className="task-panel-toolbar-actions">
           <button
             type="button"
+            className="task-panel-dismiss"
             aria-label="关闭任务详情"
             disabled={busy}
             onClick={() => void close()}
           >
-            <TaskPanelIcon name="close" />
+            <TaskPanelIcon name="chevron" />
           </button>
         </div>
       </header>
@@ -313,7 +314,7 @@ export function InboxTaskPanel({
                 <button
                   type="button"
                   aria-pressed={date === today}
-                  disabled={locked || !canSchedule || task.status === "completed"}
+                  disabled={locked || task.status === "completed"}
                   onClick={() => changed(setDate, today, true)}
                 >
                   今天
@@ -321,7 +322,7 @@ export function InboxTaskPanel({
                 <button
                   type="button"
                   aria-pressed={date === tomorrow(today)}
-                  disabled={locked || !canSchedule || task.status === "completed"}
+                  disabled={locked || task.status === "completed"}
                   onClick={() => changed(setDate, tomorrow(today), true)}
                 >
                   明天
@@ -330,7 +331,7 @@ export function InboxTaskPanel({
                   value={date}
                   onChange={(value) => changed(setDate, value, true)}
                   label="安排日期"
-                  disabled={locked || !canSchedule || task.status === "completed"}
+                  disabled={locked || task.status === "completed"}
                   className={
                     !!date && date !== today && date !== tomorrow(today)
                       ? "selected task-date-chip"
@@ -350,7 +351,6 @@ export function InboxTaskPanel({
                   没有日期
                 </button>
               </div>
-              {!canSchedule && <p className="field-help">含子任务的父任务请安排具体子任务。</p>}
             </div>
             <div className="task-panel-field task-reminder">
               <TaskPanelIcon name="clock" />
@@ -367,9 +367,10 @@ export function InboxTaskPanel({
               />
             </div>
             <TaskSubtasks
+              key={`${task.taskId}:${subtaskRevision}`}
               taskId={task.taskId}
               disabled={locked}
-              onChanged={() => void onReload()}
+              onChanged={() => onSaved("")}
             />
             <TaskWorkload
               estimate={estimate}
@@ -415,6 +416,30 @@ export function InboxTaskPanel({
           </span>
         </footer>
       )}
+      <TaskPanelActions
+        taskId={task.taskId}
+        disabled={locked}
+        {...(onDelete ? { onDelete } : {})}
+        onClose={onClose}
+        onChanged={async () => {
+          setSubtaskRevision((value) => value + 1);
+          await onSaved("");
+        }}
+        onRefined={(value) => {
+          setTitle(value.title);
+          setNotes(value.notes);
+          if (baseRef.current) {
+            const next = {
+              ...baseRef.current,
+              title: value.title,
+              notes: value.notes,
+              version: baseRef.current.version + 1,
+            };
+            baseRef.current = next;
+            setBase(next);
+          }
+        }}
+      />
     </aside>
   );
 }

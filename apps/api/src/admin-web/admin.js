@@ -6,7 +6,6 @@ const paths = {
   users:
     '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2m20 0v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/><circle cx="9" cy="7" r="4"/>',
   sync: '<path d="M20 7A9 9 0 0 0 5 5L2 8m0-5v5h5m-3 9a9 9 0 0 0 15 2l3-3m0 5v-5h-5"/>',
-  log: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6m-6 5h6m-6 5h4"/>',
   settings:
     '<path d="m12 2 2 3 3 .3 1.7 2.9-1.3 3 1.3 3L17 17l-3 .3-2 3-2-3-3-.3-1.7-2.8 1.3-3-1.3-3L7 5.3l3-.3Z"/><circle cx="12" cy="11.3" r="3"/>',
   arrow: '<path d="M5 12h14m-6-6 6 6-6 6"/>',
@@ -23,6 +22,8 @@ const paths = {
   menu: '<path d="M4 6h16M4 12h16M4 18h16"/>',
   shield:
     '<path d="m12 3 8 3v6c0 5-8 9-8 9s-8-4-8-9V6Z"/><path d="m8 12 3 3 5-6"/>',
+  model:
+    '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 9h.01M15 9h.01M8 15h8"/>',
 };
 const icon = (name) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name] || paths.grid}</svg>`;
@@ -57,22 +58,12 @@ const kindNames = {
   focus: "专注记录",
   desktop_row: "桌面数据",
 };
-const actionNames = {
-  admin_login: "管理员登录",
-  disable_user: "禁用账号",
-  enable_user: "启用账号",
-  revoke_sessions: "撤销设备登录",
-};
 const views = {
-  overview: ["数据概览", "了解 Praxis 的账号、同步与数据情况。", "OVERVIEW"],
-  users: [
-    "用户管理",
-    "管理用户账号与设备登录，保持数据有序。",
-    "USER MANAGEMENT",
-  ],
-  sync: ["同步数据", "查看云端数据分布与同步写入情况。", "SYNC & DATA"],
-  audit: ["操作日志", "每一次管理操作，都有迹可循。", "AUDIT LOG"],
-  system: ["系统状态", "查看当前服务与管理控制台的运行信息。", "SYSTEM STATUS"],
+  overview: ["数据概览", "用户与云端数据，一目了然。"],
+  users: ["用户管理", "查找用户，管理账号与登录设备。"],
+  sync: ["同步数据", "查看云端数据数量与同步写入情况。"],
+  model: ["模型设置", "配置规划助手使用的模型服务。"],
+  system: ["系统状态", "查看服务运行情况。"],
 };
 const state = {
   view: "overview",
@@ -81,7 +72,7 @@ const state = {
   status: "all",
   overview: null,
   users: null,
-  audit: null,
+  model: null,
   system: null,
   selected: null,
   pending: null,
@@ -111,6 +102,7 @@ async function api(path, options = {}) {
       RATE_LIMITED: "尝试次数过多，请在 15 分钟后重试。",
       INVALID_REQUEST: "输入格式有误，请检查后重试。",
       USER_NOT_FOUND: "该用户不存在，请刷新列表。",
+      EMAIL_CONFIRMATION_MISMATCH: "邮箱与所选用户不一致，请重新输入。",
       INVALID_ORIGIN: "请求验证失败，请刷新页面后重试。",
     };
     if (response.status === 401 && path !== "login") {
@@ -146,13 +138,13 @@ function shell() {
   ]
     .map(([view, i]) => navButton(view, i))
     .join("")}<div class="nav-separator"></div><p class="nav-label">管理</p>${[
-    ["audit", "log"],
+    ["model", "model"],
     ["system", "settings"],
   ]
     .map(([view, i]) => navButton(view, i))
     .join(
       "",
-    )}</nav><div class="sidebar-bottom"><div class="environment"><strong>Praxis 云端服务</strong><span>账号与全域数据同步</span></div><div class="sidebar-account"><span class="avatar">AD</span><div>管理员<small>Administrator</small></div><button class="icon-button" data-action="logout" aria-label="退出登录" title="退出登录">${icon("logout")}</button></div></div></aside><main class="main"><header class="topbar"><div class="breadcrumbs"><button class="icon-button mobile-toggle" data-action="menu" aria-label="展开导航">${icon("menu")}</button><span>管理控制台</span><span>/</span><strong id="breadcrumb"></strong></div><div class="topbar-right"><span class="health" id="connection-state">已安全登录</span><span class="date-label">${escape(new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" }))}</span><span class="avatar" aria-label="管理员">AD</span></div></header><div class="content"><div class="page-heading"><div><div class="eyebrow" id="eyebrow"></div><h1 id="page-title"></h1><p class="subtitle" id="subtitle"></p></div><div class="heading-actions"><button class="button" data-action="refresh">${icon("refresh")}刷新数据</button><button class="button primary" data-action="goto-users">${icon("users")}管理用户</button></div></div><div id="error" role="alert"></div><div id="view-content">${empty("正在获取数据…")}</div><footer class="footer"><span>© ${new Date().getFullYear()} Praxis · Turn intent into action.</span><span>管理控制台 · 所有数据来自当前服务</span></footer></div></main></div>`;
+    )}</nav><div class="sidebar-bottom"><div class="environment"><strong>Praxis 云端服务</strong><span>账号与全域数据同步</span></div><div class="sidebar-account"><span class="avatar">AD</span><div>管理员<small>Administrator</small></div><button class="icon-button" data-action="logout" aria-label="退出登录" title="退出登录">${icon("logout")}</button></div></div></aside><main class="main"><header class="topbar"><div class="breadcrumbs"><button class="icon-button mobile-toggle" data-action="menu" aria-label="展开导航">${icon("menu")}</button><span>管理控制台</span><span>/</span><strong id="breadcrumb"></strong></div><div class="topbar-right"><span class="health" id="connection-state">已安全登录</span><span class="date-label">${escape(new Date().toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric" }))}</span><span class="avatar" aria-label="管理员">AD</span></div></header><div class="content"><div class="page-heading"><div><h1 id="page-title"></h1><p class="subtitle" id="subtitle"></p></div><div class="heading-actions"><button class="button" data-action="refresh">${icon("refresh")}刷新数据</button></div></div><div id="error" role="alert"></div><div id="view-content">${empty("正在获取数据…")}</div><footer class="footer"><span>© ${new Date().getFullYear()} Praxis · Turn intent into action.</span><span id="updated-at"></span></footer></div></main></div>`;
   updateNavigation();
 }
 function navButton(view, i) {
@@ -170,41 +162,22 @@ function updateNavigation() {
     (id) => (document.getElementById(id).textContent = views[state.view][0]),
   );
   document.querySelector("#subtitle").textContent = views[state.view][1];
-  document.querySelector("#eyebrow").textContent = views[state.view][2];
-  document.querySelector('[data-action="goto-users"]').hidden =
-    state.view === "users";
 }
-function metrics() {
+function metrics(sync = false) {
   const o = state.overview;
-  const cards = [
-    [
-      "注册用户",
-      o.users,
-      "users",
-      `${number(o.users - o.disabledUsers)} 个正常账号`,
-      "已注册",
-    ],
-    ["有效登录设备", o.activeDevices, "device", "按用户与设备去重", "会话有效"],
-    ["云端数据", o.entities, "data", "未删除的同步数据对象", "全域同步"],
-    [
-      "今日同步写入",
-      o.todayOperations,
-      "sync",
-      "UTC 当日已接收的操作批次",
-      "实时统计",
-    ],
-  ];
-  return `<div class="section-kicker">${icon("clock")}截至 ${escape(date(o.updatedAt))}</div><div class="metrics">${cards.map(([title, value, i, foot, pill]) => `<article class="metric"><div class="metric-top">${title}<span class="metric-icon">${icon(i)}</span></div><div class="metric-value">${number(value)}</div><div class="metric-foot"><span class="pill">${pill}</span>${escape(foot)}</div></article>`).join("")}</div>`;
-}
-function trend() {
-  const daily = state.overview.daily;
-  const max = Math.max(4, ...daily.map((day) => day.count));
-  const points = daily.map((day, index) => [
-    43 + index * 36.3,
-    163 - (day.count / max) * 130,
-  ]);
-  const line = points.map((point) => point.join(",")).join(" ");
-  return `<section class="panel"><div class="panel-head"><div><h2>同步活动趋势</h2><p>每日成功接收的同步操作批次</p></div><span class="period-label">最近 14 天</span></div><div class="chart-legend"><span></span>同步写入</div><svg class="trend-chart" viewBox="0 0 550 200" role="img" aria-label="最近十四天同步写入趋势，共 ${number(daily.reduce((sum, day) => sum + day.count, 0))} 次">${[0, 1, 2, 3, 4].map((index) => `<line class="trend-grid" x1="43" x2="515" y1="${33 + index * 32.5}" y2="${33 + index * 32.5}"/><text x="33" y="${37 + index * 32.5}" text-anchor="end">${Math.round((max * (4 - index)) / 4)}</text>`).join("")}<polygon class="trend-area" points="43,163 ${line} 515,163"/><polyline class="trend-line" points="${line}"/>${daily.map((day, index) => (index % 3 === 0 || index === 13 ? `<text x="${43 + index * 36.3}" y="187" text-anchor="middle">${day.day.slice(5).replace("-", "/")}</text>` : "")).join("")}${points.map((point, index) => `<circle cx="${point[0]}" cy="${point[1]}" r="3" fill="#59a5b4"><title>${daily[index].day}：${daily[index].count} 次</title></circle>`).join("")}</svg><p class="chart-note">按 UTC 自然日统计 · 不包含拉取请求</p></section>`;
+  const cards = sync
+    ? [
+        ["云端数据", o.entities, "data", "不含已删除数据"],
+        ["今日同步写入", o.todayOperations, "sync", "UTC 当日操作批次"],
+        ["累计同步写入", o.operations, "sync", "已接收操作批次"],
+      ]
+    : [
+        ["注册用户", o.users, "users", `${number(o.disabledUsers)} 个已禁用`],
+        ["有效登录设备", o.activeDevices, "device", "有效会话，非实时在线"],
+        ["云端数据", o.entities, "data", "不含已删除数据"],
+        ["今日同步写入", o.todayOperations, "sync", "UTC 当日操作批次"],
+      ];
+  return `<div class="metrics${sync ? " metrics-three" : ""}">${cards.map(([title, value, i, foot]) => `<article class="metric"><div class="metric-top">${title}<span class="metric-icon">${icon(i)}</span></div><div class="metric-value">${number(value)}</div><div class="metric-foot">${escape(foot)}</div></article>`).join("")}</div>`;
 }
 function kindRows(kinds, limit = 6) {
   const total = kinds.reduce((sum, item) => sum + item.count, 0);
@@ -221,10 +194,7 @@ function kindRows(kinds, limit = 6) {
     )
     .join("");
 }
-function distribution() {
-  const o = state.overview;
-  return `<section class="panel"><div class="panel-head"><div><h2>数据分布</h2><p>按业务对象类型统计</p></div>${icon("data")}</div><div class="distribution"><div class="distribution-top"><strong>${number(o.entities)}</strong><span>个云端数据对象</span></div>${o.kinds.length ? kindRows(o.kinds, 4) : empty("暂无同步数据", "用户完成首次同步后将在这里显示。")}</div></section>`;
-}
+
 function userIdentity(user) {
   return `<div class="user-cell"><span class="avatar">${escape((user.displayName || user.email).slice(0, 2).toUpperCase())}</span><span><span class="user-name">${escape(user.displayName)}</span><span class="user-email">${escape(user.email)}</span></span></div>`;
 }
@@ -258,31 +228,25 @@ function usersTable(compact = false) {
 }
 function syncView() {
   const o = state.overview;
-  return `${metrics()}<div class="inline-notice">统计仅展示数据数量与类型。同步写入指服务器已接收的操作批次；有效登录设备不等同于当前在线设备。</div><div class="sync-kind-grid">${o.kinds.map((item) => `<div class="panel sync-kind"><span>${escape(kindNames[item.kind] || item.kind)}</span><strong>${number(item.count)}</strong></div>`).join("") || `<div class="panel">${empty("暂无同步数据")}</div>`}</div><div class="chart-grid">${trend()}<section class="panel"><div class="panel-head"><h2>同步累计</h2>${icon("sync")}</div><div class="sync-total"><strong>${number(o.operations)}</strong>已接收操作批次<br><br>涵盖任务、项目、习惯、安排、记录等全域对象。<br>已删除的数据对象不计入云端数据总量。</div></section></div>`;
-}
-function auditView() {
-  const result = state.audit;
-  return `<div class="inline-notice">账号状态变更、设备登录撤销与管理员登录会记录在这里。管理操作与审计记录在同一事务内保存。</div><section class="panel table-panel"><div class="panel-head"><div><h2>操作记录</h2><p>按操作发生时间倒序排列</p></div>${icon("log")}</div>${result.entries.length ? `<div class="table-scroll"><table><thead><tr><th>操作</th><th>目标账号</th><th>操作说明</th><th>时间</th></tr></thead><tbody>${result.entries.map((entry) => `<tr><td><span class="user-name">${escape(actionNames[entry.action] || entry.action)}</span></td><td>${escape(entry.email || entry.targetId || "管理控制台")}</td><td>${escape(entry.reason)}</td><td>${escape(date(entry.createdAt))}</td></tr>`).join("")}</tbody></table></div>` : empty("暂无操作记录")}${pagination(result)}</section>`;
+  return `${metrics(true)}<section class="panel table-panel"><div class="panel-head"><div><h2>数据分类</h2><p>仅统计未删除的云端数据</p></div><span class="muted">${o.kinds.length} 类</span></div>${o.kinds.length ? `<div class="table-scroll"><table><thead><tr><th>数据类型</th><th class="numeric">数量</th></tr></thead><tbody>${o.kinds.map((item) => `<tr><td>${escape(kindNames[item.kind] || item.kind)}</td><td class="numeric">${number(item.count)}</td></tr>`).join("")}</tbody></table></div>` : empty("暂无同步数据", "用户完成首次同步后将在这里显示。")}</section>`;
 }
 function systemView() {
   const s = state.system;
   const rows = [
-    ["服务名称", s.service],
-    ["服务状态", "正常运行"],
-    ["同步协议", `v${s.protocolVersion}`],
+    ["服务", s.service],
     [
-      "本次运行",
+      "连续运行",
       `${number(Math.floor(s.uptimeSeconds / 3600))} 小时 ${Math.floor(s.uptimeSeconds / 60) % 60} 分钟`,
     ],
-    [
-      "数据库大小",
-      `${(s.databaseBytes / 1024 / 1024).toFixed(2)} MB（不含 WAL）`,
-    ],
-    ["Node.js", s.nodeVersion],
-    ["固定配对凭据", `${s.configuredDevices} 个`],
+    ["数据库大小", `${(s.databaseBytes / 1024 / 1024).toFixed(2)} MB`],
     ["检查时间", date(s.checkedAt)],
   ];
-  return `<div class="system-grid"><section class="panel"><div class="panel-head"><h2>服务运行信息</h2>${icon("device")}</div><dl class="system-body">${rows.map(([label, value]) => `<div class="system-row"><dt>${escape(label)}</dt><dd>${escape(value)}</dd></div>`).join("")}</dl></section><section class="panel"><div class="panel-head"><h2>访问与会话</h2>${icon("shield")}</div><div class="system-body"><div class="system-row"><dt>管理员会话</dt><dd>${s.administratorSessionHours} 小时</dd></div><div class="system-row"><dt>Cookie 保护</dt><dd>HttpOnly · SameSite=Strict${s.secureCookies ? " · Secure" : ""}</dd></div><div class="system-copy"><strong>独立管理员权限</strong>普通应用账号无法访问此控制台。管理员密钥在服务配置中维护，轮换后旧管理会话立即失效。<strong>账号禁用</strong>禁用后撤销该账号的全部登录，阻止新的登录和同步。重新启用后，用户需要重新登录。<strong>数据范围</strong>后台展示账号信息及同步数据统计。用户任务正文、记录内容与密码不会在此展示。</div></div></section><section class="panel"><div class="panel-head"><h2>同步服务代次</h2>${icon("sync")}</div><div class="system-body"><p class="mono system-copy">${escape(s.generation)}</p><p class="subtitle">服务重启后代次会更新，客户端按现有同步协议重新校验。</p></div></section></div>`;
+  return `<section class="panel settings-panel"><div class="panel-head"><h2>服务运行</h2><span class="badge${s.status === "ok" ? "" : " disabled"}">${s.status === "ok" ? "正常运行" : "状态异常"}</span></div><dl class="system-body">${rows.map(([label, value]) => `<div class="system-row"><dt>${escape(label)}</dt><dd>${escape(value)}</dd></div>`).join("")}</dl></section>`;
+}
+function modelView() {
+  const model = state.model;
+  if (!model) return empty("正在读取模型设置…");
+  return `<section class="panel settings-panel"><div class="panel-head"><h2>规划助手</h2><span class="badge${model.enabled ? "" : " disabled"}">${model.enabled ? "已配置" : "待配置"}</span></div><form class="model-form" id="model-form"><div class="form-grid"><div><label class="field-label" for="model-provider">服务</label><select class="form-input" id="model-provider" name="provider" data-previous="${escape(model.provider)}"><option value="deepseek"${model.provider === "deepseek" ? " selected" : ""}>DeepSeek</option><option value="openai"${model.provider === "openai" ? " selected" : ""}>OpenAI / 兼容接口</option></select></div><div><label class="field-label" for="model-name">模型</label><input class="form-input" id="model-name" name="model" required maxlength="200" value="${escape(model.model)}" placeholder="输入模型名称"></div></div><label class="field-label" for="model-base">接口地址</label><input class="form-input" id="model-base" name="baseUrl" type="url" required maxlength="300" value="${escape(model.baseUrl)}" placeholder="https://api.deepseek.com" aria-describedby="model-base-help"><p class="field-help" id="model-base-help">支持 HTTPS 服务地址，可填写自定义兼容接口。</p><label class="field-label" for="model-key">API 密钥</label><div class="secret-input"><input class="form-input" id="model-key" name="apiKey" type="password" maxlength="500" autocomplete="new-password" ${model.hasApiKey ? "" : "required"} placeholder="${model.hasApiKey ? "已保存，留空保留原密钥" : "输入 API 密钥"}" aria-describedby="model-key-help"><button type="button" class="icon-button" data-action="toggle-key" aria-label="显示 API 密钥" aria-pressed="false">显示</button></div><p class="field-help" id="model-key-help">${model.hasApiKey ? "已保存的密钥不会回显。" : "首次配置需要填写密钥。"}</p><p class="dialog-error" role="alert"></p><div class="form-footer"><span class="muted">${model.updatedAt ? `上次保存 ${escape(date(model.updatedAt))}` : model.source === "environment" ? "当前使用环境配置" : "保存后生效"}</span><button class="button primary" type="submit">保存模型设置</button></div></form></section>`;
 }
 function renderView() {
   const content = document.querySelector("#view-content");
@@ -291,13 +255,13 @@ function renderView() {
   const start = focus ? document.activeElement.selectionStart : null;
   content.innerHTML =
     state.view === "overview"
-      ? `${metrics()}<div class="chart-grid">${trend()}${distribution()}</div>${usersTable(true)}`
+      ? `${metrics()}${usersTable(true)}`
       : state.view === "users"
         ? usersTable()
         : state.view === "sync"
           ? syncView()
-          : state.view === "audit"
-            ? auditView()
+          : state.view === "model"
+            ? modelView()
             : systemView();
   if (focus) {
     const input = document.querySelector("#user-search");
@@ -314,7 +278,7 @@ async function load() {
   }
   document.querySelector("#error")?.replaceChildren();
   try {
-    let overview, users, audit, system;
+    let overview, users, system, model;
     if (state.view === "overview")
       [overview, users] = await Promise.all([api("overview"), api("users")]);
     if (state.view === "users")
@@ -322,14 +286,21 @@ async function load() {
         `users?${new URLSearchParams({ page: String(state.page), q: state.q, status: state.status })}`,
       );
     if (state.view === "sync") overview = await api("overview");
-    if (state.view === "audit") audit = await api(`audit?page=${state.page}`);
+    if (state.view === "model") model = await api("model");
     if (state.view === "system") system = await api("system");
     if (revision !== state.revision) return;
     if (overview) state.overview = overview;
     if (users) state.users = users;
-    if (audit) state.audit = audit;
+    if (model) state.model = model;
     if (system) state.system = system;
+    if (users && users.page > 1 && !users.users.length) {
+      state.page = Math.max(1, Math.ceil(users.total / users.pageSize));
+      await load();
+      return;
+    }
     renderView();
+    document.querySelector("#updated-at").textContent =
+      `更新于 ${date(overview?.updatedAt || system?.checkedAt || new Date().toISOString())}`;
     document.querySelector("#connection-state").textContent = "服务连接正常";
   } catch (error) {
     if (revision !== state.revision) return;
@@ -369,7 +340,7 @@ async function openUser(id, open = true) {
     if (!detailDialog.open || revision !== detailRevision) return;
     state.selected = result;
     const { user, sessions, kinds } = result;
-    detailDialog.innerHTML = `<div class="dialog-header"><h2 id="detail-title">用户详情</h2><button class="icon-button" data-action="close-detail" aria-label="关闭">${icon("close")}</button></div><div class="dialog-body">${userIdentity(user)}<div class="system-row"><dt>账号状态</dt><dd>${badge(user)}</dd></div><div class="system-row"><dt>注册时间</dt><dd>${escape(date(user.createdAt))}</dd></div><div class="system-row"><dt>最近登录</dt><dd>${escape(date(user.lastLoginAt))}</dd></div><div class="system-row"><dt>用户 ID</dt><dd class="mono">${escape(user.id)}</dd></div><h3 class="dialog-section-title">云端数据</h3>${kinds.length ? kindRows(kinds, 5) : '<p class="dialog-copy">暂无同步数据</p>'}<h3 class="dialog-section-title">有效登录设备 · ${sessions.length} 台</h3>${sessions.map((session) => `<div class="session-card"><div class="mono">${escape(session.deviceId)}</div><div class="session-card-footer"><span>到期 ${escape(date(session.expiresAt))}</span><button class="text-button" data-action="revoke-device" data-device="${escape(session.deviceId)}">撤销登录</button></div></div>`).join("") || '<p class="dialog-copy">暂无有效登录设备</p>'}</div><div class="dialog-actions"><button class="button" data-action="revoke-all" ${sessions.length ? "" : "disabled"}>撤销全部登录</button><button class="button ${user.disabled ? "primary" : "danger"}" data-action="toggle-status">${user.disabled ? "启用账号" : "禁用账号"}</button></div>`;
+    detailDialog.innerHTML = `<div class="dialog-header"><h2 id="detail-title">用户详情</h2><button class="icon-button" data-action="close-detail" aria-label="关闭">${icon("close")}</button></div><div class="dialog-body">${userIdentity(user)}<div class="system-row"><dt>账号状态</dt><dd>${badge(user)}</dd></div><div class="system-row"><dt>注册时间</dt><dd>${escape(date(user.createdAt))}</dd></div><div class="system-row"><dt>最近登录</dt><dd>${escape(date(user.lastLoginAt))}</dd></div><div class="system-row"><dt>用户 ID</dt><dd class="mono">${escape(user.id)}</dd></div><h3 class="dialog-section-title">云端数据</h3>${kinds.length ? kindRows(kinds, 5) : '<p class="dialog-copy">暂无同步数据</p>'}<h3 class="dialog-section-title">有效登录设备 · ${sessions.length} 台</h3>${sessions.map((session) => `<div class="session-card"><div class="mono">${escape(session.deviceId)}</div><div class="session-card-footer"><span>到期 ${escape(date(session.expiresAt))}</span><button class="text-button" data-action="revoke-device" data-device="${escape(session.deviceId)}">撤销登录</button></div></div>`).join("") || '<p class="dialog-copy">暂无有效登录设备</p>'}</div><div class="dialog-actions"><button class="button danger delete-user" data-action="delete-user">删除用户</button><button class="button" data-action="revoke-all" ${sessions.length ? "" : "disabled"}>撤销全部登录</button><button class="button ${user.disabled ? "primary" : "danger"}" data-action="toggle-status">${user.disabled ? "启用账号" : "禁用账号"}</button></div>`;
   } catch (error) {
     if (detailDialog.open) {
       detailDialog.close();
@@ -379,25 +350,30 @@ async function openUser(id, open = true) {
 }
 function confirmAction(action, deviceId) {
   const user = state.selected.user;
-  const disabling = action === "toggle-status" && !user.disabled;
-  const title =
-    action === "toggle-status"
+  const deleting = action === "delete-user";
+  const danger = deleting || (action === "toggle-status" && !user.disabled);
+  const title = deleting
+    ? "删除用户"
+    : action === "toggle-status"
       ? user.disabled
         ? "启用账号"
         : "禁用账号"
       : action === "revoke-device"
         ? "撤销设备登录"
         : "撤销全部登录";
-  const description =
-    action === "toggle-status"
+  const description = deleting
+    ? "将永久删除此账号、全部云端数据与模型运行记录，并撤销所有登录。此操作无法撤销，设备上的本地数据不受影响。"
+    : action === "toggle-status"
       ? user.disabled
         ? "启用后，用户可重新登录并继续同步。"
         : "将撤销全部登录，并阻止该用户登录和同步。已有数据会保留。"
       : "所选设备需要重新登录才能继续同步，已有数据会保留。";
   state.pending = { id: user.id, action, deviceId, disabled: !user.disabled };
-  confirmDialog.innerHTML = `<form id="action-form"><div class="dialog-header"><h2 id="confirm-title">${title}</h2><button type="button" class="icon-button" data-action="close-confirm" aria-label="关闭">${icon("close")}</button></div><div class="dialog-body"><p class="dialog-copy">${escape(user.email)}<br>${description}</p><label for="action-reason" class="field-label">操作原因 <span>（必填，将记入日志）</span></label><textarea id="action-reason" class="form-input" name="reason" rows="3" required maxlength="200" placeholder="请填写本次操作的原因"></textarea><div class="dialog-error" role="alert"></div></div><div class="dialog-actions"><button type="button" class="button" data-action="close-confirm">取消</button><button class="button ${disabling ? "danger" : "primary"}" type="submit">确认${title}</button></div></form>`;
+  confirmDialog.innerHTML = `<form id="action-form"><div class="dialog-header"><h2 id="confirm-title">${title}</h2><button type="button" class="icon-button" data-action="close-confirm" aria-label="关闭">${icon("close")}</button></div><div class="dialog-body"><p class="dialog-copy${deleting ? " destructive-copy" : ""}"><strong>${escape(user.email)}</strong><br>${description}</p>${deleting ? `<label for="confirm-email" class="field-label">输入用户邮箱以确认</label><input id="confirm-email" class="form-input" name="email" type="email" required autocomplete="off" maxlength="254" placeholder="${escape(user.email)}">` : ""}<label for="action-reason" class="field-label">操作原因 <span>（必填）</span></label><textarea id="action-reason" class="form-input" name="reason" rows="2" required maxlength="200" placeholder="请填写本次操作的原因"></textarea><div class="dialog-error" role="alert"></div></div><div class="dialog-actions"><button type="button" class="button" data-action="close-confirm">取消</button><button class="button ${danger ? "danger" : "primary"}" type="submit">确认${title}</button></div></form>`;
   confirmDialog.showModal();
-  document.querySelector("#action-reason").focus();
+  document
+    .querySelector(deleting ? "#confirm-email" : "#action-reason")
+    .focus();
 }
 function exportUsers() {
   if (!state.users?.users.length) {
@@ -454,9 +430,21 @@ document.addEventListener("click", async (event) => {
   if (action === "menu")
     document.querySelector(".shell")?.classList.toggle("menu-open");
   if (action === "export") exportUsers();
+  if (action === "toggle-key") {
+    const input = document.querySelector("#model-key");
+    const visible = input.type === "password";
+    input.type = visible ? "text" : "password";
+    target.textContent = visible ? "隐藏" : "显示";
+    target.setAttribute("aria-label", `${visible ? "隐藏" : "显示"} API 密钥`);
+    target.setAttribute("aria-pressed", String(visible));
+  }
   if (action === "close-detail") detailDialog.close();
   if (action === "close-confirm") confirmDialog.close();
-  if (["revoke-device", "revoke-all", "toggle-status"].includes(action))
+  if (
+    ["revoke-device", "revoke-all", "toggle-status", "delete-user"].includes(
+      action,
+    )
+  )
     confirmAction(action, target.dataset.device);
   if (action === "logout") {
     target.disabled = true;
@@ -483,6 +471,25 @@ document.addEventListener("input", (event) => {
   }
 });
 document.addEventListener("change", (event) => {
+  if (event.target.id === "model-provider") {
+    const presets = {
+      deepseek: {
+        baseUrl: "https://api.deepseek.com",
+        model: "deepseek-flash",
+      },
+      openai: { baseUrl: "https://api.openai.com/v1", model: "" },
+    };
+    const previous = presets[event.target.dataset.previous];
+    const next = presets[event.target.value];
+    const form = event.target.form;
+    for (const name of ["baseUrl", "model"])
+      if (
+        !form.elements[name].value ||
+        form.elements[name].value === previous[name]
+      )
+        form.elements[name].value = next[name];
+    event.target.dataset.previous = event.target.value;
+  }
   if (event.target.id === "status-filter") {
     state.status = event.target.value;
     state.page = 1;
@@ -490,6 +497,33 @@ document.addEventListener("change", (event) => {
   }
 });
 document.addEventListener("submit", async (event) => {
+  if (event.target.id === "model-form") {
+    event.preventDefault();
+    const form = event.target;
+    const submit = form.querySelector('[type="submit"]');
+    submit.disabled = true;
+    const body = {
+      provider: form.elements.provider.value,
+      baseUrl: form.elements.baseUrl.value.trim(),
+      model: form.elements.model.value.trim(),
+    };
+    const apiKey = form.elements.apiKey.value.trim();
+    if (apiKey) body.apiKey = apiKey;
+    form.querySelector(".dialog-error").textContent = "";
+    try {
+      state.model = await api("model", {
+        method: "PUT",
+        body: JSON.stringify(body),
+      });
+      form.elements.apiKey.value = "";
+      renderView();
+      toast("模型设置已保存。");
+    } catch (error) {
+      form.querySelector(".dialog-error").textContent = error.message;
+      submit.disabled = false;
+    }
+    return;
+  }
   if (!["login-form", "action-form"].includes(event.target.id)) return;
   event.preventDefault();
   const form = event.target;
@@ -520,13 +554,25 @@ document.addEventListener("submit", async (event) => {
     return;
   }
   const pending = { ...state.pending };
+  if (
+    pending.action === "delete-user" &&
+    form.elements.email.value.trim().toLowerCase() !== state.selected.user.email
+  ) {
+    form.querySelector(".dialog-error").textContent =
+      "邮箱与所选用户不一致，请重新输入。";
+    submit.disabled = false;
+    return;
+  }
   try {
     await api(
-      `users/${encodeURIComponent(pending.id)}/${pending.action === "toggle-status" ? "status" : "revoke"}`,
+      `users/${encodeURIComponent(pending.id)}${pending.action === "delete-user" ? "" : pending.action === "toggle-status" ? "/status" : "/revoke"}`,
       {
-        method: "POST",
+        method: pending.action === "delete-user" ? "DELETE" : "POST",
         body: JSON.stringify({
           reason,
+          ...(pending.action === "delete-user"
+            ? { email: form.elements.email.value.trim() }
+            : {}),
           ...(pending.action === "toggle-status"
             ? { disabled: pending.disabled }
             : pending.deviceId
@@ -536,8 +582,17 @@ document.addEventListener("submit", async (event) => {
       },
     );
     confirmDialog.close();
-    toast("操作已完成并记入日志。");
-    await Promise.all([openUser(pending.id, false), load()]);
+    if (pending.action === "delete-user") {
+      detailRevision++;
+      detailDialog.close();
+      state.selected = null;
+      state.pending = null;
+      toast("用户及其云端数据已删除。");
+      await load();
+    } else {
+      toast("操作已完成。");
+      await Promise.all([openUser(pending.id, false), load()]);
+    }
   } catch (error) {
     form.querySelector(".dialog-error").textContent = error.message;
     submit.disabled = false;
