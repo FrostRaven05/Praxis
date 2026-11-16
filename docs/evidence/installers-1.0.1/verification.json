@@ -1,0 +1,46 @@
+{
+  "version": "1.0.1",
+  "state": "published and publicly verified",
+  "artifacts": {
+    "windows": {
+      "file": ".tools\\releases\\1.0.1\\Praxis-1.0.1-windows-x64-setup.exe",
+      "bytes": 5651390,
+      "sha256": "b3f9eaf9787c65bc64205eedded0dad7833b86a2d9834d39edae6333e4b27f8a"
+    },
+    "android": {
+      "file": ".tools\\releases\\1.0.1\\Praxis-1.0.1-android.apk",
+      "bytes": 12320553,
+      "sha256": "ec31a1bbc1c6632506d72281ed7587cb93fa7ec048e884b75c286bb907e846b5"
+    }
+  },
+  "windows": {
+    "format": "NSIS x64 current-user installer",
+    "silentInstall": true,
+    "silentUninstall": true,
+    "installedBinaryMatches": true,
+    "publisherSignature": "unsigned"
+  },
+  "android": {
+    "applicationId": "com.praxis.mobile",
+    "versionCode": 2,
+    "versionName": "1.0.1",
+    "minSdk": 24,
+    "debuggable": false,
+    "signatureVerified": true,
+    "sameSignerAsPreviousApk": true,
+    "signerCertificateSha256": "d3cbcc6d98364ff17ed206963afcd3374ca0031f752dc8d85494d665a42f85f7",
+    "signingMode": "existing development certificate retained for in-place compatibility",
+    "zipIntegrity": "passed",
+    "abis": [
+      "arm64-v8a",
+      "armeabi-v7a",
+      "x86",
+      "x86_64"
+    ]
+  },
+  "adminBrowserChecks": 14,
+  "adminBrowserErrors": [],
+  "apiSourceArchiveSha256": "a3ec9e56475821dbabac656e63dab2c0f93e4f82e670683a8eb25c2be9aa5df2",
+  "apiTestsPassed": 86,
+  "publicationEvidence": "publication.json"
+}

@@ -15,11 +15,7 @@ import { editStorage, taskDetailsStorage } from "./storage";
 import { TaskPanelIcon } from "./TaskPanelIcon";
 import { DatePicker } from "./DatePicker";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import {
-  TaskWorkload,
-  reminderLabel,
-  specificDateLabel,
-} from "./TaskPanelFields";
+import { reminderLabel, specificDateLabel } from "./TaskPanelFields";
 import { TaskDescription, TaskSubtitle } from "./TaskDescription";
 import { TaskProjectControl } from "./TaskProjectControl";
 import { TaskSubtasks } from "./TaskSubtasks";
@@ -172,7 +168,7 @@ export function TaskDetailPanel({
     });
     return operation;
   }
-  async function persist(): Promise<boolean> {
+  async function persist(attempt = 0): Promise<boolean> {
     const captured = pendingDraft.current ?? draftRef.current;
     const { title, date, notes, criteria, important, deadline, estimate } =
       captured;
@@ -263,10 +259,36 @@ export function TaskDetailPanel({
       pendingDraft.current = null;
       return true;
     } catch (error) {
+      const message = errorText(error);
+      const stale =
+        /STATE_CONFLICT|内容已更新|已更新|已变化|重新打开|重新加载|重新读取/.test(
+          message,
+        );
+      if (attempt < 1 && stale) {
+        try {
+          const fresh = await taskDetailsStorage.read(initialTask.current.taskId);
+          baseRef.current = fresh;
+          setBase(fresh);
+          const schedule = {
+            ...scheduleRef.current,
+            version: fresh.version,
+            title: fresh.title,
+            important: fresh.important,
+            deadline: fresh.deadline,
+          };
+          scheduleRef.current = schedule;
+          setScheduleBase(schedule);
+          return await persist(attempt + 1);
+        } catch {
+          /* 读不到新版本时，保留草稿并显示原来的失败 */
+        }
+      }
       setError(
         metadataSaved.current
-          ? `部分修改已保存，仍有修改尚未确认：${errorText(error)}。`
-          : errorText(error),
+          ? `部分修改已保存，仍有修改尚未确认：${message}。`
+          : stale
+            ? "修改还在。点下面的重试再存一次。"
+            : message,
       );
       return false;
     } finally {
@@ -283,8 +305,9 @@ export function TaskDetailPanel({
     return true;
   }
   flushRef.current = flush;
-  async function close() {
-    if (!baseRef.current || (await flushRef.current())) onClose();
+  function close() {
+    void flushRef.current();
+    onClose();
   }
   function changed<T>(setter: (value: T) => void, value: T, discrete = false) {
     immediate.current = discrete;
@@ -324,17 +347,8 @@ export function TaskDetailPanel({
     let off: (() => void) | undefined;
     const nativeWindow = getCurrentWindow();
     void nativeWindow
-      .onCloseRequested(async (event) => {
-        if (
-          !hasChanges() &&
-          !inFlight.current &&
-          !pendingDraft.current &&
-          !pendingReceipt.current &&
-          !metadataSaved.current
-        )
-          return;
-        // Tauri waits for this handler before destroying the window.
-        if (!(await flushRef.current())) event.preventDefault();
+      .onCloseRequested(() => {
+        void flushRef.current();
       })
       .then((unlisten) => {
         if (active) off = unlisten;
@@ -366,7 +380,7 @@ export function TaskDetailPanel({
         ) {
           event.preventDefault();
           void saveRef.current();
-        } else if (event.key === "Escape" && !busy) {
+        } else if (event.key === "Escape") {
           event.preventDefault();
           void close();
         }
@@ -385,8 +399,7 @@ export function TaskDetailPanel({
             className="task-panel-dismiss"
             aria-label="关闭任务详情"
             title="收起详情"
-            disabled={busy}
-            onClick={() => void close()}
+            onClick={() => close()}
           >
             <TaskPanelIcon name="chevron" />
           </button>
@@ -475,13 +488,9 @@ export function TaskDetailPanel({
             <TaskSubtasks
               key={`${task.taskId}:${subtaskRevision}`}
               taskId={task.taskId}
+              revision={base?.version ?? 0}
               disabled={loading || !base}
               onChanged={() => onPersisted()}
-            />
-            <TaskWorkload
-              estimate={estimate}
-              disabled={loading || !base}
-              onChange={(minutes) => changed(setEstimate, minutes, true)}
             />
             <TaskDescription
               value={notes}

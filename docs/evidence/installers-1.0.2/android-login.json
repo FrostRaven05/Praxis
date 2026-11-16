@@ -1,0 +1,7 @@
+{
+  "phase": "login",
+  "checks": [
+    "Android 1.0.1 release APK submitted login using isolated HTTPS and custom test CA"
+  ],
+  "testedAt": "2026-11-16T15:28:02.219Z"
+}

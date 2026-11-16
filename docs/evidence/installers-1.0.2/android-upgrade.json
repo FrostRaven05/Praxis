@@ -1,0 +1,7 @@
+{
+  "phase": "upgrade",
+  "checks": [
+    "Actual signed Android release APK upgraded from 1.0.1 to 1.0.2 without clearing package data"
+  ],
+  "testedAt": "2026-11-16T15:28:46.845Z"
+}

@@ -287,24 +287,7 @@ export function PomodoroDock({
             </button>
           </div>
           <div className="pomodoro-noise-wrap">
-            {soundsOpen && (
-              <div className="pomodoro-sounds" role="menu" aria-label="白噪音">
-                {ambiences.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={sound === item}
-                    onClick={() => chooseSound(item)}
-                  >
-                    {pomodoroAmbienceLabels[item]}
-                  </button>
-                ))}
-                <button type="button" role="menuitem" onClick={() => chooseSound(null)}>
-                  关闭
-                </button>
-              </div>
-            )}
+            {soundsOpen && <SoundMenu sound={sound} onChoose={chooseSound} />}
             <button
               type="button"
               className="pomodoro-noise"
@@ -313,7 +296,7 @@ export function PomodoroDock({
               onClick={() => setSoundsOpen((open) => !open)}
             >
               <SpeakerIcon />
-              {sound ? pomodoroAmbienceLabels[sound] : "白噪音"}
+              {sound ? pomodoroAmbienceLabels[sound] : "环境音"}
             </button>
           </div>
         </section>
@@ -414,24 +397,7 @@ export function PomodoroDock({
             </p>
           )}
           <div className="pomodoro-noise-wrap">
-            {soundsOpen && (
-              <div className="pomodoro-sounds" role="menu" aria-label="白噪音">
-                {ambiences.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    role="menuitemradio"
-                    aria-checked={sound === item}
-                    onClick={() => chooseSound(item)}
-                  >
-                    {pomodoroAmbienceLabels[item]}
-                  </button>
-                ))}
-                <button type="button" role="menuitem" onClick={() => chooseSound(null)}>
-                  关闭
-                </button>
-              </div>
-            )}
+            {soundsOpen && <SoundMenu sound={sound} onChoose={chooseSound} />}
             <button
               type="button"
               className="pomodoro-noise"
@@ -443,7 +409,7 @@ export function PomodoroDock({
               }}
             >
               <SpeakerIcon />
-              {sound ? pomodoroAmbienceLabels[sound] : "白噪音"}
+              {sound ? pomodoroAmbienceLabels[sound] : "环境音"}
             </button>
           </div>
         </div>
@@ -499,6 +465,98 @@ function SpeakerIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <path d="M4 10h3l4-3v10l-4-3H4zM16 9a4 4 0 0 1 0 6" />
+    </svg>
+  );
+}
+
+function SoundMenu({
+  sound,
+  onChoose,
+}: {
+  sound: PomodoroAmbience | null;
+  onChoose: (next: PomodoroAmbience | null) => void;
+}) {
+  return (
+    <div className="pomodoro-sounds" role="menu" aria-label="环境音">
+      {ambiences.map((item) => (
+        <button
+          key={item}
+          type="button"
+          role="menuitemradio"
+          aria-checked={sound === item}
+          onClick={() => onChoose(item)}
+        >
+          <AmbienceIcon kind={item} />
+          {pomodoroAmbienceLabels[item]}
+        </button>
+      ))}
+      <button type="button" role="menuitem" onClick={() => onChoose(null)}>
+        关闭
+      </button>
+    </div>
+  );
+}
+
+function AmbienceIcon({ kind }: { kind: PomodoroAmbience }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      {kind === "rain" && (
+        <>
+          <path d="M7 14.5a4 4 0 0 1-.4-7.6 5 5 0 0 1 9.3-1.1 3.4 3.4 0 0 1 1.6 6.5" />
+          <path d="M8 17.5v2M12 17.5v2M16 17.5v2" />
+        </>
+      )}
+      {kind === "thunder" && (
+        <>
+          <path d="M7 13.5a4 4 0 0 1-.4-7.6 5 5 0 0 1 9.3-1.1 3.4 3.4 0 0 1 1.6 6.5" />
+          <path d="M12.2 12.5 10 17h2.6L11 21" />
+        </>
+      )}
+      {kind === "fire" && (
+        <path d="M12 20.5c3.2 0 4.8-2 4.8-4.4 0-2-1.3-3.3-2-4.8-.4 1.1-1.1 1.7-1.7 1.7-.2-1.5-.8-3-2.1-4.5-1 1.8-1.2 3.2-1.2 4.3-1.5 1.6-.8 7.7 2.2 7.7z" />
+      )}
+      {kind === "waves" && (
+        <>
+          <path d="M3 9.5c1.6 1.3 2.6 1.3 4.2 0s2.6-1.3 4.2 0 2.6 1.3 4.2 0 2.6-1.3 4.2 0" />
+          <path d="M3 15c1.6 1.3 2.6 1.3 4.2 0s2.6-1.3 4.2 0 2.6 1.3 4.2 0 2.6-1.3 4.2 0" />
+        </>
+      )}
+      {kind === "birds" && (
+        <>
+          <path d="M3 15c3.5-5 6.5-5.5 9.5-1.5" />
+          <path d="M12 13.5c3.2-4.2 6-4.5 9-1" />
+        </>
+      )}
+      {kind === "stream" && (
+        <>
+          <path d="M12 4c1.8 2.4 1.8 3.8 0 6.2S10.2 14 12 17.5" />
+          <path d="M7.5 7c1.6 2 1.6 3.2 0 5.4" />
+          <path d="M16.5 7c-1.6 2-1.6 3.2 0 5.4" />
+        </>
+      )}
+      {kind === "forest" && (
+        <>
+          <path d="M12 3.5 6.2 12h3.1L5.8 18h12.4L14.7 12H17.8Z" />
+          <path d="M12 18v2.5" />
+        </>
+      )}
+      {kind === "cafe" && (
+        <>
+          <path d="M6 8h8.5v5.5a3.5 3.5 0 0 1-3.5 3.5H9.5A3.5 3.5 0 0 1 6 13.5z" />
+          <path d="M14.5 9.2h2.2a2 2 0 0 1 0 4h-2.2" />
+          <path d="M7 20.5h10" />
+        </>
+      )}
+      {kind === "cat" && (
+        <>
+          <path d="M8.2 11.4 6.4 6.4 11 9.6" />
+          <path d="M15.8 11.4 17.6 6.4 13 9.6" />
+          <path d="M7.2 13.2a4.8 4.6 0 1 0 9.6 0 4.8 4.6 0 1 0-9.6 0" />
+          <circle className="is-mark" cx="10.3" cy="13.4" r="0.7" />
+          <circle className="is-mark" cx="13.7" cy="13.4" r="0.7" />
+          <path d="M12 14.4v1" />
+        </>
+      )}
     </svg>
   );
 }

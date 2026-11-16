@@ -286,12 +286,17 @@ export function createPersonalTasks<Command>(
     key: string,
     signature: string,
     prepare: (operationId: string) => Command,
+    replaceStuck = false,
   ) {
     if (saving.has(key)) throw Error("正在保存，请稍候");
-    const retained = pending.has(key);
     let entry = pending.get(key);
-    if (entry && entry.signature !== signature)
-      throw Error("上次保存结果尚未确认，请先重试原内容");
+    if (entry && entry.signature !== signature) {
+      // A stuck earlier write must not make delete impossible.
+      if (!replaceStuck) throw Error("上次保存结果尚未确认，请先重试原内容");
+      pending.delete(key);
+      entry = undefined;
+    }
+    const retained = entry !== undefined;
     if (!entry) {
       try {
         const operationId = crypto.randomUUID();
@@ -446,6 +451,7 @@ export function createPersonalTasks<Command>(
             operationId,
             clock().toISOString(),
           ),
+        change.type === "delete",
       );
     },
   };

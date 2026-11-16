@@ -3,6 +3,7 @@ import { readFileSync } from "node:fs";
 import type { DatabaseSync } from "node:sqlite";
 import type { FastifyInstance } from "fastify";
 import type { AiService } from "./ai.js";
+import type { AppRelease } from "./app-release.js";
 
 interface AdminOptions {
   tokenHash: string | undefined;
@@ -10,6 +11,7 @@ interface AdminOptions {
   generation: string;
   configuredDevices: number;
   ai: AiService;
+  release: AppRelease;
 }
 const hash = (value: string) =>
   createHash("sha256").update(value).digest("hex");
@@ -183,6 +185,7 @@ export function registerAdmin(
     },
   );
   app.get("/admin/api/session", async () => ({ authenticated: true }));
+  app.get("/admin/api/release", async () => options.release);
   app.post("/admin/api/logout", async (request, reply) => {
     const token =
       request.headers.cookie

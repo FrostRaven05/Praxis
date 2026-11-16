@@ -1,0 +1,10 @@
+{
+  "phase": "relogin",
+  "checks": [
+    "Guest workspace survived upgrade and account logout without migration",
+    "Upgraded Windows client logged in again using the retained isolated account",
+    "Upgraded Windows client uploaded a new task to the existing backend"
+  ],
+  "errors": [],
+  "testedAt": "2026-11-16T15:26:45.551Z"
+}

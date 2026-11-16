@@ -19,6 +19,20 @@ const server = createServer({
   databasePath: join(directory, "api.db"),
   devices: [],
   adminTokenHash: createHash("sha256").update(token).digest("hex"),
+  release: {
+    version: "1.0.1",
+    minimumVersion: "0.1.0",
+    notes: "Windows 与 Android 安装包",
+    publishedAt: "2026-11-16T00:00:00.000Z",
+    windows: {
+      url: "https://download.example.test/Praxis-setup.exe",
+      sha256: "a".repeat(64),
+    },
+    android: {
+      url: "https://download.example.test/Praxis.apk",
+      sha256: "b".repeat(64),
+    },
+  },
 });
 let browser;
 const errors = [];
@@ -237,6 +251,29 @@ try {
   await page.getByText("模型设置已保存。", { exact: true }).waitFor();
   await page.screenshot({ path: join(evidence, "model.png"), fullPage: true });
   check("模型设置保存、刷新保持与密钥不回显（无外部模型请求）");
+  await page.getByRole("button", { name: "安装包", exact: true }).click();
+  await page
+    .getByRole("heading", { name: "Praxis 1.0.1", exact: true })
+    .waitFor();
+  assert.equal(
+    await page
+      .getByRole("link", { name: "下载安装包", exact: true })
+      .getAttribute("href"),
+    "https://download.example.test/Praxis-setup.exe",
+  );
+  assert.equal(
+    await page
+      .getByRole("link", { name: "下载 APK", exact: true })
+      .getAttribute("href"),
+    "https://download.example.test/Praxis.apk",
+  );
+  await page.getByText("SHA-256 校验值", { exact: true }).first().click();
+  await page.getByText("a".repeat(64), { exact: true }).waitFor();
+  await page.screenshot({
+    path: join(evidence, "release.png"),
+    fullPage: true,
+  });
+  check("Windows / Android 安装包下载入口与 SHA-256 校验值");
   await page.getByRole("button", { name: "数据概览", exact: true }).click();
   await page.getByText("当前服务共 14 个注册账号", { exact: true }).waitFor();
   await page.setViewportSize({ width: 390, height: 844 });
@@ -262,6 +299,7 @@ try {
       ["模型设置", "#model-form", "model"],
       ["同步数据", ".metrics-three", "sync"],
       ["系统状态", ".system-body", "system"],
+      ["安装包", ".release-grid", "release"],
     ]) {
       await page.getByRole("button", { name: "展开导航", exact: true }).click();
       await page.getByRole("button", { name: label, exact: true }).click();

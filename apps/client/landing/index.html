@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f7f8f2" />
+    <meta
+      name="description"
+      content="Praxis，把想法变成行动。用任务、项目、今日安排与番茄钟，找到清晰的下一步。在 Windows 与 Android 之间延续你的节奏。"
+    />
+    <title>Praxis · 让想法落地</title>
+    <link rel="icon" type="image/svg+xml" href="./mark.svg" />
+    <link rel="stylesheet" href="./landing.css" />
+    <script type="module" src="./landing.js"></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">跳转到正文</a>
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="Praxis 首页"
+        ><img src="./mark.svg" alt="" width="34" height="34" /><span
+          >Praxis<span class="brand-period">.</span></span
+        ></a
+      >
+      <nav aria-label="主导航">
+        <a href="#features">功能</a><a href="#workflow">使用方式</a
+        ><a href="#devices">多端同步</a><a href="#faq">常见问题</a>
+      </nav>
+      <a class="button button-small button-dark" href="#download"
+        >开始行动 <span aria-hidden="true">↗</span></a
+      >
+    </header>
+
+    <main id="main">
+      <section class="hero section-wrap" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <div class="eyebrow">
+            <span class="status-dot"></span> 为每一个想要开始的你
+          </div>
+          <h1 id="hero-title">
+            想法很多，<br />从<span class="heading-highlight">这一步</span
+            ><br />开始。
+          </h1>
+          <p class="hero-description">
+            把脑海里的「想做」，变成今天的「在做」。<br />用 Praxis
+            理清任务、推进项目，<br
+              class="mobile-break"
+            />让每一天都有一点进展。
+          </p>
+          <div class="hero-actions">
+            <a class="button button-dark" href="#download"
+              >下载 Praxis <span aria-hidden="true">↗</span></a
+            ><a class="text-link" href="#demo"
+              >看看它如何工作
+              <span class="play-icon" aria-hidden="true">▷</span></a
+            >
+          </div>
+          <div class="platform-note">
+            <span class="windows-icon" aria-hidden="true">⊞</span> Windows
+            <span class="note-separator">/</span>
+            <span aria-hidden="true">♧</span> Android
+            <span class="note-separator">·</span> 你的个人行动空间
+          </div>
+        </div>
+
+        <div class="hero-visual" id="demo">
+          <div class="orbit orbit-one" aria-hidden="true"></div>
+          <div class="orbit orbit-two" aria-hidden="true"></div>
+          <span class="visual-annotation">a little progress, every day.</span>
+          <div class="app-window" aria-label="Praxis 今日安排交互演示">
+            <div class="window-bar">
+              <div class="window-dots" aria-hidden="true">
+                <i></i><i></i><i></i>
+              </div>
+              <span>你的行动空间</span
+              ><span class="window-sync"
+                ><span class="status-dot"></span> 已同步</span
+              >
+            </div>
+            <div class="app-body">
+              <aside class="demo-sidebar">
+                <div class="demo-brand">
+                  <img src="./mark.svg" alt="" />Praxis
+                </div>
+                <div class="demo-nav active">
+                  <span>☀</span> 今日 <small>4</small>
+                </div>
+                <div class="demo-nav"><span>▤</span> 我的任务</div>
+                <div class="demo-nav">
+                  <span>▱</span> 收件箱 <small>3</small>
+                </div>
+                <div class="sidebar-label">我的项目 <span>＋</span></div>
+                <div class="demo-project">
+                  <i class="project-dot dot-green"></i> 个人网站
+                </div>
+                <div class="demo-project">
+                  <i class="project-dot dot-orange"></i> 阅读计划
+                </div>
+                <div class="demo-project">
+                  <i class="project-dot dot-purple"></i> 健康生活
+                </div>
+                <div class="sidebar-bottom">
+                  <span class="avatar">P</span
+                  ><span>我的工作空间<small>把日子过成喜欢的样子</small></span>
+                </div>
+              </aside>
+              <div class="demo-content">
+                <div class="demo-date">星期一 · 新的一周</div>
+                <div class="demo-title-row">
+                  <h2>今天，也向前一点 <span>☀</span></h2>
+                  <span class="demo-more" aria-hidden="true">···</span>
+                </div>
+                <p class="demo-subtitle">给重要的事，留一点时间。</p>
+                <div class="demo-progress">
+                  <span>今日进展</span
+                  ><span id="progress-label">1 / 4 已完成</span>
+                </div>
+                <div class="progress-track"><i id="progress-fill"></i></div>
+                <div class="task-group-label">
+                  今天要做 <span id="remaining-count">3</span>
+                </div>
+                <label class="demo-task"
+                  ><input type="checkbox" /><span class="task-check"></span
+                  ><span class="task-text"
+                    >为个人网站画一版首页<small
+                      ><i class="project-dot dot-green"></i> 个人网站
+                      <span class="task-tag">优先做</span></small
+                    ></span
+                  ><span class="task-time">09:30</span></label
+                >
+                <label class="demo-task"
+                  ><input type="checkbox" /><span class="task-check"></span
+                  ><span class="task-text"
+                    >读完《掌控习惯》第二章<small
+                      ><i class="project-dot dot-orange"></i> 阅读计划</small
+                    ></span
+                  ><span class="task-time">14:00</span></label
+                >
+                <label class="demo-task"
+                  ><input type="checkbox" /><span class="task-check"></span
+                  ><span class="task-text"
+                    >出门走走，给自己充个电<small
+                      ><i class="project-dot dot-purple"></i> 健康生活</small
+                    ></span
+                  ><span class="task-time">17:30</span></label
+                >
+                <label class="demo-task is-complete"
+                  ><input type="checkbox" checked /><span
+                    class="task-check"
+                  ></span
+                  ><span class="task-text"
+                    >整理这一周的小目标<small
+                      ><i class="project-dot dot-green"></i> 个人网站</small
+                    ></span
+                  ><span class="task-time">08:30</span></label
+                >
+                <form class="demo-add-form">
+                  <span aria-hidden="true">＋</span
+                  ><input
+                    id="new-task"
+                    aria-label="添加演示任务"
+                    placeholder="添加一个小小的行动…"
+                    maxlength="70"
+                  /><button type="submit" aria-label="添加任务">↵</button>
+                </form>
+                <p class="demo-hint" id="demo-status" aria-live="polite">
+                  试着勾选一项任务，感受完成的轻盈。
+                </p>
+              </div>
+            </div>
+          </div>
+          <div class="floating-focus">
+            <div class="focus-symbol" aria-hidden="true">◴</div>
+            <div>
+              <span>留一段时间，专心做事</span
+              ><strong id="hero-timer">25:00</strong>
+            </div>
+            <button
+              class="focus-toggle"
+              aria-label="开始演示番茄钟"
+              aria-pressed="false"
+            >
+              ▷
+            </button>
+          </div>
+          <div class="visual-caption">
+            <span class="caption-line"></span> 清晰一点，行动就轻松一点。
+          </div>
+        </div>
+      </section>
+
+      <section class="manifesto section-wrap" aria-label="产品理念">
+        <span class="small-label">LESS NOISE. MORE DOING.</span>
+        <p>
+          生活已经够复杂，<br class="mobile-break" />行动可以<span
+            >简单一点。</span
+          >
+        </p>
+        <div class="manifesto-details">
+          <span><i>✓</i> 想法有处安放</span><span><i>✓</i> 今天有所专注</span
+          ><span><i>✓</i> 进展看得见</span>
+        </div>
+      </section>
+
+      <section
+        class="features section-wrap"
+        id="features"
+        aria-labelledby="features-title"
+      >
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">01 / 为行动腾出空间</span>
+            <h2 id="features-title">
+              从一闪而过的念头，<br />到一件件做成的事。
+            </h2>
+          </div>
+          <p>收集、拆解、专注、回顾。<br />你需要的工具，刚刚好都在这里。</p>
+        </div>
+        <div class="feature-grid">
+          <article class="feature-card feature-project">
+            <div class="feature-copy">
+              <span class="feature-index">01 — 理清方向</span>
+              <h3>大目标，拆成小步子。</h3>
+              <p>
+                用项目收拢目标，用子任务找到下一步。<br />列表、看板、日历与甘特，换个视角看进展。
+              </p>
+            </div>
+            <div class="board-preview">
+              <div class="board-header">
+                <span><i class="project-dot dot-green"></i> 我的个人网站</span>
+                <div
+                  class="view-switch"
+                  role="group"
+                  aria-label="切换项目演示视图"
+                >
+                  <button aria-pressed="true" data-view="board">看板</button
+                  ><button aria-pressed="false" data-view="list">列表</button>
+                </div>
+              </div>
+              <div class="board-columns" id="project-preview">
+                <div class="board-column">
+                  <div class="column-title">
+                    <i></i> 待开始 <small>2</small>
+                  </div>
+                  <div class="board-task">
+                    收集喜欢的设计参考<span class="board-tag">灵感收集</span>
+                  </div>
+                  <div class="board-task">
+                    整理项目介绍文案<span class="board-tag tag-neutral"
+                      >内容</span
+                    >
+                  </div>
+                </div>
+                <div class="board-column">
+                  <div class="column-title">
+                    <i class="orange"></i> 进行中 <small>1</small>
+                  </div>
+                  <div class="board-task">
+                    画出首页的第一版<span class="board-tag tag-orange"
+                      >设计</span
+                    >
+                    <div class="mini-checklist">
+                      ☑ 确定结构 <span>1/3</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="board-column">
+                  <div class="column-title">
+                    <i class="green"></i> 已完成 <small>1</small>
+                  </div>
+                  <div class="board-task done-board-task">
+                    想好网站的名字<span class="board-tag">准备就绪 ✓</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+          <article class="feature-card feature-capture">
+            <span class="feature-index">02 — 轻松捕捉</span>
+            <h3>先记下来，<br />脑海轻一点。</h3>
+            <p>灵感、琐事、突然想到的计划，<br />先放进收件箱，再从容安排。</p>
+            <div class="capture-note note-back">
+              周末想去逛的书店 <span>↗</span>
+            </div>
+            <div class="capture-note note-front">
+              <span class="note-checkbox"></span> 那个一直想尝试的小想法<span
+                class="note-cursor"
+              ></span
+              ><small>收件箱 <span>刚刚</span></small>
+            </div>
+            <span class="capture-spark" aria-hidden="true">✳</span>
+          </article>
+          <article class="feature-card feature-focus">
+            <span class="feature-index">03 — 找回专注</span>
+            <h3>这一刻，只做这一件。</h3>
+            <p>让番茄钟陪你进入状态，<br />用记录和回顾，看见时间的去向。</p>
+            <div class="focus-preview">
+              <div class="timer-ring">
+                <span
+                  >专注于当下<strong>25<span>:</span>00</strong
+                  ><small>为个人网站画一版首页</small></span
+                >
+              </div>
+              <span class="focus-leaf" aria-hidden="true">✳</span>
+            </div>
+          </article>
+          <article class="feature-card feature-ai">
+            <span class="feature-index">04 — 多一点启发</span>
+            <h3>卡住时，一起找找下一步。</h3>
+            <p>
+              让 AI 规划助手帮你梳理思路、拆解行动。<br />先看建议，再决定哪些值得加入你的计划。
+            </p>
+            <div class="ai-conversation">
+              <div class="ai-prompt">
+                我想做一个自己的作品集网站… <span>P</span>
+              </div>
+              <div class="ai-answer">
+                <span class="ai-mark">✳</span>
+                <div>
+                  <strong>从一个小而具体的行动开始吧。</strong>
+                  <p><span>01</span> 选出 3 个最想展示的作品</p>
+                  <p><span>02</span> 为每个作品写一句介绍</p>
+                  <p><span>03</span> 画出首页的内容结构</p>
+                  <small>行动草稿 · 由你确认后加入任务</small>
+                </div>
+              </div>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section
+        class="workflow section-wrap"
+        id="workflow"
+        aria-labelledby="workflow-title"
+      >
+        <div class="section-heading">
+          <div>
+            <span class="eyebrow">02 / 找到自己的节奏</span>
+            <h2 id="workflow-title">不必计划好一切，<br />先迈出一小步。</h2>
+          </div>
+          <p>一个简单的循环，<br />让「有空再说」慢慢变成「已经做了」。</p>
+        </div>
+        <div class="workflow-steps">
+          <article>
+            <span class="step-number">01 <span>↗</span></span>
+            <h3>放下脑海里的事</h3>
+            <p>把想法放进收件箱，<br />给大脑留点空白。</p>
+          </article>
+          <article>
+            <span class="step-number">02 <span>↗</span></span>
+            <h3>选好今天的重点</h3>
+            <p>从项目里挑出值得推进的事，<br />安排进今天。</p>
+          </article>
+          <article>
+            <span class="step-number">03 <span>↗</span></span>
+            <h3>留一段专注时间</h3>
+            <p>开启番茄钟，屏蔽杂念，<br />一次只向前一步。</p>
+          </article>
+          <article>
+            <span class="step-number">04 <span>✓</span></span>
+            <h3>看见自己的进展</h3>
+            <p>回顾完成的任务和记录，<br />为每一点行动留个印记。</p>
+          </article>
+        </div>
+      </section>
+
+      <section
+        class="devices section-wrap"
+        id="devices"
+        aria-labelledby="devices-title"
+      >
+        <div class="device-copy">
+          <span class="eyebrow">03 / 随时接着做</span>
+          <h2 id="devices-title">换个设备，<br />继续你的节奏。</h2>
+          <p>
+            电脑前，沉下来规划。<br />出门时，随手记下灵感。<br />登录同一个账号，让任务和项目随你同行。
+          </p>
+          <div class="device-platforms">
+            <span>⊞ Windows 桌面端</span><span>♧ Android 手机端</span>
+          </div>
+          <div class="sync-note">
+            <span class="status-dot"></span> 同一账号 · 跨设备同步 ·
+            个人数据隔离
+          </div>
+        </div>
+        <div class="device-art" aria-label="桌面与手机共享个人项目的示意图">
+          <div class="mini-desktop">
+            <div class="mini-desktop-top">
+              <i></i><i></i><i></i><span>Praxis</span>
+            </div>
+            <div class="mini-desktop-body">
+              <aside>
+                <b>P.</b><span></span><span></span><span></span><span></span>
+              </aside>
+              <div class="mini-desktop-main">
+                <h3>我的项目</h3>
+                <div class="mini-project-card">
+                  <span class="mini-project-emoji">◈</span
+                  ><strong>个人网站</strong><small>每一步，都算数。</small>
+                  <div class="mini-project-progress"></div>
+                  <span class="mini-project-count">2 / 4 项任务已完成</span>
+                </div>
+                <div class="mini-project-card mini-card-back">
+                  <span>✳</span><strong>阅读计划</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mini-desktop-stand"></div>
+          <div class="mini-phone">
+            <div class="phone-camera"></div>
+            <div class="phone-top"><span>9:41</span><span>▮▮▮ ▰</span></div>
+            <div class="phone-greeting">早上好，行动派 ☀</div>
+            <h3>我的今天</h3>
+            <p>一点一点，靠近想要的生活。</p>
+            <div class="phone-progress">
+              <span>今日进展</span><strong>2 / 4</strong><i></i>
+            </div>
+            <div class="phone-task">
+              <i>✓</i><span>整理这一周的小目标</span>
+            </div>
+            <div class="phone-task">
+              <i>✓</i><span>收集喜欢的设计参考</span>
+            </div>
+            <div class="phone-task">
+              <i></i><span>为个人网站画一版首页</span>
+            </div>
+            <div class="phone-add">＋</div>
+            <div class="phone-nav">
+              <span>☀<small>今日</small></span
+              ><span>▤<small>任务</small></span
+              ><span>◴<small>专注</small></span
+              ><span>○<small>我的</small></span>
+            </div>
+          </div>
+          <span class="sync-badge"><span>↻</span> 让行动，随你同行</span>
+        </div>
+      </section>
+
+      <section class="faq section-wrap" id="faq" aria-labelledby="faq-title">
+        <div>
+          <span class="eyebrow">还有一点好奇？</span>
+          <h2 id="faq-title">你可能想知道</h2>
+          <p>开始前，把小疑问放下。</p>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>
+              Praxis 适合什么样的我？<span aria-hidden="true">＋</span>
+            </summary>
+            <p>
+              如果你有想推进的个人项目、想养成的行动习惯，或只是希望把每天的待办理清楚，Praxis
+              都可以成为你的行动空间。从一个任务开始就好。
+            </p>
+          </details>
+          <details>
+            <summary>
+              可以在电脑和手机上一起使用吗？<span aria-hidden="true">＋</span>
+            </summary>
+            <p>
+              可以。Praxis 提供 Windows 桌面端和 Android
+              手机端，使用同一个个人账号登录，即可通过同步服务在设备之间同步你的任务、项目与记录。
+            </p>
+          </details>
+          <details>
+            <summary>
+              没有网络，还能管理任务吗？<span aria-hidden="true">＋</span>
+            </summary>
+            <p>
+              桌面端和手机端使用本地 SQLite
+              保存数据，你可以在本机管理任务。账号登录、跨设备同步和 AI
+              规划等在线功能需要网络连接。也可以通过本地备份与恢复保管数据。
+            </p>
+          </details>
+          <details>
+            <summary>
+              AI 会直接修改我的计划吗？<span aria-hidden="true">＋</span>
+            </summary>
+            <p>
+              AI
+              规划助手提供的是行动草稿。你可以先查看和调整建议，确认采用后再转为自己的正式任务。具体可用模型以应用中的模型配置为准。
+            </p>
+          </details>
+        </div>
+      </section>
+
+      <section
+        class="download section-wrap"
+        id="download"
+        aria-labelledby="download-title"
+      >
+        <div class="download-doodle" aria-hidden="true">✳</div>
+        <span class="eyebrow">TURN INTENT INTO ACTION.</span>
+        <h2 id="download-title">下一步，就从现在开始。</h2>
+        <p>给想法一个去处，给行动一点空间。</p>
+        <div class="download-actions">
+          <a
+            class="button button-dark"
+            href="https://todo.frostraven05.com/releases/1.0.3/Praxis-1.0.3-windows-x64-setup.exe"
+            ><span class="windows-icon" aria-hidden="true">⊞</span> 下载 Windows
+            版 <span aria-hidden="true">↓</span></a
+          ><a
+            class="button button-outline"
+            href="https://todo.frostraven05.com/releases/1.0.3/Praxis-1.0.3-android.apk"
+            ><span aria-hidden="true">♧</span> 下载 Android 版
+            <span aria-hidden="true">↓</span></a
+          >
+        </div>
+        <small>直接下载安装包 · Windows x64 / Android 7.0 及以上</small
+        ><a class="browser-preview-link" href="../"
+          >或先在浏览器中预览界面 <span aria-hidden="true">↗</span></a
+        >
+      </section>
+    </main>
+    <footer class="site-footer section-wrap">
+      <a class="brand" href="#"
+        ><img src="./mark.svg" alt="" width="28" height="28" /><span
+          >Praxis<span class="brand-period">.</span></span
+        ></a
+      ><span>把想法，过成生活。</span><a href="#main">回到顶部 ↑</a
+      ><small>© <span id="copyright-year">2026</span> Praxis</small>
+    </footer>
+  </body>
+</html>

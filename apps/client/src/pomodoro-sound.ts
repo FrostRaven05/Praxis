@@ -1,10 +1,36 @@
-export type PomodoroAmbience = "rain" | "fire" | "waves" | "white";
+export type PomodoroAmbience =
+  | "rain"
+  | "thunder"
+  | "fire"
+  | "waves"
+  | "birds"
+  | "stream"
+  | "forest"
+  | "cafe"
+  | "cat";
 
 export const pomodoroAmbienceLabels: Record<PomodoroAmbience, string> = {
   rain: "雨声",
+  thunder: "雷声",
   fire: "篝火",
   waves: "海浪",
-  white: "白噪音",
+  birds: "鸟鸣",
+  stream: "溪流",
+  forest: "森林",
+  cafe: "咖啡厅",
+  cat: "猫",
+};
+
+const sources: Record<PomodoroAmbience, string> = {
+  rain: "ambience/rain.mp3?v=2",
+  thunder: "ambience/thunder.mp3?v=2",
+  fire: "ambience/fire.mp3",
+  waves: "ambience/waves.mp3?v=2",
+  birds: "ambience/birds.mp3",
+  stream: "ambience/stream.mp3",
+  forest: "ambience/forest.mp3",
+  cafe: "ambience/cafe.mp3",
+  cat: "ambience/cat.mp3",
 };
 
 let generation = 0;
@@ -26,118 +52,96 @@ export function warmPomodoroAudio() {
   if (next.state === "suspended") void next.resume();
 }
 
-function noiseBuffer(
-  target: AudioContext,
-  seconds: number,
-  color: "white" | "brown",
-) {
-  const length = Math.floor(target.sampleRate * seconds);
-  const buffer = target.createBuffer(1, length, target.sampleRate);
-  const data = buffer.getChannelData(0);
-  let brown = 0;
-  for (let index = 0; index < length; index += 1) {
-    const white = Math.random() * 2 - 1;
-    brown = (brown + 0.02 * white) / 1.02;
-    data[index] = color === "white" ? white * 0.35 : brown * 3.2;
-  }
-  return buffer;
-}
-
 export function stopPomodoroAmbience() {
   generation += 1;
   halt();
 }
 
+function fileUrl(kind: PomodoroAmbience) {
+  const base = import.meta.env.BASE_URL || "/";
+  return `${base}${sources[kind]}`;
+}
+
 export async function playPomodoroAmbience(kind: PomodoroAmbience) {
   const ticket = ++generation;
   halt();
-  const target = context();
-  if (target.state === "suspended") await target.resume();
-  if (ticket !== generation) return;
-  const master = target.createGain();
-  master.gain.value = kind === "white" ? 0.07 : 0.2;
-  master.connect(target.destination);
-  const source = target.createBufferSource();
-  source.buffer = noiseBuffer(
-    target,
-    2,
-    kind === "white" ? "white" : "brown",
-  );
-  source.loop = true;
-  const filter = target.createBiquadFilter();
-  if (kind === "rain") {
-    filter.type = "highpass";
-    filter.frequency.value = 900;
-  } else if (kind === "fire") {
-    filter.type = "lowpass";
-    filter.frequency.value = 480;
-  } else if (kind === "waves") {
-    filter.type = "lowpass";
-    filter.frequency.value = 300;
-  } else {
-    filter.type = "highpass";
-    filter.frequency.value = 160;
+  const url = fileUrl(kind);
+  const pair = [new Audio(url), new Audio(url)];
+  for (const item of pair) {
+    item.preload = "auto";
+    item.volume = 0;
   }
-  source.connect(filter);
-  filter.connect(master);
-  const extras: Array<{ stop: () => void }> = [];
-  if (kind === "waves") {
-    const lfo = target.createOscillator();
-    const depth = target.createGain();
-    lfo.frequency.value = 0.07;
-    depth.gain.value = 0.09;
-    lfo.connect(depth);
-    depth.connect(master.gain);
-    lfo.start();
-    extras.push({
-      stop() {
-        lfo.stop();
-      },
-    });
-  }
-  if (kind === "fire" || kind === "rain") {
-    const timer = window.setInterval(() => {
-      const burst = target.createBufferSource();
-      burst.buffer = noiseBuffer(target, 0.08, "white");
-      const gain = target.createGain();
-      gain.gain.setValueAtTime(
-        kind === "fire" ? 0.28 : 0.1,
-        target.currentTime,
-      );
-      gain.gain.exponentialRampToValueAtTime(0.001, target.currentTime + 0.08);
-      const band = target.createBiquadFilter();
-      band.type = "bandpass";
-      band.frequency.value = kind === "fire" ? 1600 : 4200;
-      burst.connect(band);
-      band.connect(gain);
-      gain.connect(master);
-      burst.start();
-      burst.stop(target.currentTime + 0.09);
-    }, kind === "fire" ? 320 : 110);
-    extras.push({
-      stop() {
-        window.clearInterval(timer);
-      },
-    });
-  }
-  source.start();
-  if (ticket !== generation) {
-    source.stop();
-    for (const extra of extras) extra.stop();
-    master.disconnect();
+  const level = 0.8;
+  const seam = 0.45;
+  let index = 0;
+  let bridging = false;
+  let stopped = false;
+  let frame = 0;
+  const opened = performance.now();
+  const watch = () => {
+    if (stopped) return;
+    const envelope = Math.min(1, (performance.now() - opened) / 350);
+    const active = pair[index];
+    const idle = pair[1 - index];
+    if (!active || !idle) return;
+    const left = active.duration - active.currentTime;
+    if (!bridging && Number.isFinite(left) && left <= seam && active.duration > seam * 3) {
+      bridging = true;
+      idle.currentTime = 0;
+      void idle.play();
+    }
+    if (bridging) {
+      const remain = Math.max(0, active.duration - active.currentTime);
+      const mix = 1 - Math.min(1, remain / seam);
+      active.volume = level * envelope * (1 - mix);
+      idle.volume = level * envelope * mix;
+      if (remain <= 0.03 || active.ended) {
+        active.pause();
+        index = 1 - index;
+        bridging = false;
+      }
+    } else {
+      active.volume = level * envelope;
+    }
+    frame = requestAnimationFrame(watch);
+  };
+  const stop = () => {
+    if (stopped) return;
+    stopped = true;
+    cancelAnimationFrame(frame);
+    const from = pair.map((item) => item.volume);
+    const start = performance.now();
+    const down = (now: number) => {
+      const mix = Math.min(1, (now - start) / 180);
+      pair.forEach((item, itemIndex) => {
+        item.volume = (from[itemIndex] ?? 0) * (1 - mix);
+      });
+      if (mix < 1) {
+        requestAnimationFrame(down);
+        return;
+      }
+      for (const item of pair) {
+        item.pause();
+        item.removeAttribute("src");
+        item.load();
+      }
+    };
+    requestAnimationFrame(down);
+  };
+  current = { stop };
+  frame = requestAnimationFrame(watch);
+  try {
+    await Promise.all(pair.map((item) => item.play()));
+  } catch {
+    if (ticket === generation) halt();
     return;
   }
-  current = {
-    stop() {
-      try {
-        source.stop();
-      } catch {
-        /* already stopped */
-      }
-      for (const extra of extras) extra.stop();
-      master.disconnect();
-    },
-  };
+  const idle = pair[1];
+  if (idle && !stopped && ticket === generation) {
+    idle.pause();
+    idle.currentTime = 0;
+  }
+  if (ticket !== generation) stop();
 }
 
 export async function playPomodoroChime() {

@@ -1,5 +1,5 @@
 {
-  "verifiedAt": "2026-11-15T16:00:54.365Z",
+  "verifiedAt": "2026-11-16T16:54:20.128Z",
   "environment": "isolated local SQLite; test users only; no production connection",
   "checks": [
     "管理员登录与真实空状态",
@@ -11,6 +11,7 @@
     "同步数据页面",
     "系统状态页面",
     "模型设置保存、刷新保持与密钥不回显（无外部模型请求）",
+    "Windows / Android 安装包下载入口与 SHA-256 校验值",
     "390px 手机布局与折叠导航",
     "模型、同步和系统页的 390px / 320px 布局",
     "删除取消、邮箱确认、删除后关闭详情和末页自动回退",

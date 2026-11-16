@@ -17,7 +17,7 @@ import { taskDetailsStorage } from "./storage";
 import { useAutosave } from "./useAutosave";
 import { DatePicker } from "./DatePicker";
 import { TaskPanelIcon } from "./TaskPanelIcon";
-import { TaskWorkload, reminderLabel } from "./TaskPanelFields";
+import { reminderLabel } from "./TaskPanelFields";
 import { TaskDescription, TaskSubtitle } from "./TaskDescription";
 import { TaskProjectControl } from "./TaskProjectControl";
 import { TaskSubtasks } from "./TaskSubtasks";
@@ -287,11 +287,6 @@ export function ProjectTaskPanel({
               taskId={task.taskId}
               disabled={loading || !base}
               onChanged={() => void onSaved()}
-            />
-            <TaskWorkload
-              estimate={draft.estimate}
-              disabled={loading || !base}
-              onChange={(minutes) => changed("estimate", minutes, true)}
             />
             <TaskDescription
               value={draft.notes}

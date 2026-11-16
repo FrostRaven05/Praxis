@@ -82,6 +82,7 @@ it("serves the console with CSP while denying unconfigured, unauthenticated and 
     "users",
     "audit",
     "system",
+    "release",
     `users/${user.user.id}`,
   ]) {
     expect((await app.inject({ url: `/admin/api/${path}` })).statusCode).toBe(

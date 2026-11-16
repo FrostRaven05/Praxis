@@ -1,0 +1,31 @@
+{
+  "verifiedAt": "2026-11-16T15:41:45.356Z",
+  "baseUrl": "https://todo.frostraven05.com",
+  "version": "1.0.2",
+  "publishedAt": "2026-11-16T15:39:49.844Z",
+  "checks": {
+    "publicManifest": true,
+    "administratorApiProtected": true,
+    "assets": {
+      "windows": {
+        "url": "https://todo.frostraven05.com/releases/1.0.2/Praxis-1.0.2-windows-x64-setup.exe",
+        "bytes": 5650800,
+        "sha256": "e86c6862e6ffd182d958912a52441410e6da85af570cac9fb37bf4274511ee0b",
+        "publicHead": true,
+        "browserDownloadHashMatches": true
+      },
+      "android": {
+        "url": "https://todo.frostraven05.com/releases/1.0.2/Praxis-1.0.2-android.apk",
+        "bytes": 12321021,
+        "sha256": "bfcbc9dbe0a65883427fcfd6a6d014c5f634f23aa535c77e391a11d4a3181c2b",
+        "publicHead": true,
+        "browserDownloadHashMatches": true
+      }
+    },
+    "adjacentConfigurationNotServed": true,
+    "previousInstallersPreserved": true,
+    "adminDownloadPage": true,
+    "mobileLayout": true
+  },
+  "browserErrors": []
+}

@@ -1,0 +1,10 @@
+{
+  "phase": "verify",
+  "checks": [
+    "Upgraded Android release APK retained the old signed-in test account",
+    "Android 1.0.3 preserved the task synchronized by Android 1.0.2",
+    "Upgraded Android release APK completed the retained task through its UI",
+    "New Windows 1.0.3 task appeared in the upgraded Android release APK"
+  ],
+  "testedAt": "2026-11-16T17:07:40.983Z"
+}

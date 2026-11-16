@@ -5,5 +5,6 @@
   "keyPath": "/config/server.key",
   "certPath": "/config/fullchain.pem",
   "healthServerName": "sync.example.com",
+  "releaseDirectory": "/data/releases",
   "devices": []
 }

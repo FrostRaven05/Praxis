@@ -40,7 +40,14 @@ export function ProjectIcon({
       ) : name === "edit" ? (
         <path d="m15 4 5 5M4 20l5-1L20 8a2 2 0 0 0-5-5L4 14Z" />
       ) : name === "folder" ? (
-        <path d="M3 8V6a2 2 0 0 1 2-2h4l2 3h8a2 2 0 0 1 2 2v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z" />
+        <>
+          <path
+            d="M4.5 9.2V7.6c0-.7.6-1.3 1.3-1.3h2.8L10.4 8h7.8c.7 0 1.3.6 1.3 1.3v7.8c0 .7-.6 1.3-1.3 1.3H5.8c-.7 0-1.3-.6-1.3-1.3Z"
+            fill="currentColor"
+            fillOpacity="0.16"
+          />
+          <path d="M4.5 11.2h15" />
+        </>
       ) : name === "tasks" ? (
         <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
       ) : name === "gantt" ? (

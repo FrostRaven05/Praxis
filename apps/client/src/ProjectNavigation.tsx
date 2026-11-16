@@ -73,8 +73,8 @@ export function ProjectNavigation({
             }
             onClick={() => onSelect(project.id)}
           >
-            <span className="sidebar-project-icon">
-              <ProjectIcon name="folder" />
+            <span className="sidebar-project-icon" aria-hidden="true">
+              {projectMark(project.name)}
             </span>
             <strong>{project.name}</strong>
             {selectedId === project.id && (
@@ -85,4 +85,9 @@ export function ProjectNavigation({
       </nav>
     </section>
   );
+}
+
+function projectMark(name: string) {
+  const mark = Array.from(name.trim())[0];
+  return mark ? mark.toLocaleUpperCase() : "项";
 }

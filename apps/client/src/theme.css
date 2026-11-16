@@ -1,8 +1,8 @@
 /* DESIGN.md is the source of truth. Theme values live only here. */
 :root {
   color-scheme: light;
-  --font-ui: "Ink Free", "LXGW WenKai Light", "霞鹜文楷 Light", "LXGW WenKai", "霞鹜文楷", serif;
-  --font-data: "Ink Free", "LXGW WenKai Light", "霞鹜文楷 Light", "LXGW WenKai", "霞鹜文楷", serif;
+  --font-ui: "Noto Sans SC", "PingFang SC", "Microsoft YaHei UI", "Segoe UI", sans-serif;
+  --font-data: "Noto Sans SC", "PingFang SC", "Microsoft YaHei UI", "Segoe UI", sans-serif;
   --primary-light: #a6d6c3;
   --primary: var(--primary-light);
   --primary-light-hover: #94bfae;

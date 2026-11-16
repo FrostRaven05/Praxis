@@ -1,0 +1,9 @@
+{
+  "phase": "sync",
+  "checks": [
+    "Android 1.0.2 completion synchronized back into Windows 1.0.2 native storage",
+    "Both upgraded native clients continued synchronization through the isolated HTTPS backend"
+  ],
+  "errors": [],
+  "testedAt": "2026-11-16T15:30:49.949Z"
+}

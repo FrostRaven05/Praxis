@@ -483,6 +483,8 @@ async fn change_completion(
             database.record_error("completion", Some(&command.operation_id), &error);
             if let Some(message) = error.strip_prefix("USER:") {
                 message.to_string()
+            } else if error == "SUMMARY_TASK" {
+                "还有子任务未完成，不能在今日列表里直接勾选完成。".to_owned()
             } else if error == "STATE_CONFLICT" {
                 "任务状态已变化，请重新读取列表后再操作。".to_owned()
             } else {

@@ -1,5 +1,7 @@
 # ECS Docker 部署
 
+2026-11-16 更新：Windows / Android 1.0.1 安装包已放到[管理后台](https://todo.frostraven05.com/admin#release)。生产 `server.json` 使用 `releaseDirectory=/data/releases` 和 `release` 清单；宿主机文件在 `/opt/praxis/deploy/runtime/data/releases/1.0.1/`，随现有数据卷持久化。保留当前 TLS 直通与 `127.0.0.1:14443 -> 4318` 映射，下载路由由 API 提供。详情和回退记录见[安装包发布说明](installer-release-1.0.1.md)。
+
 2026-11-06 更新：用户确认域名备案完成，备案号为 **陕ICP备2026010048号**（用户提供）。当前推荐后端为 `https://todo.frostraven05.com`，管理后台为 `https://todo.frostraven05.com/admin`。已签发同时包含 `todo.frostraven05.com` 和 `8.152.219.210` 的公开信任证书，保留 IP HTTPS 供现有客户端连接。Windows 与 Android 模拟器通过域名完成注册、登录、双向任务与完成状态同步，以及进程重启验收，见 [本轮结果](evidence/domain-https/result.json)。域名版 Windows / Android 程序在 `.tools/releases/domain-https/`。
 
 已有登录账号继续使用其原服务地址及本机工作空间，新注册或未登录时默认域名；本轮没有强制迁移旧账号地址或复制用户本机数据库。证书配置变更前的服务器备份在 `/opt/praxis/backups/tls-domain-20261106T142026Z`。后文 10 月 18 日内容保留为原 IP 部署历史。

@@ -1,0 +1,11 @@
+{
+  "phase": "verify",
+  "checks": [
+    "Installed Windows 1.0.2 retained the old account, encrypted session and cloud task after upgrade",
+    "Guest workspace survived upgrade and account logout without migration",
+    "Upgraded Windows client logged in again using the retained isolated account",
+    "Upgraded Windows client uploaded a new task to the isolated backend"
+  ],
+  "errors": [],
+  "testedAt": "2026-11-16T15:32:16.161Z"
+}

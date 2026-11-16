@@ -72,6 +72,8 @@ async fn nested_subtasks_keep_identity_and_summary_parent_cannot_be_scheduled() 
         occurred_at: at,
     };
     assert!(s.schedule_task(&schedule).await.is_err());
+    assert!(s.list_day("2026-09-19").await.unwrap().is_empty());
+    assert_eq!(s.task_details(&parent).await.unwrap().version, 1);
     s.close().await;
     let s = Store::open(&path).await.unwrap();
     let rows = s.project_tasks(&project).await.unwrap();
@@ -252,5 +254,72 @@ async fn last_write_failure_rolls_back_split_and_parent_plan_conversion() {
     s.add_subtasks(&c).await.unwrap();
     assert_eq!(s.project_tasks(&project).await.unwrap().len(), 2);
     assert!(s.list_day("2026-09-19").await.unwrap().is_empty());
+    s.close().await;
+}
+
+#[tokio::test]
+async fn finished_children_can_complete_the_parent_on_the_day_list() {
+    use praxis_desktop_lib::store::CompletionCommand;
+    use sqlx::Connection;
+    let d = tempfile::tempdir().unwrap();
+    let path = d.path().join("finished-children.db");
+    let s = Store::open(&path).await.unwrap();
+    let at = "2026-09-19T01:00:00Z".to_string();
+    let parent = id();
+    let plan = id();
+    let child = id();
+    s.capture(&CaptureCommand {
+        operation_id: id(),
+        task_id: parent.clone(),
+        plan_id: plan.clone(),
+        title: "父任务".into(),
+        execution_date: "2026-09-19".into(),
+        time_zone: "Asia/Hong_Kong".into(),
+        occurred_at: at.clone(),
+    })
+    .await
+    .unwrap();
+    let mut db = sqlx::SqliteConnection::connect_with(
+        &sqlx::sqlite::SqliteConnectOptions::new().filename(&path),
+    )
+    .await
+    .unwrap();
+    let owner: String =
+        sqlx::query_scalar("SELECT owner_id FROM local_profile WHERE singleton=1")
+            .fetch_one(&mut db)
+            .await
+            .unwrap();
+    sqlx::query("INSERT INTO tasks(id,owner_id,title,parent_task_id,status,source,created_at) VALUES(?,?,?,?,'todo','temporary',?)")
+        .bind(&child)
+        .bind(&owner)
+        .bind("子任务")
+        .bind(&parent)
+        .bind(&at)
+        .execute(&mut db)
+        .await
+        .unwrap();
+    let command = |action: &str| CompletionCommand {
+        operation_id: id(),
+        task_id: parent.clone(),
+        plan_id: plan.clone(),
+        action: action.into(),
+        expected_version: 0,
+        completion_id: None,
+        execution_date: "2026-09-19".into(),
+        time_zone: "Asia/Hong_Kong".into(),
+        occurred_at: at.clone(),
+    };
+    assert_eq!(
+        s.change_completion(&command("complete")).await.unwrap_err(),
+        "SUMMARY_TASK"
+    );
+    sqlx::query("UPDATE tasks SET status='completed' WHERE id=?")
+        .bind(&child)
+        .execute(&mut db)
+        .await
+        .unwrap();
+    let done = s.change_completion(&command("complete")).await.unwrap();
+    assert_eq!(done.status, "completed");
+    assert_eq!(s.list_day("2026-09-19").await.unwrap()[0].status, "completed");
     s.close().await;
 }

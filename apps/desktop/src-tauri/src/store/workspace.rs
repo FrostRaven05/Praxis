@@ -424,7 +424,7 @@ impl Store {
                 .await
                 .map_err(|e| e.to_string())?;
         let summary: bool = sqlx::query_scalar(
-            "SELECT EXISTS(SELECT 1 FROM tasks WHERE owner_id=? AND parent_task_id=?)",
+            "SELECT EXISTS(SELECT 1 FROM tasks WHERE owner_id=? AND parent_task_id=? AND deleted_at IS NULL AND status NOT IN ('completed','cancelled'))",
         )
         .bind(&self.owner_id)
         .bind(task)

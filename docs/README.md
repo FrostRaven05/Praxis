@@ -29,6 +29,9 @@
 - [AI 规划首版](implementation-ai-planner-v1.md)
 - [项目恢复](implementation-project-recovery.md)
 - [管理后台、模型配置和用户管理](implementation-admin.md)
+- [Windows / Android 安装包与发布](installer-release-1.0.1.md)
+- [1.0.2 新安装包与隔离升级验证](installer-release-1.0.2.md)
+- [1.0.3 客户端、后端与安装包发布](installer-release-1.0.3.md)
 - [Docker / ECS 部署与维护](deploy-ecs.md)
 
 ## 验证与历史

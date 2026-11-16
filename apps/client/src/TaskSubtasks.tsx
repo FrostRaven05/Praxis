@@ -1,18 +1,32 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { PersonalTaskRead, WorkTask } from "@praxis/application";
+import type {
+  PersonalTaskChange,
+  PersonalTaskRead,
+  WorkTask,
+} from "@praxis/application";
 import { personalTasks } from "./personal-task-storage";
 import { reorderIds } from "./subtask-order";
 import { TaskPanelIcon } from "./TaskPanelIcon";
 
 const limit = 20;
 
+const conflicted = (caught: unknown) => {
+  const message = caught instanceof Error ? caught.message : String(caught);
+  return /STATE_CONFLICT|内容已更新|任务已改变|请重新预览|请重新打开/.test(
+    message,
+  );
+};
+
 export function TaskSubtasks({
   taskId,
   disabled = false,
+  revision = 0,
   onChanged,
 }: {
   taskId: string;
   disabled?: boolean;
+  /** Bumps when the open task is saved, so this list drops its stale snapshot. */
+  revision?: number;
   onChanged?: () => void;
 }) {
   const [base, setBase] = useState<PersonalTaskRead | null>(null);
@@ -50,6 +64,21 @@ export function TaskSubtasks({
       alive.current = false;
     };
   }, [taskId]);
+  useEffect(() => {
+    if (!baseRef.current) return;
+    let active = true;
+    void personalTasks
+      .read()
+      .then((next) => {
+        if (!active) return;
+        baseRef.current = next;
+        setBase(next);
+      })
+      .catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [revision]);
   useLayoutEffect(() => {
     if (!focusOnCommit.current) return;
     focusOnCommit.current = false;
@@ -95,16 +124,40 @@ export function TaskSubtasks({
   const pending = optimistic.filter((item) => !savedIds.includes(item.id));
   const count = ordered.length + pending.length;
   const slot = Math.min(count + 1, limit);
-  async function reload() {
+  async function readLatest() {
     const next = await personalTasks.read();
     baseRef.current = next;
     if (alive.current) setBase(next);
+    return next;
+  }
+  async function reload() {
+    const next = await readLatest();
     try {
       await onChanged?.();
     } catch {
       /* 子任务已经保存，列表刷新失败时保留面板里的结果 */
     }
     return next;
+  }
+  async function applyChange(id: string, change: PersonalTaskChange) {
+    const first = baseRef.current;
+    if (!first) throw Error("请重新读取");
+    try {
+      await personalTasks.change(first, id, change);
+    } catch (caught) {
+      if (!conflicted(caught)) throw caught;
+      const next = await readLatest();
+      await personalTasks.change(next, id, change);
+    }
+  }
+  function showFailure(caught: unknown) {
+    if (!alive.current) return;
+    if (conflicted(caught)) {
+      void readLatest().catch(() => undefined);
+      setError("列表已更新，请再试一次");
+      return;
+    }
+    setError(caught instanceof Error ? caught.message : String(caught));
   }
   function add(raw: string) {
     const text = raw.trim();
@@ -114,23 +167,36 @@ export function TaskSubtasks({
     setOptimistic((items) => [...items, { id, title: text }]);
     holdFocus();
     enqueue(async () => {
+      const draft = {
+        taskId: id,
+        title: text,
+        notes: "",
+        deadline: null,
+      };
       try {
         const current = baseRef.current;
         const owner = current?.work.tasks.find((task) => task.id === taskId);
         if (!current || !owner) throw Error("父任务已不存在，请重新读取");
-        await personalTasks.create(current, {
-          taskId: id,
-          title: text,
-          notes: "",
-          deadline: null,
-          projectId: owner.projectId,
-          parentId: owner.id,
-        });
+        const create = (
+          base: PersonalTaskRead,
+          projectId: string | null,
+          parentId: string,
+        ) =>
+          personalTasks.create(base, { ...draft, projectId, parentId });
+        try {
+          await create(current, owner.projectId, owner.id);
+        } catch (caught) {
+          if (!conflicted(caught)) throw caught;
+          const next = await readLatest();
+          const parent = next.work.tasks.find((task) => task.id === taskId);
+          if (!parent) throw Error("父任务已不存在，请重新读取");
+          await create(next, parent.projectId, parent.id);
+        }
+        if (alive.current) setError("");
         await reload();
         holdFocus();
       } catch (caught) {
-        if (!alive.current) return;
-        setError(caught instanceof Error ? caught.message : String(caught));
+        showFailure(caught);
         setTitle((current) => (current.trim() ? current : text));
         holdFocus();
       } finally {
@@ -141,30 +207,28 @@ export function TaskSubtasks({
   }
   function toggle(task: WorkTask) {
     enqueue(async () => {
-      const current = baseRef.current;
-      if (!current) return;
+      if (!baseRef.current) return;
       try {
-        await personalTasks.change(current, task.id, {
+        await applyChange(task.id, {
           type: "status",
           status: task.status === "completed" ? "todo" : "completed",
         });
+        if (alive.current) setError("");
         await reload();
       } catch (caught) {
-        if (alive.current)
-          setError(caught instanceof Error ? caught.message : String(caught));
+        showFailure(caught);
       }
     });
   }
   function remove(task: WorkTask) {
     enqueue(async () => {
-      const current = baseRef.current;
-      if (!current) return;
+      if (!baseRef.current) return;
       try {
-        await personalTasks.change(current, task.id, { type: "delete" });
+        await applyChange(task.id, { type: "delete" });
+        if (alive.current) setError("");
         await reload();
       } catch (caught) {
-        if (alive.current)
-          setError(caught instanceof Error ? caught.message : String(caught));
+        showFailure(caught);
       }
     });
   }
@@ -179,16 +243,14 @@ export function TaskSubtasks({
     setPreview(next);
     enqueue(async () => {
       try {
-        const current = baseRef.current;
-        if (!current) throw Error("请重新读取");
-        await personalTasks.change(current, taskId, {
+        await applyChange(taskId, {
           type: "reorder",
           orderedIds: next,
         });
+        if (alive.current) setError("");
         await reload();
       } catch (caught) {
-        if (alive.current)
-          setError(caught instanceof Error ? caught.message : String(caught));
+        showFailure(caught);
       } finally {
         if (alive.current) setPreview(null);
       }

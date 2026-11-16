@@ -103,15 +103,17 @@ impl Store {
             return Err("STATE_CONFLICT".into());
         }
         let target = NaiveDate::parse_from_str(date, "%Y-%m-%d").map_err(|e| e.to_string())?;
+        let mut changed = self
+            .carry_open_subtasks(tx, date, time_zone, at)
+            .await?;
         let tasks: Vec<(String, Option<String>)> = sqlx::query_as(
             "SELECT t.id,t.plan_value FROM tasks t WHERE t.owner_id=? AND t.deleted_at IS NULL
              AND t.status NOT IN ('completed','cancelled')
-             AND NOT EXISTS(SELECT 1 FROM tasks c WHERE c.parent_task_id=t.id AND c.deleted_at IS NULL)
+             AND NOT EXISTS(SELECT 1 FROM tasks c WHERE c.parent_task_id=t.id AND c.deleted_at IS NULL AND c.status='completed')
              AND NOT EXISTS(SELECT 1 FROM projects p WHERE p.id=t.project_id AND (p.deleted_at IS NOT NULL OR p.archived_at IS NOT NULL OR p.canceled=1 OR p.status<>'active'))
              AND ((t.plan_value IS NOT NULL AND (json_extract(t.plan_value,'$.kind')='instant' OR json_extract(t.plan_value,'$.date')<?))
                OR EXISTS(SELECT 1 FROM daily_plan_items p WHERE p.owner_id=t.owner_id AND p.task_id=t.id AND p.removed=0 AND p.is_summary=0 AND p.execution_date<?))")
             .bind(&self.owner_id).bind(date).bind(date).fetch_all(&mut **tx).await.map_err(|e| e.to_string())?;
-        let mut changed = 0;
         for (id, raw) in tasks {
             let plan: Option<TimeValue> = raw
                 .as_deref()
@@ -185,4 +187,152 @@ impl Store {
         }
         Ok(changed)
     }
+
+    /// A partly finished checklist leaves yesterday behind. The unfinished
+    /// subtasks become a new task on the new day.
+    async fn carry_open_subtasks(
+        &self,
+        tx: &mut sqlx::Transaction<'_, sqlx::Sqlite>,
+        date: &str,
+        time_zone: &str,
+        at: &str,
+    ) -> StoreResult<usize> {
+        let parents: Vec<CarryParent> = sqlx::query_as(
+            "SELECT t.id,t.title,t.project_id,t.notes,t.important,t.priority_level,t.section_id,t.deadline,t.deadline_time_zone,t.default_estimated_minutes
+             FROM tasks t WHERE t.owner_id=? AND t.deleted_at IS NULL AND t.parent_task_id IS NULL
+             AND t.status NOT IN ('completed','cancelled')
+             AND EXISTS(SELECT 1 FROM tasks c WHERE c.owner_id=t.owner_id AND c.parent_task_id=t.id AND c.deleted_at IS NULL AND c.status NOT IN ('completed','cancelled'))
+             AND EXISTS(SELECT 1 FROM tasks c WHERE c.owner_id=t.owner_id AND c.parent_task_id=t.id AND c.deleted_at IS NULL AND c.status='completed')
+             AND EXISTS(SELECT 1 FROM daily_plan_items p WHERE p.owner_id=t.owner_id AND p.task_id=t.id AND p.removed=0 AND p.is_summary=0 AND p.execution_date<?)
+             AND NOT EXISTS(SELECT 1 FROM daily_plan_items p WHERE p.owner_id=t.owner_id AND p.task_id=t.id AND p.removed=0 AND p.is_summary=0 AND p.execution_date>=?)",
+        )
+        .bind(&self.owner_id)
+        .bind(date)
+        .bind(date)
+        .fetch_all(&mut **tx)
+        .await
+        .map_err(|e| e.to_string())?;
+        let mut changed = 0;
+        for parent in parents {
+            let slot: Option<(String, i64, Option<i64>)> = sqlx::query_as(
+                "SELECT day_period,day_rank,estimated_minutes FROM daily_plan_items WHERE owner_id=? AND task_id=? AND removed=0 AND is_summary=0 AND execution_date<? ORDER BY execution_date DESC,created_at DESC,id LIMIT 1",
+            )
+            .bind(&self.owner_id)
+            .bind(&parent.id)
+            .bind(date)
+            .fetch_optional(&mut **tx)
+            .await
+            .map_err(|e| e.to_string())?;
+            let Some((period, rank, minutes)) = slot else {
+                continue;
+            };
+            let open: Vec<String> = sqlx::query_scalar(
+                "SELECT id FROM tasks WHERE owner_id=? AND parent_task_id=? AND deleted_at IS NULL AND status NOT IN ('completed','cancelled') ORDER BY task_rank,created_at,id",
+            )
+            .bind(&self.owner_id)
+            .bind(&parent.id)
+            .fetch_all(&mut **tx)
+            .await
+            .map_err(|e| e.to_string())?;
+            if open.is_empty() {
+                continue;
+            }
+            let id = Uuid::new_v4().to_string();
+            let plan = serde_json::to_string(&TimeValue::Date {
+                date: date.to_owned(),
+            })
+            .map_err(|e| e.to_string())?;
+            sqlx::query(
+                "INSERT INTO tasks(id,owner_id,title,notes,project_id,section_id,important,priority_level,deadline,deadline_time_zone,default_estimated_minutes,plan_value,status,source,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,'todo','temporary',?)",
+            )
+            .bind(&id)
+            .bind(&self.owner_id)
+            .bind(&parent.title)
+            .bind(&parent.notes)
+            .bind(&parent.project_id)
+            .bind(&parent.section_id)
+            .bind(parent.important)
+            .bind(parent.priority_level)
+            .bind(&parent.deadline)
+            .bind(&parent.deadline_time_zone)
+            .bind(parent.default_estimated_minutes)
+            .bind(&plan)
+            .bind(at)
+            .execute(&mut **tx)
+            .await
+            .map_err(|e| e.to_string())?;
+            sqlx::query(
+                "INSERT INTO daily_plan_items(id,owner_id,task_id,execution_date,time_zone,created_at,day_period,day_rank,estimated_minutes) VALUES(?,?,?,?,?,?,?,?,?)",
+            )
+            .bind(Uuid::new_v4().to_string())
+            .bind(&self.owner_id)
+            .bind(&id)
+            .bind(date)
+            .bind(time_zone)
+            .bind(at)
+            .bind(&period)
+            .bind(rank)
+            .bind(minutes)
+            .execute(&mut **tx)
+            .await
+            .map_err(|e| e.to_string())?;
+            sqlx::query(
+                "UPDATE tasks SET parent_task_id=?,version=version+1 WHERE owner_id=? AND parent_task_id=? AND deleted_at IS NULL AND status NOT IN ('completed','cancelled')",
+            )
+            .bind(&id)
+            .bind(&self.owner_id)
+            .bind(&parent.id)
+            .execute(&mut **tx)
+            .await
+            .map_err(|e| e.to_string())?;
+            sqlx::query(
+                "UPDATE tasks SET status='completed',completed_at=?,version=version+1 WHERE id=? AND owner_id=?",
+            )
+            .bind(at)
+            .bind(&parent.id)
+            .bind(&self.owner_id)
+            .execute(&mut **tx)
+            .await
+            .map_err(|e| e.to_string())?;
+            sqlx::query(
+                "UPDATE daily_plan_items SET removed=1 WHERE owner_id=? AND task_id=? AND execution_date<? AND removed=0 AND is_summary=0",
+            )
+            .bind(&self.owner_id)
+            .bind(&parent.id)
+            .bind(date)
+            .execute(&mut **tx)
+            .await
+            .map_err(|e| e.to_string())?;
+            sqlx::query(
+                "INSERT INTO domain_events(id,owner_id,task_id,kind,occurred_at,payload) VALUES(?,?,?,'task_split',?,?)",
+            )
+            .bind(Uuid::new_v4().to_string())
+            .bind(&self.owner_id)
+            .bind(&parent.id)
+            .bind(at)
+            .bind(
+                json!({"reason":"remaining_subtasks","date":date,"taskId":id,"subtasks":open})
+                    .to_string(),
+            )
+            .execute(&mut **tx)
+            .await
+            .map_err(|e| e.to_string())?;
+            changed += 1;
+        }
+        Ok(changed)
+    }
+}
+
+#[derive(sqlx::FromRow)]
+struct CarryParent {
+    id: String,
+    title: String,
+    project_id: Option<String>,
+    notes: String,
+    important: i64,
+    priority_level: i64,
+    section_id: Option<String>,
+    deadline: Option<String>,
+    deadline_time_zone: Option<String>,
+    default_estimated_minutes: Option<i64>,
 }

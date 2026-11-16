@@ -16,11 +16,7 @@ import { DatePicker } from "./DatePicker";
 import { TaskPanelIcon } from "./TaskPanelIcon";
 import { shiftCalendarDate } from "./calendar-controls";
 import { useAutosave } from "./useAutosave";
-import {
-  TaskWorkload,
-  reminderLabel,
-  specificDateLabel,
-} from "./TaskPanelFields";
+import { reminderLabel, specificDateLabel } from "./TaskPanelFields";
 import { TaskDescription, TaskSubtitle } from "./TaskDescription";
 import { TaskProjectControl } from "./TaskProjectControl";
 import { TaskSubtasks } from "./TaskSubtasks";
@@ -371,11 +367,6 @@ export function InboxTaskPanel({
               taskId={task.taskId}
               disabled={locked}
               onChanged={() => onSaved("")}
-            />
-            <TaskWorkload
-              estimate={estimate}
-              disabled={locked}
-              onChange={(minutes) => changed(setEstimate, minutes, true)}
             />
             <TaskDescription
               value={notes}

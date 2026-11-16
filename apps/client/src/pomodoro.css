@@ -205,9 +205,9 @@
   left: 50%;
   bottom: calc(100% + 8px);
   display: grid;
+  grid-template-columns: repeat(4, minmax(64px, 1fr));
   gap: 4px;
-  width: max-content;
-  min-width: 112px;
+  width: 336px;
   padding: 6px;
   border: 1px solid var(--line);
   border-radius: 12px;
@@ -215,13 +215,39 @@
   box-shadow: var(--shadow-card);
   transform: translateX(-50%);
 }
+.pomodoro-sounds button[role="menuitem"] {
+  grid-column: 1 / -1;
+}
 .workspace .pomodoro-dock .pomodoro-sounds button {
   min-height: 32px;
-  padding: 4px 10px;
+  padding: 4px 8px;
   border-radius: 8px;
   background: transparent;
   color: var(--text-primary);
   text-align: left;
+}
+.pomodoro-sounds button[role="menuitemradio"] {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.pomodoro-sounds svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.pomodoro-sounds .is-mark {
+  fill: currentColor;
+  stroke: none;
+}
+.workspace .pomodoro-dock .pomodoro-sounds button[role="menuitem"] {
+  grid-column: 1 / -1;
 }
 .workspace .pomodoro-dock .pomodoro-sounds button[aria-checked="true"] {
   background: color-mix(in srgb, var(--primary) 45%, var(--surface));

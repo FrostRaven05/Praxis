@@ -1,0 +1,22 @@
+{
+  "baseUrl": "https://todo.frostraven05.com",
+  "version": "1.0.1",
+  "sourceArchiveSha256": "a3ec9e56475821dbabac656e63dab2c0f93e4f82e670683a8eb25c2be9aa5df2",
+  "runtimeBackup": "/opt/praxis/backups/before-admin-20261115T163151Z",
+  "releaseConfigBackup": "/opt/praxis/backups/before-installers-20261115T163151Z",
+  "releaseDirectory": "/opt/praxis/deploy/runtime/data/releases/1.0.1",
+  "containerReleaseDirectory": "/data/releases",
+  "imageShortId": "419c9e6a09da",
+  "containerHealthy": true,
+  "certificateRenewalActive": true,
+  "administratorCredentialPreserved": true,
+  "composeAndNginxConfigHashesUnchanged": true,
+  "databaseIntegrity": "ok",
+  "accountIdentitiesPreserved": true,
+  "countsBeforeAndAfter": {
+    "account_users": 1,
+    "account_sessions": 1,
+    "sync_entities": 151,
+    "sync_entity_changes": 44
+  }
+}

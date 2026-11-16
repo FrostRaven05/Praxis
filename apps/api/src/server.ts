@@ -4,7 +4,11 @@ import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import { EntityStore, entityKinds, type EntityCommand } from "./entities.js";
 import { CaptureStore, StoreError, type CaptureCommand } from "./store.js";
 import { AccountStore, AccountError } from "./accounts.js";
-import { readRelease, type AppRelease } from "./app-release.js";
+import {
+  readRelease,
+  registerReleaseDownloads,
+  type AppRelease,
+} from "./app-release.js";
 import { DatabaseSync } from "node:sqlite";
 import { registerAdmin } from "./admin.js";
 
@@ -20,6 +24,7 @@ export interface ServerOptions {
   adminTokenHash?: string;
   https?: { key: string | Buffer; cert: string | Buffer };
   release?: unknown;
+  releaseDirectory?: string;
 }
 const uuid =
   "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
@@ -85,6 +90,7 @@ export function createServer(options: ServerOptions): FastifyInstance {
     generation: entities.generation,
     configuredDevices: credentials.length,
     ai,
+    release,
   });
   const identities = new WeakMap<FastifyRequest, DeviceCredential>();
   const windows = new Map<string, { start: number; count: number }>();
@@ -178,7 +184,7 @@ export function createServer(options: ServerOptions): FastifyInstance {
       return reply.code(413).send({ error: "BODY_TOO_LARGE" });
     return reply.code(500).send({ error: "INTERNAL_ERROR" });
   });
-  registerAiRoutes(app, ai, request => identities.get(request)?.ownerId);
+  registerAiRoutes(app, ai, (request) => identities.get(request)?.ownerId);
   app.get("/", async (_request, reply) =>
     reply
       .type("text/plain; charset=utf-8")
@@ -287,6 +293,7 @@ export function createServer(options: ServerOptions): FastifyInstance {
   app.get("/app/release", async (_request, reply) =>
     reply.header("Cache-Control", "no-store").send(release),
   );
+  registerReleaseDownloads(app, options.releaseDirectory);
   app.post<{ Body: CaptureCommand }>(
     "/v1/captures/commands",
     { schema: { body: commandSchema } },

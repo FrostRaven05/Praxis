@@ -17,10 +17,17 @@ import {
   type WorkspaceSnapshot,
 } from "@praxis/storage-mobile";
 
-const rejectedNative = (error: unknown) =>
-  /^(?:STATE_CONFLICT|USER:|Operation reused)/.test(
-    error instanceof Error ? error.message : String(error),
+const rejectedNative = (error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  // Desktop maps STATE_CONFLICT to these sentences before the client sees it.
+  // They are definite refusals: the write did not land, so the old command must not stay stuck.
+  return (
+    /^(?:STATE_CONFLICT|USER:|Operation reused)/.test(message) ||
+    /内容已更新|视图已更新|任务状态已变化|任务已有更新|安排已发生变化|内容已变化/.test(
+      message,
+    )
   );
+};
 const versions = (work: WorkSnapshot) =>
   work.tasks.map((t) => [t.id, t.version] as [string, number]);
 export function createDesktopPersonalTasks(

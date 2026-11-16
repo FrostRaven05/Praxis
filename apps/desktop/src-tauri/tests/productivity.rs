@@ -488,3 +488,54 @@ async fn subtasks_append_then_keep_a_dragged_order() {
     );
     s.close().await;
 }
+
+#[tokio::test]
+async fn partial_subtasks_become_a_new_task_the_next_day() {
+    let (d, s) = fixture().await;
+    let parent = id();
+    let done = id();
+    let left = id();
+    s.capture(&CaptureCommand {
+        operation_id: id(),
+        task_id: parent.clone(),
+        plan_id: id(),
+        title: "预览图".into(),
+        execution_date: "2026-10-06".into(),
+        time_zone: "Asia/Hong_Kong".into(),
+        occurred_at: "2026-10-06T01:00:00Z".into(),
+    })
+    .await
+    .unwrap();
+    let mut db = sqlx::SqliteConnection::connect_with(
+        &sqlx::sqlite::SqliteConnectOptions::new().filename(d.path().join("praxis.db")),
+    )
+    .await
+    .unwrap();
+    let owner: String = sqlx::query_scalar("SELECT owner_id FROM local_profile WHERE singleton=1")
+        .fetch_one(&mut db)
+        .await
+        .unwrap();
+    for (child, title, status) in [(&done, "已完成步骤", "completed"), (&left, "还没做完", "todo")] {
+        sqlx::query("INSERT INTO tasks(id,owner_id,title,parent_task_id,status,source,created_at) VALUES(?,?,?,?,?,'temporary','2026-10-06T01:00:00Z')")
+            .bind(child)
+            .bind(&owner)
+            .bind(title)
+            .bind(&parent)
+            .bind(status)
+            .execute(&mut db)
+            .await
+            .unwrap();
+    }
+    drop(db);
+    s.prepare_daily_tasks("2026-10-07T16:30:00Z").await.unwrap();
+    let today = s.list_day("2026-10-08").await.unwrap();
+    assert_eq!(today.len(), 1);
+    assert_eq!(today[0].title, "预览图");
+    assert_ne!(today[0].task_id, parent);
+    assert_eq!(item(&s, &parent).await["status"], "completed");
+    assert_eq!(item(&s, &done).await["parentId"], parent);
+    assert_eq!(item(&s, &left).await["parentId"], today[0].task_id);
+    s.prepare_daily_tasks("2026-10-07T18:00:00Z").await.unwrap();
+    assert_eq!(s.list_day("2026-10-08").await.unwrap().len(), 1);
+    s.close().await;
+}

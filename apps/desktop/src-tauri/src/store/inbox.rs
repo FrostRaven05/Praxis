@@ -116,7 +116,7 @@ impl Store {
         )
         .await?
         {
-            let allowed:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM tasks t WHERE t.id=? AND t.owner_id=? AND t.version=? AND t.parent_task_id IS NULL AND t.status IN('todo','in_progress','blocked') AND NOT EXISTS(SELECT 1 FROM daily_plan_items p WHERE p.task_id=t.id AND p.owner_id=t.owner_id AND p.is_summary=0 AND p.removed=0))")
+            let allowed:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM tasks t WHERE t.id=? AND t.owner_id=? AND t.version=? AND t.parent_task_id IS NULL AND t.status IN('todo','in_progress','blocked') AND NOT EXISTS(SELECT 1 FROM tasks child WHERE child.owner_id=t.owner_id AND child.parent_task_id=t.id AND child.deleted_at IS NULL AND child.status NOT IN('completed','cancelled')) AND NOT EXISTS(SELECT 1 FROM daily_plan_items p WHERE p.task_id=t.id AND p.owner_id=t.owner_id AND p.is_summary=0 AND p.removed=0))")
  .bind(&c.task_id).bind(&self.owner_id).bind(c.expected_version).fetch_one(&mut *tx).await.map_err(|e|e.to_string())?;
             if !allowed {
                 return Err("STATE_CONFLICT".into());

@@ -7,6 +7,7 @@ export class RetriableCommands<Command> {
     matches: (command: Command) => boolean,
     create: () => Command,
     send: (command: Command) => Promise<Result>,
+    rejected?: (error: unknown) => boolean,
   ): Promise<{ command: Command; result: Result }> {
     if (this.saving.has(key)) throw new Error("正在保存，请稍候");
     let command = this.pending.get(key);
@@ -19,6 +20,9 @@ export class RetriableCommands<Command> {
       const result = await send(command);
       this.pending.delete(key);
       return { command, result };
+    } catch (error) {
+      if (rejected?.(error)) this.pending.delete(key);
+      throw error;
     } finally {
       this.saving.delete(key);
     }

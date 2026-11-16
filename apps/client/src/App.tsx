@@ -127,10 +127,10 @@ export function App() {
   }, []);
   const [projectNavigation, setProjectNavigation] = useState(0);
   const [projectBusy, setProjectBusy] = useState(false);
-  const [detailBusy, setDetailBusy] = useState(false);
+  const [, setDetailBusy] = useState(false);
   const [inboxBusy, setInboxBusy] = useState(false);
   const [captureFocusRevision, setCaptureFocusRevision] = useState(0);
-  const [detailDirty, setDetailDirty] = useState(false);
+  const [, setDetailDirty] = useState(false);
   const [projectForm, setProjectForm] = useState<"new" | "edit" | null>(null);
   const workspaceRef = useRef<HTMLElement>(null);
   const [projectId, setProjectId] = useState<string | null>(null);
@@ -140,7 +140,7 @@ export function App() {
     [],
   );
   const [view, setView] = useState<"todos" | "day" | "inbox" | "projects">(
-    "todos",
+    "day",
   );
   const [accountOpen, setAccountOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection>("account");
@@ -229,7 +229,7 @@ export function App() {
   const dailyHabits = useDailyHabitTasks(
     displayedDate,
     desktopAvailable && view === "day",
-    planningBusy || detailBusy || detailDirty || inboxBusy,
+    planningBusy || inboxBusy,
   );
   const completedHabits = dailyHabits.rows.filter(
     (row) => row.entry?.status === "done",
@@ -247,20 +247,20 @@ export function App() {
     dailyHabits.busy ||
     planningBusy ||
     changingId !== null ||
-    detailBusy ||
-    detailDirty ||
     saving ||
     inboxBusy ||
     loading ||
     pendingPlan !== null;
 
+  const loadedDate = useRef("");
   const refresh = useCallback(async (date: string) => {
     const version = ++queryVersion.current;
-    setLoading(true);
+    if (loadedDate.current !== date) setLoading(true);
     try {
       const tasks = await listedDay(date);
       if (version === queryVersion.current) {
         setItems(tasks);
+        loadedDate.current = date;
         setLoadError("");
         return tasks;
       }
@@ -322,10 +322,8 @@ export function App() {
   const quickCapture = useCallback(() => {
     if (
       projectBusy ||
-      detailBusy ||
       planningBusy ||
       inboxBusy ||
-      detailDirty ||
       (view === "day" && planLocked)
     )
       return;
@@ -335,10 +333,8 @@ export function App() {
     setCaptureFocusRevision((revision) => revision + 1);
   }, [
     projectBusy,
-    detailBusy,
     planningBusy,
     inboxBusy,
-    detailDirty,
     view,
     planLocked,
   ]);
@@ -346,10 +342,8 @@ export function App() {
     (id: string | null) => {
       if (
         projectBusy ||
-        detailBusy ||
         planningBusy ||
         inboxBusy ||
-        detailDirty ||
         (view === "day" && planLocked)
       )
         return;
@@ -364,10 +358,8 @@ export function App() {
     },
     [
       projectBusy,
-      detailBusy,
       planningBusy,
       inboxBusy,
-      detailDirty,
       view,
       planLocked,
     ],
@@ -379,7 +371,7 @@ export function App() {
   }, [openProject]);
   useEffect(() => {
     const manage = (event: Event) => {
-      if (projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty || (view === "day" && planLocked)) return;
+      if (projectBusy || planningBusy || inboxBusy || (view === "day" && planLocked)) return;
       setProjectForm(null);
       setWorkTaskId(null);
       setWorkReviewId(null);
@@ -388,14 +380,14 @@ export function App() {
     };
     window.addEventListener("praxis-project-settings", manage);
     return () => window.removeEventListener("praxis-project-settings", manage);
-  }, [projectBusy, detailBusy, planningBusy, inboxBusy, detailDirty, view, planLocked]);
+  }, [projectBusy, planningBusy, inboxBusy, view, planLocked]);
   function openSettings() {
-    if (projectBusy || detailBusy || planningBusy || inboxBusy) return;
+    if (projectBusy || planningBusy || inboxBusy) return;
     setSettingsSection("account");
     setAccountOpen(true);
   }
   function openTodos() {
-    if(projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty || (view==="day" && planLocked)) return;
+    if(projectBusy || planningBusy || inboxBusy || (view==="day" && planLocked)) return;
     setSelectedId(null);setWorkTaskId(null);setWorkProjectId(null);setWorkReviewId(null);setView("todos");
   }
   useEffect(() => {
@@ -406,8 +398,6 @@ export function App() {
         event.repeat ||
         document.querySelector("dialog[open]") ||
         projectBusy ||
-        detailBusy ||
-        detailDirty ||
         (view === "day" && planLocked) ||
         planningBusy ||
         inboxBusy
@@ -442,8 +432,6 @@ export function App() {
     return () => window.removeEventListener("keydown", handler);
   }, [
     projectBusy,
-    detailBusy,
-    detailDirty,
     planningBusy,
     inboxBusy,
     quickCapture,
@@ -671,7 +659,7 @@ export function App() {
     await refresh(date);
   }
   function selectDate(date: string) {
-    if (projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty)
+    if (projectBusy || planningBusy || inboxBusy)
       return;
     if (!validCalendarDate(date)) return;
     setSelectedId(null);
@@ -738,7 +726,7 @@ export function App() {
         row={row}
         disabled={planLocked || dailyHabits.future}
         selected={selectedHabitId === row.habit.id}
-        detailsDisabled={detailBusy || detailDirty || planningBusy || inboxBusy}
+        detailsDisabled={planningBusy || inboxBusy}
         onDetails={() => {
           setSelectedId(null);
           setSelectedHabitId(
@@ -767,7 +755,8 @@ export function App() {
         data-completion-row=""
         className={`task-item${item.status === "completed" ? " completed" : ""}${draggingId === item.planId ? " is-dragging" : ""}${targeted ? " drop-" + dropTarget.position : ""}`}
         onContextMenu={(event) => {
-          if (!desktopAvailable || planLocked) return;
+          if (!desktopAvailable || changingId || planningBusy)
+            return;
           event.preventDefault();
           setTaskMenu({
             id: item.taskId,
@@ -800,8 +789,6 @@ export function App() {
             disabled={
               changingId !== null ||
               planningBusy ||
-              detailBusy ||
-              detailDirty ||
               pendingPlan !== null
             }
             onToggle={() => {
@@ -810,7 +797,7 @@ export function App() {
           />
         )}
         <button
-          disabled={detailBusy || detailDirty || planningBusy || inboxBusy}
+          disabled={planningBusy || inboxBusy}
           className={
             selectedId === item.taskId ? "task-row selected" : "task-row"
           }
@@ -933,7 +920,6 @@ export function App() {
               saving ||
               planningBusy ||
               inboxBusy ||
-              detailDirty ||
               !nativeAvailable
             }
             aria-invalid={Boolean(saveError)}
@@ -1136,9 +1122,7 @@ export function App() {
                       row={row}
                       disabled={planLocked || dailyHabits.future}
                       selected={selectedHabitId === row.habit.id}
-                      detailsDisabled={
-                        detailBusy || detailDirty || planningBusy || inboxBusy
-                      }
+                      detailsDisabled={planningBusy || inboxBusy}
                       onDetails={() => {
                         setSelectedId(null);
                         setSelectedHabitId(
@@ -1166,23 +1150,21 @@ export function App() {
       ref={workspaceRef}
     >
       <aside className="sidebar">
-        <a className="brand" href="#todos" aria-label="Praxis 首页" onClick={event=>{event.preventDefault();openTodos();}}>
+        <a className="brand" href="#today" aria-label="Praxis 首页" onClick={event=>{event.preventDefault();selectDate(localDay(day.timeZone).date);}}>
           <span className="brand-mark">P</span>Praxis
           <span className="brand-dot">.</span>
         </a>
         <nav aria-label="主导航">
-          {desktopAvailable && <button type="button" className={view==="day" ? "nav-item active" : "nav-item"} aria-current={view==="day" ? "page" : undefined} disabled={projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty} onClick={()=>selectDate(localDay(day.timeZone).date)}><TaskPanelIcon name="sun" />今日</button>}
-          <button type="button" className={view==="todos" ? "nav-item active" : "nav-item"} aria-current={view==="todos" ? "page" : undefined} disabled={projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty || (view==="day" && planLocked)} onClick={openTodos}><TaskPanelIcon name="check" />杂事</button>
+          {desktopAvailable && <button type="button" className={view==="day" ? "nav-item active" : "nav-item"} aria-current={view==="day" ? "page" : undefined} disabled={projectBusy || planningBusy || inboxBusy} onClick={()=>selectDate(localDay(day.timeZone).date)}><TaskPanelIcon name="sun" />今日</button>}
+          <button type="button" className={view==="todos" ? "nav-item active" : "nav-item"} aria-current={view==="todos" ? "page" : undefined} disabled={projectBusy || planningBusy || inboxBusy || (view==="day" && planLocked)} onClick={openTodos}><TaskPanelIcon name="check" />杂事</button>
         </nav>
         {desktopAvailable && (
           <ProjectNavigation
             revision={projectRevision}
             disabled={
               projectBusy ||
-              detailBusy ||
               planningBusy ||
               inboxBusy ||
-              detailDirty ||
               (view === "day" && planLocked)
             }
             selectedId={
@@ -1194,7 +1176,7 @@ export function App() {
             onSelect={openProject}
             onList={() => openProject(null)}
             onCreate={() => {
-              if (projectBusy || detailBusy || planningBusy || inboxBusy)
+              if (projectBusy || planningBusy || inboxBusy)
                 return;
               setProjectForm("new");
               setProjectNavigation((n) => n + 1);
@@ -1205,14 +1187,14 @@ export function App() {
         )}
         {desktopAvailable && (
           <div className="sidebar-bottom sidebar-userbar">
-            <AccountButton disabled={projectBusy || detailBusy || planningBusy || inboxBusy || detailDirty || (view === "day" && planLocked)} onClick={() => { setSettingsSection("account"); setAccountOpen(true); }} />
+            <AccountButton disabled={projectBusy || planningBusy || inboxBusy || (view === "day" && planLocked)} onClick={() => { setSettingsSection("account"); setAccountOpen(true); }} />
             <LanSyncStatus onRefresh={synced} />
             <button
               type="button"
               className="sidebar-more"
               aria-label="设置"
               title="设置"
-              disabled={projectBusy || detailBusy || planningBusy || inboxBusy}
+              disabled={projectBusy || planningBusy || inboxBusy}
               onClick={openSettings}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -1224,7 +1206,7 @@ export function App() {
         )}
       </aside>
       {view === "todos" ? (
-        <PersonalTodoHome revision={projectRevision} externalBusy={detailBusy || detailDirty || personalAgent!==null} onBusyChange={setInboxBusy} onOpenProject={openProject} focusRevision={captureFocusRevision} onChanged={projectsChanged} />
+        <PersonalTodoHome revision={projectRevision} externalBusy={personalAgent!==null} onBusyChange={setInboxBusy} onOpenProject={openProject} focusRevision={captureFocusRevision} onChanged={projectsChanged} />
       ) : view === "day" && desktopAvailable ? (
         <ProductivityView
           renderToday={renderDailyView}
@@ -1244,8 +1226,6 @@ export function App() {
             .join("|")}
           externalBusy={
             planningBusy ||
-            detailBusy ||
-            detailDirty ||
             saving ||
             pendingPlan !== null
           }

@@ -1,0 +1,39 @@
+{
+  "version": "1.0.2",
+  "backup": "/opt/praxis/backups/before-installers-20261116T154021Z",
+  "databaseIntegrity": "ok",
+  "tableCountsBefore": {
+    "captures": 0,
+    "capture_changes": 0,
+    "sync_entities": 278,
+    "sync_entity_versions": 357,
+    "sync_entity_changes": 79,
+    "sync_entity_migrations": 1,
+    "sync_entity_upgrades": 1,
+    "account_users": 1,
+    "account_sessions": 2,
+    "admin_sessions": 1,
+    "admin_audit": 45,
+    "ai_runs": 9,
+    "admin_ai_settings": 1,
+    "account_deleted_users": 9
+  },
+  "tableCountsAfter": {
+    "captures": 0,
+    "capture_changes": 0,
+    "sync_entities": 278,
+    "sync_entity_versions": 357,
+    "sync_entity_changes": 79,
+    "sync_entity_migrations": 1,
+    "sync_entity_upgrades": 1,
+    "account_users": 1,
+    "account_sessions": 2,
+    "admin_sessions": 1,
+    "admin_audit": 45,
+    "ai_runs": 9,
+    "admin_ai_settings": 1,
+    "account_deleted_users": 9
+  },
+  "backendImageUnchanged": true,
+  "routingUnchanged": true
+}

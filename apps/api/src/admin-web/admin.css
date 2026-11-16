@@ -1283,6 +1283,64 @@ dialog::backdrop {
 .settings-panel {
   max-width: 760px;
 }
+.release-summary {
+  padding: 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+.release-summary h2 {
+  font-size: 20px;
+}
+.release-notes {
+  width: 100%;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #657985;
+  white-space: pre-wrap;
+}
+.release-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.release-card {
+  padding: 26px;
+}
+.release-card .metric-icon {
+  width: 42px;
+  height: 42px;
+  margin-bottom: 20px;
+}
+.release-card h2 {
+  font-size: 17px;
+}
+.release-card .button {
+  margin-top: 24px;
+  text-decoration: none;
+}
+.release-checksum {
+  margin-top: 20px;
+  font-size: 11px;
+  color: #7b8c98;
+}
+.release-checksum summary {
+  cursor: pointer;
+}
+.release-checksum code {
+  display: block;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+  margin-top: 10px;
+}
+@media (max-width: 560px) {
+  .release-grid {
+    grid-template-columns: 1fr;
+  }
+}
 .settings-panel .panel-head {
   padding-bottom: 20px;
   border-bottom: 1px solid var(--line);

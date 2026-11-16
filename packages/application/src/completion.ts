@@ -56,6 +56,12 @@ export class ChangeCompletion {
         };
       },
       (command) => this.storage.changeCompletion(command),
+      (error) => {
+        const message = error instanceof Error ? error.message : String(error);
+        return /SUMMARY_TASK|STATE_CONFLICT|还有子任务|任务状态已变化|当前任务不能|没有可撤销/.test(
+          message,
+        );
+      },
     );
     return result;
   }

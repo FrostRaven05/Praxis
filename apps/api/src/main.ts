@@ -49,6 +49,11 @@ try {
     throw new Error("invalid_admin_hash");
   let release: AppRelease | undefined;
   if (c.release !== undefined) release = readRelease(c.release);
+  if (
+    c.releaseDirectory !== undefined &&
+    typeof c.releaseDirectory !== "string"
+  )
+    throw new Error("invalid_release_directory");
   const adminTokenHash = adminToken
     ? createHash("sha256").update(adminToken).digest("hex")
     : typeof c.adminTokenHash === "string"
@@ -60,6 +65,9 @@ try {
     devices,
     ...(adminTokenHash ? { adminTokenHash } : {}),
     ...(release ? { release } : {}),
+    ...(typeof c.releaseDirectory === "string"
+      ? { releaseDirectory: resolve(root, c.releaseDirectory) }
+      : {}),
     https: {
       key: readFileSync(resolve(root, c.keyPath)),
       cert: readFileSync(resolve(root, c.certPath)),

@@ -1,6 +1,55 @@
+import { createReadStream, realpathSync, statSync } from "node:fs";
+import { dirname, join } from "node:path";
+import type { FastifyInstance } from "fastify";
+
 export interface ReleaseAsset {
   url: string;
   sha256: string;
+}
+
+export function registerReleaseDownloads(
+  app: FastifyInstance,
+  directory?: string,
+) {
+  app.get<{ Params: { version: string; file: string } }>(
+    "/releases/:version/:file",
+    async (request, reply) => {
+      const { version: requestedVersion, file } = request.params;
+      const platform =
+        file === `Praxis-${requestedVersion}-windows-x64-setup.exe`
+          ? "windows"
+          : file === `Praxis-${requestedVersion}-android.apk`
+            ? "android"
+            : null;
+      if (!directory || !version.test(requestedVersion) || !platform)
+        return reply.code(404).send({ error: "RELEASE_NOT_FOUND" });
+      let path: string;
+      let size: number;
+      try {
+        const root = realpathSync(directory);
+        path = realpathSync(join(root, requestedVersion, file));
+        if (dirname(path) !== join(root, requestedVersion))
+          return reply.code(404).send({ error: "RELEASE_NOT_FOUND" });
+        const stat = statSync(path);
+        if (!stat.isFile())
+          return reply.code(404).send({ error: "RELEASE_NOT_FOUND" });
+        size = stat.size;
+      } catch {
+        return reply.code(404).send({ error: "RELEASE_NOT_FOUND" });
+      }
+      return reply
+        .type(
+          platform === "android"
+            ? "application/vnd.android.package-archive"
+            : "application/vnd.microsoft.portable-executable",
+        )
+        .header("Content-Disposition", `attachment; filename="${file}"`)
+        .header("Content-Length", size)
+        .header("Cache-Control", "public, max-age=86400, immutable")
+        .header("X-Content-Type-Options", "nosniff")
+        .send(createReadStream(path));
+    },
+  );
 }
 export interface AppRelease {
   version: string;
@@ -60,7 +109,8 @@ export function readRelease(value: unknown): AppRelease {
   return {
     version: row.version,
     notes: row.notes,
-    publishedAt: row.publishedAt == null ? null : new Date(row.publishedAt).toISOString(),
+    publishedAt:
+      row.publishedAt == null ? null : new Date(row.publishedAt).toISOString(),
     minimumVersion: row.minimumVersion,
     windows: asset(row.windows),
     android: asset(row.android),

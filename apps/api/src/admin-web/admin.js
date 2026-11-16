@@ -63,6 +63,7 @@ const views = {
   users: ["用户管理", "查找用户，管理账号与登录设备。"],
   sync: ["同步数据", "查看云端数据数量与同步写入情况。"],
   model: ["模型设置", "配置规划助手使用的模型服务。"],
+  release: ["安装包", "下载 Windows 桌面端与 Android APP。"],
   system: ["系统状态", "查看服务运行情况。"],
 };
 const state = {
@@ -73,6 +74,7 @@ const state = {
   overview: null,
   users: null,
   model: null,
+  release: null,
   system: null,
   selected: null,
   pending: null,
@@ -139,6 +141,7 @@ function shell() {
     .map(([view, i]) => navButton(view, i))
     .join("")}<div class="nav-separator"></div><p class="nav-label">管理</p>${[
     ["model", "model"],
+    ["release", "download"],
     ["system", "settings"],
   ]
     .map(([view, i]) => navButton(view, i))
@@ -248,6 +251,29 @@ function modelView() {
   if (!model) return empty("正在读取模型设置…");
   return `<section class="panel settings-panel"><div class="panel-head"><h2>规划助手</h2><span class="badge${model.enabled ? "" : " disabled"}">${model.enabled ? "已配置" : "待配置"}</span></div><form class="model-form" id="model-form"><div class="form-grid"><div><label class="field-label" for="model-provider">服务</label><select class="form-input" id="model-provider" name="provider" data-previous="${escape(model.provider)}"><option value="deepseek"${model.provider === "deepseek" ? " selected" : ""}>DeepSeek</option><option value="openai"${model.provider === "openai" ? " selected" : ""}>OpenAI / 兼容接口</option></select></div><div><label class="field-label" for="model-name">模型</label><input class="form-input" id="model-name" name="model" required maxlength="200" value="${escape(model.model)}" placeholder="输入模型名称"></div></div><label class="field-label" for="model-base">接口地址</label><input class="form-input" id="model-base" name="baseUrl" type="url" required maxlength="300" value="${escape(model.baseUrl)}" placeholder="https://api.deepseek.com" aria-describedby="model-base-help"><p class="field-help" id="model-base-help">支持 HTTPS 服务地址，可填写自定义兼容接口。</p><label class="field-label" for="model-key">API 密钥</label><div class="secret-input"><input class="form-input" id="model-key" name="apiKey" type="password" maxlength="500" autocomplete="new-password" ${model.hasApiKey ? "" : "required"} placeholder="${model.hasApiKey ? "已保存，留空保留原密钥" : "输入 API 密钥"}" aria-describedby="model-key-help"><button type="button" class="icon-button" data-action="toggle-key" aria-label="显示 API 密钥" aria-pressed="false">显示</button></div><p class="field-help" id="model-key-help">${model.hasApiKey ? "已保存的密钥不会回显。" : "首次配置需要填写密钥。"}</p><p class="dialog-error" role="alert"></p><div class="form-footer"><span class="muted">${model.updatedAt ? `上次保存 ${escape(date(model.updatedAt))}` : model.source === "environment" ? "当前使用环境配置" : "保存后生效"}</span><button class="button primary" type="submit">保存模型设置</button></div></form></section>`;
 }
+function releaseView() {
+  const release = state.release;
+  const available = Boolean(release.windows || release.android);
+  return `<section class="panel release-summary"><div><h2>${available ? `Praxis ${escape(release.version)}` : "尚未发布安装包"}</h2><p class="subtitle">${available ? `发布于 ${escape(date(release.publishedAt))}` : "安装包发布后将在这里提供下载。"}</p></div><span class="badge${available ? "" : " disabled"}">${available ? "可下载" : "待发布"}</span>${release.notes ? `<p class="release-notes">${escape(release.notes)}</p>` : ""}</section><div class="release-grid">${[
+    ["windows", "Windows 桌面端", "64 位 Windows · 安装向导", "device"],
+    ["android", "Android APP", "Android 7.0 及以上 · APK", "download"],
+  ]
+    .map(([platform, title, description, i]) => {
+      const asset = release[platform];
+      let url = null;
+      try {
+        const parsed = new URL(asset?.url);
+        if (
+          parsed.protocol === "https:" &&
+          !parsed.username &&
+          !parsed.password
+        )
+          url = parsed.href;
+      } catch {}
+      return `<section class="panel release-card"><span class="metric-icon">${icon(i)}</span><h2>${title}</h2><p class="subtitle">${description}</p>${url ? `<a class="button primary" href="${escape(url)}" download>下载${platform === "windows" ? "安装包" : " APK"} ${icon("download")}</a><details class="release-checksum"><summary>SHA-256 校验值</summary><code>${escape(asset.sha256)}</code></details>` : '<button class="button" disabled>暂未提供</button>'}</section>`;
+    })
+    .join("")}</div>`;
+}
 function renderView() {
   const content = document.querySelector("#view-content");
   if (!content) return;
@@ -262,7 +288,9 @@ function renderView() {
           ? syncView()
           : state.view === "model"
             ? modelView()
-            : systemView();
+            : state.view === "release"
+              ? releaseView()
+              : systemView();
   if (focus) {
     const input = document.querySelector("#user-search");
     input?.focus();
@@ -278,7 +306,7 @@ async function load() {
   }
   document.querySelector("#error")?.replaceChildren();
   try {
-    let overview, users, system, model;
+    let overview, users, system, model, release;
     if (state.view === "overview")
       [overview, users] = await Promise.all([api("overview"), api("users")]);
     if (state.view === "users")
@@ -287,11 +315,13 @@ async function load() {
       );
     if (state.view === "sync") overview = await api("overview");
     if (state.view === "model") model = await api("model");
+    if (state.view === "release") release = await api("release");
     if (state.view === "system") system = await api("system");
     if (revision !== state.revision) return;
     if (overview) state.overview = overview;
     if (users) state.users = users;
     if (model) state.model = model;
+    if (release) state.release = release;
     if (system) state.system = system;
     if (users && users.page > 1 && !users.users.length) {
       state.page = Math.max(1, Math.ceil(users.total / users.pageSize));

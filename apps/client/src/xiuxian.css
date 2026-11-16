@@ -1,6 +1,6 @@
 /* Accent styling loaded after the theme. Page surfaces stay on theme.css. */
 :root {
-  --font-title: "Ink Free", "LXGW WenKai Light", "霞鹜文楷 Light", "LXGW WenKai", "霞鹜文楷", serif;
+  --font-title: "Noto Sans SC", "PingFang SC", "Microsoft YaHei UI", "Segoe UI", sans-serif;
   --xp: #d4a43c;
   --xp-deep: #a87a1c;
   --streak: #c8553d;
@@ -642,6 +642,10 @@
 .project-summary progress::-webkit-progress-value {
   background: linear-gradient(90deg, #3f9a7c, #8fd3b6);
 }
+.workspace.modern-workspace .reference-day .day-period {
+  border-radius: 10px;
+  box-shadow: none;
+}
 .modern-workspace .day-period .list-heading h2 {
   font-size: 15px;
   letter-spacing: 0.06em;
@@ -1005,14 +1009,18 @@
 .workspace.modern-workspace .sidebar-project-list .sidebar-project-icon,
 .workspace.modern-workspace .sidebar-project-list .selected .sidebar-project-icon,
 .workspace.modern-workspace .sidebar-project-list .project-card[aria-current="page"] .sidebar-project-icon {
-  width: 16px;
-  height: 16px;
-  border-radius: 0;
-  background: transparent;
-  color: var(--text-tertiary);
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--primary-text) 12%, transparent);
+  color: var(--primary-text);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
 }
 .workspace.modern-workspace .sidebar-project-list .project-card.selected .sidebar-project-icon,
 .workspace.modern-workspace .sidebar-project-list .project-card[aria-current="page"] .sidebar-project-icon {
+  background: color-mix(in srgb, var(--cinnabar) 14%, transparent);
   color: var(--cinnabar);
 }
 .workspace.modern-workspace .sidebar-project-list .project-card strong {

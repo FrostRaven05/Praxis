@@ -364,6 +364,123 @@ describe("personal task adapters", () => {
     ).rejects.toBeInstanceOf(PersonalTaskRejectedError);
     expect(sent).toHaveLength(2);
   });
+  it("drops a translated conflict so the next edit is not stuck on the old command", async () => {
+    const taskId = id();
+    let version = 1;
+    const sent: number[] = [];
+    const task = {
+      id: taskId,
+      title: "上线",
+      notes: "",
+      projectId: null,
+      parentId: null,
+      sectionId: null,
+      status: "todo",
+      version,
+      plan: null,
+      deadline: null,
+      followUp: null,
+      priority: 4,
+      important: 0,
+      waitingFor: "",
+      waitingNote: "",
+      completedAt: null,
+      createdAt: fixture.clock.now,
+      rank: 0,
+      labels: [],
+    };
+    const manager = createDesktopPersonalTasks(
+      {
+        scope: async () => "a",
+        read: async () => ({
+          settings: [{ timeZone: "Asia/Hong_Kong", version: 0 }],
+          tasks: [{ ...task, version }],
+          projects: [],
+          sections: [],
+          labels: [],
+          days: [],
+          legacyPlans: [],
+          events: [],
+          migrationReport: "",
+        }),
+        send: async (command) => {
+          sent.push(
+            (command.action as { expectedVersion: number }).expectedVersion,
+          );
+          if (sent.length === 1)
+            throw Error(
+              "内容已更新，请返回并重新打开后再预览。未保存的输入仍保留。",
+            );
+        },
+      },
+      clock,
+    );
+    const stale = await manager.read();
+    await expect(
+      manager.change(stale, taskId, { type: "status", status: "completed" }),
+    ).rejects.toBeInstanceOf(PersonalTaskRejectedError);
+    version = 2;
+    await manager.change(await manager.read(), taskId, {
+      type: "status",
+      status: "completed",
+    });
+    expect(sent).toEqual([1, 2]);
+  });
+  it("lets a delete replace a stuck unconfirmed edit", async () => {
+    const taskId = id();
+    const task = {
+      id: taskId,
+      title: "上线",
+      notes: "",
+      projectId: null,
+      parentId: null,
+      sectionId: null,
+      status: "todo",
+      version: 1,
+      plan: null,
+      deadline: null,
+      followUp: null,
+      priority: 4,
+      important: 0,
+      waitingFor: "",
+      waitingNote: "",
+      completedAt: null,
+      createdAt: fixture.clock.now,
+      rank: 0,
+      labels: [],
+    };
+    const sent: string[] = [];
+    const manager = createDesktopPersonalTasks(
+      {
+        scope: async () => "a",
+        read: async () => ({
+          settings: [{ timeZone: "Asia/Hong_Kong", version: 0 }],
+          tasks: [task],
+          projects: [],
+          sections: [],
+          labels: [],
+          days: [],
+          legacyPlans: [],
+          events: [],
+          migrationReport: "",
+        }),
+        send: async () => {
+          sent.push("status");
+          throw Error("lost response");
+        },
+        sendTrash: async () => {
+          sent.push("delete");
+        },
+      },
+      clock,
+    );
+    const base = await manager.read();
+    await expect(
+      manager.change(base, taskId, { type: "status", status: "completed" }),
+    ).rejects.toThrow("lost response");
+    await manager.change(base, taskId, { type: "delete" });
+    expect(sent).toEqual(["status", "delete"]);
+  });
   it("creates unplanned independent/project tasks with stable receipts, optional notes/deadline and no duplicate on a lost commit response", async () => {
     const f = setup();
     try {

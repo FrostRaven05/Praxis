@@ -22,7 +22,7 @@ export function checkAppRelease() {
     );
   if (Capacitor.isNativePlatform()) return native.appReleaseCheck();
   return Promise.resolve({
-    current: "0.1.0",
+    current: "1.0.3",
     release: null as AppRelease | null,
   });
 }
