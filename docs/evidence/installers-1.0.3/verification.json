@@ -1,6 +1,6 @@
 {
   "version": "1.0.3",
-  "status": "locally verified; ready for backend deployment",
+  "status": "published and publicly verified",
   "checks": {
     "typescript": true,
     "vitestPassed": 339,
@@ -17,7 +17,12 @@
     "androidAssetsAndAudioMatch": true,
     "guestAndAccountDataPreserved": true,
     "bidirectionalSync": "passed with isolated local HTTPS server",
-    "originalDesktopDatabaseReplaced": false
+    "originalDesktopDatabaseReplaced": false,
+    "publicDownloadsSha256Verified": true,
+    "adminReleasePageAndMobileLayout": true,
+    "previousInstallersPreserved": true,
+    "cloudDatabaseIntegrity": "ok",
+    "cloudTableCountsPreserved": true
   },
   "artifacts": {
     "windows": {
@@ -32,5 +37,8 @@
       "url": "https://todo.frostraven05.com/releases/1.0.3/Praxis-1.0.3-android.apk",
       "sha256": "cf823ae3d1ae7e485b3cddc60e39aff5a8442806bd9af9efe25a0b017b8ba84d"
     }
-  }
+  },
+  "sourceCommit": "c60f5e9dc5d6a9f39e3208987a6b1f66e5bfb860",
+  "publicationEvidence": "publication.json",
+  "deploymentEvidence": "deployment.json"
 }

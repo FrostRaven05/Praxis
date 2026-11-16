@@ -20,4 +20,14 @@
 
 ## 发布
 
-本地安装包、`release.json`、`SHA256SUMS.txt`、源码摘要和仅含 API 源码的部署归档位于被 Git 忽略的 `.tools/releases/1.0.3/`。后端更新与公网发布结果将在完成验收后补充。
+本地安装包、`release.json`、`SHA256SUMS.txt`、源码摘要和仅含 API 源码的部署归档位于被 Git 忽略的 `.tools/releases/1.0.3/`。源码提交为 `c60f5e9dc5d6a9f39e3208987a6b1f66e5bfb860`。
+
+香港时间 2026-11-17 01:11 已按现有流程重建并部署 API，先通过数据库副本迁移和 HTTPS 启动检查，再切换服务。API 源码对应的构建复用了缓存，镜像摘要与前版相同；本轮后端版本信息和安装包分发更新为 1.0.3，服务健康检查通过。
+
+发布前后全部数据库表记录数一致，包括 1 个账号、2 个账号会话、296 个同步实体、385 个实体版本和 86 个同步变更批次；账号身份摘要和数据库完整性检查通过。Compose、Nginx 和管理员配置保留。后端与运行数据备份为 `/opt/praxis/backups/before-admin-20261116T171120Z`，发布配置和数据库副本备份为 `/opt/praxis/backups/before-installers-20261116T171119Z`。
+
+详见[部署记录](evidence/installers-1.0.3/deployment.json)、[本地验证](evidence/installers-1.0.3/verification.json)、[Windows 数据升级](evidence/installers-1.0.3/windows-verify.json)、[Android 升级](evidence/installers-1.0.3/android-verify.json)和[双向同步](evidence/installers-1.0.3/windows-sync.json)。
+
+公网验收已完成：版本接口和管理后台均显示 1.0.3，两份安装包通过浏览器实际下载并核对字节数及 SHA-256，原 1.0.2 下载仍可用。管理员接口认证、相邻配置不可下载、390px 手机布局和浏览器脚本错误检查通过。见[公网下载验证](evidence/installers-1.0.3/publication.json)、[桌面截图](evidence/installers-1.0.3/published-release.png)和[手机截图](evidence/installers-1.0.3/published-release-mobile.png)。
+
+下载：[Windows 1.0.3](https://todo.frostraven05.com/releases/1.0.3/Praxis-1.0.3-windows-x64-setup.exe)、[Android 1.0.3](https://todo.frostraven05.com/releases/1.0.3/Praxis-1.0.3-android.apk)。
