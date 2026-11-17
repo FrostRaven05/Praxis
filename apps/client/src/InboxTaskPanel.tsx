@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   TaskDetailEditor,
@@ -382,7 +383,7 @@ export function InboxTaskPanel({
         )}
         {error && (
           <div className="task-panel-feedback error" role="alert">
-            {error}
+            {feedbackMessage(error)}
             {base && (
               <button disabled={busy} onClick={() => void autosave.save()}>
                 重试自动保存

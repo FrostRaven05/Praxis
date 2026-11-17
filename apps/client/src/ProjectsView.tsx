@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { PersonalTodoHome } from "./PersonalTodoHome";
 import { PersonalProjectForm } from "./PersonalProjectForm";
 import { PersonalProjectList, PersonalProjectProgress } from "./PersonalProjectList";
@@ -158,7 +159,7 @@ export function ProjectsView({
           </h1>
           {error && (
             <p role="alert" className="error">
-              {error}{" "}
+              {feedbackMessage(error)}{" "}
               <button disabled={loading} onClick={() => void refresh(selectedId)}>
                 重新读取项目
               </button>

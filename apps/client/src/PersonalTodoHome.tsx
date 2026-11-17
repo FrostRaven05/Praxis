@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -687,10 +688,9 @@ export function PersonalTodoHome({
       )}
       {error && (
         <div className="personal-todo-error" role="alert">
-          <p>{error}</p>
+          <p>{pending ? "保存结果未确认，本次操作已保留。" : feedbackMessage(error)}</p>
           {pending ? (
             <>
-              <p>保存结果尚未确认，请重试原操作。</p>
               {!editing && (
                 <button
                   type="button"

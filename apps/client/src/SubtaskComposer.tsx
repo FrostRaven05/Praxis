@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useState } from "react";
 import { Subtasks, type ProjectTask } from "@praxis/application";
 import { subtaskStorage } from "./storage";
@@ -72,7 +73,7 @@ export function SubtaskComposer({
           )}
           {error && (
             <p role="alert" className="error">
-              {error}
+              {feedbackMessage(error)}
             </p>
           )}
           <button disabled={busy}>保存子任务</button>

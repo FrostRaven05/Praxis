@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useState } from "react";
 import type { Project } from "@praxis/application";
 import { projectStorage } from "./storage";
@@ -70,7 +71,7 @@ export function ProjectAssignment({
       </button>
       {error && (
         <p role="alert" className="error">
-          {error}
+          {feedbackMessage(error)}
           <button onClick={() => setReload((n) => n + 1)}>重读项目列表</button>
         </p>
       )}

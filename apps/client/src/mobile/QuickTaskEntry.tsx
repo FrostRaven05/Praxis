@@ -1,3 +1,4 @@
+import { feedbackMessage } from "../feedback-message";
 import { useEffect, type RefObject } from "react";
 import "./quick-task-entry.css";
 
@@ -94,7 +95,7 @@ export function QuickTaskEntry({
         </header>
         {error && (
           <div className="pm-entry-error" role="alert">
-            {error}
+            {feedbackMessage(error)}
             {onRetry && (
               <button type="button" disabled={busy} onClick={onRetry}>
                 重试原操作

@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useRef, useState } from "react";
 import type { WorkSnapshot, WorkTask } from "@praxis/application";
 import { openWorkTask, readWork, sendWorkAction } from "./ProductivityView";
@@ -185,7 +186,7 @@ export function WorkTaskProperties({
       {busy && <p role="status">正在保存属性…</p>}
       {error && (
         <div role="alert">
-          {error}
+          {feedbackMessage(error)}
           <button
             type="button"
             disabled={busy}

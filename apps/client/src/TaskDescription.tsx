@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useLayoutEffect, useRef, useState } from "react";
 import {
   encodeNote,
@@ -237,7 +238,7 @@ export function TaskDescription({
       />
       {error && (
         <p className="task-description-error" role="alert">
-          {error}
+          {feedbackMessage(error)}
         </p>
       )}
     </div>

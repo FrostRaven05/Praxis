@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useState, useSyncExternalStore, type CSSProperties } from "react";
 import "./theme-settings.css";
 import {
@@ -90,7 +91,7 @@ export function ThemeSettings() {
       </div>
       {error ? (
         <p className="error" role="alert">
-          {error}
+          {feedbackMessage(error)}
         </p>
       ) : (
         <p className="theme-status" role="status">

@@ -1,5 +1,6 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useRef, useState } from "react";
-import { mobileStorage } from "../../../packages/storage-mobile/src/native";
+import { mobileStorage } from "./mobile-storage";
 import type {
   MobileCapture,
   SaveCaptureCommand,
@@ -157,7 +158,7 @@ export function MobileCaptureView({
           </button>
         )}
       </form>
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{feedbackMessage(error)}</p>}
       {pending.current && !busy && (
         <p>
           上次保存结果尚未确认，请重试同一操作。原文暂时锁定，避免重复或覆盖。

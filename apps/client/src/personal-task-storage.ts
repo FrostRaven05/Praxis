@@ -1,10 +1,10 @@
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "./native-recovery";
 import { Capacitor } from "@capacitor/core";
 import { type WorkSnapshot } from "@praxis/application";
 import {
   mobileStorage,
   mobileDatabaseName,
-} from "../../../packages/storage-mobile/src/native";
+} from "./mobile-storage";
 import { accountStorage } from "./account-storage";
 import { prepareDailyTasks } from "./daily-preparation";
 import {

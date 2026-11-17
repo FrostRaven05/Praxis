@@ -1,4 +1,4 @@
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "./native-recovery";
 
 export const DEFAULT_THEME_COLOR = "#A6D6C3";
 const LEGACY_DEFAULT_THEME_COLOR = "#BDE7EE";

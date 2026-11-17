@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useLanRefresh } from "./useLanRefresh";
 import { useEffect, useState } from "react";
 import { type ContentSnapshot } from "@praxis/application";
@@ -35,7 +36,7 @@ export function RelatedRecords({
       <details>
         <summary>关联记录</summary>
         {error ? (
-          <p role="alert">{error}</p>
+          <p role="alert">{feedbackMessage(error)}</p>
         ) : !data ? (
           <p>正在读取…</p>
         ) : (

@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import {
   useCallback,
   useEffect,
@@ -302,7 +303,7 @@ export function ProjectTaskPanel({
         )}
         {error && (
           <div className="task-panel-feedback error" role="alert">
-            {error}
+            {feedbackMessage(error)}
             {base && (
               <button
                 disabled={autosave.busy}

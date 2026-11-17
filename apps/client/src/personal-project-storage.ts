@@ -7,7 +7,7 @@ import {
 import {
   mobileStorage,
   mobileDatabaseName,
-} from "../../../packages/storage-mobile/src/native";
+} from "./mobile-storage";
 import { accountStorage } from "./account-storage";
 import { projectStorage } from "./storage";
 import { mobileProjectCommand } from "./personal-project-adapters";

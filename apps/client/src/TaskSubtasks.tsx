@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type {
   PersonalTaskChange,
@@ -376,7 +377,7 @@ export function TaskSubtasks({
             }}
           />
         )}
-        {error && <p role="alert">{error}</p>}
+        {error && <p role="alert">{feedbackMessage(error)}</p>}
       </div>
     </div>
   );

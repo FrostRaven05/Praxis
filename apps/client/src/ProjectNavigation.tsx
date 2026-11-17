@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { ProjectIcon } from "./ProjectIcon";
 import { useProjectList } from "./useProjectList";
 
@@ -51,7 +52,7 @@ export function ProjectNavigation({
       </div>
       {error ? (
         <p className="sidebar-project-message" role="alert">
-          {error}
+          {feedbackMessage(error)}
           <button onClick={reload}>重试</button>
         </p>
       ) : loading && items.length === 0 ? (

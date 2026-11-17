@@ -1,6 +1,7 @@
+import { feedbackMessage } from "../feedback-message";
 import { useState } from "react";
 import type { WorkspaceEntity } from "@praxis/storage-mobile";
-import { mobileStorage } from "../../../../packages/storage-mobile/src/native";
+import { mobileStorage } from "../mobile-storage";
 import { entityTitle, projectEvidence, historySummary } from "./extras-model";
 export function ProjectChecks({
   entities,
@@ -88,7 +89,7 @@ export function CommandHistory({ timeZone }: { timeZone: string }) {
       >
         读取历史
       </button>
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{feedbackMessage(error)}</p>}
       {loaded && !rows.length && <p>尚无已保存操作</p>}
       {rows.map((r, i) => (
         <article key={i}>

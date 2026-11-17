@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   EditTask,
@@ -506,7 +507,7 @@ export function TaskDetailPanel({
         )}
         {error && (
           <div className="task-panel-feedback error" role="alert">
-            {error}
+            {feedbackMessage(error)}
             {base && (
               <button disabled={busy} onClick={() => void saveRef.current()}>
                 重试自动保存

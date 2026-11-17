@@ -1,6 +1,7 @@
+import { feedbackMessage } from "./feedback-message";
 import { useLanRefresh } from "./useLanRefresh";
 import { useEffect, useRef, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./native-recovery";
 import { RetriableCommands } from "../../../packages/application/src/retriable-commands";
 import "./reviews.css";
 
@@ -136,7 +137,7 @@ export function ReviewView({
   return (
     <section className="review-view" aria-label="项目检查与周回顾">
       <h2>项目检查与周回顾</h2>
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{feedbackMessage(error)}</p>}
       {!data ? (
         <p>正在读取本机记录…</p>
       ) : (

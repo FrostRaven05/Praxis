@@ -1,6 +1,7 @@
+import { feedbackMessage } from "./feedback-message";
 import { useLanRefresh } from "./useLanRefresh";
 import { useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./native-recovery";
 import { RetriableCommands } from "../../../packages/application/src/retriable-commands";
 import { contentError } from "./content-storage";
 
@@ -283,7 +284,7 @@ export function TrashView({ onChanged }: { onChanged?: () => void }) {
       </button>
       {error && (
         <p role="alert" className="error">
-          {error}
+          {feedbackMessage(error)}
         </p>
       )}
       <p role="status">{notice}</p>

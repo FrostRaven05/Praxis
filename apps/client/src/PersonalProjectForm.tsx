@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useRef, useState } from "react";
 import {
   PersonalProjectRejectedError,
@@ -98,7 +99,7 @@ export function PersonalProjectForm({
       />
       {error && (
         <p role="alert">
-          {error}
+          {feedbackMessage(error)}
           {unknown
             ? "。保存结果未确认，请重试原操作。"
             : saved.current

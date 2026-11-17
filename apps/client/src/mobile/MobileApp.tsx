@@ -1,4 +1,6 @@
+import { feedbackMessage } from "../feedback-message";
 import "../personal-shell.css";
+import "../feedback.css";
 import { AccountPage } from "../AccountPanel";
 import { PersonalProjectForm } from "../PersonalProjectForm";
 import { PersonalAgentPanel } from "../PersonalAgentPanel";
@@ -18,7 +20,7 @@ import { WorkspaceRejectedError, mobilePersonalTaskFields, mobilePersonalWork } 
 import { calendarDate, personalTaskQuery, personalDeadlineDay, timeLabel } from "@praxis/application";
 import { App as NativeApp } from "@capacitor/app";
 import { Capacitor } from "@capacitor/core";
-import { mobileStorage } from "../../../../packages/storage-mobile/src/native";
+import { mobileStorage } from "../mobile-storage";
 import { Inbox } from "./Inbox";
 import { Extras, type ExtraSection } from "./Extras";
 import { MobileDrawer } from "./MobileDrawer";
@@ -672,7 +674,7 @@ export function MobileApp() {
       )}
       {error && (
         <div className="pm-error" role="alert">
-          {error}
+          {feedbackMessage(error)}
           {pending.current && (
             <button disabled={busy} onClick={() => void retryPending()}>
               重试原操作
@@ -981,7 +983,7 @@ function Organizer({
         </div>
         {error && (
           <p role="alert" className="pm-error">
-            {error}
+            {feedbackMessage(error)}
             {onRetry && (
               <button type="button" disabled={busy} onClick={onRetry}>
                 重试原操作
@@ -1225,7 +1227,7 @@ function Editor({
         </div>
         {error && (
           <p role="alert" className="pm-error">
-            {error}
+            {feedbackMessage(error)}
             {onRetry && (
               <button type="button" disabled={busy} onClick={onRetry}>
                 重试原操作

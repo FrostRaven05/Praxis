@@ -1,6 +1,7 @@
+import { feedbackMessage } from "./feedback-message";
 import { useLanRefresh } from "./useLanRefresh";
 import { useEffect, useRef, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./native-recovery";
 import "./search-views.css";
 
 type Condition = { field: string; op: string; value: string };
@@ -285,7 +286,7 @@ export function SearchViews() {
   return (
     <section className="search-views" aria-label="搜索与筛选">
       <p className="search-lede">本机离线搜索。回收站内容不参与结果。</p>
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{feedbackMessage(error)}</p>}
       {!snapshot ? (
         <p>
           正在加载搜索…{" "}

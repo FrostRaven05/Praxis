@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useRef, useState } from "react";
 import {
   PersonalTaskRejectedError,
@@ -190,7 +191,7 @@ export function PersonalTaskComposer({
       )}
       {error && (
         <div className="personal-task-inline-error" role="alert">
-          {error}
+          {feedbackMessage(error)}
           {committed
             ? "。任务已保存，重新读取不会重复提交。"
             : unknown

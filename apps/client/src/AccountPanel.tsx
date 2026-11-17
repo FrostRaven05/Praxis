@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useId, useRef, useState } from "react";
 import {
   accountAvailable,
@@ -188,7 +189,7 @@ export function AccountPage({
   const unavailable = busy || switching || !status || !accountAvailable;
   const errorMessage = error && (
     <p className="account-error" role="alert">
-      {error}
+      {feedbackMessage(error)}
       {!status && (
         <button type="button" onClick={() => void read()}>
           重新读取
@@ -356,7 +357,7 @@ export function AccountPage({
             )}
             {passwordError && (
               <p className="account-error" role="alert">
-                {passwordError}
+                {feedbackMessage(passwordError)}
               </p>
             )}
             {errorMessage}
@@ -511,7 +512,7 @@ export function AccountPage({
           <h3 className="settings-group-title">归档项目</h3>
           {projects.error ? (
             <p className="account-error" role="alert">
-              {projects.error}{" "}
+              {feedbackMessage(projects.error)}{" "}
               <button type="button" onClick={projects.reload}>重试</button>
             </p>
           ) : projects.loading ? (

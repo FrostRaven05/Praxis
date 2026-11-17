@@ -1,5 +1,5 @@
 import { Capacitor } from "@capacitor/core";
-import { mobileStorage } from "../../../packages/storage-mobile/src/native";
+import { mobileStorage } from "./mobile-storage";
 import { personalTasks } from "./personal-task-storage";
 import { projectStorage } from "./storage";
 import { mobileAiContext } from "./ai-context-mobile";

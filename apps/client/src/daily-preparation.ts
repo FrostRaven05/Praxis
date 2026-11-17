@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./native-recovery";
 
 let pending: Promise<void> | null = null;
 /** Both daily snapshots wait for the same committed rollover. */

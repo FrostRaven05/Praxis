@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./native-recovery";
 import { ContentCommands, type ContentSnapshot } from "@praxis/application";
 export const contentCommands = new ContentCommands((command) =>
   invoke("content_command", { command }),

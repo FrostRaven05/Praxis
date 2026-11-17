@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useRef, useState } from "react";
 import {
   personalDeadlineDay,
@@ -143,10 +144,10 @@ export function PersonalTaskInlineEditor({
           )}
         </div>
       )}
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{feedbackMessage(error)}</p>}
       {failure && (
         <p role="alert">
-          {failure}
+          {feedbackMessage(failure)}
           {onRetry ? "。保存结果未确认，请重试原操作。" : ""}
         </p>
       )}

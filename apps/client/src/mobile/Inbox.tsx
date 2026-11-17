@@ -1,8 +1,9 @@
+import { feedbackMessage } from "../feedback-message";
 import { useEffect, useRef, useState } from "react";
 import { AiPlannerPanel } from "../AiPlannerPanel";
 import { aiStorage, mobileAiContext } from "../ai-storage";
 import type { AiPlannerLaunch } from "../ai-planner-model";
-import { mobileStorage } from "../../../../packages/storage-mobile/src/native";
+import { mobileStorage } from "../mobile-storage";
 import {
   WorkspaceRejectedError,
   type WorkspaceCommand,
@@ -225,7 +226,7 @@ export function Inbox({
     <section className="pm-inbox">
       {aiLaunch && <AiPlannerPanel launch={aiLaunch} onClose={() => { setAiLaunch(null); void refresh(); }} onApplied={() => refresh()} />}
       <p className="pm-local-note">原文先保存在本机；配对后通过局域网自动同步。</p>
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{feedbackMessage(error)}</p>}
       {pendingAiUndo && !busy && (
         <button onClick={() => void undoAiCapture(pendingAiUndo)}>重试确认 AI 撤销</button>
       )}

@@ -1,5 +1,6 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./native-recovery";
 import type { SyncedEntity } from "./LanSyncStatus";
 import { useLanRefresh } from "./useLanRefresh";
 const names: Record<string, string> = {
@@ -65,7 +66,7 @@ export function SyncedNotes({
     <section aria-label="策略决策与专注">
       <h2>策略、决策与专注</h2>
       <p>与手机共享的策略、决策正文和专注记录。</p>
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{feedbackMessage(error)}</p>}
       {!draft && (
         <>
           <div>

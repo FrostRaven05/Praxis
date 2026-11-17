@@ -1,5 +1,6 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./native-recovery";
 import { contentError } from "./content-storage";
 interface Backup {
   name: string;
@@ -146,7 +147,7 @@ export function BackupPanel() {
       )}
       {error && (
         <p className="error" role="alert">
-          {error}
+          {feedbackMessage(error)}
         </p>
       )}
       {notice && <p role="status">{notice}</p>}

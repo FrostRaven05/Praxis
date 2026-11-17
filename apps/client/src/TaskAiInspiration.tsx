@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import {
@@ -127,7 +128,7 @@ export function TaskAiInspiration({
         </header>
         <div className="task-ai-body">
           {loading && <p role="status">正在生成建议…</p>}
-          {error && <p role="alert">{error}</p>}
+          {error && <p role="alert">{feedbackMessage(error)}</p>}
           {draft?.summary && (
             <article className="task-ai-card">
               <header>

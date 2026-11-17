@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useRef, useState } from "react";
 import type { AiApplyReceipt, AiRun } from "../../api/src/ai-contract";
 import { personalAgentStorage } from "./personal-agent-storage";
@@ -466,7 +467,7 @@ export function PersonalAgentPanel({
       {notice && <p role="status">{notice}</p>}
       {error && (
         <p className="personal-agent-error" role="alert">
-          {error}
+          {feedbackMessage(error)}
         </p>
       )}
       {mode === "decompose" && snapshot && !snapshot.canDecompose && (

@@ -1,0 +1,48 @@
+/* Override historical error cards throughout the app; keep alerts and recovery controls accessible. */
+#root [role="alert"],
+.work-overlay [role="alert"],
+.task-properties-overlay [role="alert"],
+.personal-agent-dialog [role="alert"],
+.pm-dialog [role="alert"] {
+  min-height: 0;
+  padding: 7px 0;
+  margin-block: 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+#root [role="alert"] > p,
+.work-overlay [role="alert"] > p,
+.pm-dialog [role="alert"] > p {
+  margin: 2px 0;
+  color: inherit;
+}
+#root [role="alert"] button,
+.work-overlay [role="alert"] button,
+.task-properties-overlay [role="alert"] button,
+.personal-agent-dialog [role="alert"] button,
+.pm-dialog [role="alert"] button {
+  width: auto;
+  min-height: 28px;
+  margin-inline: 4px;
+  padding: 3px 7px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--primary-text);
+  font: inherit;
+  text-decoration: none;
+}
+#root [role="alert"] button:hover {
+  background: var(--surface-hover);
+}
+#root .pm-app [role="alert"] button,
+.pm-dialog [role="alert"] button {
+  min-height: 36px;
+}

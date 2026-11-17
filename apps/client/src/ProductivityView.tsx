@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useLanRefresh } from "./useLanRefresh";
 import { prepareDailyTasks } from "./daily-preparation";
 import { SyncedNotes } from "./SyncedNotes";
@@ -19,7 +20,7 @@ import { upcomingDayRows } from "./day-timeline";
 import { TaskPanelIcon } from "./TaskPanelIcon";
 import { DatePicker } from "./DatePicker";
 import { shiftCalendarDate } from "./calendar-controls";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./native-recovery";
 import { readPersonalWork } from "./personal-task-storage";
 import {
   calendarDate,
@@ -173,6 +174,8 @@ export function ProductivityView({
       description: string;
     } | null>(null),
     [clock, setClock] = useState(() => new Date());
+  const [readFailure, setReadFailure] = useState("");
+  const shownError = error || readFailure;
   const savingRef = useRef(false);
   const [confirmedAction, setConfirmedAction] = useState<Action | null>(null);
   const [dirtyEditors, setDirtyEditors] = useState<Set<string>>(
@@ -221,27 +224,31 @@ export function ProductivityView({
   }, [initialProjectId]);
   const refresh = async (automatic = false) => {
     const generation = ++readGeneration.current;
-    const s = await readWork();
-    if (
-      generation === readGeneration.current &&
-      (!automatic || !automaticBlocked.current)
-    )
-      setData(s);
-    return s;
+    try {
+      const s = await readWork();
+      if (generation === readGeneration.current && (!automatic || !automaticBlocked.current)) {
+        setData(s);
+        setReadFailure("");
+      }
+      return s;
+    } catch (failure) {
+      if (generation === readGeneration.current && (!automatic || !automaticBlocked.current)) setReadFailure(errorText(failure));
+      throw failure;
+    }
   };
   useEffect(() => {
-    void refresh(true).catch((e) => setError(errorText(e)));
+    void refresh(true).catch(() => {});
   }, [tab]);
   useEffect(() => {
     if (dailyRevision !== undefined && !automaticBlocked.current)
-      void refresh(true).catch((e) => setError(errorText(e)));
+      void refresh(true).catch(() => {});
   }, [dailyRevision, externalBusy]);
   useEffect(() => {
-    void refresh(true).catch((e) => setError(errorText(e)));
+    void refresh(true).catch(() => {});
     const timer = setInterval(() => setClock(new Date()), 15000);
     const onFocus = () => {
       if (!automaticBlocked.current)
-        void refresh(true).catch((e) => setError(errorText(e)));
+        void refresh(true).catch(() => {});
     };
     window.addEventListener("focus", onFocus);
     return () => {
@@ -268,7 +275,7 @@ export function ProductivityView({
     setError("");
     try {
       await sendWorkAction(action);
-      await refresh();
+      await refresh().catch(() => setReadFailure("已保存，列表暂未更新。"));
       onChanged();
       return true;
     } catch (e) {
@@ -394,9 +401,9 @@ export function ProductivityView({
   if (!data)
     return (
       <section className={editorOnly ? "work-overlay" : "work-view"}>
-        <p>{error || "正在读取本地工作空间…"}</p>
+        <p role={shownError ? "alert" : "status"}>{shownError ? feedbackMessage(shownError) : "正在读取本地工作空间…"}</p>
         <button
-          onClick={() => void refresh().catch((e) => setError(errorText(e)))}
+          onClick={() => void refresh().catch(() => {})}
         >
           重新加载
         </button>
@@ -413,7 +420,7 @@ export function ProductivityView({
           aria-label="任务属性"
         >
           <div>
-            {error && <p role="alert">{error}</p>}
+            {shownError && <p role="alert">{feedbackMessage(shownError)}</p>}
             <TaskEditor
               key={edit === "new" ? "new" : edit.id}
               task={edit === "new" ? null : edit}
@@ -446,7 +453,7 @@ export function ProductivityView({
         >
           <div className="work-dialog">
             <h2>确认影响</h2>
-            {error && <p role="alert">{error}</p>}
+            {shownError && <p role="alert">{feedbackMessage(shownError)}</p>}
             <p>{confirm.description}</p>
             <button
               disabled={busy}
@@ -472,7 +479,7 @@ export function ProductivityView({
   if (settingsOnly)
     return (
       <div className="workspace-advanced-settings">
-        {error && <p role="alert">{error}</p>}
+        {shownError && <p role="alert">{feedbackMessage(shownError)}</p>}
         <ZoneEditor data={data} save={save} onDirtyChange={setEditorDirty} />
         <LabelEditor data={data} save={save} onDirtyChange={setEditorDirty} />
       </div>
@@ -514,7 +521,7 @@ export function ProductivityView({
           </p>
         )}
       </header>
-      {error && <p role="alert">{error}</p>}
+      {shownError && <p role="alert">{feedbackMessage(shownError)}</p>}
       <fieldset
         className={renderToday ? "timeline-header" : undefined}
         disabled={locked}
@@ -623,7 +630,7 @@ export function ProductivityView({
           {tab === "trash" && (
             <TrashView
               onChanged={() => {
-                void refresh().catch((e) => setError(errorText(e)));
+                void refresh().catch(() => {});
                 onChanged();
               }}
             />
@@ -1373,7 +1380,7 @@ function ZoneEditor({
       >
         预览时区影响
       </button>
-      {invalid && <p role="alert">{invalid}</p>}
+      {invalid && <p role="alert">{feedbackMessage(invalid)}</p>}
       {preview && (
         <>
           <p>

@@ -1,8 +1,9 @@
+import { feedbackMessage } from "./feedback-message";
 import { useLanRefresh } from "./useLanRefresh";
 import { calendarDate } from "@praxis/application";
 import { useEffect, useState } from "react";
 import { RetriableCommands } from "../../../packages/application/src/retriable-commands";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./native-recovery";
 type Template = {
   id: string;
   title: string;
@@ -102,7 +103,7 @@ export function RepeatView() {
       <p>
         固定日历规则只生成独立的顶层任务和计划日期，不自动设置期限。补齐包含离线遗漏和未来30天；完成某一次不移动后续日期。
       </p>
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{feedbackMessage(error)}</p>}
       <fieldset disabled={busy}>
         <legend>新建规则</legend>
         <label>
@@ -345,7 +346,7 @@ function RuleEditor({
       </button>
       {open && (
         <div role="dialog" aria-label="修改未来重复规则">
-          {previewError && <p role="alert">{previewError}</p>}
+          {previewError && <p role="alert">{feedbackMessage(previewError)}</p>}
           <fieldset disabled={busy || preview || previewBusy}>
             <legend>从指定日期修改未来规则</legend>
             <p>

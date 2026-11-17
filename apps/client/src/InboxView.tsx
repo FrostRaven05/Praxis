@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { InboxTaskPanel } from "./InboxTaskPanel";
 import { AiPlannerPanel } from "./AiPlannerPanel";
 import { desktopAiContext } from "./ai-storage";
@@ -265,12 +266,12 @@ export function InboxView({
         </form>
         {error && (
           <p role="alert" className="error">
-            {error}
+            {feedbackMessage(error)}
           </p>
         )}
         {loadError && (
           <p role="alert" className="error">
-            {loadError}
+            {feedbackMessage(loadError)}
             <button
               disabled={locked}
               onClick={() => {
@@ -400,7 +401,7 @@ export function InboxView({
           <div className="work-dialog">
             <h2>完成「{confirmTask.task.title}」？</h2>
             <p>将同时完成 {confirmTask.count} 个未结束的子任务。</p>
-            {error && <p role="alert">{error}</p>}
+            {error && <p role="alert">{feedbackMessage(error)}</p>}
             <button
               disabled={busy}
               onClick={() =>

@@ -1,4 +1,6 @@
+import { feedbackMessage } from "./feedback-message";
 import "./personal-shell.css";
+import "./feedback.css";
 import { AccountButton, AccountPage, type SettingsSection } from "./AccountPanel";
 import { PersonalAgentPanel } from "./PersonalAgentPanel";
 import { PersonalTodoHome } from "./PersonalTodoHome";
@@ -971,7 +973,7 @@ export function App() {
         )}
         {saveError && (
           <p className="error" id="save-error" role="alert">
-            {saveError}
+            {feedbackMessage(saveError)}
           </p>
         )}
         <p id="task-sort-help" className="sr-only">
@@ -979,7 +981,7 @@ export function App() {
         </p>
         {loadError ? (
           <div className="load-error" role="alert">
-            <p>{loadError}</p>
+            <p>{feedbackMessage(loadError)}</p>
             {nativeAvailable && (
               <button
                 onClick={() => {
@@ -1094,7 +1096,7 @@ export function App() {
         )}
         {dailyHabits.error && (
           <p className="error" role="alert">
-            {dailyHabits.error}
+            {feedbackMessage(dailyHabits.error)}
           </p>
         )}
         {!loading &&

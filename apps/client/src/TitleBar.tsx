@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 export function TitleBar() {
@@ -81,7 +82,7 @@ export function TitleBar() {
       </div>
       {error && (
         <p className="window-error" role="alert">
-          {error}
+          {feedbackMessage(error)}
         </p>
       )}
     </header>

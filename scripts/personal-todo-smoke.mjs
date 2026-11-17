@@ -113,6 +113,12 @@ try {
     page.setDefaultTimeout(10000);
     if (scenario === "inline" || scenario === "remaining") await page.clock.install({ time: new Date() });
     await page.goto(`${base}__personal-todo?mode=${mode}`);
+    if (scenario === "feedback") {
+      const { runFeedbackScenario } = await import("./fixtures/feedback-scenario.mjs");
+      await runFeedbackScenario(page, mode, evidence, checks);
+      await context.close();
+      continue;
+    }
     if (scenario === "planning") {
       const { runPlanningConflictScenario } = await import("./fixtures/planning-conflict-scenario.mjs");
       await runPlanningConflictScenario(page, evidence, checks);

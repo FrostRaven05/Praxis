@@ -1,6 +1,7 @@
 import { expect, it, vi } from "vitest";
 import {
   Planning,
+  planChange,
   type DailyTask,
   type PlanningStorage,
 } from "@praxis/application";
@@ -239,7 +240,7 @@ it.each([new Error("STATE_CONFLICT"), "安排已发生变化，请刷新后重�
     const planning = new Planning(storage);
     const changes = [
       {
-        ...latestPlan(task),
+        ...planChange(task),
         expectedVersion: 1,
         isFocus: true,
         focusRank: 0,

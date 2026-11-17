@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useLanRefresh } from "./useLanRefresh";
 import { useEffect, useState } from "react";
 import { Planning, parseMinutes, type DayLoad } from "@praxis/application";
@@ -35,7 +36,7 @@ export function PlanningPanel({
   if (error)
     return (
       <p className="error" role="alert">
-        {error}
+        {feedbackMessage(error)}
         <button onClick={() => setReload((x) => x + 1)}>重新读取负载</button>
       </p>
     );
@@ -126,7 +127,7 @@ function CapacityForm({
       </button>
       {error && (
         <p className="error" role="alert">
-          {error}
+          {feedbackMessage(error)}
         </p>
       )}
     </form>

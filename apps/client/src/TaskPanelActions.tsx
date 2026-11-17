@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useState } from "react";
 import { personalTasks } from "./personal-task-storage";
 import { TaskAiInspiration } from "./TaskAiInspiration";
@@ -55,7 +56,7 @@ export function TaskPanelActions({
           {...(onRefined ? { onRefined } : {})}
         />
       )}
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{feedbackMessage(error)}</p>}
       <button
         type="button"
         className="task-panel-ai"

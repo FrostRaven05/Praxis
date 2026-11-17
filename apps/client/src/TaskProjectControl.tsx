@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useRef, useState } from "react";
 import { subtree, type PersonalTaskChange } from "@praxis/application";
 import { personalTasks } from "./personal-task-storage";
@@ -106,7 +107,7 @@ export function TaskProjectControl({
       </label>
       {error && (
         <p className="task-panel-project-error" role="alert">
-          {error}
+          {feedbackMessage(error)}
         </p>
       )}
     </div>

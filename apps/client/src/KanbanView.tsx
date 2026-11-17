@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useId, useRef, useState } from "react";
 import {
   calendarDate,
@@ -276,7 +277,7 @@ export function KanbanView({
             {pending?.committed
               ? "状态已保存，未能刷新看板。"
               : "未能更新任务状态。"}{" "}
-            {error}
+            {feedbackMessage(error)}
           </p>
           {pending && !transition && (
             <button

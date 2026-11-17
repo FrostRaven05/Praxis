@@ -1,7 +1,7 @@
 import { calendarDate, ProjectWorkspace } from "@praxis/application";
 import { Capacitor } from "@capacitor/core";
-import { mobileStorage } from "../../../packages/storage-mobile/src/native";
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { mobileStorage } from "./mobile-storage";
+import { invoke, isTauri } from "./native-recovery";
 import { prepareDailyTasks } from "./daily-preparation";
 import type {
   CaptureCommand,

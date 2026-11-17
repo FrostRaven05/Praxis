@@ -1,4 +1,4 @@
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "./native-recovery";
 import { Capacitor, registerPlugin } from "@capacitor/core";
 import {
   calendarDate,
@@ -78,7 +78,7 @@ let mobileAdapter: Promise<
 function mobileApplication() {
   mobileAdapter ??= Promise.all([
     import("./ai-mobile-adapter"),
-    import("../../../packages/storage-mobile/src/native"),
+    import("./mobile-storage"),
     import("./account-storage"),
   ]).then(([adapter, storage, accounts]) =>
     adapter.createMobileAiAdapter({

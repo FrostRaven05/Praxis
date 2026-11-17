@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { AiContextPreview } from "./AiContextPreview";
 import { useEffect, useRef, useState } from "react";
 import type {
@@ -676,7 +677,7 @@ export function AiPlannerPanel({
           )}
           {error && (
             <p role="alert" className="ai-planner-error">
-              {error}
+              {feedbackMessage(error)}
             </p>
           )}
           {proposal && (

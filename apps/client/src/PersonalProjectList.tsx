@@ -1,3 +1,4 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useMemo, useState } from "react";
 import {
   personalProjectList,
@@ -54,7 +55,7 @@ function ProjectProgress({
           ) : null}
         </>
       ) : (
-        <span role="alert">{row.error}，请打开原项目检查。</span>
+        <span role="alert">{feedbackMessage(row.error)}，请打开原项目检查。</span>
       )}
     </div>
   );

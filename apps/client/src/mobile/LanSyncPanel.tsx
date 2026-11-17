@@ -4,7 +4,7 @@ import { App } from "@capacitor/app";
 import {
   mobileStorage,
   mobileDatabaseName,
-} from "../../../../packages/storage-mobile/src/native";
+} from "../mobile-storage";
 import {
   WorkspaceRejectedError,
   type EntityCommand,

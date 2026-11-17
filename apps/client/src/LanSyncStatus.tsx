@@ -1,5 +1,6 @@
+import { feedbackMessage } from "./feedback-message";
 import { useEffect, useRef, useState } from "react";
-import { invoke, isTauri } from "@tauri-apps/api/core";
+import { invoke, isTauri } from "./native-recovery";
 import { TaskPanelIcon } from "./TaskPanelIcon";
 import "./lan-sync.css";
 type Status = {
@@ -250,7 +251,7 @@ export function LanSyncStatus({ onRefresh }: { onRefresh: () => void }) {
               : "尚未同步"}
           </p>
           {status.message && <p role="status">{status.message}</p>}
-          {error && <p role="alert">{error}</p>}
+          {error && <p role="alert">{feedbackMessage(error)}</p>}
           {pending && (
             <button disabled={busy} onClick={() => void submit(pending)}>
               重试冲突处理

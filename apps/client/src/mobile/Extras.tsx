@@ -1,3 +1,4 @@
+import { feedbackMessage } from "../feedback-message";
 import { scheduleId, workspaceSettingsId } from "./sync-identity";
 import { AccountPanel } from "../AccountPanel";
 import { editRecordLinks, firstRecordLink } from "./record-links";
@@ -17,7 +18,7 @@ import type {
   WorkspaceCommand,
   WorkspaceKind,
 } from "@praxis/storage-mobile";
-import { mobileStorage } from "../../../../packages/storage-mobile/src/native";
+import { mobileStorage } from "../mobile-storage";
 import "./extras.css";
 import { SearchPanel } from "./SearchPanel";
 import { FocusView } from "./FocusView";
@@ -1078,7 +1079,7 @@ export function Extras({
       )}
       {error && (
         <div className="mx-error" role="alert">
-          {error}
+          {feedbackMessage(error)}
           {pending && button("重试同一操作", () => void run(pending.changes))}
         </div>
       )}

@@ -1,6 +1,7 @@
+import { feedbackMessage } from "./feedback-message";
 import { useLanRefresh } from "./useLanRefresh";
 import { useEffect, useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "./native-recovery";
 import { RetriableCommands } from "../../../packages/application/src/retriable-commands";
 import "./habits.css";
 
@@ -325,7 +326,7 @@ export function HabitsView({
           placeholder="名称、说明或实践版本"
         />
       </label>
-      {error && <p role="alert">{error}</p>}
+      {error && <p role="alert">{feedbackMessage(error)}</p>}
       {creating && (
         <HabitForm
           date={snapshot?.today ?? selected}
