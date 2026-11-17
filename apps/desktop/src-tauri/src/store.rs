@@ -31,6 +31,9 @@ pub use projects::{
     SaveProjectCommand,
 };
 mod inbox;
+mod migration_compat;
+#[cfg(test)]
+mod migration_line_ending_tests;
 pub use inbox::{InboxCommand, InboxTask, ScheduleCommand};
 mod planning;
 pub use planning::{CapacityCommand, DayLoad, HabitPlanChange, PlanChange, PlanCommand};
@@ -214,10 +217,7 @@ impl Store {
                 .await?;
             }
         }
-        MIGRATOR
-            .run(&pool)
-            .await
-            .map_err(|error| error.to_string())?;
+        migration_compat::run(&pool).await?;
         sqlx::query(
             "INSERT OR IGNORE INTO local_profile(singleton, owner_id, device_id) VALUES (1, ?, ?)",
         )
