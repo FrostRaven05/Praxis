@@ -1,0 +1,32 @@
+{
+  "commit": "eb61c35a64f5c3a461cdc10855796abeed38eb29",
+  "archiveSha256": "d8a5b07f8b3a6dccf2c33d731174e9ff0b54d982e236cec19c0371d21c05d426",
+  "files": [
+    ".dockerignore",
+    "Dockerfile",
+    "apps/api/package.json",
+    "apps/api/scripts/copy-admin.mjs",
+    "apps/api/src/accounts.ts",
+    "apps/api/src/admin-web/admin.css",
+    "apps/api/src/admin-web/admin.js",
+    "apps/api/src/admin-web/favicon.svg",
+    "apps/api/src/admin-web/index.html",
+    "apps/api/src/admin.ts",
+    "apps/api/src/ai-contract.ts",
+    "apps/api/src/ai.ts",
+    "apps/api/src/app-release.ts",
+    "apps/api/src/entities.ts",
+    "apps/api/src/entity-protocol.md",
+    "apps/api/src/entity-validation.ts",
+    "apps/api/src/main.ts",
+    "apps/api/src/server.ts",
+    "apps/api/src/store.ts",
+    "apps/api/tsconfig.json",
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml"
+  ],
+  "scope": "Committed API source only; no credentials, databases, runtime configuration or Compose",
+  "deploymentScriptCustomization": "Registration-closure probe on disposable copied database only",
+  "apiContentsUnchangedFrom": "d35c5777ef20042b02d9bb6c67a7cbcd8a066df1"
+}

@@ -1,0 +1,48 @@
+{
+  "version": "1.0.4",
+  "sourceCommit": "eb61c35a64f5c3a461cdc10855796abeed38eb29",
+  "status": "published and verified",
+  "checks": {
+    "typescript": true,
+    "vitestPassed": 378,
+    "rustPassed": 193,
+    "feedbackBrowserChecks": 9,
+    "adminBrowserChecks": 14,
+    "ambienceCategories": 12,
+    "ambienceTracksDecodedAndHashed": 48,
+    "windowsLegacyDataOpened": true,
+    "migrationMetadataUnchanged": true,
+    "windowsUserInstallationUntouched": true,
+    "androidFinalSignedApkInstalled": true,
+    "androidVersionCode": 5,
+    "androidDebuggable": false,
+    "sameAndroidSigner": true,
+    "registrationClosedInNativeBridgeAndAndroidUi": true,
+    "bidirectionalSync": "passed using isolated local HTTPS backend",
+    "originalDesktopDatabaseReplaced": false,
+    "productionApiHealthy": true,
+    "productionDatabaseIntegrity": "ok",
+    "productionTableCountsPreserved": true,
+    "productionAccountIdentitiesPreserved": true,
+    "productionRegistrationClosureVerifiedOnCopiedDatabase": true,
+    "serverFullInstallerSha256Verified": true,
+    "publicDownloadPrefixBytesMatched": 65536,
+    "publicDownloadFilenameAndLengthVerified": true,
+    "previousInstallersPreserved": true,
+    "composeAndNginxUnchanged": true
+  },
+  "artifacts": {
+    "windows": {
+      "url": "https://todo.frostraven05.com/releases/1.0.4/Praxis-1.0.4-windows-x64-setup.exe",
+      "sha256": "9de186ed9efecdf8ad9080b5c4225715843579788cac6e2881b0d12c7455b45a",
+      "bytes": 172497281
+    },
+    "android": {
+      "url": "https://todo.frostraven05.com/releases/1.0.4/Praxis-1.0.4-android.apk",
+      "sha256": "7bca4e985466677ab035239ec574db88ce3eb94e8d3a2d2df337a4c7d5cd174a",
+      "bytes": 179716598
+    }
+  },
+  "publishedVerification": "publication.json",
+  "deploymentVerification": "deployment.json"
+}

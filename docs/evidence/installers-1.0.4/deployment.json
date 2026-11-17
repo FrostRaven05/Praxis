@@ -1,0 +1,57 @@
+{
+  "version": "1.0.4",
+  "backup": "/opt/praxis/backups/before-installers-20261117T152750Z",
+  "databaseIntegrity": "ok",
+  "tableCountsBefore": {
+    "captures": 0,
+    "capture_changes": 0,
+    "sync_entities": 355,
+    "sync_entity_versions": 461,
+    "sync_entity_changes": 104,
+    "sync_entity_migrations": 1,
+    "sync_entity_upgrades": 1,
+    "account_users": 1,
+    "account_sessions": 2,
+    "admin_sessions": 0,
+    "admin_audit": 47,
+    "ai_runs": 9,
+    "admin_ai_settings": 1,
+    "account_deleted_users": 9
+  },
+  "tableCountsAfter": {
+    "captures": 0,
+    "capture_changes": 0,
+    "sync_entities": 355,
+    "sync_entity_versions": 461,
+    "sync_entity_changes": 104,
+    "sync_entity_migrations": 1,
+    "sync_entity_upgrades": 1,
+    "account_users": 1,
+    "account_sessions": 2,
+    "admin_sessions": 0,
+    "admin_audit": 47,
+    "ai_runs": 9,
+    "admin_ai_settings": 1,
+    "account_deleted_users": 9
+  },
+  "backendUpdated": true,
+  "previousImage": "sha256:419c9e6a09da50e7e383c8680f47039697b1424699e2cbca7faf0034f48ef8dc",
+  "currentImage": "sha256:27c01f81fc8297240646845b790bc6a3df18f31e9fc98ad94129cc87173d4f4c",
+  "routingUnchanged": true,
+  "sourceCommit": "eb61c35a64f5c3a461cdc10855796abeed38eb29",
+  "backendBackup": "/opt/praxis/backups/before-admin-20261117T152758Z",
+  "copiedDatabasePreflight": true,
+  "productionRegistrationClosureVerified": true,
+  "accountIdentitiesPreserved": true,
+  "artifactHashesVerified": true,
+  "artifacts": {
+    "windows": {
+      "url": "https://todo.frostraven05.com/releases/1.0.4/Praxis-1.0.4-windows-x64-setup.exe",
+      "sha256": "9de186ed9efecdf8ad9080b5c4225715843579788cac6e2881b0d12c7455b45a"
+    },
+    "android": {
+      "url": "https://todo.frostraven05.com/releases/1.0.4/Praxis-1.0.4-android.apk",
+      "sha256": "7bca4e985466677ab035239ec574db88ce3eb94e8d3a2d2df337a4c7d5cd174a"
+    }
+  }
+}

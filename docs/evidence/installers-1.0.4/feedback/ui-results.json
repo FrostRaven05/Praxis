@@ -1,0 +1,18 @@
+{
+  "date": "2026-11-17",
+  "executedAt": "2026-11-17T14:53:41.028Z",
+  "passed": true,
+  "environment": "headless Chromium; real App/MobileApp and personal modules; synthetic native/Capacitor test doubles, not device acceptance",
+  "checks": [
+    "desktop: a recovered automatic read clears its stale error without affecting pending edits",
+    "desktop: persistent reads retain visible tasks and show compact neutral feedback",
+    "desktop: a transient read recovers in the background without replacing the task list or showing an error",
+    "desktop: an acknowledged write with a lost response replays the same operation and records completion once",
+    "desktop: 11 historical error-card variants share neutral compact styling, including settings, AI, inbox, editors and mobile pages",
+    "mobile: persistent reads retain visible tasks and show compact neutral feedback",
+    "mobile: a transient read recovers in the background without replacing the task list or showing an error",
+    "mobile: an acknowledged write with a lost response replays the same operation and records completion once",
+    "mobile: 11 historical error-card variants share neutral compact styling, including settings, AI, inbox, editors and mobile pages"
+  ],
+  "errors": []
+}

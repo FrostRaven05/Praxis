@@ -1,0 +1,9 @@
+{
+  "checks": [
+    "desktop: 12 categories, all variant menus, playback, remembered cat variant, crossfade loop, stop and missing-asset recovery",
+    "All 48 local audio files decoded by the real browser; byte counts and SHA-256 hashes verified",
+    "mobile: 12 categories, all variant menus, playback, remembered cat variant, crossfade loop, stop and missing-asset recovery"
+  ],
+  "errors": [],
+  "totalBytes": 146179162
+}

@@ -1,0 +1,9 @@
+{
+  "phase": "seed",
+  "checks": [
+    "Windows 1.0.3 installed; identifier-only instrumented copy launched with isolated guest data",
+    "Old installed client registered and synchronized a synthetic account over isolated HTTPS"
+  ],
+  "errors": [],
+  "testedAt": "2026-11-17T14:52:13.425Z"
+}

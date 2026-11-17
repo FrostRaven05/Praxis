@@ -1,0 +1,8 @@
+{
+  "phase": "final",
+  "checks": [
+    "Final packaged Windows executable opens retained legacy data and synchronizes successfully"
+  ],
+  "errors": [],
+  "testedAt": "2026-11-17T15:22:25.053Z"
+}

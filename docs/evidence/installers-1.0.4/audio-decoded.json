@@ -1,0 +1,290 @@
+[
+  {
+    "file": "ambience/ppbzy/cat/1.mp3",
+    "seconds": 21.6875,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/cat/2.mp3",
+    "seconds": 23.283916666666666,
+    "channels": 1,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/rain/1.mp3",
+    "seconds": 83.96733333333333,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/rain/2.mp3",
+    "seconds": 170.96008333333333,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/rain/3.mp3",
+    "seconds": 35.5753125,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/thunder/1.mp3",
+    "seconds": 72.817,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/thunder/2.mp3",
+    "seconds": 35.310583333333334,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/wind/1.mp3",
+    "seconds": 54.609770833333336,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/wind/2.mp3",
+    "seconds": 80.31622916666667,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/wind/3.mp3",
+    "seconds": 77.39825,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/wind/4.mp3",
+    "seconds": 114.52266666666667,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/wind/5.mp3",
+    "seconds": 50.91108333333333,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/wind/6.mp3",
+    "seconds": 42.6165625,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/wind/7.mp3",
+    "seconds": 78.2010625,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/wind/8.mp3",
+    "seconds": 112.00375,
+    "channels": 1,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/wind/9.mp3",
+    "seconds": 21.651479166666668,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/blizzard/1.m4a",
+    "seconds": 40,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/fire/1.mp3",
+    "seconds": 95.06241666666666,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/fire/2.mp3",
+    "seconds": 36.4878125,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/fire/3.mp3",
+    "seconds": 85.83235416666666,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/fire/4.mp3",
+    "seconds": 96.77308333333333,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/fire/5.mp3",
+    "seconds": 97.26735416666666,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/waves/1.mp3",
+    "seconds": 99.97060416666666,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/waves/2.mp3",
+    "seconds": 57.55164583333333,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/waves/3.mp3",
+    "seconds": 79.0748125,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/waves/4.mp3",
+    "seconds": 57.309895833333336,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/waves/5.mp3",
+    "seconds": 65.68877083333334,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/waves/6.mp3",
+    "seconds": 109.09954166666667,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/birds/1.mp3",
+    "seconds": 39.75572916666667,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/birds/2.mp3",
+    "seconds": 67.27189583333333,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/birds/3.mp3",
+    "seconds": 42.8780625,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/birds/4.mp3",
+    "seconds": 58.50525,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/stream/1.mp3",
+    "seconds": 15.588375,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/stream/2.mp3",
+    "seconds": 34.61504166666667,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/stream/3.mp3",
+    "seconds": 40.3255625,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/stream/4.mp3",
+    "seconds": 38.492375,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/forest/1.mp3",
+    "seconds": 117.46660416666667,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/forest/2.mp3",
+    "seconds": 113.26527083333333,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/forest/3.mp3",
+    "seconds": 108.1810625,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/forest/4.mp3",
+    "seconds": 113.90504166666666,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/forest/5.mp3",
+    "seconds": 116.65660416666667,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/night/1.mp3",
+    "seconds": 60.61541666666667,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/night/2.mp3",
+    "seconds": 38.29841666666667,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/night/3.mp3",
+    "seconds": 91.05097916666666,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/night/4.mp3",
+    "seconds": 87.91164583333334,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/cafe/1.mp3",
+    "seconds": 240.43058333333335,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/cafe/2.mp3",
+    "seconds": 197.165875,
+    "channels": 2,
+    "sampleRate": 48000
+  },
+  {
+    "file": "ambience/ppbzy/cafe/3.mp3",
+    "seconds": 126.9945625,
+    "channels": 2,
+    "sampleRate": 48000
+  }
+]

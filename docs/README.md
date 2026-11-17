@@ -32,6 +32,7 @@
 - [Windows / Android 安装包与发布](installer-release-1.0.1.md)
 - [1.0.2 新安装包与隔离升级验证](installer-release-1.0.2.md)
 - [1.0.3 客户端、后端与安装包发布](installer-release-1.0.3.md)
+- [1.0.4 注册关闭、恢复机制与升级兼容](installer-release-1.0.4.md)
 - [Docker / ECS 部署与维护](deploy-ecs.md)
 
 ## 验证与历史

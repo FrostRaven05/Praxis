@@ -1,0 +1,7 @@
+{
+  "phase": "registration",
+  "checks": [
+    "Final Android login UI exposes existing-account login and no registration action"
+  ],
+  "testedAt": "2026-11-17T15:20:58.248Z"
+}

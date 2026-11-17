@@ -1,0 +1,12 @@
+{
+  "tool": "esbuild 0.25.0",
+  "scope": "Isolated build dependency only; product source and lockfile unchanged",
+  "reason": "Windows rejects removal of esbuild large-input temporary file",
+  "change": "Use existing inline IPC input transport for large transforms",
+  "originalSha256": "9425d36afcd1c8542950739bb5611c569f67ba45b4701b274c7ea2ae91f2902b",
+  "isolatedPatchedSha256": "f05729a193e27a452884435eb886f49c03cf1902c73f1e6c9cf4e779671595b8",
+  "sharedDependencyUnmodified": true,
+  "isolatedJavaScriptRestored": true,
+  "finalWorkaround": "Use existing trusted executable path via ESBUILD_BINARY_PATH, version 0.25.0; original JS API restored",
+  "frontendOutputsIdenticalAfterRestoration": true
+}

@@ -1,0 +1,13 @@
+{
+  "phase": "verify",
+  "checks": [
+    "Installed Windows 1.0.4 retained the old account, encrypted session and cloud task after upgrade",
+    "All 48 bundled ambience variants load in the real Windows WebView",
+    "Windows native bridge rejects registration while retaining the existing account",
+    "Guest workspace survived upgrade and account logout without migration",
+    "Upgraded Windows client logged in again using the retained isolated account",
+    "Upgraded Windows client uploaded a new task to the isolated backend"
+  ],
+  "errors": [],
+  "testedAt": "2026-11-17T15:14:13.470Z"
+}
