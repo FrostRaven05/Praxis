@@ -19,6 +19,7 @@ import {
   playPomodoroAmbience,
   playPomodoroChime,
   pomodoroAmbienceLabels,
+  pomodoroAmbienceVariants,
   stopPomodoroAmbience,
   warmPomodoroAudio,
   type PomodoroAmbience,
@@ -77,6 +78,10 @@ export function PomodoroDock({
   const [expanded, setExpanded] = useState(false);
   const [soundsOpen, setSoundsOpen] = useState(false);
   const [sound, setSound] = useState<PomodoroAmbience | null>(null);
+  const [soundVariants, setSoundVariants] = useState<
+    Partial<Record<PomodoroAmbience, string>>
+  >({});
+  const soundRequest = useRef(0);
   const [announce, setAnnounce] = useState("");
   stateRef.current = state;
 
@@ -108,7 +113,8 @@ export function PomodoroDock({
         stateRef.current = result.state;
         setState(result.state);
       }
-      const shown = result.finished || result.state !== current ? result.state : current;
+      const shown =
+        result.finished || result.state !== current ? result.state : current;
       document.title =
         shown.phase.kind === "running"
           ? `${formatPomodoroClock(pomodoroRemainingMs(shown, nextNow))} · ${pomodoroModeLabels[shown.phase.mode]} · Praxis`
@@ -164,7 +170,8 @@ export function PomodoroDock({
   const clock = formatPomodoroClock(remaining);
   const running = state.phase.kind === "running";
   const locked = state.phase.kind !== "idle";
-  const activeMode = state.phase.kind === "idle" ? state.mode : state.phase.mode;
+  const activeMode =
+    state.phase.kind === "idle" ? state.mode : state.phase.mode;
 
   function begin() {
     const nextNow = Date.now();
@@ -178,14 +185,29 @@ export function PomodoroDock({
 
   function chooseSound(next: PomodoroAmbience | null) {
     warmPomodoroAudio();
-    setSoundsOpen(false);
     if (!next || next === sound) {
+      soundRequest.current += 1;
       setSound(null);
       stopPomodoroAmbience();
+      if (!next) setSoundsOpen(false);
       return;
     }
+    startSound(next, soundVariants[next]);
+  }
+
+  function startSound(next: PomodoroAmbience, variantId?: string) {
+    const request = ++soundRequest.current;
     setSound(next);
-    void playPomodoroAmbience(next);
+    void playPomodoroAmbience(next, variantId).catch(() => {
+      if (request !== soundRequest.current) return;
+      setSound(null);
+      setAnnounce("环境音播放失败，请重新选择音轨");
+    });
+  }
+
+  function chooseVariant(kind: PomodoroAmbience, variantId: string) {
+    setSoundVariants((previous) => ({ ...previous, [kind]: variantId }));
+    startSound(kind, variantId);
   }
 
   if (variant !== "page" && !state.enabled) return null;
@@ -198,7 +220,8 @@ export function PomodoroDock({
         onPointerDown={() => warmPomodoroAudio()}
       >
         <p className="sr-only" role="status">
-          {statusLabel(state, finished)}，今日完成 {state.completedCount} 个番茄。{announce}
+          {statusLabel(state, finished)}，今日完成 {state.completedCount}{" "}
+          个番茄。{announce}
         </p>
         <section className="pomodoro-page-card" aria-label="番茄钟">
           <p className="pomodoro-clock" role="timer">
@@ -210,7 +233,9 @@ export function PomodoroDock({
               {state.task.title}
             </p>
           )}
-          <p className="pomodoro-page-count">今天已完成 {state.completedCount} 个番茄</p>
+          <p className="pomodoro-page-count">
+            今天已完成 {state.completedCount} 个番茄
+          </p>
           <div className="pomodoro-modes" role="group" aria-label="番茄钟模式">
             {pomodoroModes.map((mode) => (
               <button
@@ -287,7 +312,14 @@ export function PomodoroDock({
             </button>
           </div>
           <div className="pomodoro-noise-wrap">
-            {soundsOpen && <SoundMenu sound={sound} onChoose={chooseSound} />}
+            {soundsOpen && (
+              <SoundMenu
+                sound={sound}
+                variants={soundVariants}
+                onChoose={chooseSound}
+                onVariant={chooseVariant}
+              />
+            )}
             <button
               type="button"
               className="pomodoro-noise"
@@ -311,7 +343,8 @@ export function PomodoroDock({
       onPointerDown={() => warmPomodoroAudio()}
     >
       <p className="sr-only" role="status">
-        {statusLabel(state, finished)}，今日完成 {state.completedCount} 个番茄。{announce}
+        {statusLabel(state, finished)}，今日完成 {state.completedCount} 个番茄。
+        {announce}
       </p>
       {expanded && (
         <div className="pomodoro-mode-panel">
@@ -397,7 +430,14 @@ export function PomodoroDock({
             </p>
           )}
           <div className="pomodoro-noise-wrap">
-            {soundsOpen && <SoundMenu sound={sound} onChoose={chooseSound} />}
+            {soundsOpen && (
+              <SoundMenu
+                sound={sound}
+                variants={soundVariants}
+                onChoose={chooseSound}
+                onVariant={chooseVariant}
+              />
+            )}
             <button
               type="button"
               className="pomodoro-noise"
@@ -471,10 +511,14 @@ function SpeakerIcon() {
 
 function SoundMenu({
   sound,
+  variants,
   onChoose,
+  onVariant,
 }: {
   sound: PomodoroAmbience | null;
+  variants: Partial<Record<PomodoroAmbience, string>>;
   onChoose: (next: PomodoroAmbience | null) => void;
+  onVariant: (kind: PomodoroAmbience, variantId: string) => void;
 }) {
   return (
     <div className="pomodoro-sounds" role="menu" aria-label="环境音">
@@ -490,6 +534,24 @@ function SoundMenu({
           {pomodoroAmbienceLabels[item]}
         </button>
       ))}
+      {sound && (
+        <label className="pomodoro-track-picker">
+          <span>{pomodoroAmbienceLabels[sound]}音轨</span>
+          <select
+            aria-label={`${pomodoroAmbienceLabels[sound]}音轨`}
+            value={
+              variants[sound] ?? pomodoroAmbienceVariants[sound].variants[0]?.id
+            }
+            onChange={(event) => onVariant(sound, event.target.value)}
+          >
+            {pomodoroAmbienceVariants[sound].variants.map((track) => (
+              <option key={track.id} value={track.id}>
+                {track.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
       <button type="button" role="menuitem" onClick={() => onChoose(null)}>
         关闭
       </button>
@@ -511,6 +573,15 @@ function AmbienceIcon({ kind }: { kind: PomodoroAmbience }) {
           <path d="M7 13.5a4 4 0 0 1-.4-7.6 5 5 0 0 1 9.3-1.1 3.4 3.4 0 0 1 1.6 6.5" />
           <path d="M12.2 12.5 10 17h2.6L11 21" />
         </>
+      )}
+      {kind === "wind" && (
+        <path d="M3 8h11a3 3 0 1 0-3-3M3 12h15a3 3 0 1 1-3 3M3 16h5a3 3 0 1 1-3 3" />
+      )}
+      {kind === "blizzard" && (
+        <path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9M9 5l3 3 3-3M9 19l3-3 3 3M5 10l4-1-1-4M16 19l-1-4 4-1M5 14l4 1-1 4M16 5l-1 4 4 1" />
+      )}
+      {kind === "night" && (
+        <path d="M20 14a8.5 8.5 0 0 1-10-10A8.5 8.5 0 1 0 20 14Z" />
       )}
       {kind === "fire" && (
         <path d="M12 20.5c3.2 0 4.8-2 4.8-4.4 0-2-1.3-3.3-2-4.8-.4 1.1-1.1 1.7-1.7 1.7-.2-1.5-.8-3-2.1-4.5-1 1.8-1.2 3.2-1.2 4.3-1.5 1.6-.8 7.7 2.2 7.7z" />

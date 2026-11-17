@@ -25,6 +25,7 @@ export interface ServerOptions {
   https?: { key: string | Buffer; cert: string | Buffer };
   release?: unknown;
   releaseDirectory?: string;
+  allowRegistration?: boolean;
 }
 const uuid =
   "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
@@ -71,6 +72,8 @@ export function createServer(options: ServerOptions): FastifyInstance {
   ) {
     throw new Error("Duplicate device token");
   }
+  const allowRegistration =
+    options.allowRegistration ?? process.env.NODE_ENV === "test";
   const app = Fastify({
     logger: false,
     bodyLimit: 8 * 1024 * 1024,
@@ -228,6 +231,8 @@ export function createServer(options: ServerOptions): FastifyInstance {
       bodyLimit: 4096,
     },
     async (request, reply) => {
+      if (!allowRegistration)
+        return reply.code(403).send({ error: "REGISTRATION_CLOSED" });
       if (!request.body.displayName.trim())
         return reply.code(400).send({ error: "INVALID_REQUEST" });
       const session = await accounts.register(

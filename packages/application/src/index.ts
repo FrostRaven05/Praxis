@@ -10,6 +10,7 @@ export type { EditStorage, EditTaskCommand, EditReceipt } from "./edit-task";
 
 export {
   Planning,
+  isPlanConflict,
   planChange,
   parseMinutes,
   orderedFocus,

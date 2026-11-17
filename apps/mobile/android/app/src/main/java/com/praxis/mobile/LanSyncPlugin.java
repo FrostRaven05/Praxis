@@ -60,7 +60,8 @@ import javax.net.ssl.*;
       String mode=call.getString("mode",""),base=call.getString("baseUrl","").trim(),email=call.getString("email",""),password=call.getString("password",""),name=call.getString("displayName",""),ca=call.getString("caPem","");
       URL url=new URL(base);
       if(!url.getProtocol().equals("https")||url.getHost().isEmpty()||url.getUserInfo()!=null||!(url.getPath().isEmpty()||url.getPath().equals("/"))||url.getQuery()!=null||url.getRef()!=null)throw new Exception("Endpoint");
-      if(!mode.equals("login")&&!mode.equals("register"))throw new Exception("Mode");
+      if(mode.equals("register"))throw new Exception("Registration closed");
+      if(!mode.equals("login"))throw new Exception("Mode");
       if(password.length()<6||password.length()>128||email.length()>254||name.length()>60||ca.length()>65536)throw new Exception("Fields");
       base=base.replaceAll("/+$","");
       SharedPreferences prefs=getContext().getSharedPreferences("lan-secure",Context.MODE_PRIVATE);
@@ -74,7 +75,7 @@ import javax.net.ssl.*;
       connection.setInstanceFollowRedirects(false);connection.setConnectTimeout(10000);connection.setReadTimeout(15000);connection.setRequestMethod("POST");connection.setDoOutput(true);connection.setRequestProperty("Content-Type","application/json");
       try(OutputStream out=connection.getOutputStream()){out.write(body.toString().getBytes(StandardCharsets.UTF_8));} body.remove("password");
       int code=connection.getResponseCode();
-      if(code!=200&&code!=201){call.reject(code==401?"邮箱或密码不正确。":code==409?"该邮箱已注册，请登录。":code==429?"尝试次数过多，请稍后重试。":"账号信息无效或服务暂不可用。");return;}
+      if(code!=200&&code!=201){call.reject(code==401?"邮箱或密码不正确。":code==403?"注册已关闭，请使用已有账号登录。":code==409?"该邮箱已注册，请登录。":code==429?"尝试次数过多，请稍后重试。":"账号信息无效或服务暂不可用。");return;}
       JSONObject session=response(connection),user=session.getJSONObject("user");
       java.util.UUID.fromString(user.getString("id"));
       if(!device.equals(session.getString("deviceId"))||session.getString("token").length()!=64)throw new Exception("Session");

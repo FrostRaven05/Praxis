@@ -479,6 +479,7 @@
 .settings-rows {
   border: 1px solid var(--hairline, var(--line));
   border-radius: 10px;
+  background: var(--surface-card, #fff);
   overflow: hidden;
 }
 .settings-row {
@@ -732,6 +733,28 @@ button.settings-row:hover:not(:disabled) {
 .settings-shell .settings-row {
   font-size: 15px;
   font-weight: 500;
+}
+.workspace.modern-workspace .settings-shell button.settings-row,
+.workspace.modern-workspace .settings-shell button.settings-row:hover:not(:disabled),
+.workspace.modern-workspace .settings-shell button.settings-row:focus,
+.workspace.modern-workspace .settings-shell button.settings-row:focus-visible {
+  min-height: 48px;
+  padding: 10px 16px;
+  border: 0;
+  border-bottom: 1px solid var(--hairline, var(--line));
+  border-radius: 0;
+  background: var(--surface-card);
+  background-color: var(--surface-card);
+  box-shadow: none;
+  color: var(--text-primary);
+}
+.workspace.modern-workspace .settings-shell .settings-rows > button.settings-row:last-child,
+.workspace.modern-workspace .settings-shell .settings-rows > button.settings-row:last-child:hover:not(:disabled) {
+  border-bottom: 0;
+}
+.workspace.modern-workspace .settings-shell button.settings-row:hover:not(:disabled) {
+  background: var(--row-hover, var(--surface-hover));
+  background-color: var(--row-hover, var(--surface-hover));
 }
 .settings-shell .settings-group-title {
   font-size: 15px;

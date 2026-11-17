@@ -102,7 +102,10 @@ pub async fn account_authenticate(
     accounts: State<'_, Accounts>,
 ) -> Result<(), String> {
     let _guard = accounts.lock.lock().await;
-    if !["login", "register"].contains(&login.mode.as_str())
+    if login.mode == "register" {
+        return Err("注册已关闭，请使用已有账号登录。".into());
+    }
+    if login.mode != "login"
         || login.password.chars().count() < 6
         || login.password.chars().count() > 128
         || login.email.len() > 254
@@ -166,6 +169,7 @@ pub async fn account_authenticate(
     if !response.status().is_success() {
         return Err(match response.status().as_u16() {
             401 => "邮箱或密码不正确。",
+            403 => "注册已关闭，请使用已有账号登录。",
             409 => "该邮箱已注册，请登录。",
             429 => "尝试次数过多，请稍后重试。",
             400 => "账号信息无效，密码需为 6-128 个字符。",

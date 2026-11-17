@@ -51,7 +51,7 @@ pnpm desktop
 
 构建桌面端使用 `pnpm desktop:build`；直接预览内置页面使用 `pnpm desktop:preview`。`native-env.ps1` 可优先使用本地隔离工具链，新设备需自行安装开发环境。
 
-生成 Windows 安装向导使用 `pnpm package:windows`；配置 Android 签名环境后使用 `pnpm package:android`。产物与发布流程见[安装包说明](docs/installer-release-1.0.3.md)。
+生成 Windows 安装向导使用 `pnpm package:windows`；配置 Android 签名环境后使用 `pnpm package:android`。产物与发布流程见[安装包说明](docs/installer-release-1.0.4.md)。
 
 Android 构建、原生存储及双端验证见[手机端说明](docs/implementation-mobile-reference.md)与[全域同步说明](docs/implementation-full-sync.md)。
 

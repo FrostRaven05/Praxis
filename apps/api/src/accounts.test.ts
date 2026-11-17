@@ -3,7 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { afterEach, expect, it } from "vitest";
+import { afterEach, expect, it, vi } from "vitest";
 import { createServer } from "./server";
 import type { AccountSession } from "./accounts";
 const servers: ReturnType<typeof createServer>[] = [],
@@ -31,6 +31,33 @@ const register = (
   });
 const headers = (session: AccountSession) => ({
   authorization: `Bearer ${session.token}`,
+});
+
+it("honors explicit registration closure while running tests", async () => {
+  const server = createServer({
+    databasePath: ":memory:",
+    devices: [],
+    allowRegistration: false,
+  });
+  servers.push(server);
+  const response = await register(server, "closed@example.com");
+  expect(response.statusCode).toBe(403);
+  expect(response.json()).toEqual({ error: "REGISTRATION_CLOSED" });
+});
+
+it("defaults to closed registration in production", async () => {
+  const server = (() => {
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      return createServer({ databasePath: ":memory:", devices: [] });
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  })();
+  servers.push(server);
+  const response = await register(server, "production-closed@example.com");
+  expect(response.statusCode).toBe(403);
+  expect(response.json()).toEqual({ error: "REGISTRATION_CLOSED" });
 });
 
 it("registers, normalizes email, rejects duplicate and wrong credentials, and revokes only the logged-out session", async () => {

@@ -6,7 +6,8 @@ import { LanSyncStatus } from "./LanSyncStatus";
 import { useLanRefresh } from "./useLanRefresh";
 import { ProductivityView, type TodayContent } from "./ProductivityView";
 import { dayTimeline, recommendBacklog } from "./day-timeline";
-import { DailyHabitTask, useDailyHabitTasks } from "./DailyHabitTasks";
+import { DailyHabitTask, readDailyHabits, useDailyHabitTasks } from "./DailyHabitTasks";
+import { createDayPlanRequest, DayPlanSaveError, saveDayPlan, type DayPlanIntent, type DayPlanRequest } from "./day-planning";
 import { HabitDetailPanel } from "./HabitDetailPanel";
 import type { Row as HabitRow } from "./HabitsView";
 import { DateStrip } from "./DateStrip";
@@ -48,10 +49,7 @@ import {
   dayPeriods,
   dayPeriodLabels,
   orderedDayItems,
-  moveDayItems,
-  planChange,
   type DayArrangementItem,
-  type HabitPlanChange,
   taskPeriod,
   type DayPeriod,
   type PlanChange,
@@ -148,6 +146,7 @@ export function App() {
     workspaceRef.current?.scrollTo({ top: 0 });
   }, [view, projectId, projectNavigation]);
   const [planningBusy, setPlanningBusy] = useState(false);
+  const planningSaving = useRef(false);
   const [acceptingSuggestion, setAcceptingSuggestion] = useState<string | null>(
     null,
   );
@@ -220,11 +219,7 @@ export function App() {
   const queryVersion = useRef(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const selected = items.find((item) => item.taskId === selectedId);
-  const [pendingPlan, setPendingPlan] = useState<{
-    date: string;
-    changes: PlanChange[];
-    habitChanges?: HabitPlanChange[];
-  } | null>(null);
+  const [pendingPlan, setPendingPlan] = useState<DayPlanRequest | null>(null);
   const draggingPlan = useRef<string | null>(null);
   const dailyHabits = useDailyHabitTasks(
     displayedDate,
@@ -234,6 +229,10 @@ export function App() {
   const completedHabits = dailyHabits.rows.filter(
     (row) => row.entry?.status === "done",
   );
+  const visibleCompleted = [
+    ...completedItems.map((task) => ({ type: "task" as const, task })),
+    ...completedHabits.map((row) => ({ type: "habit" as const, row })),
+  ].slice(0, 3);
   const selectedHabit = dailyHabits.rows.find(
     (row) => row.habit.id === selectedHabitId,
   );
@@ -271,8 +270,13 @@ export function App() {
     }
   }, []);
   useLanRefresh(
-    () => listedDay(displayedDate),
-    setItems,
+    () => {
+      const version = queryVersion.current;
+      return listedDay(displayedDate).then((tasks) => ({ version, tasks }));
+    },
+    ({ version, tasks }) => {
+      if (version === queryVersion.current && !planningSaving.current) setItems(tasks);
+    },
     planLocked || view !== "day",
     displayedDate,
   );
@@ -438,18 +442,24 @@ export function App() {
     view,
     planLocked,
   ]);
-  async function updatePlanning(
-    changes: PlanChange[],
-    date = displayedDate,
-    habitChanges: HabitPlanChange[] = [],
-  ) {
-    if (planningBusy) return;
+  async function updatePlanning(request: DayPlanRequest) {
+    if (planningSaving.current) return;
+    planningSaving.current = true;
+    queryVersion.current += 1;
     setPlanningBusy(true);
     setChangeError("");
     try {
-      await planning.update(date, changes, habitChanges);
+      const result = await saveDayPlan(request, {
+        write: (date, changes, habitChanges) => planning.update(date, changes, habitChanges),
+        read: async (date) => {
+          const [tasks, snapshot] = await Promise.all([listedDay(date), readDailyHabits(date)]);
+          return { tasks, habits: snapshot.habits };
+        },
+      });
       setPendingPlan(null);
-      await dailyHabits.refresh();
+      if (result === "changed") setChangeError("任务已更新，已显示最新安排。");
+      // A failed read after an acknowledged save must not create another pending write.
+      await dailyHabits.refresh().catch(() => {});
       const rows = await refresh(displayedDate);
       const current = rows?.find((task) => task.taskId === selectedId);
       if (current) {
@@ -457,20 +467,24 @@ export function App() {
         setEditorRevision((revision) => revision + 1);
       }
     } catch (error) {
-      const text = message(error);
-      setChangeError(
-        text.includes("STATE_CONFLICT")
-          ? "任务或习惯安排已更新，请重新读取后再调整。"
-          : text,
-      );
-      setPendingPlan({ date, changes, habitChanges });
+      if (error instanceof DayPlanSaveError) {
+        setChangeError(error.message);
+        setPendingPlan(error.pending);
+      } else {
+        setChangeError("暂时无法调整安排，请稍后重试。");
+      }
     } finally {
+      planningSaving.current = false;
       setPlanningBusy(false);
     }
   }
+  function arrangeDay(intent: DayPlanIntent) {
+    if (planLocked || planningSaving.current) return;
+    const request = createDayPlanRequest(displayedDate, intent, { tasks: items, habits: dailyHabits.rows });
+    if (request) return updatePlanning(request);
+  }
   async function savePlan(change: PlanChange) {
-    if (planLocked) return;
-    await updatePlanning([change]);
+    await arrangeDay({ type: "focus", taskId: change.taskId, planId: change.planId, isFocus: change.isFocus });
   }
   function dailyArrangementRows(): (DayArrangementItem & {
     task?: DailyTask;
@@ -505,29 +519,7 @@ export function App() {
     anchorId?: string,
     position: "before" | "after" = "before",
   ) {
-    if (planLocked) return;
-    const rows = dailyArrangementRows();
-    const movement = moveDayItems(rows, planId, period, anchorId, position);
-    const changes: PlanChange[] = [],
-      habitChanges: HabitPlanChange[] = [];
-    for (const move of movement) {
-      const row = rows.find((row) => row.key === move.key)!;
-      if (row.task)
-        changes.push({
-          ...planChange(row.task),
-          dayPeriod: move.dayPeriod,
-          dayRank: move.dayRank,
-        });
-      if (row.habit)
-        habitChanges.push({
-          habitId: row.habit.habit.id,
-          expectedVersion: row.habit.placement.version,
-          dayPeriod: move.dayPeriod,
-          dayRank: move.dayRank,
-        });
-    }
-    if (movement.length)
-      void updatePlanning(changes, displayedDate, habitChanges);
+    void arrangeDay({ type: "move", key: planId, period, ...(anchorId ? { anchorId } : {}), position });
   }
   function clearDrag() {
     draggingPlan.current = null;
@@ -1065,35 +1057,39 @@ export function App() {
         )}
 
         {changeError && (
-          <div className="error" role="alert">
-            {changeError}
+          <div className="day-save-notice" role="status">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" /><path d="M10 9v5M10 6h.01" /></svg>
+            <span>{changeError}</span>
             {pendingPlan && (
               <button
                 disabled={planningBusy}
                 onClick={() => {
-                  void updatePlanning(
-                    pendingPlan.changes,
-                    pendingPlan.date,
-                    pendingPlan.habitChanges,
-                  );
+                  void updatePlanning(pendingPlan);
                 }}
               >
-                重试保存排序与星标
+                重试
               </button>
             )}
             <button
               disabled={planningBusy}
               onClick={() => {
+                if (planningSaving.current) return;
+                setPlanningBusy(true);
                 void Promise.all([
                   refresh(displayedDate),
                   dailyHabits.refresh(),
-                ]).catch((e) => setChangeError(message(e)));
-                setChangeError("");
-                setPendingPlan(null);
+                ]).then(([rows]) => {
+                  if (rows) {
+                    setChangeError("");
+                    setPendingPlan(null);
+                  }
+                }).catch(() => setChangeError("暂时无法刷新，请稍后重试。"))
+                  .finally(() => setPlanningBusy(false));
               }}
             >
-              重新读取
+              刷新
             </button>
+            {!pendingPlan && <button aria-label="收起提示" onClick={() => setChangeError("")}>×</button>}
           </div>
         )}
         {dailyHabits.error && (
@@ -1115,27 +1111,30 @@ export function App() {
               </button>
               {showCompleted && (
                 <ul className="task-list">
-                  {completedItems.map((task) => taskRow(task))}
-                  {completedHabits.map((row) => (
-                    <DailyHabitTask
-                      key={row.habit.id}
-                      row={row}
-                      disabled={planLocked || dailyHabits.future}
-                      selected={selectedHabitId === row.habit.id}
-                      detailsDisabled={planningBusy || inboxBusy}
-                      onDetails={() => {
-                        setSelectedId(null);
-                        setSelectedHabitId(
-                          selectedHabitId === row.habit.id
-                            ? null
-                            : row.habit.id,
-                        );
-                      }}
-                      onToggle={() => {
-                        void dailyHabits.toggle(row);
-                      }}
-                    />
-                  ))}
+                  {visibleCompleted.map((item) =>
+                    item.type === "task" ? (
+                      taskRow(item.task)
+                    ) : (
+                      <DailyHabitTask
+                        key={item.row.habit.id}
+                        row={item.row}
+                        disabled={planLocked || dailyHabits.future}
+                        selected={selectedHabitId === item.row.habit.id}
+                        detailsDisabled={planningBusy || inboxBusy}
+                        onDetails={() => {
+                          setSelectedId(null);
+                          setSelectedHabitId(
+                            selectedHabitId === item.row.habit.id
+                              ? null
+                              : item.row.habit.id,
+                          );
+                        }}
+                        onToggle={() => {
+                          void dailyHabits.toggle(item.row);
+                        }}
+                      />
+                    ),
+                  )}
                 </ul>
               )}
             </section>

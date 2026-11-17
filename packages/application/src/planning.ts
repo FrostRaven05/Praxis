@@ -83,6 +83,11 @@ export function planChange(task: DailyTask): PlanChange {
     estimatedMinutes: task.estimatedMinutes ?? null,
   };
 }
+/** Native adapters may translate the conflict code into a user-facing message. */
+export function isPlanConflict(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /STATE_CONFLICT|安排已发生变化|任务或习惯安排已更新/.test(message);
+}
 export function parseMinutes(value: string, allowZero = false): number | null {
   if (!value.trim()) return null;
   const n = Number(value);
@@ -150,6 +155,7 @@ export class Planning {
         ...(habitChanges.length ? { habitChanges } : {}),
       }),
       (c) => this.storage.updatePlan(c),
+      isPlanConflict,
     );
   }
   async capacity(date: string, version: number, minutes: number | null) {

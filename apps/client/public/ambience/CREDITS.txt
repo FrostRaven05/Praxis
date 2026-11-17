@@ -1,4 +1,9 @@
-番茄环境音使用 Freesound 上可再分发的实地录音，不使用泡泡白噪音的音频文件。
+番茄环境音当前使用泡泡白噪音（https://www.ppbzy.com/）的 12 类、48 条音轨。
+音频原始字节保存在 ppbzy/ 下；文件扩展名按实际音频格式修正，未重新编码。
+ppbzy/manifest.json 记录原始音轨名、公开来源地址、文件大小和 SHA-256 校验值。
+重新导入：node scripts/import-ppbzy-ambience.mjs --download
+
+以下为项目此前使用、仍保留在本目录的 Freesound 素材署名：
 
 雨声  EricsSoundschmiede — Heavy Rain
 https://freesound.org/s/666624/  CC0 1.0

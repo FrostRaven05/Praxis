@@ -1732,10 +1732,12 @@
   color: var(--text-tertiary);
   font-size: 12px;
 }
-.workspace.modern-workspace .reference-task-panel .task-subtask-check {
+.workspace.modern-workspace .reference-task-panel .task-subtask-check,
+.workspace.modern-workspace .reference-task-panel .task-subtask-check:hover:not(:disabled) {
   border: 1.5px solid var(--text-tertiary);
 }
-.workspace.modern-workspace .reference-task-panel .task-subtask-check[aria-pressed="true"] {
+.workspace.modern-workspace .reference-task-panel .task-subtask-check[aria-pressed="true"],
+.workspace.modern-workspace .reference-task-panel .task-subtask-check[aria-pressed="true"]:hover:not(:disabled) {
   border-color: var(--primary-text);
   background: var(--selected);
   color: var(--primary-text);

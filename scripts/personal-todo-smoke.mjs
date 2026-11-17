@@ -75,6 +75,7 @@ const server = await createServer({
           return `${stylePaths.map((p) => `import '/src/${p}.css';`).join("\n")}
       import React from 'react';import {createRoot} from 'react-dom/client';import {installFixture} from ${JSON.stringify(fixtureUrl)};
       const mode=new URLSearchParams(location.search).get('mode')||'desktop';installFixture(mode);
+      if(${JSON.stringify(scenario)}==='planning'){const {installPlanningFixture}=await import('/@fs/'+${JSON.stringify(resolve("scripts/fixtures/planning-conflict-browser.mjs").replaceAll("\\", "/"))});installPlanningFixture();}
       const component=mode==='mobile'?(await import('/src/mobile/MobileApp.tsx')).MobileApp:(await import('/src/App.tsx')).App;
       createRoot(document.getElementById('root')).render(React.createElement(React.StrictMode,null,React.createElement(component)));`;
       },
@@ -98,6 +99,7 @@ try {
     ...(channel ? { channel } : {}),
   });
   for (const mode of ["desktop", "mobile"]) {
+    if (scenario === "planning" && mode === "mobile") continue;
     const context = await browser.newContext({
       viewport:
         mode === "mobile"
@@ -111,6 +113,12 @@ try {
     page.setDefaultTimeout(10000);
     if (scenario === "inline" || scenario === "remaining") await page.clock.install({ time: new Date() });
     await page.goto(`${base}__personal-todo?mode=${mode}`);
+    if (scenario === "planning") {
+      const { runPlanningConflictScenario } = await import("./fixtures/planning-conflict-scenario.mjs");
+      await runPlanningConflictScenario(page, evidence, checks);
+      await context.close();
+      continue;
+    }
     if (scenario === "projects") {
       const { runProjectScenario } = await import("./fixtures/personal-project-scenario.mjs");
       await runProjectScenario(page, mode, evidence, checks);

@@ -18,6 +18,7 @@ const token = randomBytes(32).toString("hex");
 const server = createServer({
   databasePath: join(directory, "api.db"),
   devices: [],
+  allowRegistration: true,
   adminTokenHash: createHash("sha256").update(token).digest("hex"),
   release: {
     version: "1.0.1",

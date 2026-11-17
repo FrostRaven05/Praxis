@@ -26,6 +26,10 @@ type Command = {
 };
 const retries = new RetriableCommands<Command>();
 
+export function readDailyHabits(date: string) {
+  return invoke<Snapshot>("habit_snapshot", { date });
+}
+
 export function useDailyHabitTasks(
   date: string,
   enabled: boolean,
@@ -37,10 +41,7 @@ export function useDailyHabitTasks(
   const pending = useRef(false);
   const scope = useRef(date);
   scope.current = date;
-  const read = useCallback(
-    () => invoke<Snapshot>("habit_snapshot", { date }),
-    [date],
-  );
+  const read = useCallback(() => readDailyHabits(date), [date]);
   const accept = useCallback((next: Snapshot) => {
     if (next.date === scope.current) setSnapshot(next);
   }, []);

@@ -78,11 +78,9 @@ export function AccountPage({
   modal?: boolean;
 }) {
   const [status, setStatus] = useState<AccountStatus | null>(null);
-  const [mode, setMode] = useState<"login" | "register">("login");
   const [baseUrl, setBaseUrl] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
   const [caPem, setCaPem] = useState("");
   const [busy, setBusy] = useState(false);
   const [switching, setSwitching] = useState(false);
@@ -182,12 +180,6 @@ export function AccountPage({
     } finally {
       setPasswordBusy(false);
     }
-  }
-  function switchMode() {
-    setMode(mode === "login" ? "register" : "login");
-    setPassword("");
-    setShowPassword(false);
-    setError("");
   }
   const expired = status?.expiresAt
     ? Date.parse(status.expiresAt) <= Date.now()
@@ -378,36 +370,22 @@ export function AccountPage({
             )}
             <div className="settings-auth">
             <form
-              aria-label="用户登录与注册"
+              aria-label="用户登录"
               onSubmit={(e) => {
                 e.preventDefault();
                 void run(() =>
                   accountStorage.authenticate({
-                    mode,
+                    mode: "login",
                     baseUrl,
                     email,
                     password,
-                    displayName,
+                    displayName: "",
                     caPem,
                   }),
                 );
               }}
             >
               <fieldset disabled={unavailable}>
-                {mode === "register" && (
-                  <label>
-                    昵称
-                    <input
-                      aria-label="昵称"
-                      required
-                      maxLength={60}
-                      placeholder="怎么称呼你"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                      autoComplete="nickname"
-                    />
-                  </label>
-                )}
                 <label>
                   邮箱
                   <input
@@ -434,16 +412,10 @@ export function AccountPage({
                     required
                     minLength={6}
                     maxLength={128}
-                    placeholder={
-                      mode === "register"
-                        ? "设置密码（6–128 个字符）"
-                        : "请输入密码"
-                    }
+                    placeholder="请输入密码"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    autoComplete={
-                      mode === "register" ? "new-password" : "current-password"
-                    }
+                    autoComplete="current-password"
                   />
                   <button
                     className="account-password-toggle"
@@ -470,20 +442,8 @@ export function AccountPage({
                     ? "正在打开工作空间…"
                     : busy
                       ? "正在连接…"
-                      : mode === "register"
-                        ? "注册并登录"
-                        : "登录账号"}
+                      : "登录账号"}
                 </button>
-                <p className="account-mode-switch">
-                  {mode === "login" ? "还没有账号？" : "已有账号？"}
-                  <button
-                    type="button"
-                    className="account-text-button"
-                    onClick={switchMode}
-                  >
-                    {mode === "login" ? "注册账号" : "返回登录"}
-                  </button>
-                </p>
                 <details className="account-connection">
                   <summary>高级连接设置</summary>
                   <label>

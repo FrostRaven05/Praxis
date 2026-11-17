@@ -239,26 +239,18 @@ try {
     }),
   });
   await h1().press("ArrowLeft");
-  await expect(page.locator('.today-content [role="alert"]')).toContainText(
-    "安排已发生变化",
-  );
-  await page
-    .locator('.today-content [role="alert"]')
-    .getByRole("button", { name: "重新读取", exact: true })
-    .click();
-  await waitIdle();
-  await h1().press("ArrowLeft");
   await expect(
     period("afternoon").locator(`[data-habit-id="${habits[0]}"]`),
   ).toBeVisible();
   await waitIdle();
+  await expect(page.locator('.today-content [role="alert"]')).toHaveCount(0);
   await h1().press("ArrowRight");
   await expect(
     period("evening").locator(`[data-habit-id="${habits[0]}"]`),
   ).toBeVisible();
   await waitIdle();
   checks.push(
-    "Each date saves its own override, future occurrences inherit the recent period, and stale placement versions recover after rereading without changing habit checks.",
+    "Each date saves its own override, future occurrences inherit the recent period, and stale placement versions recover automatically without a blocking alert or changing habit checks.",
   );
 
   await page

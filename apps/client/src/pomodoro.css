@@ -232,6 +232,26 @@
   gap: 5px;
   white-space: nowrap;
 }
+.pomodoro-track-picker {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+.pomodoro-track-picker select {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font: inherit;
+}
 .pomodoro-sounds svg {
   width: 15px;
   height: 15px;

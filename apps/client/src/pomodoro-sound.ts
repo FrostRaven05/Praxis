@@ -1,3 +1,5 @@
+import catalogue from "../public/ambience/ppbzy/manifest.json";
+
 export type PomodoroAmbience =
   | "rain"
   | "thunder"
@@ -7,31 +9,27 @@ export type PomodoroAmbience =
   | "stream"
   | "forest"
   | "cafe"
-  | "cat";
+  | "cat"
+  | "wind"
+  | "blizzard"
+  | "night";
 
 export const pomodoroAmbienceLabels: Record<PomodoroAmbience, string> = {
+  cat: "猫",
   rain: "雨声",
   thunder: "雷声",
+  wind: "风声",
+  blizzard: "暴风雪",
   fire: "篝火",
   waves: "海浪",
   birds: "鸟鸣",
   stream: "溪流",
   forest: "森林",
+  night: "夜晚",
   cafe: "咖啡厅",
-  cat: "猫",
 };
 
-const sources: Record<PomodoroAmbience, string> = {
-  rain: "ambience/rain.mp3?v=2",
-  thunder: "ambience/thunder.mp3?v=2",
-  fire: "ambience/fire.mp3",
-  waves: "ambience/waves.mp3?v=2",
-  birds: "ambience/birds.mp3",
-  stream: "ambience/stream.mp3",
-  forest: "ambience/forest.mp3",
-  cafe: "ambience/cafe.mp3",
-  cat: "ambience/cat.mp3",
-};
+export const pomodoroAmbienceVariants = catalogue.categories;
 
 let generation = 0;
 let current: { stop: () => void } | null = null;
@@ -57,15 +55,22 @@ export function stopPomodoroAmbience() {
   halt();
 }
 
-function fileUrl(kind: PomodoroAmbience) {
+function fileUrl(kind: PomodoroAmbience, variantId?: string) {
   const base = import.meta.env.BASE_URL || "/";
-  return `${base}${sources[kind]}`;
+  const variants = pomodoroAmbienceVariants[kind].variants;
+  const track =
+    variants.find((variant) => variant.id === variantId) ?? variants[0];
+  if (!track) throw new Error("环境音没有可用音轨");
+  return `${base}${track.file}`;
 }
 
-export async function playPomodoroAmbience(kind: PomodoroAmbience) {
+export async function playPomodoroAmbience(
+  kind: PomodoroAmbience,
+  variantId?: string,
+) {
   const ticket = ++generation;
   halt();
-  const url = fileUrl(kind);
+  const url = fileUrl(kind, variantId);
   const pair = [new Audio(url), new Audio(url)];
   for (const item of pair) {
     item.preload = "auto";
@@ -85,7 +90,12 @@ export async function playPomodoroAmbience(kind: PomodoroAmbience) {
     const idle = pair[1 - index];
     if (!active || !idle) return;
     const left = active.duration - active.currentTime;
-    if (!bridging && Number.isFinite(left) && left <= seam && active.duration > seam * 3) {
+    if (
+      !bridging &&
+      Number.isFinite(left) &&
+      left <= seam &&
+      active.duration > seam * 3
+    ) {
       bridging = true;
       idle.currentTime = 0;
       void idle.play();
@@ -132,8 +142,9 @@ export async function playPomodoroAmbience(kind: PomodoroAmbience) {
   frame = requestAnimationFrame(watch);
   try {
     await Promise.all(pair.map((item) => item.play()));
-  } catch {
+  } catch (error) {
     if (ticket === generation) halt();
+    if (ticket === generation) throw error;
     return;
   }
   const idle = pair[1];

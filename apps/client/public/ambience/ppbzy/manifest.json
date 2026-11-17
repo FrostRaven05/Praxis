@@ -1,0 +1,452 @@
+{
+  "source": "https://www.ppbzy.com/",
+  "configurationUrl": "https://www.ppbzy.com/_astro/constants.1o57vU37.js",
+  "importedOn": "2026-11-17",
+  "quality": "high",
+  "categories": {
+    "cat": {
+      "name": "猫",
+      "variants": [
+        {
+          "id": "Cat purr",
+          "name": "猫打呼 1",
+          "file": "ambience/ppbzy/cat/1.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Ambient/Cat%20purr_fa-cat/Cat%20purr_320.m4a",
+          "bytes": 871200,
+          "sha256": "a12f0ead255eef978408c26fb5ad3294fbf2999d916e513e005e7cffcd363a84"
+        },
+        {
+          "id": "Cat purr 2",
+          "name": "猫打呼 2",
+          "file": "ambience/ppbzy/cat/2.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Ambient/Cat%20purr_fa-cat/Cat%20purr%202_320.m4a",
+          "bytes": 934080,
+          "sha256": "fd897d1e3b585a34e1506353f70f8d70c0bdd8c4f96965ed4d7beb31e6dadf8d"
+        }
+      ]
+    },
+    "rain": {
+      "name": "雨声",
+      "variants": [
+        {
+          "id": "Rain",
+          "name": "雨声 1",
+          "file": "ambience/ppbzy/rain/1.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Rain_fa-cloud-showers-heavy/Rain_320.m4a",
+          "bytes": 3361435,
+          "sha256": "9b12d228160655a772b599cb2a181432c7398ca1fbe52a612a93c656638f6a1e"
+        },
+        {
+          "id": "Rain 2",
+          "name": "雨声 2",
+          "file": "ambience/ppbzy/rain/2.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Rain_fa-cloud-showers-heavy/Rain%202_320.m4a",
+          "bytes": 6840946,
+          "sha256": "0881b242617b7650807bd94cfc6206bb4bce5dff8d6c3d169fe45355bcab1277"
+        },
+        {
+          "id": "Rain 3",
+          "name": "雨声 3",
+          "file": "ambience/ppbzy/rain/3.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Rain_fa-cloud-showers-heavy/Rain%203_320.m4a",
+          "bytes": 1425240,
+          "sha256": "f5608753b53f1ce03d0b8dbd0b26ee918b039191e29b0d810add458d4ce517ba"
+        }
+      ]
+    },
+    "thunder": {
+      "name": "雷声",
+      "variants": [
+        {
+          "id": "Thunder 2",
+          "name": "雷声 1",
+          "file": "ambience/ppbzy/thunder/1.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Thunder_fa-bolt/Thunder%202_320.m4a",
+          "bytes": 2915264,
+          "sha256": "f7c453e87e9e5db962f3c7eb986ed65fc82e72b882a3a08d97c18abc48422305"
+        },
+        {
+          "id": "Thunder 3",
+          "name": "雷声 2",
+          "file": "ambience/ppbzy/thunder/2.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Thunder_fa-bolt/Thunder%203_320.m4a",
+          "bytes": 1414791,
+          "sha256": "734e6929a63560cef98baf3a0302c70113c77db9edc71bab9f4aececf51b4b78"
+        }
+      ]
+    },
+    "wind": {
+      "name": "风声",
+      "variants": [
+        {
+          "id": "Light",
+          "name": "微风",
+          "file": "ambience/ppbzy/wind/1.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Wind_fa-wind/Light_320.m4a",
+          "bytes": 2186970,
+          "sha256": "cd80e403e7b01bf8d0a29aa2bcc732a59063663b8f8d60ec862c3e8dae4b5de0"
+        },
+        {
+          "id": "Medium",
+          "name": "中风",
+          "file": "ambience/ppbzy/wind/2.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Wind_fa-wind/Medium_320.m4a",
+          "bytes": 3215150,
+          "sha256": "bf9f0585ea96aaa01bf7be1f4a22a12acac059e16754a32a5ac7a4397618189f"
+        },
+        {
+          "id": "Medium 2",
+          "name": "中风 2",
+          "file": "ambience/ppbzy/wind/3.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Wind_fa-wind/Medium%202_320.m4a",
+          "bytes": 3098121,
+          "sha256": "3f48b9048c9c00805f078531ea140147265edff018b7ded7660a6225a414872c"
+        },
+        {
+          "id": "Strong",
+          "name": "强风",
+          "file": "ambience/ppbzy/wind/4.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Wind_fa-wind/Strong_320.m4a",
+          "bytes": 4583966,
+          "sha256": "5eb003196619eee31ede1beec098d451e086de9f683605d177ea84f2ca370e21"
+        },
+        {
+          "id": "Howling",
+          "name": "呼啸",
+          "file": "ambience/ppbzy/wind/5.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Wind_fa-wind/Howling_320.m4a",
+          "bytes": 2038595,
+          "sha256": "33f22c5f0a4fb5e273e50dfc19cc41cff5c4521f13a9fafad43dadc16a0c6e89"
+        },
+        {
+          "id": "Whistling",
+          "name": "啸叫",
+          "file": "ambience/ppbzy/wind/6.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Wind_fa-wind/Whistling_320.m4a",
+          "bytes": 1707362,
+          "sha256": "3f729478e89fd0ef18d3a7fc19f7a21c811d96c6a52f112c494cb1a24aecfc6b"
+        },
+        {
+          "id": "Ominous",
+          "name": "阴森",
+          "file": "ambience/ppbzy/wind/7.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Wind_fa-wind/Ominous_320.m4a",
+          "bytes": 3130513,
+          "sha256": "08190664a297c0c32f7404e457c64eece84e41adca1d8a3cab01ceff4a85feb7"
+        },
+        {
+          "id": "Desert",
+          "name": "沙漠",
+          "file": "ambience/ppbzy/wind/8.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Wind_fa-wind/Desert_320.m4a",
+          "bytes": 4482611,
+          "sha256": "a3b24eee1c32a726deae7d2b72bafca1996cd42996bf8c07ac498166e1d8b7e3"
+        },
+        {
+          "id": "Far",
+          "name": "远方",
+          "file": "ambience/ppbzy/wind/9.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Wind_fa-wind/Far_320.m4a",
+          "bytes": 868309,
+          "sha256": "8c486cb2dfb677349694452264526d62605221094313c9769dd84c1627d39b63"
+        }
+      ]
+    },
+    "blizzard": {
+      "name": "暴风雪",
+      "variants": [
+        {
+          "id": "Blizzard",
+          "name": "暴风雪",
+          "file": "ambience/ppbzy/blizzard/1.m4a",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Snow_fa-snow/Blizzard.m4a",
+          "bytes": 648980,
+          "sha256": "7c2b0505028ed553525435851c7bf8a42a2a538ae2e03c515c6e0e13e92e4d72"
+        }
+      ]
+    },
+    "fire": {
+      "name": "篝火",
+      "variants": [
+        {
+          "id": "Bonfire 1",
+          "name": "篝火 1",
+          "file": "ambience/ppbzy/fire/1.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Bonfire_fa-fire/Bonfire%201_320.m4a",
+          "bytes": 3805517,
+          "sha256": "873ce7f6da75aee6058dad1cb520d8f34564338a2430d4a745f71a281e727f3d"
+        },
+        {
+          "id": "Bonfire 2",
+          "name": "篝火 2",
+          "file": "ambience/ppbzy/fire/2.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Bonfire_fa-fire/Bonfire%202_320.m4a",
+          "bytes": 1461811,
+          "sha256": "c2b710ab8cc74138825a53057212720396697436c5c7023bc49e973fa7067c0d"
+        },
+        {
+          "id": "Bonfire 3",
+          "name": "篝火 3",
+          "file": "ambience/ppbzy/fire/3.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Bonfire_fa-fire/Bonfire%203_320.m4a",
+          "bytes": 3435623,
+          "sha256": "49e58611f4f8351812fa5a5dd54b88bdfa21fe3cddbecdacd5724794844846ae"
+        },
+        {
+          "id": "Bonfire 4",
+          "name": "篝火 4",
+          "file": "ambience/ppbzy/fire/4.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Bonfire_fa-fire/Bonfire%204_320.m4a",
+          "bytes": 3873435,
+          "sha256": "a71993c249ed4f2817f2738be09c73c5c74ce4be477c7407c577c36aa69b4de6"
+        },
+        {
+          "id": "Bonfire 5",
+          "name": "篝火 5",
+          "file": "ambience/ppbzy/fire/5.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Bonfire_fa-fire/Bonfire%205_320.m4a",
+          "bytes": 3893288,
+          "sha256": "4251b07e86bb25779c420944a0aefa11e1e8291f2e87f3f2e1a41d987e5a8935"
+        }
+      ]
+    },
+    "waves": {
+      "name": "海浪",
+      "variants": [
+        {
+          "id": "Beach",
+          "name": "海浪 1",
+          "file": "ambience/ppbzy/waves/1.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Waves_fa-water/Beach_320.m4a",
+          "bytes": 1197883,
+          "sha256": "96ef15afe5f68f6eff9a329bee5f3f3cf147b2001d2e64c0bf70dd15658b63b0"
+        },
+        {
+          "id": "Beach 2",
+          "name": "海浪 2",
+          "file": "ambience/ppbzy/waves/2.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Waves_fa-water/Beach%202_320.m4a",
+          "bytes": 2305044,
+          "sha256": "f730ef54949bbaeb699d7db7cd8e99f58cfa61c698bde218d5453d6d3008c73c"
+        },
+        {
+          "id": "Beach 3",
+          "name": "海浪 3",
+          "file": "ambience/ppbzy/waves/3.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Waves_fa-water/Beach%203_320.m4a",
+          "bytes": 3166040,
+          "sha256": "f4a69b0b8bad58a1a61a61b5612c61a6d55b13ce3211f101c71a02307bf4074b"
+        },
+        {
+          "id": "Coastal cave",
+          "name": "海岸洞穴",
+          "file": "ambience/ppbzy/waves/4.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Waves_fa-water/Coastal%20cave_320.m4a",
+          "bytes": 2294595,
+          "sha256": "47dd058a553c6940bebdadc6b1c9731adf5ecbcc9bcccd5620d792299fdfd05a"
+        },
+        {
+          "id": "Rocky coast",
+          "name": "岩石海岸",
+          "file": "ambience/ppbzy/waves/5.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Waves_fa-water/Rocky%20coast_320.m4a",
+          "bytes": 2630007,
+          "sha256": "e55eee842caad2ed9ad999e07d7e737c9ee24a6e9aff15c5d62fe1ddce9ecb04"
+        },
+        {
+          "id": "Storm",
+          "name": "风暴",
+          "file": "ambience/ppbzy/waves/6.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Waves_fa-water/Storm_320.m4a",
+          "bytes": 4366627,
+          "sha256": "416e2c42f16ce1d926d730a711dca691d16038472afc377a330ca4856404c5ba"
+        }
+      ]
+    },
+    "birds": {
+      "name": "鸟鸣",
+      "variants": [
+        {
+          "id": "Birdsong 1",
+          "name": "鸟鸣 1",
+          "file": "ambience/ppbzy/birds/1.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Birdsong_fa-dove/Birdsong%201_320.m4a",
+          "bytes": 1592423,
+          "sha256": "74714944d08802a79785581e030c0570d7ee63a292912eb5e9673c42cad235d5"
+        },
+        {
+          "id": "Birdsong 2",
+          "name": "鸟鸣 2",
+          "file": "ambience/ppbzy/birds/2.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Birdsong_fa-dove/Birdsong%202_320.m4a",
+          "bytes": 2693746,
+          "sha256": "384650fea41fdbf63255ad9f4ea6283c49ae95b48f38e3ab6d77d779a6b720d1"
+        },
+        {
+          "id": "Birdsong 3",
+          "name": "鸟鸣 3",
+          "file": "ambience/ppbzy/birds/3.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Birdsong_fa-dove/Birdsong%203_320.m4a",
+          "bytes": 1717811,
+          "sha256": "10de2770d17ed4e27e0f223622c88bad2f4898d0d6db92722581858e097ed42d"
+        },
+        {
+          "id": "Birdsong 4",
+          "name": "鸟鸣 4",
+          "file": "ambience/ppbzy/birds/4.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Birdsong_fa-dove/Birdsong%204_320.m4a",
+          "bytes": 2342660,
+          "sha256": "d446b4245feb5e618e3177660a0f99cfe9952d69a4c997572f0b43e7c14a4a50"
+        }
+      ]
+    },
+    "stream": {
+      "name": "溪流",
+      "variants": [
+        {
+          "id": "Stream",
+          "name": "溪流",
+          "file": "ambience/ppbzy/stream/1.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Stream_fa-bars-staggered/Stream_320.m4a",
+          "bytes": 625893,
+          "sha256": "efcc60becd98ba6b412dc801143da9c1cf669b5c1c8d6f7964644f0bbb81c5f5"
+        },
+        {
+          "id": "Stream 2",
+          "name": "溪流 2",
+          "file": "ambience/ppbzy/stream/2.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Stream_fa-bars-staggered/Stream%202_320.m4a",
+          "bytes": 1387623,
+          "sha256": "db2b366ce3baf638dd9a2a1e1230f64db349635ebe57b7db311b3b645401b99c"
+        },
+        {
+          "id": "Stream 3",
+          "name": "溪流 3",
+          "file": "ambience/ppbzy/stream/3.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Stream_fa-bars-staggered/Stream%203_320.m4a",
+          "bytes": 1615411,
+          "sha256": "655cee59792e15209ee2d7c1576fdd233892f25a525aba59b1fd704c5b38fb7e"
+        },
+        {
+          "id": "Cave stream",
+          "name": "洞穴溪流",
+          "file": "ambience/ppbzy/stream/4.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Stream_fa-bars-staggered/Cave%20stream_320.m4a",
+          "bytes": 1542268,
+          "sha256": "805ebb76dc28db0dca4332ed967d3c50e646a0f6954b62a5ecaec5a1e53258f6"
+        }
+      ]
+    },
+    "forest": {
+      "name": "森林",
+      "variants": [
+        {
+          "id": "Forest 1",
+          "name": "森林 1",
+          "file": "ambience/ppbzy/forest/1.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Forest_fa-tree/Forest%201_320.m4a",
+          "bytes": 4700995,
+          "sha256": "3f4165aef6643c3b7952b141882ac84ce6959908604a05cfc392b35873e45008"
+        },
+        {
+          "id": "Forest 2",
+          "name": "森林 2",
+          "file": "ambience/ppbzy/forest/2.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Forest_fa-tree/Forest%202_320.m4a",
+          "bytes": 4532766,
+          "sha256": "750c3c0d412bf31e21b0e72428cf118904e65b03f995d37fac2826cbc535ef80"
+        },
+        {
+          "id": "Forest 3",
+          "name": "森林 3",
+          "file": "ambience/ppbzy/forest/3.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Forest_fa-tree/Forest%203_320.m4a",
+          "bytes": 4330056,
+          "sha256": "3f93112134e9a368e8240b6a81d80f509bc039de5c43b3eaacb51c27d5117fad"
+        },
+        {
+          "id": "Forest 4",
+          "name": "森林 4",
+          "file": "ambience/ppbzy/forest/4.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Forest_fa-tree/Forest%204_320.m4a",
+          "bytes": 4558888,
+          "sha256": "b0f8741bed756bed4a83b62ec721393108ca61bfce1fbb6acb9311bc9e5524ab"
+        },
+        {
+          "id": "Forest 5",
+          "name": "森林 5",
+          "file": "ambience/ppbzy/forest/5.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Forest_fa-tree/Forest%205_320.m4a",
+          "bytes": 4668603,
+          "sha256": "199c9de9bce48aefd169e60c3997e078cc6ba079767ba039d0a6e75ccb669782"
+        }
+      ]
+    },
+    "night": {
+      "name": "夜晚",
+      "variants": [
+        {
+          "id": "Night",
+          "name": "夜晚 1",
+          "file": "ambience/ppbzy/night/1.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Night_fa-moon/Night_320.m4a",
+          "bytes": 2427297,
+          "sha256": "50cb52ccddb2cc8a15138ae13dbe720756447891468f981ee042104b3457e115"
+        },
+        {
+          "id": "Night 2",
+          "name": "夜晚 2",
+          "file": "ambience/ppbzy/night/2.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Night_fa-moon/Night%202_320.m4a",
+          "bytes": 1534954,
+          "sha256": "0fd10d4320823d0bb922d6bb7a13650cf45b3724120cafae2c37ef4ca3d6cabb"
+        },
+        {
+          "id": "Night in city",
+          "name": "城市夜晚 1",
+          "file": "ambience/ppbzy/night/3.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Night_fa-moon/Night%20in%20city_320.m4a",
+          "bytes": 3644603,
+          "sha256": "9a06729e4e8c68ae3fee1d1660e55babdfd284d41cd75d4e1ae49cb1c29fb8de"
+        },
+        {
+          "id": "Night in city 2",
+          "name": "城市夜晚 2",
+          "file": "ambience/ppbzy/night/4.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Background/Night_fa-moon/Night%20in%20city%202_320.m4a",
+          "bytes": 3519215,
+          "sha256": "d3604c620a4f1fb5f59914b684a48aef904573f22d45a02e26bd7b54e01e1560"
+        }
+      ]
+    },
+    "cafe": {
+      "name": "咖啡厅",
+      "variants": [
+        {
+          "id": "Cafe 1",
+          "name": "咖啡厅",
+          "file": "ambience/ppbzy/cafe/1.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Place/Cafe_fa-mug-saucer/Cafe%201_320.m4a",
+          "bytes": 9619329,
+          "sha256": "65897d3454cac041d1afe476191b221572a553495a128fbc38f52a801ce65bfa"
+        },
+        {
+          "id": "Cafe (English speech)",
+          "name": "咖啡厅 1",
+          "file": "ambience/ppbzy/cafe/2.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Place/Cafe_fa-mug-saucer/Cafe%20(English%20speech)_320.m4a",
+          "bytes": 7888978,
+          "sha256": "8d305fb9833420691433281c059999fcd06f6f95748f0eebcd60326e8dc1e2cf"
+        },
+        {
+          "id": "Cafe (Russian speech)",
+          "name": "咖啡厅 2",
+          "file": "ambience/ppbzy/cafe/3.mp3",
+          "sourceUrl": "https://www.ppbzy.com/audio/Place/Cafe_fa-mug-saucer/Cafe%20(Russian%20speech)_320.m4a",
+          "bytes": 5082240,
+          "sha256": "ccf399237140468a48680fbd63d6e50914b8ca1a8aa8c5a00801bf0d968e672f"
+        }
+      ]
+    }
+  }
+}
