@@ -99,7 +99,7 @@ async fn delivered_mixed_line_endings_are_accepted_without_rewriting_history() {
     store.close().await;
     let db = pool(&path).await;
     let records: Vec<serde_json::Value> =
-        serde_json::from_str(include_str!("../../migrations/legacy-line-endings.json")).unwrap();
+        serde_json::from_str(include_str!("legacy_line_endings.json")).unwrap();
     for row in records {
         let hex = row["legacy"].as_str().unwrap();
         let bytes: Vec<u8> = (0..hex.len())

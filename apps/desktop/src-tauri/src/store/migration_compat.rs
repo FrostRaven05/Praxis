@@ -13,7 +13,7 @@ struct DeliveredLineEnding {
     legacy: String,
 }
 
-const DELIVERED: &str = include_str!("../../migrations/legacy-line-endings.json");
+const DELIVERED: &str = include_str!("legacy_line_endings.json");
 
 fn hexadecimal(bytes: &[u8]) -> String {
     bytes.iter().map(|byte| format!("{byte:02x}")).collect()
