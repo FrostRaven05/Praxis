@@ -1,4 +1,4 @@
-import { Capacitor } from "@capacitor/core";
+import { isMobileSurface } from "./mobile-surface";
 import { mobileStorage } from "./mobile-storage";
 import { personalTasks } from "./personal-task-storage";
 import { projectStorage } from "./storage";
@@ -13,10 +13,15 @@ import type { AiContextTask } from "../../api/src/ai-contract";
 export const personalAgentStorage = {
   ...aiStorage,
   scope: async () => (await personalTasks.read()).scopeKey,
-  async read(projectId?: string) {
+  async read(projectId?: string, options?: { newProject?: boolean }) {
     const base = await personalTasks.read();
+    if (options?.newProject && !projectId) {
+      return personalAgentSnapshot(base, [], undefined, new Date(), {
+        newProject: true,
+      });
+    }
     let metadata: AiContextTask[] = [];
-    if (Capacitor.isNativePlatform()) {
+    if (isMobileSurface()) {
       const raw = await mobileStorage.workspaceSnapshot();
       const ids = projectId ? [projectId] : base.work.projects.map((p) => p.id);
       for (const id of ids) {

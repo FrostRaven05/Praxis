@@ -63,8 +63,12 @@ function barLabel(state: PomodoroState) {
 
 export function PomodoroDock({
   variant = "dock",
+  onClose,
+  onCompleteTask,
 }: {
-  variant?: "dock" | "page";
+  variant?: "dock" | "page" | "overlay";
+  onClose?: () => void;
+  onCompleteTask?: (taskId: string) => void;
 } = {}) {
   const dock = useRef<HTMLDivElement>(null);
   const stateRef = useRef<PomodoroState | null>(null);
@@ -77,6 +81,7 @@ export function PomodoroDock({
   );
   const [expanded, setExpanded] = useState(false);
   const [soundsOpen, setSoundsOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [sound, setSound] = useState<PomodoroAmbience | null>(null);
   const [soundVariants, setSoundVariants] = useState<
     Partial<Record<PomodoroAmbience, string>>
@@ -210,7 +215,220 @@ export function PomodoroDock({
     startSound(kind, variantId);
   }
 
-  if (variant !== "page" && !state.enabled) return null;
+  if (variant !== "page" && variant !== "overlay" && !state.enabled) return null;
+
+  if (variant === "overlay") {
+    const totalMs = Math.max(1, state.durations[activeMode] * 60_000);
+    const progress = Math.max(0, Math.min(1, remaining / totalMs));
+    const radius = 114;
+    const circumference = 2 * Math.PI * radius;
+    const dashOffset = circumference * (1 - progress);
+
+    return (
+      <div
+        className="pomodoro-overlay"
+        role="dialog"
+        aria-modal="true"
+        aria-label="专注模式"
+        ref={dock}
+        onPointerDown={() => warmPomodoroAudio()}
+      >
+        <p className="sr-only" role="status">
+          {statusLabel(state, finished)}，今日完成 {state.completedCount}{" "}
+          个番茄。{announce}
+        </p>
+
+        <header className="pomodoro-overlay-bar">
+          <button
+            type="button"
+            className="pomodoro-overlay-icon"
+            aria-label="收起专注页面"
+            onClick={onClose}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="m6 9 6 6 6-6" />
+            </svg>
+            <span>收起</span>
+          </button>
+          <button
+            type="button"
+            className={`pomodoro-overlay-icon${settingsOpen ? " is-active" : ""}`}
+            aria-label="调整模式与时长"
+            aria-expanded={settingsOpen}
+            disabled={locked}
+            onClick={() => {
+              setSoundsOpen(false);
+              setSettingsOpen((open) => !open);
+            }}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="8" />
+              <path d="M12 8v4l2.5 1.5" />
+            </svg>
+            <span>{pomodoroModeLabels[activeMode]}</span>
+          </button>
+        </header>
+
+        {settingsOpen && !locked && (
+          <div className="pomodoro-overlay-drawer">
+            <div className="pomodoro-modes" role="group" aria-label="番茄钟模式">
+              {pomodoroModes.map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  className={mode === activeMode ? "is-selected" : undefined}
+                  aria-pressed={mode === activeMode}
+                  onClick={() => {
+                    setFinished(null);
+                    commit(selectPomodoroMode(state, mode));
+                  }}
+                >
+                  {pomodoroModeLabels[mode]}
+                </button>
+              ))}
+            </div>
+            <div className="pomodoro-overlay-stepper">
+              <span>{pomodoroModeLabels[activeMode]}时长</span>
+              <div className="pomodoro-overlay-stepper-ctrl">
+                <button
+                  type="button"
+                  aria-label={`${pomodoroModeLabels[activeMode]}减少五分钟`}
+                  onClick={() =>
+                    commit(
+                      setPomodoroDuration(
+                        state,
+                        activeMode,
+                        state.durations[activeMode] - 5,
+                      ),
+                    )
+                  }
+                >
+                  −
+                </button>
+                <b>{state.durations[activeMode]} 分钟</b>
+                <button
+                  type="button"
+                  aria-label={`${pomodoroModeLabels[activeMode]}增加五分钟`}
+                  onClick={() =>
+                    commit(
+                      setPomodoroDuration(
+                        state,
+                        activeMode,
+                        state.durations[activeMode] + 5,
+                      ),
+                    )
+                  }
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="pomodoro-overlay-center">
+          <div className="pomodoro-overlay-task">
+            <span className="pomodoro-overlay-status">
+              {statusLabel(state, finished)}
+            </span>
+            <h2 title={state.task?.title || "自由专注"}>
+              {state.task?.title || "自由专注"}
+            </h2>
+          </div>
+
+          <div className="pomodoro-ring" aria-label="专注倒计时">
+            <svg viewBox="0 0 260 260" aria-hidden="true">
+              <circle
+                className="pomodoro-ring-track"
+                cx="130"
+                cy="130"
+                r={radius}
+              />
+              <circle
+                className="pomodoro-ring-progress"
+                cx="130"
+                cy="130"
+                r={radius}
+                strokeDasharray={circumference}
+                strokeDashoffset={dashOffset}
+              />
+            </svg>
+            <p className="pomodoro-overlay-clock" role="timer">
+              {clock}
+            </p>
+          </div>
+
+          <div className="pomodoro-overlay-actions">
+            <button
+              type="button"
+              className="pomodoro-overlay-primary"
+              onClick={() => {
+                setSettingsOpen(false);
+                begin();
+              }}
+            >
+              {running ? <PauseIcon /> : <PlayIcon />}
+              {barLabel(state)}
+            </button>
+            {locked && (
+              <div className="pomodoro-overlay-secondary-row">
+                <button
+                  type="button"
+                  className="pomodoro-overlay-ghost"
+                  onClick={() => {
+                    setFinished(null);
+                    commit(stopPomodoro(state));
+                  }}
+                >
+                  结束计时
+                </button>
+                {state.task && onCompleteTask && (
+                  <button
+                    type="button"
+                    className="pomodoro-overlay-complete"
+                    onClick={() => {
+                      const taskId = state.task!.id;
+                      setFinished(null);
+                      commit(stopPomodoro(state));
+                      onCompleteTask(taskId);
+                    }}
+                  >
+                    ✓ 完成任务
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <footer className="pomodoro-overlay-footer">
+          <div className="pomodoro-noise-wrap">
+            {soundsOpen && (
+              <SoundMenu
+                sound={sound}
+                variants={soundVariants}
+                onChoose={chooseSound}
+                onVariant={chooseVariant}
+              />
+            )}
+            <button
+              type="button"
+              className="pomodoro-overlay-noise"
+              aria-pressed={sound !== null}
+              aria-expanded={soundsOpen}
+              onClick={() => {
+                setSettingsOpen(false);
+                setSoundsOpen((open) => !open);
+              }}
+            >
+              <SpeakerIcon />
+              {sound ? pomodoroAmbienceLabels[sound] : "环境音"}
+            </button>
+          </div>
+        </footer>
+      </div>
+    );
+  }
 
   if (variant === "page") {
     return (

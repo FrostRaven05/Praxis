@@ -9,6 +9,7 @@ import {
   type WorkTask,
   type WorkRow,
 } from "@praxis/application";
+import { todayTarget } from "./current-subtask";
 
 /** Combine independent plans with scheduled tasks without creating or changing plans. */
 export function dayTimeline(
@@ -55,8 +56,22 @@ export function dayTimeline(
 
 export interface Recommendation {
   task: WorkTask;
+  /** The concrete leaf step to put onto Today (equals task when it has no open children). */
+  actionTask: WorkTask;
   score: number;
   reasons: string[];
+}
+
+function hasIncompleteDependency(
+  task: WorkTask,
+  byId: Map<string, WorkTask>,
+): boolean {
+  const deps = task.dependencies;
+  if (!deps?.length) return false;
+  return deps.some((depId) => {
+    const pred = byId.get(depId);
+    return pred ? pred.status !== "completed" : false;
+  });
 }
 
 /**
@@ -71,6 +86,7 @@ export function recommendBacklog(
   limit = 5,
 ): Recommendation[] {
   const onDay = new Set(scheduled.map((task) => task.taskId));
+  const byId = new Map(snapshot.tasks.map((task) => [task.id, task]));
   const inactive = new Set(
     snapshot.projects
       .filter((p) => p.status !== "active" || p.archivedAt)
@@ -113,6 +129,13 @@ export function recommendBacklog(
       (task.projectId && inactive.has(task.projectId))
     )
       continue;
+    const actionTask = todayTarget(snapshot.tasks, task) ?? task;
+    if (
+      onDay.has(actionTask.id) ||
+      ["waiting", "blocked"].includes(actionTask.status) ||
+      hasIncompleteDependency(actionTask, byId)
+    )
+      continue;
     const reasons: string[] = [];
     let score = 0;
     const deadline = timeDay(task.deadline, zone);
@@ -153,7 +176,7 @@ export function recommendBacklog(
       score += 8;
     }
     if (!reasons.length) reasons.push("积压任务");
-    result.push({ task, score, reasons });
+    result.push({ task, actionTask, score, reasons });
   }
   return result
     .sort(

@@ -181,12 +181,84 @@
   font-size: 14px;
   text-align: left;
 }
-.pm-drawer-link > span {
+.pm-drawer-link > span:not(.pm-drawer-project-badge) {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.pm-app .pm-drawer-project {
+  margin-top: 4px;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--line) 65%, transparent);
+  border-radius: 12px;
+  background: var(--surface-secondary);
+  gap: 10px;
+}
+.pm-app .pm-drawer-project[aria-current="page"] {
+  border-color: color-mix(in srgb, var(--primary) 65%, var(--line));
+  background: var(--selected);
+}
+.pm-drawer-project-badge {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: var(--selected);
+  border: 1px solid color-mix(in srgb, var(--primary-text) 18%, transparent);
+  color: var(--primary-text);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1;
+}
+.pm-drawer-project[aria-current="page"] .pm-drawer-project-badge {
+  background: var(--primary-text);
+  border-color: transparent;
+  color: #ffffff;
+}
+.pm-drawer-project-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.pm-drawer-project-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  font-weight: 550;
+  color: var(--text-primary);
+  line-height: 1.25;
+}
+.pm-drawer-project[aria-current="page"] .pm-drawer-project-name {
+  color: var(--primary-text);
+  font-weight: 650;
+}
+.pm-drawer-project-bar {
+  display: block;
+  width: 100%;
+  height: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--line) 65%, transparent);
+  overflow: hidden;
+}
+.pm-drawer-project-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary-text);
+}
+.pm-drawer-project-count {
+  flex-shrink: 0;
+  min-width: 22px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 .pm-drawer-link svg {
   color: var(--text-secondary);

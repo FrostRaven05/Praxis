@@ -45,9 +45,18 @@ pub struct AiTask {
     pub estimated_minutes: Option<i64>,
     pub depends_on: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_key: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deadline: Option<String>,
+}
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct AiScheduleToday {
+    pub task_id: String,
+    pub date: String,
+    pub time_zone: String,
 }
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -67,6 +76,8 @@ pub struct AiApplyCommand {
     pub basis_tasks: Vec<AiBasis>,
     pub tasks: Vec<AiTask>,
     pub reward: Option<AiReward>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub schedule_today: Option<AiScheduleToday>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub basis_recovery: Option<AiRecoveryBasis>,
 }
@@ -92,7 +103,7 @@ fn validate(c: &AiApplyCommand) -> StoreResult<()> {
         || !id(&c.run_id)
         || !valid(&c.input, 8000, false)
         || c.tasks.is_empty()
-        || c.tasks.len() > 8
+        || c.tasks.len() > 20
         || c.basis_tasks.len() > 100
         || c.project.is_some() && c.new_project.is_some()
     {
@@ -144,15 +155,29 @@ fn validate(c: &AiApplyCommand) -> StoreResult<()> {
             || !valid(&t.title, 300, false)
             || !valid(&t.criteria, 1000, false)
             || t.estimated_minutes.is_some_and(|m| !(1..=480).contains(&m))
-            || t.depends_on.len() > 8
+            || t.depends_on.len() > 20
         {
             return Err("AI_INVALID_COMMAND".into());
         }
     }
+    let by_key: HashMap<&String, &AiTask> = c.tasks.iter().map(|t| (&t.key, t)).collect();
+    let mut parent_keys: HashSet<&String> = HashSet::new();
     for t in &c.tasks {
+        if let Some(pk) = &t.parent_key {
+            let parent = by_key.get(pk).ok_or("AI_INVALID_COMMAND")?;
+            if pk == &t.key || parent.parent_key.is_some() {
+                return Err("AI_INVALID_COMMAND".into());
+            }
+            parent_keys.insert(pk);
+        }
+    }
+    for t in &c.tasks {
+        if parent_keys.contains(&t.key) && !t.depends_on.is_empty() {
+            return Err("AI_INVALID_DEPENDENCIES".into());
+        }
         if t.depends_on
             .iter()
-            .any(|d| d == &t.key || !keys.contains(d))
+            .any(|d| d == &t.key || !keys.contains(d) || parent_keys.contains(d))
             || t.depends_on.iter().collect::<HashSet<_>>().len() != t.depends_on.len()
         {
             return Err("AI_INVALID_DEPENDENCIES".into());
@@ -172,6 +197,23 @@ fn validate(c: &AiApplyCommand) -> StoreResult<()> {
             && c.tasks.iter().any(|t| !t.depends_on.is_empty()))
     {
         return Err("AI_INVALID_DEPENDENCIES".into());
+    }
+    if let Some(plan) = &c.schedule_today {
+        if !id(&plan.task_id)
+            || validate_date(&plan.date).is_err()
+            || !valid(&plan.time_zone, 80, false)
+            || plan.time_zone.parse::<chrono_tz::Tz>().is_err()
+        {
+            return Err("AI_INVALID_COMMAND".into());
+        }
+        let target = c
+            .tasks
+            .iter()
+            .find(|t| t.id == plan.task_id)
+            .ok_or("AI_INVALID_COMMAND")?;
+        if parent_keys.contains(&target.key) || !target.depends_on.is_empty() {
+            return Err("AI_INVALID_COMMAND".into());
+        }
     }
     Ok(())
 }
@@ -286,18 +328,64 @@ impl Store {
             c.project.as_ref().map(|p| p.id.clone())
         };
         let rank: i64 = sqlx::query_scalar(
-            "SELECT COALESCE(MAX(task_rank),0) FROM tasks WHERE owner_id=? AND project_id IS ?",
+            "SELECT COALESCE(MAX(task_rank),0) FROM tasks WHERE owner_id=? AND project_id IS ? AND parent_task_id IS NULL",
         )
         .bind(&self.owner_id)
         .bind(&project_id)
         .fetch_one(&mut *tx)
         .await
         .map_err(|e| e.to_string())?;
-        for (index, t) in c.tasks.iter().enumerate() {
-            let deadline=t.deadline.as_ref().map(|date|json!({"kind":"date","date":date}).to_string());
-            sqlx::query("INSERT INTO tasks(id,owner_id,title,notes,completion_criteria,default_estimated_minutes,project_id,status,source,created_at,source_capture_id,task_rank,deadline_value) VALUES(?,?,?,?,?,?,?,'todo','temporary',?,?,?,?)").bind(&t.id).bind(&self.owner_id).bind(t.title.trim()).bind(t.notes.as_deref().unwrap_or("由规划草稿采用，原始意图保留在关联收集项。")).bind(&t.criteria).bind(t.estimated_minutes).bind(&project_id).bind(&at).bind(&capture_id).bind(rank+index as i64+1).bind(deadline).execute(&mut *tx).await.map_err(|e|e.to_string())?;
-        }
         let by_key: HashMap<_, _> = c.tasks.iter().map(|t| (&t.key, &t.id)).collect();
+        let mut root_index: i64 = 0;
+        for t in c.tasks.iter().filter(|t| t.parent_key.is_none()) {
+            root_index += 1;
+            let deadline = t
+                .deadline
+                .as_ref()
+                .map(|date| json!({"kind":"date","date":date}).to_string());
+            sqlx::query("INSERT INTO tasks(id,owner_id,title,notes,completion_criteria,default_estimated_minutes,project_id,parent_task_id,status,source,created_at,source_capture_id,task_rank,deadline_value) VALUES(?,?,?,?,?,?,?,NULL,'todo','temporary',?,?,?,?)")
+                .bind(&t.id)
+                .bind(&self.owner_id)
+                .bind(t.title.trim())
+                .bind(t.notes.as_deref().unwrap_or("由规划草稿采用，原始意图保留在关联收集项。"))
+                .bind(&t.criteria)
+                .bind(t.estimated_minutes)
+                .bind(&project_id)
+                .bind(&at)
+                .bind(&capture_id)
+                .bind(rank + root_index)
+                .bind(deadline)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
+        }
+        let mut child_ranks: HashMap<&String, i64> = HashMap::new();
+        for t in c.tasks.iter().filter(|t| t.parent_key.is_some()) {
+            let pk = t.parent_key.as_ref().unwrap();
+            let parent_id = by_key[pk];
+            let next_rank = child_ranks.entry(pk).or_insert(0);
+            *next_rank += 1;
+            let deadline = t
+                .deadline
+                .as_ref()
+                .map(|date| json!({"kind":"date","date":date}).to_string());
+            sqlx::query("INSERT INTO tasks(id,owner_id,title,notes,completion_criteria,default_estimated_minutes,project_id,parent_task_id,status,source,created_at,source_capture_id,task_rank,deadline_value) VALUES(?,?,?,?,?,?,?,?, 'todo','temporary',?,?,?,?)")
+                .bind(&t.id)
+                .bind(&self.owner_id)
+                .bind(t.title.trim())
+                .bind(t.notes.as_deref().unwrap_or("由规划草稿采用，原始意图保留在关联收集项。"))
+                .bind(&t.criteria)
+                .bind(t.estimated_minutes)
+                .bind(&project_id)
+                .bind(parent_id)
+                .bind(&at)
+                .bind(&capture_id)
+                .bind(*next_rank)
+                .bind(deadline)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
+        }
         for t in &c.tasks {
             for dep in &t.depends_on {
                 sqlx::query(
@@ -310,6 +398,31 @@ impl Store {
                 .await
                 .map_err(|e| e.to_string())?;
             }
+        }
+        if let Some(plan) = &c.schedule_today {
+            let plan_id = Uuid::new_v5(
+                &Uuid::NAMESPACE_OID,
+                format!("{}:today_plan:{}", c.operation_id, plan.task_id).as_bytes(),
+            )
+            .to_string();
+            let estimate = c
+                .tasks
+                .iter()
+                .find(|t| t.id == plan.task_id)
+                .and_then(|t| t.estimated_minutes);
+            sqlx::query(
+                "INSERT INTO daily_plan_items(id,owner_id,task_id,execution_date,time_zone,created_at,estimated_minutes) VALUES(?,?,?,?,?,?,?)",
+            )
+            .bind(&plan_id)
+            .bind(&self.owner_id)
+            .bind(&plan.task_id)
+            .bind(&plan.date)
+            .bind(&plan.time_zone)
+            .bind(&at)
+            .bind(estimate)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| e.to_string())?;
         }
         if let Some(p) = &project_id {
             sqlx::query(
@@ -399,6 +512,16 @@ impl Store {
         if origin_used {
             return Err("AI_UNDO_CONFLICT".into());
         }
+        let scheduled_plan: Option<(String, String)> = original.schedule_today.as_ref().map(|p| {
+            (
+                p.task_id.clone(),
+                Uuid::new_v5(
+                    &Uuid::NAMESPACE_OID,
+                    format!("{}:today_plan:{}", apply_operation_id, p.task_id).as_bytes(),
+                )
+                .to_string(),
+            )
+        });
         let set: HashSet<_> = receipt.task_ids.iter().collect();
         for task in &receipt.task_ids {
             let linked:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM cultivation_goal_tasks WHERE owner_id=? AND task_id=? UNION ALL SELECT 1 FROM cultivation_achievement_tasks WHERE owner_id=? AND task_id=? UNION ALL SELECT 1 FROM cultivation_reward_agreements r,json_each(r.task_ids) j WHERE r.owner_id=? AND j.value=?)")
@@ -406,9 +529,48 @@ impl Store {
             if linked {
                 return Err("AI_UNDO_CONFLICT".into());
             }
-            let clean:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM tasks t WHERE id=? AND owner_id=? AND version=0 AND status='todo' AND deleted_at IS NULL AND NOT EXISTS(SELECT 1 FROM daily_plan_items WHERE task_id=t.id) AND NOT EXISTS(SELECT 1 FROM project_schedules WHERE task_id=t.id) AND NOT EXISTS(SELECT 1 FROM record_links WHERE target_type='task' AND target_id=t.id) AND NOT EXISTS(SELECT 1 FROM project_context WHERE next_action_task_id=t.id) AND NOT EXISTS(SELECT 1 FROM tasks WHERE parent_task_id=t.id) AND NOT EXISTS(SELECT 1 FROM domain_events WHERE task_id=t.id))").bind(task).bind(&self.owner_id).fetch_one(&mut *tx).await.map_err(|e|e.to_string())?;
+            let clean:bool=sqlx::query_scalar("SELECT EXISTS(SELECT 1 FROM tasks t WHERE id=? AND owner_id=? AND version=0 AND status='todo' AND deleted_at IS NULL AND NOT EXISTS(SELECT 1 FROM project_schedules WHERE task_id=t.id) AND NOT EXISTS(SELECT 1 FROM record_links WHERE target_type='task' AND target_id=t.id) AND NOT EXISTS(SELECT 1 FROM project_context WHERE next_action_task_id=t.id) AND NOT EXISTS(SELECT 1 FROM domain_events WHERE task_id=t.id))").bind(task).bind(&self.owner_id).fetch_one(&mut *tx).await.map_err(|e|e.to_string())?;
             if !clean {
                 return Err("AI_UNDO_CONFLICT".into());
+            }
+            let children: Vec<String> = sqlx::query_scalar(
+                "SELECT id FROM tasks WHERE owner_id=? AND parent_task_id=? AND deleted_at IS NULL",
+            )
+            .bind(&self.owner_id)
+            .bind(task)
+            .fetch_all(&mut *tx)
+            .await
+            .map_err(|e| e.to_string())?;
+            if children.iter().any(|child| !set.contains(child)) {
+                return Err("AI_UNDO_CONFLICT".into());
+            }
+            let plans: Vec<String> = sqlx::query_scalar(
+                "SELECT id FROM daily_plan_items WHERE owner_id=? AND task_id=?",
+            )
+            .bind(&self.owner_id)
+            .bind(task)
+            .fetch_all(&mut *tx)
+            .await
+            .map_err(|e| e.to_string())?;
+            if !plans.is_empty() {
+                let allowed_plan = scheduled_plan
+                    .as_ref()
+                    .filter(|(tid, _)| tid == task)
+                    .map(|(_, pid)| pid);
+                if allowed_plan.is_none_or(|pid| plans.len() != 1 || &plans[0] != pid) {
+                    return Err("AI_UNDO_CONFLICT".into());
+                }
+                let has_exec: bool = sqlx::query_scalar(
+                    "SELECT EXISTS(SELECT 1 FROM execution_records WHERE owner_id=? AND plan_id=?)",
+                )
+                .bind(&self.owner_id)
+                .bind(&plans[0])
+                .fetch_one(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
+                if has_exec {
+                    return Err("AI_UNDO_CONFLICT".into());
+                }
             }
             let edges:Vec<(String,String)>=sqlx::query_as("SELECT task_id,predecessor_id FROM task_dependencies WHERE owner_id=? AND (task_id=? OR predecessor_id=?)").bind(&self.owner_id).bind(task).bind(task).fetch_all(&mut *tx).await.map_err(|e|e.to_string())?;
             if edges
@@ -429,6 +591,14 @@ impl Store {
             }
         }
         let at = chrono::Utc::now().to_rfc3339();
+        if let Some((_, plan_id)) = &scheduled_plan {
+            sqlx::query("DELETE FROM daily_plan_items WHERE id=? AND owner_id=?")
+                .bind(plan_id)
+                .bind(&self.owner_id)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
+        }
         for task in &receipt.task_ids {
             sqlx::query("DELETE FROM task_dependencies WHERE owner_id=? AND task_id=?")
                 .bind(&self.owner_id)
@@ -436,7 +606,25 @@ impl Store {
                 .execute(&mut *tx)
                 .await
                 .map_err(|e| e.to_string())?;
-            sqlx::query("UPDATE tasks SET deleted_at=?,status='cancelled',version=version+1 WHERE id=? AND owner_id=?").bind(&at).bind(task).bind(&self.owner_id).execute(&mut *tx).await.map_err(|e|e.to_string())?;
+        }
+        // Cancel children before parents to satisfy SQLite's active-subtask trigger.
+        for task in &receipt.task_ids {
+            sqlx::query("UPDATE tasks SET deleted_at=?,status='cancelled',version=version+1 WHERE id=? AND owner_id=? AND parent_task_id IS NOT NULL")
+                .bind(&at)
+                .bind(task)
+                .bind(&self.owner_id)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
+        }
+        for task in &receipt.task_ids {
+            sqlx::query("UPDATE tasks SET deleted_at=?,status='cancelled',version=version+1 WHERE id=? AND owner_id=? AND parent_task_id IS NULL")
+                .bind(&at)
+                .bind(task)
+                .bind(&self.owner_id)
+                .execute(&mut *tx)
+                .await
+                .map_err(|e| e.to_string())?;
         }
         if let Some(record) = &reward {
             sqlx::query(

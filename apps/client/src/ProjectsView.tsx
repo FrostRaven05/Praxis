@@ -37,7 +37,11 @@ export function ProjectsView({
   form: "new" | "edit" | null;
   onFormChange: (form: "new" | "edit" | null) => void;
   onSettings: () => void;
-  onOpenPersonalAgent?: (mode:"decompose"|"next",projectId:string)=>void;
+  onOpenPersonalAgent?: (
+    mode: "decompose" | "next",
+    projectId?: string,
+    initialInput?: string,
+  ) => void;
 }) {
   const [work, setWork] = useState<WorkSnapshot | null>(null);
   const [formLocked, setFormLocked] = useState(false);
@@ -174,6 +178,14 @@ export function ProjectsView({
                 modal
                 onBusyChange={setFormLocked}
                 onCancel={() => setForm(null)}
+                {...(form === "new" && onOpenPersonalAgent
+                  ? {
+                      onSwitchToAi: (seed: string) => {
+                        setForm(null);
+                        onOpenPersonalAgent("decompose", undefined, seed);
+                      },
+                    }
+                  : {})}
                 onSaved={async id => {
                   await refresh(id, true);
                   setSelectedId(id);
@@ -222,121 +234,133 @@ export function ProjectsView({
                     {selected.targetDate && <small>目标日期 {selected.targetDate}</small>}
                     {work && <PersonalProjectProgress work={work} projectId={selected.id} />}
                   </div>
-                  <div className="project-summary-aside">
-                    {onOpenPersonalAgent && (
+                  {onOpenPersonalAgent && (
+                    <div className="project-summary-aside">
                       <div className="ai-planner-launch-group">
                         <button type="button" className="ai-planner-launch" disabled={locked || loading || (selected.status !== undefined && selected.status !== "active")} onClick={() => onOpenPersonalAgent("decompose",selected.id)}>✦ 拆成步骤</button>
+                        <button type="button" className="ai-planner-launch" disabled={locked || loading || (selected.status !== undefined && selected.status !== "active")} onClick={() => onOpenPersonalAgent("next",selected.id)}>✦ 下一步</button>
                       </div>
-                    )}
-                    <div className="project-view-controls">
-                    <div
-                      className="project-view-tabs"
-                      role="tablist"
-                      aria-label="项目视图"
-                    >
-                      {(
-                        [
-                          ["tasks", "列表"],
-                          ["board", "看板"],
-                        ] as const
-                      ).map(([key, label]) => (
-                        <button
-                          role="tab"
-                          aria-label={label}
-                          title={label}
-                          key={key}
-                          id={"project-view-" + key}
-                          aria-controls="project-view-content"
-                          disabled={locked}
-                          tabIndex={mode === key ? 0 : -1}
-                          aria-selected={mode === key}
-                          onClick={() => setMode(key)}
-                          onKeyDown={(event) => {
-                            if (
-                              locked ||
-                              ![
-                                "ArrowLeft",
-                                "ArrowRight",
-                                "Home",
-                                "End",
-                              ].includes(event.key)
-                            )
-                              return;
-                            event.preventDefault();
-                            const keys = ["tasks", "board"] as const;
-                            const index =
-                              event.key === "Home"
-                                ? 0
-                                : event.key === "End"
-                                  ? keys.length - 1
-                                  : (keys.indexOf(key) +
-                                      (event.key === "ArrowRight" ? 1 : keys.length - 1)) %
-                                    keys.length;
-                            const next = keys[index]!;
-                            setMode(next);
-                            document
-                              .getElementById("project-view-" + next)
-                              ?.focus();
-                          }}
-                        >
-                          <ProjectIcon name={key} />
-                        </button>
-                      ))}
                     </div>
-                    {mode === "board" && tasks.some((task) => task.status === "cancelled") && (
-                      <TaskActionMenu label="任务筛选" disabled={locked}>
-                        {(close) => (
+                  )}
+                </header>
+                <section className="project-tasks-card" aria-label="项目任务工作区">
+                  <div className="project-view-toolbar">
+                    <span className="project-section-label">任务</span>
+                    <div className="project-view-controls">
+                      <div
+                        className="project-view-tabs"
+                        role="tablist"
+                        aria-label="项目视图"
+                      >
+                        {(
+                          [
+                            ["tasks", "列表"],
+                            ["board", "看板"],
+                          ] as const
+                        ).map(([key, label]) => (
                           <button
-                            aria-pressed={showCancelled}
-                            onClick={() => {
-                              setShowCancelled(!showCancelled);
-                              close();
+                            role="tab"
+                            aria-label={label}
+                            title={label}
+                            key={key}
+                            id={"project-view-" + key}
+                            aria-controls="project-view-content"
+                            disabled={locked}
+                            tabIndex={mode === key ? 0 : -1}
+                            aria-selected={mode === key}
+                            onClick={() => setMode(key)}
+                            onKeyDown={(event) => {
+                              if (
+                                locked ||
+                                ![
+                                  "ArrowLeft",
+                                  "ArrowRight",
+                                  "Home",
+                                  "End",
+                                ].includes(event.key)
+                              )
+                                return;
+                              event.preventDefault();
+                              const keys = ["tasks", "board"] as const;
+                              const index =
+                                event.key === "Home"
+                                  ? 0
+                                  : event.key === "End"
+                                    ? keys.length - 1
+                                    : (keys.indexOf(key) +
+                                        (event.key === "ArrowRight" ? 1 : keys.length - 1)) %
+                                      keys.length;
+                              const next = keys[index]!;
+                              setMode(next);
+                              document
+                                .getElementById("project-view-" + next)
+                                ?.focus();
                             }}
                           >
-                            {showCancelled ? "隐藏已取消任务" : "显示已取消任务"}
+                            <ProjectIcon name={key} />
                           </button>
-                        )}
-                      </TaskActionMenu>
-                    )}
+                        ))}
+                      </div>
+                      {mode === "board" && tasks.some((task) => task.status === "cancelled") && (
+                        <TaskActionMenu label="任务筛选" disabled={locked}>
+                          {(close) => (
+                            <button
+                              aria-pressed={showCancelled}
+                              onClick={() => {
+                                setShowCancelled(!showCancelled);
+                                close();
+                              }}
+                            >
+                              {showCancelled ? "隐藏已取消任务" : "显示已取消任务"}
+                            </button>
+                          )}
+                        </TaskActionMenu>
+                      )}
                     </div>
                   </div>
-                </header>
-                <div className="project-view-toolbar">
-                  <span className="project-section-label">任务</span>
-                </div>
-                {loading && (
-                  <p className="project-loading" role="status">
-                    正在读取任务…
-                  </p>
-                )}
-                <div
-                  id="project-view-content"
-                  role="tabpanel"
-                  aria-labelledby={"project-view-" + mode}
-                >
-                  {mode === "board" && (
-                    <KanbanView
-                      key={"board:" + selected.id}
-                      tasks={tasks}
-                      showCancelled={showCancelled}
-                      disabled={loading || panelLocked}
-                      onBusyChange={setViewBusy}
-                      onSaved={() => refresh(selected.id, true)}
-                    />
+                  {loading && (
+                    <p className="project-loading" role="status">
+                      正在读取任务…
+                    </p>
                   )}
-                  {mode === "tasks" && (
-                    <PersonalTodoHome key={selected.id} projectId={selected.id} embedded
-                      revision={work?.tasks.map(t=>t.id+":"+t.version).join("|")}
-                      externalBusy={loading || viewBusy || panelLocked || formLocked}
-                      onBusyChange={setTaskBusy}
-                      onOpenProject={setSelectedId}
-                      onChanged={()=>void refresh(selected.id)} />
-                  )}
-                </div>
+                  <div
+                    id="project-view-content"
+                    role="tabpanel"
+                    aria-labelledby={"project-view-" + mode}
+                  >
+                    {mode === "board" && (
+                      <KanbanView
+                        key={"board:" + selected.id}
+                        tasks={tasks}
+                        showCancelled={showCancelled}
+                        disabled={loading || panelLocked}
+                        onBusyChange={setViewBusy}
+                        onSaved={() => refresh(selected.id, true)}
+                      />
+                    )}
+                    {mode === "tasks" && (
+                      <PersonalTodoHome key={selected.id} projectId={selected.id} embedded
+                        revision={work?.tasks.map(t=>t.id+":"+t.version).join("|")}
+                        externalBusy={loading || viewBusy || panelLocked || formLocked}
+                        onBusyChange={setTaskBusy}
+                        onOpenProject={setSelectedId}
+                        onChanged={()=>void refresh(selected.id)} />
+                    )}
+                  </div>
+                </section>
               </>
             )}
             {!selected && work && (
-              <PersonalProjectList work={work} disabled={locked || loading} onOpen={setSelectedId} onCreate={() => setForm("new")} onEdit={id => {if(!items.some(p=>p.id===id)){setError("项目资料已变化，请重新读取后编辑");return;}setSelectedId(id);setForm("edit");}} />
+              <PersonalProjectList
+                work={work}
+                disabled={locked || loading}
+                onOpen={setSelectedId}
+                onCreate={() => setForm("new")}
+                {...(onOpenPersonalAgent
+                  ? { onAiCreate: () => onOpenPersonalAgent("decompose") }
+                  : {})}
+                onEdit={id => {if(!items.some(p=>p.id===id)){setError("项目资料已变化，请重新读取后编辑");return;}setSelectedId(id);setForm("edit");}}
+              />
             )}
           </div>
         </div>

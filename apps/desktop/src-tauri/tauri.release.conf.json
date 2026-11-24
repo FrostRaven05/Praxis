@@ -7,6 +7,11 @@
     "windows": {
       "webviewInstallMode": { "type": "downloadBootstrapper" },
       "nsis": {
+        "template": "installer.nsi",
+        "installerIcon": "icons/icon.ico",
+        "sidebarImage": "icons/wizard-side.bmp",
+        "headerImage": "icons/wizard-header.bmp",
+        "uninstallerIcon": "icons/icon.ico",
         "installMode": "currentUser",
         "languages": ["SimpChinese", "English"],
         "displayLanguageSelector": false

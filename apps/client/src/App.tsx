@@ -24,6 +24,10 @@ import { PomodoroDock } from "./PomodoroDock";
 import { assignPomodoroTask, readPomodoroState, writePomodoroState } from "./pomodoro";
 import { personalTasks } from "./personal-task-storage";
 import { noteSubtitle } from "./task-note";
+import { currentSubtask } from "./current-subtask";
+import { computeNextStepHandoff, parentToAutoComplete, type NextStepHandoff } from "./next-step-handoff";
+import { NextStepBanner } from "./NextStepBanner";
+import { TaskAiInspiration } from "./TaskAiInspiration";
 import { ProjectsView } from "./ProjectsView";
 import { InboxView } from "./InboxView";
 import { MobileCaptureView } from "./MobileCaptureView";
@@ -50,7 +54,10 @@ import {
   validCalendarDate,
   dayPeriods,
   dayPeriodLabels,
+  defaultPeriodForDate,
+  localHour,
   orderedDayItems,
+  periodForTime,
   type DayArrangementItem,
   taskPeriod,
   type DayPeriod,
@@ -98,7 +105,7 @@ function message(error: unknown): string {
 }
 
 export function App() {
-  const [personalAgent, setPersonalAgent] = useState<{mode:"decompose"|"next";projectId?:string}|null>(null);
+  const [personalAgent, setPersonalAgent] = useState<{mode:"decompose"|"next";projectId?:string|undefined;initialInput?:string|undefined}|null>(null);
   useEffect(()=>{if(personalAgent)setInboxBusy(true);return()=>{if(personalAgent)setInboxBusy(false);};},[personalAgent]);
   const [workTaskId, setWorkTaskId] = useState<string | null>(null);
   const [workProjectId, setWorkProjectId] = useState<string | null>(null);
@@ -174,6 +181,9 @@ export function App() {
   const [changingId, setChangingId] = useState<string | null>(null);
   const [changeError, setChangeError] = useState("");
   const [showCompleted, setShowCompleted] = useState(false);
+  const [showAllRecommendations, setShowAllRecommendations] = useState(false);
+  const [dayHandoff, setDayHandoff] = useState<NextStepHandoff | null>(null);
+  const [inspireTaskId, setInspireTaskId] = useState<string | null>(null);
   const completedItems = items.filter((item) => item.status === "completed");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -485,6 +495,37 @@ export function App() {
     const request = createDayPlanRequest(displayedDate, intent, { tasks: items, habits: dailyHabits.rows });
     if (request) return updatePlanning(request);
   }
+  async function autoArrangeDay(content?: TodayContent) {
+    if (planLocked || planningSaving.current) return;
+    const zone = content?.zone ?? day.timeZone;
+    const plannedHours: Record<string, number> = {};
+    if (content) {
+      for (const task of content.data.tasks) {
+        if (
+          task.plan?.kind === "instant" &&
+          timeDay(task.plan, zone) === displayedDate
+        ) {
+          plannedHours[task.id] = localHour(new Date(task.plan.atUtc), zone);
+        }
+      }
+    }
+    const intent: DayPlanIntent = {
+      type: "auto",
+      today: day.date,
+      nowIso: new Date().toISOString(),
+      timeZone: zone,
+      plannedHours,
+    };
+    const request = createDayPlanRequest(displayedDate, intent, {
+      tasks: items,
+      habits: dailyHabits.rows,
+    });
+    if (!request || !request.changes.length) {
+      setChangeError("当前早中晚安排已符合时间顺序。");
+      return;
+    }
+    await updatePlanning(request);
+  }
   async function savePlan(change: PlanChange) {
     await arrangeDay({ type: "focus", taskId: change.taskId, planId: change.planId, isFocus: change.isFocus });
   }
@@ -577,6 +618,31 @@ export function App() {
       const current = localDay(day.timeZone);
       setDay(current);
       const task = await todayTasks.add(title, current.timeZone, displayedDate);
+      const preferredPeriod = defaultPeriodForDate(
+        task.executionDate,
+        current.date,
+        new Date(),
+        current.timeZone,
+        task.title,
+      );
+      if (preferredPeriod !== taskPeriod(task)) {
+        const snapshot = await todayTasks.list(task.executionDate);
+        const moveRequest = createDayPlanRequest(
+          task.executionDate,
+          { type: "move", key: task.planId, period: preferredPeriod, position: "after" },
+          { tasks: snapshot, habits: [] },
+        );
+        if (moveRequest && moveRequest.changes.length) {
+          await saveDayPlan(moveRequest, {
+            write: (date, changes, habitChanges) =>
+              planning.update(date, changes, habitChanges),
+            read: async (date) => ({
+              tasks: await todayTasks.list(date),
+              habits: [],
+            }),
+          }).catch(() => undefined);
+        }
+      }
       setTitle("");
       // A refresh failure must not imply that the successful save failed.
       setRecoveryDate(
@@ -610,6 +676,42 @@ export function App() {
         displayedDate,
         zone,
       );
+      const preferredPeriod =
+        task.plan?.kind === "instant" && timeDay(task.plan, zone) === displayedDate
+          ? defaultPeriodForDate(
+              displayedDate,
+              day.date,
+              new Date(task.plan.atUtc),
+              zone,
+            )
+          : defaultPeriodForDate(
+              displayedDate,
+              day.date,
+              new Date(),
+              zone,
+              task.title,
+            );
+      if (preferredPeriod !== "morning") {
+        const snapshot = await todayTasks.list(displayedDate);
+        const accepted = snapshot.find((item) => item.taskId === task.id);
+        if (accepted && preferredPeriod !== taskPeriod(accepted)) {
+          const moveRequest = createDayPlanRequest(
+            displayedDate,
+            { type: "move", key: accepted.planId, period: preferredPeriod, position: "after" },
+            { tasks: snapshot, habits: [] },
+          );
+          if (moveRequest && moveRequest.changes.length) {
+            await saveDayPlan(moveRequest, {
+              write: (date, changes, habitChanges) =>
+                planning.update(date, changes, habitChanges),
+              read: async (date) => ({
+                tasks: await todayTasks.list(date),
+                habits: [],
+              }),
+            }).catch(() => undefined);
+          }
+        }
+      }
       await refresh(displayedDate);
       workChanged();
     } catch (error) {
@@ -619,6 +721,23 @@ export function App() {
       setAcceptingSuggestion(null);
       setPlanningBusy(false);
     }
+  }
+
+  async function scheduleTaskForDay(taskId: string) {
+    const current = await personalTasks.read();
+    const task = current.query.task(taskId);
+    if (!task) throw Error("任务已变化，请重新读取。");
+    await acceptSuggestion(task, current.query.timeZone);
+  }
+
+  async function completeHandoffParent(parent: WorkTask) {
+    const current = await personalTasks.read();
+    await personalTasks.change(current, parent.id, {
+      type: "status",
+      status: "completed",
+    });
+    setDayHandoff(null);
+    workChanged();
   }
 
   async function changeStatus(item: DailyTask) {
@@ -632,7 +751,38 @@ export function App() {
         item.status === "completed" ? "undo" : "complete",
         day.timeZone,
       );
-      if (updated.status === "completed") clearMotion = await animateTaskCompletion(item.taskId);
+      if (updated.status === "completed") {
+        clearMotion = await animateTaskCompletion(item.taskId);
+        const personal = await personalTasks.read().catch(() => null);
+        if (personal) {
+          const autoParentId = parentToAutoComplete(
+            item.taskId,
+            personal.work.tasks,
+          );
+          if (autoParentId) {
+            await personalTasks
+              .change(personal, autoParentId, {
+                type: "status",
+                status: "completed",
+              })
+              .catch(() => undefined);
+            workChanged();
+          }
+          const handoff = computeNextStepHandoff(
+            item.taskId,
+            personal.work,
+            displayedDate,
+            day.timeZone,
+          );
+          setDayHandoff(
+            handoff && !(autoParentId && handoff.kind === "complete_parent")
+              ? handoff
+              : null,
+          );
+        }
+      } else {
+        setDayHandoff(null);
+      }
       setSelectedId(null);
       await refresh(displayedDate);
     } catch (error) {
@@ -736,8 +886,12 @@ export function App() {
       />
     );
   }
-  function taskRow(item: DailyTask, reasons: string[] = []) {
+  function taskRow(item: DailyTask, reasons: string[] = [], allTasks: WorkTask[] = []) {
     const subtitle = noteSubtitle(item.notes ?? "").trim();
+    const objective =
+      item.status === "completed" || !allTasks.length
+        ? null
+        : currentSubtask(allTasks, item.taskId);
     const canArrange =
       desktopAvailable &&
       ["todo", "in_progress", "blocked"].includes(item.status);
@@ -813,6 +967,11 @@ export function App() {
                 </span>
               )}
               <TaskCompletionTitle taskId={item.taskId}>{item.title}</TaskCompletionTitle>
+              {objective && (
+                <span className="task-next-subtask" title={objective.title}>
+                  当前 · {objective.title}
+                </span>
+              )}
             </span>
             {subtitle && <span className="task-card-note">{subtitle}</span>}
             <span className="task-meta">
@@ -925,23 +1084,62 @@ export function App() {
             </span>
           )}
         </form>
+        {dayHandoff && (
+          <NextStepBanner
+            handoff={dayHandoff}
+            disabled={planLocked}
+            onStartPomodoro={(task) => {
+              writePomodoroState(
+                assignPomodoroTask(
+                  readPomodoroState(),
+                  { id: task.id, title: task.title },
+                  Date.now(),
+                ),
+              );
+              setDayHandoff(null);
+            }}
+            onScheduleToday={(task) => acceptSuggestion(task, day.timeZone)}
+            onCompleteParent={completeHandoffParent}
+            onOpenTask={(task) => {
+              setDayHandoff(null);
+              setWorkTaskId(task.id);
+            }}
+            onDismiss={() => setDayHandoff(null)}
+          />
+        )}
         {!loading && recommendations.length > 0 && (
           <section
             className="timeline-attention today-recommendations"
             aria-label="建议任务"
           >
-            <h2>
-              建议任务 <span>{recommendations.length}</span>
-            </h2>
+            <div className="today-recommendations-head">
+              <h2>
+                建议任务 <span>{recommendations.length}</span>
+              </h2>
+              <div className="today-recommendations-actions">
+                <button
+                  type="button"
+                  className="ai-planner-launch"
+                  disabled={planLocked}
+                  onClick={() => setPersonalAgent({ mode: "next" })}
+                >
+                  ✦ 接下来做什么
+                </button>
+              </div>
+            </div>
             <ul className="task-suggestions">
-              {recommendations.map((row) => {
+              {(showAllRecommendations ? recommendations : recommendations.slice(0, 5)).map((row) => {
                 const projectName = row.task.projectId ? projectNames.get(row.task.projectId) : "杂事";
                 const attention = row.reasons.find((reason) => ["已逾期", "今日截止", "即将截止", "进行中", "到期跟进", "P1"].includes(reason));
-                const keptDate = timeDay(row.task.deadline, content!.zone) ?? timeDay(row.task.plan, content!.zone);
+                const keptDate = timeDay(row.actionTask.deadline, content!.zone) ?? timeDay(row.task.deadline, content!.zone) ?? timeDay(row.task.plan, content!.zone);
+                const hasLeaf = row.actionTask.id !== row.task.id;
                 return (
                 <li key={row.task.id} data-task-id={row.task.id}>
-                  <span className="task-suggestion-title" title={row.task.title}>
+                  <span className="task-suggestion-title" title={hasLeaf ? `${row.task.title} → ${row.actionTask.title}` : row.task.title}>
                     {row.task.title}
+                    {hasLeaf && (
+                      <span className="task-next-subtask">当前 · {row.actionTask.title}</span>
+                    )}
                     {projectName && projectName.trim() !== row.task.title.trim() && (
                       <small> · {projectName}</small>
                     )}
@@ -954,12 +1152,12 @@ export function App() {
                     type="button"
                     className="accept-suggestion"
                     disabled={planLocked || !desktopAvailable}
-                    aria-label={`加入${displayedDate === day.date ? "今日" : displayedDate}：${row.task.title}`}
+                    aria-label={`加入${displayedDate === day.date ? "今日" : displayedDate}：${hasLeaf ? row.actionTask.title : row.task.title}`}
                     onClick={() =>
-                      void acceptSuggestion(row.task, content!.zone)
+                      void acceptSuggestion(row.actionTask, content!.zone)
                     }
                   >
-                    {acceptingSuggestion === row.task.id
+                    {acceptingSuggestion === row.actionTask.id
                       ? "加入中…"
                       : displayedDate === day.date
                         ? "加入今日"
@@ -969,6 +1167,17 @@ export function App() {
                 );
               })}
             </ul>
+            {recommendations.length > 5 && (
+              <button
+                type="button"
+                className="today-recommendations-more"
+                onClick={() => setShowAllRecommendations((v) => !v)}
+              >
+                {showAllRecommendations
+                  ? "收起建议"
+                  : `展开其余 ${recommendations.length - 5} 项`}
+              </button>
+            )}
           </section>
         )}
         {saveError && (
@@ -997,7 +1206,30 @@ export function App() {
             正在读取本机任务…
           </p>
         ) : (
-          <div className="day-periods" aria-busy={planningBusy}>
+          <>
+            <div className="day-periods-bar">
+              <span className="day-periods-now">
+                {displayedDate === day.date
+                  ? `当前时段 · ${periodTitles[periodForTime(new Date(), day.timeZone)]}`
+                  : `${displayedDate} · 早中晚安排`}
+              </span>
+              <button
+                type="button"
+                className="day-auto-arrange"
+                disabled={
+                  planLocked ||
+                  !items.some(
+                    (task) =>
+                      task.executionDate === displayedDate &&
+                      ["todo", "in_progress", "blocked"].includes(task.status),
+                  )
+                }
+                onClick={() => void autoArrangeDay(content)}
+              >
+                ⏱ 按时间安排早中晚
+              </button>
+            </div>
+            <div className="day-periods" aria-busy={planningBusy}>
             {dayPeriods.map((period) => {
               const arrangements = orderedDayItems(
                 dailyArrangementRows(),
@@ -1038,6 +1270,7 @@ export function App() {
                         ? taskRow(
                             row.task,
                             timeline?.reasons.get(row.task.taskId),
+                            content?.data.tasks,
                           )
                         : habitTaskRow(row.habit!),
                     )}
@@ -1056,6 +1289,7 @@ export function App() {
               );
             })}
           </div>
+          </>
         )}
 
         {changeError && (
@@ -1241,7 +1475,7 @@ export function App() {
         />
       ) : view === "projects" ? (
         <ProjectsView
-          onOpenPersonalAgent={(mode,projectId)=>setPersonalAgent({mode,projectId})}
+          onOpenPersonalAgent={(mode,projectId,initialInput)=>setPersonalAgent({mode,projectId,initialInput})}
           form={projectForm}
           onFormChange={setProjectForm}
           navigationRevision={projectNavigation}
@@ -1323,7 +1557,7 @@ export function App() {
             onClose={() => setSelectedHabitId(null)}
           />
         )}
-      {personalAgent && <PersonalAgentPanel {...personalAgent} onClose={()=>setPersonalAgent(null)} onApplied={()=>{projectsChanged();window.dispatchEvent(new Event("praxis-lan-sync"));}} onOpenTask={id=>{setPersonalAgent(null);setWorkTaskId(id);}} />}
+      {personalAgent && <PersonalAgentPanel {...personalAgent} onClose={()=>setPersonalAgent(null)} onApplied={()=>{projectsChanged();void refresh(displayedDate);window.dispatchEvent(new Event("praxis-lan-sync"));}} onOpenTask={id=>{setPersonalAgent(null);setWorkTaskId(id);}} onOpenProject={id=>{setPersonalAgent(null);setProjectForm(null);setProjectNavigation(n=>n+1);setSelectedId(null);setWorkTaskId(null);setWorkReviewId(null);setWorkProjectId(null);setProjectId(id);setView("projects");}} onStartPomodoro={task=>{writePomodoroState(assignPomodoroTask(readPomodoroState(),task,Date.now()));}} onScheduleToday={scheduleTaskForDay} />}
       {workTaskId && (
         <ProductivityView
           key={workTaskId}
@@ -1337,6 +1571,16 @@ export function App() {
           }}
           onChanged={workChanged}
           onBusyChange={setDetailBusy}
+        />
+      )}
+      {inspireTaskId && (
+        <TaskAiInspiration
+          taskId={inspireTaskId}
+          onClose={() => setInspireTaskId(null)}
+          onChanged={() => {
+            workChanged();
+            void refresh(displayedDate);
+          }}
         />
       )}
       <PomodoroDock />
@@ -1365,6 +1609,20 @@ export function App() {
                 }}
               >
                 用番茄钟执行
+              </button>
+            )}
+            {items.find((item) => item.taskId === taskMenu.id)?.status !==
+              "completed" && (
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  const targetId = taskMenu.id;
+                  setTaskMenu(null);
+                  setInspireTaskId(targetId);
+                }}
+              >
+                ✦ 帮我起个头 / 拆子任务
               </button>
             )}
             <button

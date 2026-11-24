@@ -8,9 +8,21 @@
   align-items: center;
   gap: 12px;
 }
-.personal-task-capture-line input {
+.personal-task-composer .personal-task-capture-line input[data-personal-capture] {
   flex: 1;
   min-width: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  padding: 10px 2px;
+}
+.personal-task-composer .personal-task-capture-line input[data-personal-capture]:focus,
+.personal-task-composer .personal-task-capture-line input[data-personal-capture]:focus-visible {
+  border: 0;
+  outline: none;
+  box-shadow: none;
 }
 .personal-task-composer input,
 .personal-task-composer textarea,

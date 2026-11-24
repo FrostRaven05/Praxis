@@ -37,17 +37,51 @@ export function AccountButton({
       window.removeEventListener("focus", read);
     };
   }, []);
+  const user = status?.user;
+  const initial = user?.displayName
+    ? Array.from(user.displayName.trim())[0]?.toUpperCase()
+    : null;
   return (
     <button
       className="sidebar-account"
       type="button"
       disabled={disabled}
       onClick={onClick}
-      aria-label={`账号：${status?.user?.displayName || "未登录"}`}
+      aria-label={`账号：${user?.displayName || "未登录"}`}
     >
-      <span className="account-button-text">
-        <strong>{status?.user?.displayName || "未登录"}</strong>
+      <span className="account-avatar" aria-hidden="true">
+        {initial ? (
+          initial
+        ) : (
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.7"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="8.5" r="3.5" />
+            <path d="M5 19.5a7 7 0 0 1 14 0" />
+          </svg>
+        )}
       </span>
+      <span className="account-button-text">
+        <strong>{user?.displayName || "登录 Praxis 账号"}</strong>
+        <small>{user?.email || "开启云同步与 AI 助手"}</small>
+      </span>
+      <svg
+        className="account-button-arrow"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <path d="m9 6 6 6-6 6" />
+      </svg>
     </button>
   );
 }
@@ -71,12 +105,14 @@ export function AccountPage({
   revision = 0,
   onOpenProject,
   modal = false,
+  accountOnly = false,
 }: {
   onBack: () => void;
   initialSection?: SettingsSection;
   revision?: number;
   onOpenProject?: (id: string) => void;
   modal?: boolean;
+  accountOnly?: boolean;
 }) {
   const [status, setStatus] = useState<AccountStatus | null>(null);
   const [baseUrl, setBaseUrl] = useState("");
@@ -207,8 +243,8 @@ export function AccountPage({
   ] as const;
   const shell = (
     <main
-      className="settings-shell"
-      aria-label="设置"
+      className={`settings-shell${accountOnly ? " is-account-only" : ""}`}
+      aria-label={accountOnly ? (signedIn ? "账户与安全" : "登录账号") : "设置"}
       onKeyDown={(e) => {
         e.stopPropagation();
         if (e.key === "Escape" && !saving.current && !switching && !passwordBusy)
@@ -216,37 +252,70 @@ export function AccountPage({
       }}
     >
       <header className="settings-shell-bar">
-        <h1>设置</h1>
-        <button
-          type="button"
-          className="settings-shell-close"
-          aria-label="关闭设置"
-          disabled={busy || switching || passwordBusy}
-          onClick={onBack}
-        >
-          ×
-        </button>
+        {accountOnly ? (
+          <>
+            <button
+              type="button"
+              className="settings-shell-back"
+              aria-label="返回"
+              disabled={busy || switching || passwordBusy}
+              onClick={onBack}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.9"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m15 6-6 6 6 6" />
+              </svg>
+              <span>返回</span>
+            </button>
+            <h1>{signedIn ? "账户与安全" : "登录账号"}</h1>
+            <span className="settings-shell-spacer" aria-hidden="true" />
+          </>
+        ) : (
+          <>
+            <h1>设置</h1>
+            <button
+              type="button"
+              className="settings-shell-close"
+              aria-label="关闭设置"
+              disabled={busy || switching || passwordBusy}
+              onClick={onBack}
+            >
+              ×
+            </button>
+          </>
+        )}
       </header>
       <div className="settings-shell-body">
-        <nav className="settings-shell-nav" aria-label="设置分类">
-          {nav.map(([key, label]) => (
-            <button
-              key={key}
-              type="button"
-              aria-current={section === key ? "page" : undefined}
-              onClick={() => setSection(key)}
-            >
-              <SettingsNavIcon name={key} />
-              {label}
-            </button>
-          ))}
-        </nav>
+        {!accountOnly && (
+          <nav className="settings-shell-nav" aria-label="设置分类">
+            {nav.map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                aria-current={section === key ? "page" : undefined}
+                onClick={() => setSection(key)}
+              >
+                <SettingsNavIcon name={key} />
+                {label}
+              </button>
+            ))}
+          </nav>
+        )}
         <div className="settings-shell-main">
       {section === "account" && (
       <section aria-labelledby={`${id}-auth-heading`}>
-        <header className="settings-pane-heading">
-          <h2 id={`${id}-auth-heading`}>账户与安全</h2>
-        </header>
+        {!accountOnly && (
+          <header className="settings-pane-heading">
+            <h2 id={`${id}-auth-heading`}>账户与安全</h2>
+          </header>
+        )}
         {signedIn ? (
           <>
             <h3 className="settings-group-title">个人资料</h3>
@@ -370,6 +439,15 @@ export function AccountPage({
               </p>
             )}
             <div className="settings-auth">
+            {accountOnly && (
+              <div className="account-login-heading">
+                <div className="account-brand" aria-hidden="true">
+                  P
+                </div>
+                <h2 id={`${id}-auth-heading`}>欢迎回到 Praxis</h2>
+                <p>登录账号以开启多端同步与 AI 助手</p>
+              </div>
+            )}
             <form
               aria-label="用户登录"
               onSubmit={(e) => {

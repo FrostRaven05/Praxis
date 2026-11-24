@@ -65,12 +65,14 @@ export function PersonalProjectList({
   disabled,
   onOpen,
   onCreate,
+  onAiCreate,
   onEdit,
 }: {
   work: WorkSnapshot;
   disabled: boolean;
   onOpen: (id: string) => void;
   onCreate: () => void;
+  onAiCreate?: () => void;
   onEdit?: (id: string) => void;
 }) {
   const [showArchived, setShowArchived] = useState(false);
@@ -87,9 +89,21 @@ export function PersonalProjectList({
           <h2>我的项目</h2>
           <small>项目是任务的主题分组，在项目里拆解任务</small>
         </div>
-        <button className="primary" disabled={disabled} onClick={onCreate}>
-          新建项目
-        </button>
+        <div className="personal-project-header-actions">
+          {onAiCreate && (
+            <button
+              type="button"
+              className="ai-planner-launch"
+              disabled={disabled}
+              onClick={onAiCreate}
+            >
+              ✦ AI 拆解新建
+            </button>
+          )}
+          <button className="primary" disabled={disabled} onClick={onCreate}>
+            新建项目
+          </button>
+        </div>
       </header>
       {rows.some(
         (r) => r.project.archivedAt || r.project.status === "archived",

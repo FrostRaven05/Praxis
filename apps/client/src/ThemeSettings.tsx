@@ -93,11 +93,11 @@ export function ThemeSettings() {
         <p className="error" role="alert">
           {feedbackMessage(error)}
         </p>
-      ) : (
+      ) : busy ? (
         <p className="theme-status" role="status">
-          {busy ? "正在保存…" : "自动保存，重启后仍会保留。"}
+          正在保存…
         </p>
-      )}
+      ) : null}
     </section>
   );
 }

@@ -27,6 +27,7 @@ export interface WorkTask {
   createdAt: string;
   rank: number;
   labels: string[];
+  dependencies?: string[];
 }
 export interface WorkProject {
   id: string;

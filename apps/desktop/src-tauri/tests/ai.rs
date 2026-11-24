@@ -141,3 +141,71 @@ async fn cultivation_usage_blocks_ai_undo_even_before_tasks_are_completed() {
         2
     );
 }
+
+#[tokio::test]
+async fn two_level_breakdown_with_dependencies_and_first_step_today_applies_replays_and_undoes() {
+    let dir = tempfile::tempdir().unwrap();
+    let s = Store::open(&dir.path().join("two-level.db")).await.unwrap();
+    let p1 = id();
+    let sub1 = id();
+    let sub2 = id();
+    let p2 = id();
+    let c: AiApplyCommand = serde_json::from_value(json!({
+        "operationId": id(),
+        "runId": id(),
+        "input": "上线个人作品集网站",
+        "source": null,
+        "project": null,
+        "newProject": {"id": id(), "name": "个人作品集网站", "outcome": "公开访问"},
+        "basisTasks": [],
+        "tasks": [
+            {"id": p1, "key": "s1", "title": "阶段一：准备内容", "criteria": "案例整理完成", "estimatedMinutes": null, "dependsOn": [], "parentKey": null, "notes": "第一阶段", "deadline": null},
+            {"id": sub1, "key": "s2", "title": "筛选十个代表项目", "criteria": "十个项目列表", "estimatedMinutes": null, "dependsOn": [], "parentKey": "s1", "notes": "", "deadline": null},
+            {"id": sub2, "key": "s3", "title": "撰写项目说明", "criteria": "说明文案完成", "estimatedMinutes": null, "dependsOn": ["s2"], "parentKey": "s1", "notes": "", "deadline": null},
+            {"id": p2, "key": "s4", "title": "阶段二：发布上线", "criteria": "链接可访问", "estimatedMinutes": null, "dependsOn": ["s3"], "parentKey": null, "notes": "", "deadline": "2026-12-20"}
+        ],
+        "reward": null,
+        "scheduleToday": {"taskId": sub1, "date": "2026-11-21", "timeZone": "Asia/Hong_Kong"}
+    }))
+    .unwrap();
+    let receipt = s.ai_apply(&c).await.unwrap();
+    assert_eq!(receipt.task_ids.len(), 4);
+    let replay = s.ai_apply(&c).await.unwrap();
+    assert_eq!(replay.operation_id, receipt.operation_id);
+    let tasks = s
+        .project_tasks(receipt.project_id.as_deref().unwrap())
+        .await
+        .unwrap();
+    assert_eq!(tasks.len(), 4);
+    let t_sub1 = tasks.iter().find(|t| t.task_id == sub1).unwrap();
+    let t_sub2 = tasks.iter().find(|t| t.task_id == sub2).unwrap();
+    let t_p2 = tasks.iter().find(|t| t.task_id == p2).unwrap();
+    assert_eq!(t_sub1.parent_task_id.as_deref(), Some(p1.as_str()));
+    assert_eq!(t_sub1.execution_date.as_deref(), Some("2026-11-21"));
+    assert_eq!(t_sub2.dependencies.0, vec![sub1.clone()]);
+    assert_eq!(t_p2.dependencies.0, vec![sub2.clone()]);
+    let day = s.list_day("2026-11-21").await.unwrap();
+    assert_eq!(day.len(), 1);
+    assert_eq!(day[0].task_id, sub1);
+    // Undo removes tasks, dependencies, and the auto-scheduled today item
+    s.ai_undo(&id(), &c.operation_id).await.unwrap();
+    assert!(s.ai_receipt(&c.operation_id).await.unwrap().unwrap().undone);
+    assert!(s.list_day("2026-11-21").await.unwrap().is_empty());
+    // Rejects invalid parent dependency and scheduling a parent/blocked task
+    let mut bad_dep = c.clone();
+    bad_dep.operation_id = id();
+    bad_dep.run_id = id();
+    bad_dep.tasks[3].depends_on = vec!["s1".into()];
+    assert_eq!(s.ai_apply(&bad_dep).await.unwrap_err(), "AI_INVALID_DEPENDENCIES");
+    let mut bad_today = c.clone();
+    bad_today.operation_id = id();
+    bad_today.run_id = id();
+    bad_today.schedule_today.as_mut().unwrap().task_id = p1.clone();
+    assert_eq!(s.ai_apply(&bad_today).await.unwrap_err(), "AI_INVALID_COMMAND");
+    let mut bad_blocked = c.clone();
+    bad_blocked.operation_id = id();
+    bad_blocked.run_id = id();
+    bad_blocked.schedule_today.as_mut().unwrap().task_id = sub2.clone();
+    assert_eq!(s.ai_apply(&bad_blocked).await.unwrap_err(), "AI_INVALID_COMMAND");
+    s.close().await;
+}

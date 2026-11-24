@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { registerPlugin } from "@capacitor/core";
+import { Capacitor, registerPlugin } from "@capacitor/core";
 import { App } from "@capacitor/app";
 import {
   mobileStorage,
@@ -120,6 +120,10 @@ export function LanSyncPanel({
     throw Error("同步积压较多，将继续读取");
   }
   async function sync() {
+    if (!Capacitor.isNativePlatform()) {
+      setMessage("浏览器预览模式（同步在 Android 应用中自动运行）");
+      return;
+    }
     if (busy.current || document.visibilityState === "hidden") return;
     busy.current = true;
     try {
@@ -187,6 +191,7 @@ export function LanSyncPanel({
   }
   useEffect(() => {
     void sync();
+    if (!Capacitor.isNativePlatform()) return;
     const timer = setInterval(() => void sync(), 5000);
     const resume = () => void sync();
     window.addEventListener("online", resume);
@@ -320,8 +325,7 @@ export function LanSyncPanel({
             </div>
           )}
           <p>
-            自动同步任务、项目、安排、收件箱及其他工作空间内容。AI
-            功能保持搁置。
+            自动同步任务、项目、安排、收件箱及其他工作空间内容。
           </p>
           <p>
             最近成功：

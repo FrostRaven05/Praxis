@@ -760,4 +760,86 @@ describe("mobile AI recovery evidence CAS", () => {
       ),
     ).toHaveLength(8);
   });
+  it("applies and undoes two-level tasks with leaf dependencies and first-step today schedule", async () => {
+    const { storage, adapter } = setup();
+    const s1 = crypto.randomUUID(),
+      s2 = crypto.randomUUID(),
+      s3 = crypto.randomUUID();
+    const input: AiApplyCommand = {
+      operationId: crypto.randomUUID(),
+      runId: crypto.randomUUID(),
+      input: "拆解作品集项目",
+      source: null,
+      project: null,
+      newProject: {
+        id: crypto.randomUUID(),
+        name: "作品集项目",
+        outcome: "发布上线",
+      },
+      basisTasks: [],
+      tasks: [
+        {
+          id: s1,
+          key: "s1",
+          title: "准备阶段",
+          criteria: "素材就绪",
+          estimatedMinutes: null,
+          dependsOn: [],
+          parentKey: null,
+        },
+        {
+          id: s2,
+          key: "s2",
+          title: "挑十张图",
+          criteria: "放入文件夹",
+          estimatedMinutes: null,
+          dependsOn: [],
+          parentKey: "s1",
+        },
+        {
+          id: s3,
+          key: "s3",
+          title: "发布页面",
+          criteria: "公开链接可用",
+          estimatedMinutes: null,
+          dependsOn: ["s2"],
+          parentKey: null,
+        },
+      ],
+      reward: null,
+      scheduleToday: {
+        taskId: s2,
+        date: "2026-11-21",
+        timeZone: "Asia/Hong_Kong",
+      },
+    };
+    const receipt = await adapter.apply(input);
+    expect(receipt.taskIds).toEqual([s1, s2, s3]);
+    const snapshot = await storage.workspaceSnapshot();
+    const t1 = snapshot.entities.find((e) => e.id === s1)!;
+    const t2 = snapshot.entities.find((e) => e.id === s2)!;
+    const t3 = snapshot.entities.find((e) => e.id === s3)!;
+    expect(t1.data.parentId).toBeNull();
+    expect(t2.data.parentId).toBe(s1);
+    expect(t2.data.executionDate).toBe("2026-11-21");
+    expect(t3.data.dependencies).toEqual([s2]);
+    // Undo succeeds even when first step was scheduled by this apply
+    await adapter.undo(crypto.randomUUID(), input.operationId);
+    expect((await adapter.receipt(input.operationId))?.undone).toBe(true);
+    // Rejects scheduling a parent task or a dependent (blocked) task
+    const badParent: AiApplyCommand = {
+      ...input,
+      operationId: crypto.randomUUID(),
+      runId: crypto.randomUUID(),
+      scheduleToday: { taskId: s1, date: "2026-11-21", timeZone: "Asia/Hong_Kong" },
+    };
+    await expect(adapter.apply(badParent)).rejects.toThrow("AI_INVALID_COMMAND");
+    const badBlocked: AiApplyCommand = {
+      ...input,
+      operationId: crypto.randomUUID(),
+      runId: crypto.randomUUID(),
+      scheduleToday: { taskId: s3, date: "2026-11-21", timeZone: "Asia/Hong_Kong" },
+    };
+    await expect(adapter.apply(badBlocked)).rejects.toThrow("AI_INVALID_COMMAND");
+  });
 });

@@ -21,6 +21,15 @@ import { currentSubtask } from "./current-subtask";
 import { noteSubtitle } from "./task-note";
 import { desktopAvailable } from "./storage";
 import { assignPomodoroTask, readPomodoroState, writePomodoroState } from "./pomodoro";
+import {
+  computeNextStepHandoff,
+  parentToAutoComplete,
+  type NextStepHandoff,
+} from "./next-step-handoff";
+import { NextStepBanner } from "./NextStepBanner";
+import { TaskAiInspiration } from "./TaskAiInspiration";
+import { planning } from "./PlanningPanel";
+import { calendarDate } from "@praxis/application";
 import type {
   PersonalTaskDraft,
   PersonalTaskReceipt,
@@ -74,20 +83,32 @@ export function PersonalTodoHome({
   projectId,
   revision,
   embedded = false,
+  hideComposer = false,
+  hideHistory = false,
   externalBusy = false,
   onBusyChange,
   onOpenProject,
   onChanged,
+  onScheduleToday,
+  onStartPomodoro,
+  onPomodoroStarted,
+  onOpenTaskEditor,
   focusRevision,
 }: {
   port?: PersonalTodoPort;
   projectId?: string;
   revision?: unknown;
   embedded?: boolean;
+  hideComposer?: boolean;
+  hideHistory?: boolean;
   externalBusy?: boolean;
   onBusyChange?: (busy: boolean) => void;
   onOpenProject: (id: string) => void;
   onChanged?: () => void;
+  onScheduleToday?: (task: WorkTask) => void | Promise<void>;
+  onStartPomodoro?: (task: { id: string; title: string }) => void;
+  onPomodoroStarted?: () => void;
+  onOpenTaskEditor?: (task: WorkTask) => void;
   focusRevision?: number;
 }) {
   const [editing, setEditing] = useState<{
@@ -97,6 +118,8 @@ export function PersonalTodoHome({
   const [composerLocked, setComposerLocked] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [rowMenu, setRowMenu] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [inspireTaskId, setInspireTaskId] = useState<string | null>(null);
+  const [handoff, setHandoff] = useState<NextStepHandoff | null>(null);
   const rowMenuPanel = useRef<HTMLDivElement>(null);
   const [panelLocked, setPanelLocked] = useState(false);
   const region = useRef<HTMLElement>(null);
@@ -307,8 +330,42 @@ export function PersonalTodoHome({
     try {
       const receipt = await port.change(next.base, next.taskId, next.change);
       committed = true;
-      if (next.change.type === "status" && next.change.status === "completed")
+      if (next.change.type === "status" && next.change.status === "completed") {
         clearMotion = await animateTaskCompletion(next.taskId);
+        const autoParentId = parentToAutoComplete(
+          next.taskId,
+          next.base.work.tasks,
+        );
+        if (autoParentId) {
+          const afterSubtask = await port.read().catch(() => null);
+          if (afterSubtask) {
+            await port
+              .change(afterSubtask, autoParentId, {
+                type: "status",
+                status: "completed",
+              })
+              .catch(() => undefined);
+          }
+        }
+        const zone = next.base.query.timeZone;
+        const today = calendarDate(new Date(), zone);
+        const suggestion = computeNextStepHandoff(
+          next.taskId,
+          next.base.work,
+          today,
+          zone,
+        );
+        if (alive.current) {
+          setHandoff(
+            suggestion &&
+              !(autoParentId && suggestion.kind === "complete_parent")
+              ? suggestion
+              : null,
+          );
+        }
+      } else if (alive.current) {
+        setHandoff(null);
+      }
       if (next.change.type === "status" && receipt?.operationId)
         undoCandidate.current = {
           scopeKey: next.base.scopeKey,
@@ -390,6 +447,11 @@ export function PersonalTodoHome({
     const close = () => setRowMenu(null);
     const outside = (event: PointerEvent) => {
       if (rowMenuPanel.current?.contains(event.target as Node)) return;
+      if (
+        event.target instanceof Element &&
+        event.target.closest(".personal-todo-more")
+      )
+        return;
       close();
     };
     const escape = (event: KeyboardEvent) => {
@@ -436,6 +498,7 @@ export function PersonalTodoHome({
   }
   function openDetails(task: WorkTask) {
     if (useDailyActions) setSelectedId(selectedId === task.id ? null : task.id);
+    else if (onOpenTaskEditor) onOpenTaskEditor(task);
     else if (base) setEditing({ base, task });
   }
   function row(task: NonNullable<typeof query>["tasks"][number]) {
@@ -461,22 +524,12 @@ export function PersonalTodoHome({
           setRowMenu({ id: task.id, x: event.clientX, y: event.clientY });
         }}
       >
-        {useDailyActions ? (
-          <TaskCompletionButton
-            title={task.title}
-            completed={task.status === "completed"}
-            busy={busy && pending?.taskId === task.id}
-            disabled={locked}
-            onToggle={() => base && void perform({base, taskId: task.id, title: task.title, change: {type: "status", status: task.status === "completed" ? "todo" : "completed"}})}
-          />
-        ) : (
-        <button
-          type="button"
-          className="personal-todo-check"
-          aria-label={`${task.status === "completed" ? "重新打开" : "完成"}：${task.title}`}
-          aria-pressed={task.status === "completed"}
+        <TaskCompletionButton
+          title={task.title}
+          completed={task.status === "completed"}
+          busy={busy && pending?.taskId === task.id}
           disabled={locked}
-          onClick={() =>
+          onToggle={() =>
             base &&
             void perform({
               base,
@@ -488,10 +541,7 @@ export function PersonalTodoHome({
               },
             })
           }
-        >
-          {task.status === "completed" ? "✓" : ""}
-        </button>
-        )}
+        />
         <div className="personal-todo-content">
           <button
             type="button"
@@ -541,53 +591,24 @@ export function PersonalTodoHome({
           </div>
         </div>
         {useDailyActions ? null : (
-        <div className="personal-task-row-actions">
-          <select
-            aria-label={`任务状态：${task.title}`}
-            value={task.status}
-            disabled={locked}
-            onChange={(e) =>
-              base &&
-              void perform({
-                base,
-                taskId: task.id,
-                title: task.title,
-                change: {
-                  type: "status",
-                  status: e.target.value as
-                    "todo" | "in_progress" | "completed",
-                },
-              })
-            }
-          >
-            {!["todo", "in_progress", "completed"].includes(task.status) && (
-              <option value={task.status} disabled>
-                {task.label}（旧状态）
-              </option>
-            )}
-            <option value="todo">待办</option>
-            <option value="in_progress">进行中</option>
-            <option value="completed">已完成</option>
-          </select>
           <button
             type="button"
-            className="personal-todo-delete"
-            aria-label={`删除：${task.title}`}
+            className="personal-todo-more"
+            aria-label={`更多操作：${task.title}`}
+            aria-haspopup="menu"
+            aria-expanded={rowMenu?.id === task.id}
             disabled={locked}
-            title="移到已删除任务，可恢复"
-            onClick={() =>
-              base &&
-              void perform({
-                base,
-                taskId: task.id,
-                title: task.title,
-                change: { type: "delete" },
-              })
-            }
+            onClick={(event) => {
+              const rect = event.currentTarget.getBoundingClientRect();
+              setRowMenu(
+                rowMenu?.id === task.id
+                  ? null
+                  : { id: task.id, x: rect.right, y: rect.bottom + 4 },
+              );
+            }}
           >
-            删除
+            ···
           </button>
-        </div>
         )}
         {editing?.task.id === task.id && (
           <PersonalTaskInlineEditor
@@ -647,7 +668,7 @@ export function PersonalTodoHome({
           ) : null}
         </div>
       </header>
-      {base && port.create && (
+      {!hideComposer && base && port.create && (
         <PersonalTaskComposer
           key={projectId ?? "independent"}
           base={base}
@@ -685,6 +706,78 @@ export function PersonalTodoHome({
             撤销上次操作
           </button>
         </p>
+      )}
+      {handoff && base && (
+        <NextStepBanner
+          handoff={handoff}
+          disabled={locked}
+          onStartPomodoro={(task) => {
+            if (onStartPomodoro) {
+              onStartPomodoro({ id: task.id, title: task.title });
+            } else {
+              writePomodoroState(
+                assignPomodoroTask(
+                  readPomodoroState(),
+                  { id: task.id, title: task.title },
+                  Date.now(),
+                ),
+              );
+            }
+            setHandoff(null);
+          }}
+          {...(onScheduleToday
+            ? {
+                onScheduleToday: async (task) => {
+                  try {
+                    await onScheduleToday(task);
+                    await refresh();
+                    callbacks.current.onChanged?.();
+                  } catch (caught) {
+                    if (alive.current) setError(message(caught));
+                    throw caught;
+                  }
+                },
+              }
+            : desktopAvailable
+              ? {
+                  onScheduleToday: async (task) => {
+                    try {
+                      const zone = base.query.timeZone;
+                      const today = calendarDate(new Date(), zone);
+                      await planning.acceptSuggestion(
+                        {
+                          taskId: task.id,
+                          title: task.title,
+                          version: task.version,
+                          createdAt: task.createdAt,
+                        },
+                        today,
+                        zone,
+                      );
+                      await refresh();
+                      callbacks.current.onChanged?.();
+                    } catch (caught) {
+                      if (alive.current) setError(message(caught));
+                      throw caught;
+                    }
+                  },
+                }
+              : {})}
+          onCompleteParent={async (parent) => {
+            const latest = await port.read();
+            await perform({
+              base: latest,
+              taskId: parent.id,
+              title: parent.title,
+              change: { type: "status", status: "completed" },
+            });
+          }}
+          onOpenTask={(task) => {
+            setHandoff(null);
+            openDetails(task);
+          }}
+          onDismiss={() => setHandoff(null)}
+        />
       )}
       {error && (
         <div className="personal-todo-error" role="alert">
@@ -748,7 +841,7 @@ export function PersonalTodoHome({
                 <ul>{rooted(query.groups[key]).map(row)}</ul>
               </section>
             ))}
-          {rooted(query.completed).length > 0 && (
+          {!hideHistory && rooted(query.completed).length > 0 && (
             <details className="personal-todo-completed">
               <summary>
                 已完成 <span>{rooted(query.completed).length}</span>
@@ -756,7 +849,7 @@ export function PersonalTodoHome({
               <ul>{rooted(query.completed).map(row)}</ul>
             </details>
           )}
-          {scopedTrash.length > 0 ? (
+          {!hideHistory && scopedTrash.length > 0 ? (
             <details className="personal-todo-completed">
               <summary>
                 已删除任务{" "}
@@ -793,7 +886,7 @@ export function PersonalTodoHome({
           ) : null}
         </>
       )}
-      {useDailyActions && rowMenu && menuTask &&
+      {rowMenu && menuTask &&
         createPortal(
           <div
             ref={rowMenuPanel}
@@ -831,21 +924,93 @@ export function PersonalTodoHome({
             }}
           >
             {menuTask.status !== "completed" && (
+              <>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => {
+                    const target = { id: menuTask.id, title: menuTask.title };
+                    setRowMenu(null);
+                    if (onStartPomodoro) {
+                      onStartPomodoro(target);
+                    } else {
+                      writePomodoroState(
+                        assignPomodoroTask(
+                          readPomodoroState(),
+                          target,
+                          Date.now(),
+                        ),
+                      );
+                    }
+                  }}
+                >
+                  用番茄钟执行
+                </button>
+                {!useDailyActions && onScheduleToday && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      const target = menuTask;
+                      setRowMenu(null);
+                      void Promise.resolve(onScheduleToday(target))
+                        .then(() => refresh())
+                        .catch((caught) => {
+                          if (alive.current) setError(message(caught));
+                        });
+                    }}
+                  >
+                    加入今日
+                  </button>
+                )}
+                {!menuTask.parentId && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      const targetId = menuTask.id;
+                      setRowMenu(null);
+                      setInspireTaskId(targetId);
+                    }}
+                  >
+                    ✦ 帮我起个头 / 拆子任务
+                  </button>
+                )}
+                {!useDailyActions && (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      const target = menuTask;
+                      setRowMenu(null);
+                      if (base)
+                        void perform({
+                          base,
+                          taskId: target.id,
+                          title: target.title,
+                          change: {
+                            type: "status",
+                            status: target.status === "in_progress" ? "todo" : "in_progress",
+                          },
+                        });
+                    }}
+                  >
+                    {menuTask.status === "in_progress" ? "回到待办" : "标记进行中"}
+                  </button>
+                )}
+              </>
+            )}
+            {!useDailyActions && (
               <button
                 type="button"
                 role="menuitem"
                 onClick={() => {
+                  const target = menuTask;
                   setRowMenu(null);
-                  writePomodoroState(
-                    assignPomodoroTask(
-                      readPomodoroState(),
-                      { id: menuTask.id, title: menuTask.title },
-                      Date.now(),
-                    ),
-                  );
+                  openDetails(target);
                 }}
               >
-                用番茄钟执行
+                编辑详情
               </button>
             )}
             <button
@@ -868,6 +1033,24 @@ export function PersonalTodoHome({
           </div>,
           document.body,
         )}
+      {inspireTaskId && (
+        <TaskAiInspiration
+          taskId={inspireTaskId}
+          onClose={() => setInspireTaskId(null)}
+          onChanged={() => refreshFromDetails()}
+          {...(onPomodoroStarted || onStartPomodoro
+            ? {
+                onStartedPomodoro: () => {
+                  if (onPomodoroStarted) onPomodoroStarted();
+                  else {
+                    const current = readPomodoroState();
+                    if (current.task && onStartPomodoro) onStartPomodoro(current.task);
+                  }
+                },
+              }
+            : {})}
+        />
+      )}
       {useDailyActions && selectedTask && base && (
         <PersonalTaskDetails
           key={selectedTask.id}

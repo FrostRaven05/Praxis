@@ -6,6 +6,7 @@ import type {
   WorkTask,
 } from "@praxis/application";
 import { personalTasks } from "./personal-task-storage";
+import { parentToAutoComplete } from "./next-step-handoff";
 import { reorderIds } from "./subtask-order";
 import { TaskPanelIcon } from "./TaskPanelIcon";
 
@@ -210,10 +211,23 @@ export function TaskSubtasks({
     enqueue(async () => {
       if (!baseRef.current) return;
       try {
+        const completing = task.status !== "completed";
         await applyChange(task.id, {
           type: "status",
-          status: task.status === "completed" ? "todo" : "completed",
+          status: completing ? "completed" : "todo",
         });
+        if (completing) {
+          const latest = await readLatest();
+          const autoParentId = parentToAutoComplete(task.id, latest.work.tasks);
+          if (autoParentId) {
+            await personalTasks
+              .change(latest, autoParentId, {
+                type: "status",
+                status: "completed",
+              })
+              .catch(() => undefined);
+          }
+        }
         if (alive.current) setError("");
         await reload();
       } catch (caught) {

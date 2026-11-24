@@ -1,0 +1,143 @@
+.next-step-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line, #8884);
+  border-left: 3px solid var(--accent, #68845b);
+  border-radius: 10px;
+  background: var(--surface-secondary, var(--surface));
+  color: var(--text-primary);
+}
+.next-step-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  flex: 1 1 240px;
+}
+.next-step-kicker {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--surface);
+  border: 1px solid var(--line, #8884);
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.next-step-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.next-step-headline {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.next-step-target {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.next-step-target small {
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+.next-step-done {
+  font-size: 12px;
+  color: var(--accent, #68845b);
+}
+.next-step-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.next-step-actions button {
+  min-height: 34px;
+  padding: 6px 10px;
+  font-size: 13px;
+  border-radius: 8px;
+}
+.next-step-close {
+  min-width: 32px;
+  padding: 4px 8px !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--text-secondary);
+}
+.today-recommendations-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.today-recommendations-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.workspace.modern-workspace .today-recommendations-head .ai-planner-launch,
+.workspace.modern-workspace .today-recommendations-head .ai-planner-launch:hover:not(:disabled),
+.workspace.modern-workspace .today-recommendations-head .ai-planner-launch:active:not(:disabled) {
+  min-height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: none;
+  transform: none;
+}
+.workspace.modern-workspace .today-recommendations-head .ai-planner-launch:hover:not(:disabled) {
+  background: var(--surface-hover);
+}
+.today-recommendations-more {
+  margin-top: 8px;
+  font-size: 12px;
+  min-height: 30px;
+  padding: 4px 10px;
+}
+.task-next-subtask {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: 8px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 400;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.task-ai-starter-input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line, #8884);
+  background: var(--surface);
+  color: inherit;
+  font: inherit;
+}
+.task-ai-starter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}

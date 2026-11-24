@@ -12,6 +12,7 @@
 .modern-workspace .personal-todo-tools button,
 .modern-workspace .ai-planner-launch,
 .modern-workspace .personal-project-list header > button,
+.modern-workspace .personal-project-list .personal-project-header-actions > button,
 .pm-app .personal-todo-tools button,
 .pm-app .ai-planner-launch {
   min-height: 40px;
@@ -28,6 +29,7 @@
 }
 .modern-workspace .personal-todo-tools button:first-child,
 .modern-workspace .personal-project-list header > button,
+.modern-workspace .personal-project-list .personal-project-header-actions > button.primary,
 .pm-app .personal-todo-tools button:first-child {
   border-color: var(--primary-text);
   background: var(--primary);
@@ -36,12 +38,14 @@
 }
 .modern-workspace .personal-todo-tools button:not(:disabled):hover,
 .modern-workspace .ai-planner-launch:not(:disabled):hover,
-.modern-workspace .personal-project-list header > button:not(:disabled):hover {
+.modern-workspace .personal-project-list header > button:not(:disabled):hover,
+.modern-workspace .personal-project-list .personal-project-header-actions > button:not(:disabled):hover {
   transform: translateY(-1px);
 }
 .modern-workspace .personal-todo-tools button:not(:disabled):active,
 .modern-workspace .ai-planner-launch:not(:disabled):active,
 .modern-workspace .personal-project-list header > button:not(:disabled):active,
+.modern-workspace .personal-project-list .personal-project-header-actions > button:not(:disabled):active,
 .pm-app .personal-todo-tools button:not(:disabled):active {
   transform: translateY(2px);
   box-shadow: none;
@@ -471,7 +475,7 @@
 
 /* Mobile shell */
 .pm-app .pm-fab {
-  border-radius: 20px;
+  border-radius: 50%;
   box-shadow: 0 4px 0 var(--game-press);
   transition: transform 120ms ease-out;
 }

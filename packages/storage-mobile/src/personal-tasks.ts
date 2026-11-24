@@ -97,12 +97,28 @@ export function mobilePersonalWork(
     }));
   const zone = settings[0]?.timeZone ?? fallbackZone;
   calendarDate(new Date(0), zone);
+  const depRows = new Map<string, Set<string>>();
+  for (const e of live) {
+    if (e.kind !== "desktop_row" || e.data.table !== "task_dependencies")
+      continue;
+    const row = object(e.data.row);
+    const taskId = text(row.task_id),
+      predId = text(row.predecessor_id);
+    if (!taskId || !predId) continue;
+    const set = depRows.get(taskId) ?? new Set<string>();
+    set.add(predId);
+    depRows.set(taskId, set);
+  }
   const tasks = live
     .filter((e) => e.kind === "task")
     .map((e) => {
       const d = e.data,
         desktop = object(d.desktop),
         raw = String(d.status ?? desktop.status ?? "todo");
+      const deps = new Set<string>(depRows.get(e.id));
+      if (Array.isArray(d.dependencies))
+        for (const v of d.dependencies)
+          if (typeof v === "string" && v) deps.add(v);
       return {
         id: e.id,
         title: String(d.title ?? ""),
@@ -129,10 +145,11 @@ export function mobilePersonalWork(
           ? text(d.completedAt)
           : text(desktop.completed_at),
         createdAt: e.createdAt,
-        rank: number(desktop.task_rank),
+        rank: number(d.rank ?? desktop.task_rank),
         labels: Array.isArray(d.tags)
           ? d.tags.filter((v): v is string => typeof v === "string")
           : [],
+        ...(deps.size ? { dependencies: [...deps] } : {}),
       };
     });
   return {

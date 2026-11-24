@@ -1,5 +1,17 @@
-import { mobileStorage as nativeStorage } from "../../../packages/storage-mobile/src/native";
+import {
+  mobileDatabaseName as nativeDatabaseName,
+  mobileStorage as nativeStorage,
+} from "../../../packages/storage-mobile/src/native";
+import { isMobilePreview } from "./mobile-surface";
+import { createPreviewMobileStorage } from "./mobile/preview-storage";
 import { createRecoveringMobileStorage } from "./mobile-storage-recovery";
-export { mobileDatabaseName } from "../../../packages/storage-mobile/src/native";
 
-export const mobileStorage = createRecoveringMobileStorage(nativeStorage);
+const preview = isMobilePreview() ? createPreviewMobileStorage() : null;
+
+export const mobileDatabaseName = preview
+  ? async () => "praxis"
+  : nativeDatabaseName;
+
+export const mobileStorage: typeof nativeStorage = preview
+  ? (preview as unknown as typeof nativeStorage)
+  : createRecoveringMobileStorage(nativeStorage);

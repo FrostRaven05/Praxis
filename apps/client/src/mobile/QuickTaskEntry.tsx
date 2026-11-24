@@ -1,6 +1,24 @@
+import { dayPeriods, type DayPeriod } from "@praxis/application";
 import { feedbackMessage } from "../feedback-message";
+import { TaskDescription } from "../TaskDescription";
 import { useEffect, type RefObject } from "react";
 import "./quick-task-entry.css";
+
+const periodLabels: Record<DayPeriod, string> = {
+  morning: "早上",
+  afternoon: "中午",
+  evening: "晚上",
+};
+
+const priorityLevels = [
+  { value: 0, label: "一般", tone: "normal" },
+  { value: 2, label: "中等", tone: "medium" },
+  { value: 1, label: "较高", tone: "high" },
+] as const;
+
+function shortDate(date: string) {
+  return `${date.slice(5, 7)}.${date.slice(8, 10)}`;
+}
 
 export function QuickTaskEntry({
   dialogRef,
@@ -33,13 +51,19 @@ export function QuickTaskEntry({
     date = String(data.executionDate ?? "");
   const locked = busy || Boolean(onRetry);
   const customDate = Boolean(date && date !== today && date !== tomorrow);
+  const currentPeriod: DayPeriod =
+    data.dayPeriod === "afternoon" || data.dayPeriod === "evening"
+      ? data.dayPeriod
+      : "morning";
+  const currentPriority = Number(data.priority ?? 0);
+
   useEffect(() => {
     const viewport = window.visualViewport;
     const resize = () => {
       const element = dialogRef.current;
       if (!element || !viewport) return;
       element.style.bottom = `${Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop)}px`;
-      element.style.maxHeight = `${Math.max(180, viewport.height - 16)}px`;
+      element.style.maxHeight = `${Math.max(220, viewport.height - 16)}px`;
     };
     resize();
     viewport?.addEventListener("resize", resize);
@@ -49,6 +73,7 @@ export function QuickTaskEntry({
       viewport?.removeEventListener("scroll", resize);
     };
   }, [dialogRef]);
+
   return (
     <dialog
       ref={dialogRef}
@@ -67,32 +92,53 @@ export function QuickTaskEntry({
       >
         <div className="pm-entry-handle" aria-hidden="true" />
         <header className="pm-entry-header">
-          <button
-            type="button"
-            className="pm-entry-close"
-            aria-label="关闭编辑"
-            disabled={locked}
-            onClick={onClose}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              aria-hidden="true"
+          <div className="pm-entry-top-pills" role="group" aria-label="时段">
+            {date ? (
+              dayPeriods.map((period) => (
+                <button
+                  key={period}
+                  type="button"
+                  className="pm-entry-chip"
+                  aria-pressed={currentPeriod === period}
+                  disabled={locked}
+                  onClick={() => onChange("dayPeriod", period)}
+                >
+                  {periodLabels[period]}
+                </button>
+              ))
+            ) : (
+              <span className="pm-entry-chip is-static">待办</span>
+            )}
+          </div>
+          <div className="pm-entry-header-right">
+            <button
+              type="submit"
+              className="pm-entry-save-text"
+              disabled={locked || !title.trim()}
             >
-              <path d="m6 6 12 12M18 6 6 18" />
-            </svg>
-          </button>
-          <h2>新任务</h2>
-          <button
-            type="submit"
-            className="pm-entry-submit"
-            disabled={locked || !title.trim()}
-          >
-            {busy ? "添加中…" : "添加"}
-          </button>
+              {busy ? "保存中…" : "保存"}
+            </button>
+            <button
+              type="button"
+              className="pm-entry-close"
+              aria-label="关闭编辑"
+              disabled={locked}
+              onClick={onClose}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                aria-hidden="true"
+              >
+                <path d="m7 7 10 10M17 7 7 17" />
+              </svg>
+            </button>
+          </div>
         </header>
+
         {error && (
           <div className="pm-entry-error" role="alert">
             {feedbackMessage(error)}
@@ -103,6 +149,7 @@ export function QuickTaskEntry({
             )}
           </div>
         )}
+
         <fieldset disabled={locked} className="pm-entry-fields">
           <input
             className="pm-entry-title"
@@ -115,15 +162,13 @@ export function QuickTaskEntry({
             value={title}
             onChange={(event) => onChange("title", event.target.value)}
           />
-          <textarea
-            className="pm-entry-notes"
-            aria-label="任务描述"
-            placeholder="添加描述"
-            rows={2}
+          <TaskDescription
             value={String(data.notes ?? "")}
-            onChange={(event) => onChange("notes", event.target.value)}
+            disabled={locked}
+            onChange={(next) => onChange("notes", next)}
           />
-          <div className="pm-entry-dates" role="group" aria-label="安排日期">
+
+          <div className="pm-entry-date-capsule" role="group" aria-label="安排日期">
             <button
               type="button"
               aria-pressed={date === today}
@@ -139,11 +184,7 @@ export function QuickTaskEntry({
               明天
             </button>
             <label className={customDate ? "is-selected" : ""}>
-              <span>
-                {customDate
-                  ? `${Number(date.slice(5, 7))}月${Number(date.slice(8, 10))}日`
-                  : "选择日期"}
-              </span>
+              <span>{customDate ? `${shortDate(date)} ▾` : "选日期 ▾"}</span>
               <input
                 type="date"
                 aria-label="选择安排日期"
@@ -153,17 +194,54 @@ export function QuickTaskEntry({
                 }
               />
             </label>
+            {date && (
+              <button
+                type="button"
+                className="pm-entry-date-clear"
+                aria-label="清除日期"
+                onClick={() => onChange("executionDate", null)}
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          <div className="pm-entry-priority-row">
+            <span className="pm-entry-row-label">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M4 20V5m0 0h11l-2.5 4.5L15 14H4" />
+              </svg>
+              优先级
+            </span>
+            <div className="pm-entry-priority-seg" role="radiogroup" aria-label="优先级">
+              {priorityLevels.map((level) => {
+                const selected =
+                  level.value === 0
+                    ? currentPriority === 0 || currentPriority === 3
+                    : currentPriority === level.value;
+                return (
+                  <button
+                    key={level.value}
+                    type="button"
+                    role="radio"
+                    data-tone={level.tone}
+                    aria-checked={selected}
+                    onClick={() => onChange("priority", level.value)}
+                  >
+                    {level.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <footer className="pm-entry-toolbar">
             <button
               type="button"
-              aria-pressed={!date}
-              onClick={() => onChange("executionDate", null)}
+              className="pm-entry-tool-pill"
+              onClick={onMore}
             >
-              没有日期
-            </button>
-          </div>
-          <footer className="pm-entry-footer">
-            <button type="button" onClick={onMore}>
-              更多选项 <span aria-hidden="true">›</span>
+              更多选项 ›
             </button>
             {context && <span className="pm-entry-context">{context}</span>}
           </footer>

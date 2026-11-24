@@ -1,37 +1,820 @@
-/* Mobile visual polish. Loads after other mobile styles; semantic tokens only. */
+/* Mobile visual polish & Desktop parity. Loads after mobile.css; semantic tokens only. */
 .pm-app {
   --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
-  --accent-soft: color-mix(in srgb, var(--primary) 32%, var(--surface));
+  --hairline: color-mix(in srgb, var(--line) 65%, transparent);
+  --accent-soft: color-mix(in srgb, var(--primary) 26%, var(--surface));
   --row-press: color-mix(in srgb, var(--text-secondary) 8%, var(--surface));
   --shadow-soft:
-    0 1px 2px color-mix(in srgb, var(--text-primary) 6%, transparent),
-    0 8px 20px -6px color-mix(in srgb, var(--text-primary) 10%, transparent);
+    0 1px 2px color-mix(in srgb, var(--text-primary) 5%, transparent),
+    0 6px 18px -6px color-mix(in srgb, var(--text-primary) 9%, transparent);
+  background: var(--surface-canvas);
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Header */
+/* ---------- 1. Desktop-consistent flat header & week strip ---------- */
 .pm-app .pm-header {
-  box-shadow: 0 1px 0 var(--line), 0 8px 24px -12px color-mix(in srgb, var(--text-primary) 14%, transparent);
+  position: sticky;
+  top: 0;
+  z-index: 15;
+  background: color-mix(in srgb, var(--sidebar-surface) 92%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  padding: calc(10px + env(safe-area-inset-top)) 14px 10px;
+  border-radius: 0;
+  border-bottom: 1px solid var(--hairline);
+  box-shadow: none;
 }
-.pm-app .pm-top small {
-  text-transform: uppercase;
+
+.pm-app .pm-top {
+  gap: 8px;
 }
+
+.pm-app .pm-top-daily {
+  display: grid;
+  grid-template-columns: 84px minmax(0, 1fr) 84px;
+}
+
+.pm-app .pm-top-actions {
+  flex: none;
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.pm-app .pm-top-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.pm-app .pm-brand-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+}
+
+.pm-app .pm-brand-mark {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pm-app .pm-brand-dot {
+  color: var(--primary-text);
+  font-weight: 700;
+}
+
+.pm-app .pm-top h1 {
+  font-size: 17px;
+  line-height: 1.25;
+  margin: 0;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-app .pm-top-daily h1 {
+  position: relative;
+  padding-bottom: 6px;
+  font-weight: 700;
+}
+
+.pm-app .pm-top-daily h1::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  width: 18px;
+  height: 2.5px;
+  border-radius: 999px;
+  background: var(--primary-text);
+  transform: translateX(-50%);
+}
+
 .pm-app .pm-icon {
-  transition: background 160ms var(--ease-out);
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  min-width: 40px;
+  min-height: 40px;
+  font-size: 20px !important;
+  border-radius: 10px;
+  color: var(--text-secondary);
+  transition: background 160ms var(--ease-out), color 160ms var(--ease-out);
 }
+
+.pm-app .pm-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
 .pm-app .pm-icon:active {
+  background: var(--row-press);
+  color: var(--text-primary);
+}
+
+.pm-app .pm-ai-trigger {
+  color: var(--primary-text);
+}
+
+.pm-app .pm-todos-trigger[aria-current="page"] {
+  background: var(--accent-soft);
+  color: var(--primary-text);
+}
+
+/* Week strip */
+.pm-app .pm-week-bar {
+  margin-top: 6px;
+}
+
+.pm-app .pm-week-title {
+  margin-top: 0;
+  margin-bottom: 6px;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.pm-app .pm-week-title button {
+  min-height: 32px;
+  min-width: 32px;
+  padding: 0 8px;
+  border-radius: 8px;
+  font-size: 16px;
+  color: var(--text-secondary);
+}
+
+.pm-app .pm-week-title button:active {
   background: var(--row-press);
 }
 
-/* Section heading */
-.pm-app .pm-list-heading {
-  padding: 14px 22px 10px;
+.pm-app .pm-week-title .pm-today-pill {
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--primary-text);
+  font-size: 12px;
+  font-weight: 600;
 }
-.pm-app .pm-list-heading h2 {
+
+.pm-app .pm-week {
+  gap: 4px;
+}
+
+.pm-app .pm-week button {
+  min-height: 54px;
+  padding: 4px 0 3px;
+  gap: 3px;
+  border-radius: 12px;
+  transition: background 140ms var(--ease-out);
+}
+
+.pm-app .pm-week button:active {
+  background: var(--row-press);
+}
+
+.pm-app .pm-week small {
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+
+.pm-app .pm-week b {
+  font-size: 15px;
+  font-weight: 550;
+  width: 30px;
+  height: 30px;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.pm-app .pm-week .is-today:not(.selected) b {
+  box-shadow: inset 0 0 0 1.5px var(--primary-text);
+  color: var(--primary-text);
+  font-weight: 650;
+}
+
+.pm-app .pm-week .selected b {
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 700;
+  box-shadow: none;
+}
+
+.pm-app .pm-week-dot {
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: transparent;
+}
+
+.pm-app .pm-week-dot.has-items {
+  background: var(--primary-text);
+}
+
+/* ---------- 2. Today View (Desktop Parity) ---------- */
+.pm-app .pm-main {
+  max-width: 720px;
+  margin: auto;
+  padding: 12px 0 140px;
+}
+
+.pm-today-view {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 0 14px;
+}
+
+.pm-today-view .next-step-banner {
+  margin: 0;
+  border-radius: 14px;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-soft);
+}
+
+/* Inline quick capture */
+.pm-capture-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pm-app .pm-capture-form input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font-size: 15px;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--text-primary) 4%, transparent);
+}
+
+.pm-app .pm-capture-form input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.pm-app .pm-capture-submit {
+  flex-shrink: 0;
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 10px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Recommendations card */
+.pm-recommendations {
+  background: var(--surface-card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow-soft);
+}
+
+.pm-recommendations-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.pm-recommendations-head h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.pm-recommendations-head h2 span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--surface-tertiary);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pm-app .pm-ai-pill {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.pm-app .pm-ai-pill:active {
+  background: var(--surface-hover);
+}
+
+.pm-rec-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.pm-rec-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--hairline);
+}
+
+.pm-rec-item:first-child {
+  border-top: 0;
+  padding-top: 2px;
+}
+
+.pm-rec-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pm-rec-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.pm-rec-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+.pm-rec-reason {
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--warning-surface);
+  color: var(--warning-text);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.pm-app .pm-rec-accept {
+  flex-shrink: 0;
+  min-height: 32px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--primary-text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pm-app .pm-rec-accept:active {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.pm-app .pm-rec-more {
+  margin-top: 6px;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 8px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+/* Day Period Cards (早上 / 中午 / 晚上) */
+.pm-active-focus-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 12px;
+  padding: 8px 14px;
+  border: 1px solid color-mix(in srgb, var(--primary) 50%, var(--line));
+  border-radius: 14px;
+  background: var(--selected);
+  color: var(--primary-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pm-active-focus-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary-text);
+  flex-shrink: 0;
+}
+
+.pm-active-focus-clock {
+  font-size: 14px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.pm-active-focus-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.pm-active-focus-cta {
+  font-size: 12px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.pm-app button.pm-day-task-focus {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--selected);
+  color: var(--primary-text);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: transform 120ms ease, background-color 120ms ease;
+}
+
+.pm-app button.pm-day-task-focus:active {
+  transform: scale(0.92);
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.pm-app button.pm-day-task-focus svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Crisp hollow completion circle (fixes solid black SVG default on mobile) */
+.pm-app button.completion-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: color-mix(in srgb, var(--text-tertiary) 68%, transparent);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.pm-app button.completion-toggle svg {
+  width: 21px;
+  height: 21px;
+  overflow: visible;
+}
+
+.pm-app button.completion-toggle circle {
+  fill: transparent;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  transition: fill 160ms ease, stroke 160ms ease;
+}
+
+.pm-app button.completion-toggle[aria-pressed="true"] {
+  color: var(--primary-text);
+}
+
+.pm-app button.completion-toggle[aria-pressed="true"] circle {
+  fill: var(--primary-text);
+  stroke: var(--primary-text);
+}
+
+.pm-app button.completion-toggle .completion-check {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pm-app button.completion-toggle .completion-spinner {
+  fill: none;
+  stroke: var(--primary-text);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.pm-periods-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.pm-periods-now {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+
+button.pm-auto-arrange {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+button.pm-auto-arrange:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pm-periods {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pm-period-card {
+  background: var(--surface-card);
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+.pm-period-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 42px;
+  padding: 6px 10px 6px 16px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.pm-period-head h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--text-secondary);
+  letter-spacing: 0.02em;
+}
+
+.pm-period-head h2 span {
+  display: inline-grid;
+  place-items: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--selected);
+  color: var(--primary-text);
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+
+.pm-app .pm-period-add {
+  min-width: 34px;
+  min-height: 34px;
+  border-radius: 10px;
+  color: var(--text-tertiary);
   font-size: 18px;
+}
+
+.pm-app .pm-period-add:active {
+  background: var(--row-press);
+  color: var(--primary-text);
+}
+
+.pm-period-empty {
+  margin: 0;
+  padding: 14px 16px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+}
+
+/* Task rows inside Period Cards & Calendar */
+.pm-day-task-list {
+  list-style: none;
+  margin: 0;
+  padding: 2px 0;
+}
+
+.pm-day-task {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px 8px 10px;
+}
+
+.pm-day-task + .pm-day-task::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 52px;
+  right: 14px;
+  height: 1px;
+  background: var(--hairline);
+}
+
+.pm-day-task .completion-toggle {
+  align-self: flex-start;
+  margin-top: 2px;
+}
+
+.pm-app .pm-day-task-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 40px;
+  padding: 4px 2px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+  border-radius: 8px;
+}
+
+.pm-app .pm-day-task-main:active {
+  background: var(--row-press);
+}
+
+.pm-day-task-title {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.pm-day-task .task-next-subtask {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+}
+
+.pm-day-task.is-complete .pm-day-task-text {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+.pm-day-task .task-next-subtask {
+  margin-left: 0;
+  max-width: 100%;
+}
+
+.pm-day-task-note {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-day-task-meta {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  overflow-wrap: anywhere;
+}
+
+.pm-app .pm-day-task-more {
+  flex-shrink: 0;
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  min-width: 38px;
+  min-height: 38px;
+  margin-top: 2px;
+  border-radius: 8px;
+  color: var(--text-tertiary);
+}
+
+.pm-app .pm-day-task-more svg {
+  width: 18px;
+  height: 18px;
+}
+
+.pm-app .pm-day-task-more:active {
+  background: var(--row-press);
+  color: var(--text-primary);
+}
+
+/* Completed section */
+.pm-completed-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pm-app .pm-completed-toggle {
+  align-self: flex-start;
+  min-height: 36px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.pm-app .pm-completed-toggle:active {
+  background: var(--row-press);
+}
+
+.pm-completed-list {
+  background: var(--surface-card);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  opacity: 0.85;
+}
+
+/* ---------- 3. Section headings, Projects & Cards ---------- */
+.pm-app .pm-list-heading {
+  padding: 12px 18px 8px;
+}
+
+.pm-app .pm-list-heading h2 {
+  font-size: 16px;
   font-weight: 650;
   letter-spacing: -0.01em;
 }
+
 .pm-app .pm-list-heading > button {
   min-height: 34px;
   padding: 0 14px;
@@ -42,145 +825,674 @@
   font-weight: 600;
 }
 
-/* Task rows become one grouped card */
-.pm-app .pm-main > .pm-task {
-  /* depth-0 rows carry an inline margin-left: 0 */
-  margin-left: 14px !important;
-  margin-right: 14px;
-  padding: 4px 6px 4px 4px;
+.pm-app .personal-project-detail-summary {
+  margin: 0 14px 10px;
+  padding: 14px 16px;
+  border-radius: 14px;
   border: 1px solid var(--line);
-  border-top-width: 0;
   background: var(--surface-card);
-  transition: background 140ms var(--ease-out);
-}
-.pm-app .pm-main > .pm-task:not(.pm-task + .pm-task) {
-  border-top-width: 1px;
-  border-radius: 18px 18px 0 0;
-}
-.pm-app .pm-main > .pm-task:not(:has(+ .pm-task)) {
-  border-radius: 0 0 18px 18px;
   box-shadow: var(--shadow-soft);
 }
-.pm-app .pm-main > .pm-task:not(.pm-task + .pm-task):not(:has(+ .pm-task)) {
-  border-radius: 18px;
-}
-.pm-app .pm-task-title:active {
-  background: var(--row-press);
-  border-radius: 10px;
-}
-.pm-app .pm-task-title strong {
-  font-weight: 500;
-  line-height: 1.4;
-}
-.pm-app .pm-task-title span {
-  font-size: 12px;
+
+.pm-app .ai-planner-launch-group {
+  margin: 0 14px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-/* Round completion control, matches desktop */
-.pm-app .pm-check:before {
-  inset: 11px;
-  border-width: 2px;
-  border-radius: 50%;
-  transition:
-    background 160ms var(--ease-out),
-    border-color 160ms var(--ease-out);
+.pm-app .pm-chart-card,
+.pm-app .pm-stat-insight,
+.pm-app .pm-stat-cards article,
+.pm-app .pm-project,
+.pm-app .pm-month-calendar {
+  box-shadow: var(--shadow-soft);
 }
-.pm-app .pm-check:active:before {
+
+.pm-app .pm-project {
+  border-radius: 16px;
+}
+
+/* ---------- 4. MobileTaskSheet & MobileTaskActionSheet ---------- */
+.pm-task-sheet .pm-sheet-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pm-app .pm-sheet-quick-btn {
+  min-height: 34px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.pm-app .pm-sheet-quick-btn:active {
   background: var(--accent-soft);
-}
-.pm-app .is-complete > .pm-task-line .pm-check:before {
-  border-color: var(--primary-text);
-}
-.pm-app .is-complete > .pm-task-line .pm-check {
-  font-size: 14px !important;
   color: var(--primary-text);
 }
-.pm-app .is-complete > .pm-task-line .pm-check:before {
-  background: var(--accent-soft);
+
+.pm-app .pm-sheet-close {
+  min-width: 36px;
+  min-height: 36px;
+  border-radius: 8px;
+  font-size: 22px;
+  color: var(--text-secondary);
 }
 
-/* Quiet secondary action on each row */
-.pm-app .pm-task-line > .pm-icon {
-  min-width: 40px;
-  font-size: 20px !important;
-  font-weight: 300;
+.pm-sheet-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pm-sheet-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.pm-status-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pm-app .pm-status-pills button {
+  min-height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.pm-app .pm-status-pills button[aria-checked="true"] {
+  border-color: var(--primary-text);
+  background: var(--accent-soft);
+  color: var(--primary-text);
+  font-weight: 600;
+}
+
+.pm-period-segment {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 4px;
+  border-radius: 12px;
+  background: var(--surface-secondary);
+  border: 1px solid var(--hairline);
+}
+
+.pm-app .pm-period-segment button {
+  min-height: 36px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.pm-app .pm-period-segment button[aria-pressed="true"] {
+  background: var(--surface-card);
+  color: var(--primary-text);
+  font-weight: 650;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--text-primary) 8%, transparent);
+}
+
+.pm-sheet-subtasks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--surface-secondary);
+}
+
+.pm-sheet-subtasks-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.pm-sheet-subtasks-head small {
+  font-weight: 500;
   color: var(--text-tertiary);
 }
-.pm-app .pm-expand {
-  margin-left: 52px;
-  border-radius: 999px;
+
+.pm-sheet-subtask-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
-/* Bottom navigation: pill indicator behind the active icon */
+
+.pm-sheet-subtask-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.pm-sheet-subtask-list li.completed span {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+.pm-sheet-subtask-add {
+  display: flex;
+  gap: 8px;
+}
+
+.pm-sheet-subtask-add input {
+  flex: 1;
+  min-width: 0;
+}
+
+.pm-app .pm-sheet-subtask-submit {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--primary-text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.pm-sheet-extra {
+  border-top: 1px solid var(--hairline);
+  padding-top: 10px;
+}
+
+.pm-sheet-extra summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  padding: 4px 0;
+}
+
+.pm-sheet-extra-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+/* Action bottom sheet */
+.pm-dialog.pm-action-sheet {
+  position: fixed;
+  inset: auto 0 0 0;
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  max-height: 82dvh;
+  margin: 0 auto;
+  padding: 10px 16px calc(18px + env(safe-area-inset-bottom));
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -8px 32px color-mix(in srgb, var(--text-primary) 18%, transparent);
+}
+
+.pm-action-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pm-action-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pm-action-sheet-head h2 {
+  font-size: 16px;
+  font-weight: 650;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-action-period-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pm-action-period-block > span {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.pm-action-sheet-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pm-app .pm-action-sheet-list button {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 12px;
+  border-radius: 10px;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.pm-app .pm-action-sheet-list button:active {
+  background: var(--row-press);
+}
+
+/* ---------- 5. Bottom navigation & FAB ---------- */
 .pm-app .pm-bottom {
-  border-top: 0;
-  box-shadow: 0 -1px 0 var(--line), 0 -10px 28px -14px color-mix(in srgb, var(--text-primary) 16%, transparent);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top: 1px solid var(--hairline);
+  box-shadow: none;
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
 }
+
 .pm-app nav.pm-bottom button {
   flex: 1;
   min-width: 0;
-  gap: 3px;
-  padding: 0;
+  gap: 2px;
+  padding: 2px 0;
   font-size: 11px;
   font-weight: 500;
 }
+
 .pm-app nav.pm-bottom svg {
   box-sizing: border-box;
   width: 44px;
   height: 28px;
-  padding: 3px 10px;
+  padding: 4px 10px;
   border-radius: 999px;
-  transition: background 200ms var(--ease-out);
+  transition: background 180ms var(--ease-out);
 }
+
+.pm-app .pm-bottom .active {
+  color: var(--primary-text);
+  font-weight: 650;
+}
+
 .pm-app .pm-bottom .active svg {
-  background: color-mix(in srgb, var(--primary) 50%, var(--surface));
+  background: var(--accent-soft);
 }
+
 .pm-app .pm-bottom button:active svg {
   background: var(--row-press);
 }
 
-/* Floating action button */
-.pm-app .pm-fab {
-  border-radius: 20px;
+.pm-app button.pm-fab {
+  width: 56px;
+  height: 56px;
+  right: 18px;
+  bottom: calc(82px + env(safe-area-inset-bottom));
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 28px !important;
   box-shadow:
-    0 2px 6px color-mix(in srgb, var(--text-primary) 10%, transparent),
-    0 10px 24px color-mix(in srgb, var(--primary-text) 30%, transparent);
-  transition: transform 160ms var(--ease-out);
-}
-.pm-app .pm-fab:active {
-  transform: scale(0.94);
+    0 2px 8px color-mix(in srgb, var(--text-primary) 10%, transparent),
+    0 8px 20px color-mix(in srgb, var(--primary-text) 24%, transparent);
+  transition: transform 160ms var(--ease-out), background-color 160ms var(--ease-out);
 }
 
-/* Cards on dashboard / settings pages */
-.pm-app .pm-chart-card,
-.pm-app .pm-stat-insight,
-.pm-app .pm-stat-cards article,
-.pm-app .pm-project {
-  box-shadow: var(--shadow-soft);
+.pm-app button.pm-fab:active {
+  transform: scale(0.94);
+  box-shadow:
+    0 2px 8px color-mix(in srgb, var(--text-primary) 10%, transparent),
+    0 4px 12px color-mix(in srgb, var(--primary-text) 20%, transparent);
 }
-.pm-app .pm-project {
-  border-radius: 18px;
-}
-.pm-app .pm-month-calendar {
-  box-shadow: var(--shadow-soft);
-}
+
 .pm-app .pm-empty {
-  padding: 64px 28px;
+  padding: 48px 24px;
 }
+
 .pm-app .pm-empty > span {
   display: grid;
   place-items: center;
-  width: 72px;
-  height: 72px;
+  width: 64px;
+  height: 64px;
   margin: 0 auto 8px;
   border-radius: 50%;
   background: var(--accent-soft);
   color: var(--primary-text);
-  font-size: 32px;
+  font-size: 28px;
 }
+
 @media (prefers-reduced-motion: reduce) {
   .pm-app *,
   .pm-app *::before,
   .pm-app *::after {
     transition: none !important;
   }
+}
+
+/* Task Detail & New Task Unified Bottom-Sheet Layout */
+.pm-app dialog.pm-task-sheet.is-task-detail {
+  position: fixed;
+  top: auto;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  margin: 0 auto;
+  width: min(100vw, 520px);
+  max-width: 100vw;
+  height: calc(100dvh - 88px - env(safe-area-inset-top));
+  max-height: calc(100dvh - 88px - env(safe-area-inset-top));
+  padding: 0;
+  border: 0;
+  border-radius: 24px 24px 0 0;
+  background: var(--surface);
+  color: var(--text-primary);
+  box-shadow: 0 -12px 40px rgb(0 0 0 / 18%);
+  overflow-y: auto;
+}
+
+.pm-app dialog.pm-task-sheet.is-task-detail::backdrop {
+  background: var(--backdrop, rgb(0 0 0 / 36%));
+}
+
+.pm-app .pm-task-sheet.is-task-detail form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 10px 18px calc(24px + env(safe-area-inset-bottom));
+}
+
+.pm-app .pm-task-sheet.is-task-detail button.pm-entry-chip,
+.pm-app .pm-task-sheet.is-task-detail span.pm-entry-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pm-app .pm-task-sheet.is-task-detail button.pm-entry-chip[aria-pressed="true"] {
+  background: var(--selected);
+  color: var(--primary-text);
+  font-weight: 650;
+}
+
+.pm-app dialog.pm-task-sheet.is-task-detail button.pm-entry-save-text {
+  min-height: 34px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--primary-text);
+  font: inherit;
+  font-size: 16px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.pm-app dialog.pm-task-sheet.is-task-detail button.pm-entry-save-text:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.pm-task-sheet.is-task-detail button.pm-entry-close {
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.pm-task-sheet.is-task-detail button.pm-entry-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+.pm-task-sheet.is-task-detail input.pm-sheet-title-input {
+  width: 100%;
+  min-height: 36px;
+  padding: 2px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: 650 19px/1.35 var(--font-ui);
+  outline: none;
+  box-shadow: none;
+}
+
+.pm-task-sheet.is-task-detail textarea.pm-sheet-notes-input {
+  width: 100%;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  font: 14px/1.55 var(--font-ui);
+  resize: none;
+  outline: none;
+  box-shadow: none;
+}
+
+.pm-sheet-subtasks-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--hairline);
+}
+
+.pm-sheet-subtask-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pm-sheet-subtask-icon {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--text-tertiary);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  flex-shrink: 0;
+}
+
+.pm-task-sheet.is-task-detail .pm-sheet-subtask-row input {
+  flex: 1;
+  min-width: 0;
+  min-height: 34px;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: 14px/1.4 var(--font-ui);
+  outline: none;
+  box-shadow: none;
+}
+
+.pm-task-sheet.is-task-detail button.pm-sheet-subtask-add-btn {
+  min-height: 30px;
+  padding: 4px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--selected);
+  color: var(--primary-text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pm-sheet-action-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--hairline);
+}
+
+.pm-sheet-action-left,
+.pm-sheet-action-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pm-task-sheet.is-task-detail button.pm-sheet-circle-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  min-height: 38px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.pm-task-sheet.is-task-detail button.pm-sheet-circle-btn svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pm-task-sheet.is-task-detail button.pm-sheet-circle-btn.is-active {
+  background: var(--selected);
+  color: var(--primary-text);
+}
+
+.pm-task-sheet.is-task-detail button.pm-sheet-circle-btn.is-ai {
+  background: var(--primary-text);
+  color: #ffffff;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--primary-text) 28%, transparent);
+}
+
+.pm-task-sheet.is-task-detail button.pm-sheet-circle-btn.is-danger {
+  color: var(--danger-text, #b42318);
+}
+
+/* Rich TaskDescription with inline image preview on mobile sheets */
+.pm-task-sheet.is-task-detail .task-description-field,
+.pm-task-entry .task-description-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pm-task-sheet.is-task-detail .task-description,
+.pm-task-entry .task-description {
+  position: relative;
+  min-height: 44px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 2px 38px 2px 0;
+  color: var(--text-secondary);
+  font: 14px/1.6 var(--font-ui);
+  outline: none;
+  word-break: break-word;
+}
+
+.pm-task-sheet.is-task-detail .task-description[data-empty="true"]::before,
+.pm-task-entry .task-description[data-empty="true"]::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  top: 2px;
+  left: 0;
+  color: var(--text-tertiary);
+  pointer-events: none;
+}
+
+.pm-task-sheet.is-task-detail .task-description p,
+.pm-task-entry .task-description p {
+  margin: 0 0 6px;
+}
+
+.pm-task-sheet.is-task-detail .task-description img,
+.pm-task-entry .task-description img {
+  display: block;
+  max-width: 100%;
+  max-height: 220px;
+  margin: 6px 0;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  object-fit: contain;
+  background: var(--surface-secondary);
+}
+
+.pm-task-sheet.is-task-detail button.task-description-image,
+.pm-task-entry button.task-description-image {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 9px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.pm-task-sheet.is-task-detail button.task-description-image svg,
+.pm-task-entry button.task-description-image svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pm-task-sheet.is-task-detail .task-description-error,
+.pm-task-entry .task-description-error {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--danger-text, #b42318);
 }

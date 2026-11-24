@@ -15,8 +15,7 @@
 .modern-workspace .personal-project-list header h1,
 .modern-workspace .personal-project-list header h2,
 .modern-workspace .project-summary h1,
-.modern-workspace .project-summary h2,
-.personal-agent-dialog h2 {
+.modern-workspace .project-summary h2 {
   font-family: var(--font-ui);
   font-weight: 700;
   font-synthesis: weight;
@@ -472,158 +471,6 @@
   color: var(--primary-text);
 }
 
-/* Guidance dialog */
-.personal-agent-dialog {
-  width: min(560px, calc(100% - 32px));
-  border: 1px solid rgb(120 90 50 / 18%);
-  border-radius: 20px;
-  padding: 26px 28px;
-  background:
-    radial-gradient(circle at 100% 0%, rgb(212 164 60 / 12%), transparent 40%),
-    var(--surface);
-  box-shadow: 0 24px 60px rgb(40 28 12 / 25%);
-}
-.personal-agent-dialog::backdrop {
-  background: rgb(30 22 12 / 45%);
-  backdrop-filter: blur(2px);
-}
-.personal-agent-dialog > header small {
-  color: var(--xp-deep);
-  font-weight: 600;
-  letter-spacing: 0.1em;
-}
-.personal-agent-dialog h2 {
-  margin: 4px 0 18px;
-  font-size: 26px;
-}
-.personal-agent-dialog .personal-agent-close {
-  width: 36px;
-  min-width: 36px;
-  height: 36px;
-  min-height: 36px;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 24px;
-  line-height: 1;
-}
-.personal-agent-dialog .personal-agent-close:hover {
-  background: var(--surface-tertiary);
-  color: var(--ink);
-}
-.personal-agent-dialog .personal-agent-facts {
-  padding: 0;
-  background: none;
-}
-.personal-agent-facts ul {
-  display: flex;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.personal-agent-facts li {
-  flex: 1;
-  display: grid;
-  justify-items: center;
-  padding: 10px 6px;
-  border: 1px solid rgb(120 90 50 / 14%);
-  border-radius: 12px;
-  background: var(--surface-secondary);
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-.personal-agent-facts li b {
-  color: var(--ink);
-  font-size: 20px;
-  line-height: 1.3;
-}
-.personal-agent-facts li[data-alert] b {
-  color: var(--cinnabar);
-}
-.personal-agent-suggestions h3 {
-  margin: 22px 0 10px;
-  font-size: 14px;
-  letter-spacing: 0.06em;
-  color: var(--text-secondary);
-}
-.personal-agent-suggestions ol {
-  display: grid;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  counter-reset: guide;
-}
-.personal-agent-suggestions li {
-  position: relative;
-  padding: 12px 14px 12px 56px;
-  border: 1px solid rgb(120 90 50 / 14%);
-  border-radius: 14px;
-  background: var(--surface);
-  counter-increment: guide;
-}
-.personal-agent-suggestions li::before {
-  content: counter(guide);
-  position: absolute;
-  top: 50%;
-  left: 14px;
-  display: grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  margin-top: -14px;
-  border-radius: 6px;
-  background: var(--cinnabar);
-  color: #fff6ea;
-  font: 700 15px/1 var(--font-title);
-  transform: rotate(-4deg);
-}
-.personal-agent-suggestions li:first-child {
-  border-color: rgb(212 164 60 / 55%);
-  background: rgb(212 164 60 / 8%);
-}
-.personal-agent-dialog .personal-agent-suggestions li > button {
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--ink);
-  font-size: 15px;
-  font-weight: 600;
-  text-align: left;
-  cursor: pointer;
-}
-.personal-agent-dialog .personal-agent-suggestions li > button:hover {
-  color: var(--primary-text);
-  text-decoration: underline;
-}
-.personal-agent-suggestions li > p {
-  margin: 2px 0 0;
-  color: var(--text-secondary);
-  font-size: 12px;
-}
-.personal-agent-hint {
-  margin: 16px 0 0;
-  color: var(--text-tertiary);
-  font-size: 12px;
-}
-.personal-agent-dialog .personal-agent-controls button {
-  min-height: 38px;
-  border: 1px solid rgb(120 90 50 / 20%);
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--ink);
-}
-.personal-agent-dialog .personal-agent-controls button:disabled {
-  border-style: dashed;
-  background: transparent;
-  color: var(--text-tertiary);
-  opacity: 0.7;
-}
-
 /* Paper cards shared by projects, settings and daily practice */
 .modern-workspace .project-summary,
 .modern-workspace .settings-card,
@@ -672,64 +519,22 @@
   font-size: 22px;
 }
 
-/* ---------- Mobile app ---------- */
+/* ---------- Mobile app (unified theme tokens) ---------- */
 .pm-app {
   --pm-bg: var(--surface-canvas);
 }
-.pm-app .pm-header {
-  position: relative;
-  overflow: hidden;
-  border-radius: 0 0 26px 26px;
-  background:
-    radial-gradient(circle at 90% -30%, rgb(212 164 60 / 30%), transparent 55%),
-    radial-gradient(circle at 0% 130%, rgb(63 154 124 / 25%), transparent 50%),
-    linear-gradient(135deg, #2a2621, #1d1b18);
-  color: #efe4cf;
-  box-shadow: 0 10px 26px rgb(40 28 12 / 25%);
-}
-.pm-app .pm-top small {
-  color: #d4a43c;
-  letter-spacing: 0.22em;
-}
-.pm-app .pm-top h1 {
-  font-family: var(--font-title);
-  font-size: 24px;
-  letter-spacing: 0.12em;
-  color: #f6dc95;
-  -webkit-text-stroke: 0.5px currentColor;
-}
-.pm-app .pm-header .pm-icon,
-.pm-app .pm-week-title,
-.pm-app .pm-week small,
-.pm-app .pm-week span {
-  color: rgb(239 228 207 / 72%);
-}
-.pm-app .pm-header .pm-icon:active {
-  background: rgb(255 255 255 / 10%);
-}
-.pm-app .pm-week b {
-  color: #efe4cf;
-}
-.pm-app .pm-week .selected b {
-  background: radial-gradient(circle at 35% 30%, #f6dc95, #d4a43c 60%, #a87a1c);
-  color: #3b2a08;
-  box-shadow: 0 0 14px rgb(212 164 60 / 50%);
-}
-.pm-app .pm-trend {
-  color: #8fd3b6;
-}
 .pm-app .pm-list-heading h2 {
-  color: var(--ink);
+  color: var(--text-primary);
 }
 .pm-app .pm-list-heading > button {
-  background: color-mix(in srgb, var(--primary) 30%, var(--surface));
+  background: color-mix(in srgb, var(--primary) 26%, var(--surface));
 }
 .pm-app .pm-main > .pm-task {
-  border-color: rgb(120 90 50 / 16%);
+  border-color: var(--line);
   background: var(--surface);
 }
 .pm-app .pm-task-title strong {
-  color: var(--ink);
+  color: var(--text-primary);
 }
 .pm-app .pm-check:before,
 .pm-app .is-complete > .pm-task-line .pm-check:before {
@@ -739,17 +544,7 @@
   background: var(--primary-text);
 }
 .pm-app .is-complete > .pm-task-line .pm-check {
-  color: #fffdf8;
-}
-.pm-app .pm-fab {
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 30%, #f6dc95, #d4a43c 60%, #a87a1c) !important;
-  color: #3b2a08 !important;
-  box-shadow: 0 0 0 4px rgb(212 164 60 / 22%), 0 10px 24px rgb(168 122 28 / 40%);
-}
-.pm-app .pm-fab:active {
-  transform: scale(0.94);
-  box-shadow: 0 0 0 4px rgb(212 164 60 / 22%);
+  color: #fff;
 }
 .pm-app .pm-bottom {
   background: var(--sidebar-surface);
@@ -761,7 +556,7 @@
 .pm-app .pm-dialog button[type="submit"]:not(.pm-delete) {
   border-radius: 999px;
   background: var(--primary-text);
-  color: #fffdf8;
+  color: #fff;
   font-weight: 600;
 }
 .pm-app .pm-dialog {
@@ -769,36 +564,80 @@
   background: var(--surface);
 }
 .pm-app .pm-empty {
-  font-family: var(--font-title);
-  color: var(--ink-soft);
+  color: var(--text-secondary);
 }
 .pm-app .pm-month-calendar,
 .pm-app .pm-settings-group,
 .pm-app .pm-stat-insight,
 .pm-app .pm-stat-list {
-  border: 1px solid rgb(120 90 50 / 14%);
-  box-shadow: var(--game-lift);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow-soft, var(--shadow-card));
 }
 .pm-app .pm-stat-cards article {
-  background: linear-gradient(135deg, #2a2621, #1d1b18);
-  color: #f6dc95;
+  background: var(--selected);
+  color: var(--primary-text);
+  border: 1px solid color-mix(in srgb, var(--primary) 45%, var(--line));
 }
 .pm-app .pm-stat-cards article + article {
   background: var(--surface);
-  color: var(--ink);
+  color: var(--text-primary);
+  border: 1px solid var(--line);
 }
+/* Unified project task & board card container. */
+.workspace.modern-workspace .simple-project-workspace .project-tasks-card {
+  margin-top: 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card, 18px);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-card);
+}
+.workspace.modern-workspace .simple-project-workspace .project-tasks-card .project-view-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--hairline, var(--line));
+}
+.workspace.modern-workspace .simple-project-workspace .project-tasks-card .project-section-label {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--text-primary);
+  letter-spacing: 0;
+}
+.workspace.modern-workspace .simple-project-workspace .project-tasks-card .project-view-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.workspace.modern-workspace .simple-project-workspace .project-tasks-card .project-loading {
+  padding: 12px 20px 0;
+  margin: 0;
+}
+.workspace.modern-workspace .simple-project-workspace .project-tasks-card #project-view-content {
+  padding: 16px 20px 20px;
+}
+
 /* Project tasks read as one list, the way Todoist stacks rows. */
+.workspace.modern-workspace .simple-project-workspace .project-tasks-card .personal-todo-home.is-project-tasks {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
 .workspace.modern-workspace .simple-project-workspace .personal-todo-home.is-project-tasks .personal-todo-header {
   gap: 4px;
-  margin-bottom: 8px;
+  min-height: 0;
+  margin: 0;
 }
 .workspace.modern-workspace .simple-project-workspace .personal-todo-home.is-project-tasks .personal-todo-header p {
   font-size: 12px;
   color: var(--text-tertiary);
 }
 .workspace.modern-workspace .simple-project-workspace .personal-todo-home.is-project-tasks .personal-task-composer {
-  margin: 0 0 8px;
-  padding: 0 12px;
+  margin: 0 0 12px;
+  padding: 2px 12px;
   border-radius: 10px;
 }
 .workspace.modern-workspace .simple-project-workspace .personal-todo-home.is-project-tasks .personal-task-composer input[data-personal-capture] {
@@ -869,7 +708,7 @@
   margin-top: 12px;
 }
 .workspace.modern-workspace .simple-project-workspace .personal-todo-home.is-project-tasks .personal-todo-empty {
-  padding: 16px 0;
+  padding: 28px 0 20px;
 }
 /* Project board reads as one Trello-style board: gray lists, compact cards. */
 .workspace.modern-workspace .simple-project-workspace .project-board .kanban-board {
@@ -984,22 +823,27 @@
   color: var(--text-primary);
 }
 .workspace.modern-workspace .sidebar-project-list {
-  gap: 2px;
-  padding: 0 8px 10px;
+  gap: 6px;
+  max-height: 320px;
+  padding: 0 8px 12px;
 }
 .workspace.modern-workspace .sidebar-project-list .project-card,
 .workspace.modern-workspace .sidebar-project-list .project-card:hover:not(:disabled) {
-  min-height: 34px;
-  padding: 0 8px;
-  gap: 8px;
-  border: 0;
-  border-radius: 10px;
-  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-height: 0;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--text-secondary) 10%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-card) 55%, transparent);
   box-shadow: none;
   color: var(--text-secondary);
 }
 .workspace.modern-workspace .sidebar-project-list .project-card:hover:not(:disabled):not(.selected):not([aria-current="page"]) {
-  background: color-mix(in srgb, var(--text-secondary) 7%, transparent);
+  background: var(--surface-card);
+  border-color: color-mix(in srgb, var(--text-secondary) 18%, transparent);
   color: var(--text-primary);
 }
 .workspace.modern-workspace .sidebar-project-list .project-card.selected,
@@ -1007,18 +851,24 @@
 .workspace.modern-workspace .sidebar-project-list .project-card.selected:hover:not(:disabled),
 .workspace.modern-workspace .sidebar-project-list .project-card[aria-current="page"]:hover:not(:disabled) {
   background: var(--surface-card);
-  color: var(--ink);
-  box-shadow:
-    0 1px 2px rgb(43 38 34 / 6%),
-    0 0 0 1px color-mix(in srgb, var(--text-secondary) 12%, transparent);
+  border-color: color-mix(in srgb, var(--primary-text) 32%, transparent);
+  color: var(--text-primary);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--text-primary) 6%, transparent);
+}
+.workspace.modern-workspace .sidebar-project-list .sidebar-project-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
 }
 .workspace.modern-workspace .sidebar-project-list .sidebar-project-icon,
 .workspace.modern-workspace .sidebar-project-list .selected .sidebar-project-icon,
 .workspace.modern-workspace .sidebar-project-list .project-card[aria-current="page"] .sidebar-project-icon {
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  background: color-mix(in srgb, var(--primary-text) 12%, transparent);
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--selected);
   color: var(--primary-text);
   font-size: 12px;
   font-weight: 700;
@@ -1026,20 +876,57 @@
 }
 .workspace.modern-workspace .sidebar-project-list .project-card.selected .sidebar-project-icon,
 .workspace.modern-workspace .sidebar-project-list .project-card[aria-current="page"] .sidebar-project-icon {
-  background: color-mix(in srgb, var(--cinnabar) 14%, transparent);
-  color: var(--cinnabar);
+  background: var(--primary-text);
+  color: #fff;
 }
 .workspace.modern-workspace .sidebar-project-list .project-card strong {
-  font-size: 13px;
-  font-weight: 500;
-  font-synthesis: weight;
-  letter-spacing: 0.01em;
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .workspace.modern-workspace .sidebar-project-list .project-card.selected strong,
 .workspace.modern-workspace .sidebar-project-list .project-card[aria-current="page"] strong {
   font-weight: 700;
-  color: var(--ink);
+  color: var(--text-primary);
 }
-.workspace.modern-workspace .sidebar-project-list .project-selection-dot {
-  display: none;
+.workspace.modern-workspace .sidebar-project-list .sidebar-project-pct {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+.workspace.modern-workspace .sidebar-project-list .project-card.selected .sidebar-project-pct,
+.workspace.modern-workspace .sidebar-project-list .project-card[aria-current="page"] .sidebar-project-pct {
+  color: var(--primary-text);
+}
+.workspace.modern-workspace .sidebar-project-list .project-card .sidebar-project-outcome {
+  display: block;
+  width: 100%;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.workspace.modern-workspace .sidebar-project-list .project-card .sidebar-project-bar {
+  display: block;
+  width: 100%;
+  height: 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-secondary) 14%, transparent);
+  overflow: hidden;
+}
+.workspace.modern-workspace .sidebar-project-list .project-card .sidebar-project-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--primary-text);
+  transition: width 220ms ease;
 }

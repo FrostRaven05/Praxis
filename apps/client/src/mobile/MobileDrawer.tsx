@@ -1,8 +1,8 @@
 import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import type { WorkspaceEntity } from "@praxis/storage-mobile";
-import { calendarDate } from "@praxis/application";
 import { TaskPanelIcon } from "../TaskPanelIcon";
 import { ProjectIcon } from "../ProjectIcon";
+import { MobileNavIcon } from "./MobileNavIcon";
 import "./mobile-drawer.css";
 
 type Props = {
@@ -17,17 +17,12 @@ type Props = {
   onProject: (id: string) => void;
   onCreateProject: () => void;
 };
-function offset(date: string, days: number) {
-  const value = new Date(`${date}T12:00:00Z`);
-  value.setUTCDate(value.getUTCDate() + days);
-  return value.toISOString().slice(0, 10);
-}
 
 export function MobileDrawer(props: Props) {
-  const { section, projectId, entities, today, timeZone, onClose, onNavigate } =
-    props;
+  const { section, projectId, entities, onClose, onNavigate } = props;
   const dialog = useRef<HTMLDialogElement>(null);
   const closeButton = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     const element = dialog.current;
     if (!element) return;
@@ -47,32 +42,7 @@ export function MobileDrawer(props: Props) {
     (e) =>
       e.kind === "project" && e.data.status === "active" && !e.data.archivedAt,
   );
-  const weekDay = (new Date(`${today}T12:00:00Z`).getUTCDay() + 6) % 7;
-  const start = offset(today, -weekDay - 77);
-  const activity = new Map<string, number>();
-  for (const task of live) {
-    if (
-      task.kind !== "task" ||
-      task.data.status !== "completed" ||
-      typeof task.data.completedAt !== "string"
-    )
-      continue;
-    const finished = new Date(task.data.completedAt);
-    if (Number.isNaN(finished.getTime())) continue;
-    const date = calendarDate(finished, timeZone);
-    if (date >= start && date <= today)
-      activity.set(date, (activity.get(date) ?? 0) + 1);
-  }
-  const completed = [...activity.values()].reduce((sum, n) => sum + n, 0);
-  const days = Array.from({ length: 84 }, (_, i) => {
-    const date = offset(start, i),
-      count = activity.get(date) ?? 0;
-    return {
-      date,
-      count,
-      level: count === 0 ? 0 : count < 3 ? 1 : count < 6 ? 2 : 3,
-    };
-  });
+
   function link(key: string, label: string, icon: ReactNode, count?: number) {
     return (
       <button
@@ -92,6 +62,7 @@ export function MobileDrawer(props: Props) {
       </button>
     );
   }
+
   return (
     <dialog
       ref={dialog}
@@ -136,40 +107,11 @@ export function MobileDrawer(props: Props) {
           </button>
         </header>
         <div className="pm-drawer-scroll">
-          <section
-            className="pm-drawer-activity"
-            aria-label="最近十二周完成记录"
-          >
-            <div className="pm-drawer-metrics">
-              <div>
-                <strong>{completed}</strong>
-                <span>完成任务</span>
-              </div>
-              <div>
-                <strong>{activity.size}</strong>
-                <span>活跃天数</span>
-              </div>
-              <small>近 12 周</small>
-            </div>
-            <div
-              className="pm-drawer-heatmap"
-              role="img"
-              aria-label={`近十二周完成 ${completed} 项任务，活跃 ${activity.size} 天`}
-            >
-              {days.map((cell) => (
-                <span
-                  key={cell.date}
-                  data-level={cell.level}
-                  data-future={cell.date > today || undefined}
-                  title={`${cell.date} · 完成 ${cell.count} 项`}
-                />
-              ))}
-            </div>
-          </section>
           <div className="pm-drawer-primary">
-            {link("tasks", "清单", <TaskPanelIcon name="check" />)}
-            {link("todos", "杂事", <TaskPanelIcon name="inbox" />)}
-            {link("focus", "专注", <TaskPanelIcon name="clock" />)}
+            {link("tasks", "今日", <TaskPanelIcon name="sun" />)}
+            {link("todos", "杂事", <TaskPanelIcon name="check" />)}
+            {link("habits", "习惯", <MobileNavIcon name="tasks" />)}
+            {link("stats", "数据复盘", <MobileNavIcon name="stats" />)}
           </div>
           <section
             className="pm-drawer-group"
@@ -187,26 +129,59 @@ export function MobileDrawer(props: Props) {
                 <ProjectIcon name="plus" />
               </button>
             </div>
-            {link("projects", "项目", <ProjectIcon name="folder" />)}
-            {projects.map((project) => (
-              <button
-                key={project.id}
-                type="button"
-                className="pm-drawer-link pm-drawer-project"
-                aria-label={`打开项目：${String(project.data.title ?? "未命名项目")}`}
-                aria-current={projectId === project.id ? "page" : undefined}
-                onClick={() => props.onProject(project.id)}
-              >
-                <ProjectIcon name="folder" />
-                <span>{String(project.data.title ?? "未命名项目")}</span>
-              </button>
-            ))}
+            {link("projects", "全部项目", <ProjectIcon name="folder" />)}
+            {projects.map((project) => {
+              const name = String(project.data.title ?? "未命名项目");
+              const projectTasks = live.filter(
+                (e) =>
+                  e.kind === "task" &&
+                  e.data.projectId === project.id &&
+                  e.data.status !== "cancelled",
+              );
+              const doneCount = projectTasks.filter(
+                (e) => e.data.status === "completed",
+              ).length;
+              const openCount = projectTasks.length - doneCount;
+              const progressPct = projectTasks.length
+                ? Math.round((doneCount / projectTasks.length) * 100)
+                : 0;
+              return (
+                <button
+                  key={project.id}
+                  type="button"
+                  className="pm-drawer-link pm-drawer-project"
+                  aria-label={`打开项目：${name}`}
+                  aria-current={projectId === project.id ? "page" : undefined}
+                  onClick={() => props.onProject(project.id)}
+                >
+                  <span className="pm-drawer-project-badge" aria-hidden="true">
+                    {Array.from(name.trim())[0]?.toUpperCase() || "项"}
+                  </span>
+                  <div className="pm-drawer-project-info">
+                    <span className="pm-drawer-project-name">{name}</span>
+                    {projectTasks.length > 0 && (
+                      <span className="pm-drawer-project-bar" aria-hidden="true">
+                        <i style={{ width: `${progressPct}%` }} />
+                      </span>
+                    )}
+                  </div>
+                  <small className="pm-drawer-project-count">
+                    {projectTasks.length > 0
+                      ? openCount > 0
+                        ? `${openCount}`
+                        : "✓"
+                      : "0"}
+                  </small>
+                </button>
+              );
+            })}
             {!projects.length && (
               <p className="pm-drawer-empty">还没有项目，点击 ＋ 创建</p>
             )}
           </section>
         </div>
         <footer className="pm-drawer-footer">
+          {link("trash", "回收站", <MobileNavIcon name="trash" />)}
           {link("settings", "我的", <ProjectIcon name="settings" />)}
         </footer>
       </nav>

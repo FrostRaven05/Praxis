@@ -12,6 +12,7 @@ export function PersonalProjectForm({
   onSaved,
   onCancel,
   onBusyChange,
+  onSwitchToAi,
   modal = false,
 }: {
   initial: PersonalProjectFields | null;
@@ -19,6 +20,7 @@ export function PersonalProjectForm({
   onSaved: (id: string) => Promise<void>;
   onCancel: () => void;
   onBusyChange: (busy: boolean) => void;
+  onSwitchToAi?: (seed: string) => void;
   modal?: boolean;
 }) {
   const [save] = useState(createSave);
@@ -122,6 +124,18 @@ export function PersonalProjectForm({
         <button type="button" disabled={busy || unknown} onClick={onCancel}>
           取消
         </button>
+        {!isEdit && onSwitchToAi && !saved.current && (
+          <button
+            type="button"
+            className="ai-planner-launch"
+            disabled={busy || unknown}
+            onClick={() =>
+              onSwitchToAi([name.trim(), outcome.trim()].filter(Boolean).join("\n"))
+            }
+          >
+            ✦ AI 拆解创建
+          </button>
+        )}
       </div>
     </form>
   );

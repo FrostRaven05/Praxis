@@ -187,3 +187,25 @@ test("suggestions list parent tasks from active projects and miscellaneous work,
   expect(result[0]!.reasons).toContain("已逾期");
   expect(recommendBacklog(snap, [scheduled], date, zone, 2)).toHaveLength(2);
 });
+
+test("suggestions resolve parent tasks to their current executable leaf and skip dependency-blocked tasks", () => {
+  const tasks = [
+    task("phase", { priority: 1 }),
+    task("step1", { parentId: "phase", rank: 1 }),
+    task("step2", { parentId: "phase", rank: 2, dependencies: ["step1"] }),
+    task("blocked-leaf", { dependencies: ["step1"] }),
+    task("unblocked-leaf", { dependencies: ["done-pred"] }),
+    task("done-pred", { status: "completed" }),
+  ];
+  const rows = recommendBacklog(snapshot(tasks), [], date, zone, 10);
+  expect(rows.map((r) => r.task.id)).toEqual(["phase", "unblocked-leaf"]);
+  expect(rows[0]!.actionTask.id).toBe("step1");
+  const withStep1OnDay = recommendBacklog(
+    snapshot(tasks),
+    [{ ...scheduled, taskId: "step1" }],
+    date,
+    zone,
+    10,
+  );
+  expect(withStep1OnDay.map((r) => r.task.id)).toEqual(["unblocked-leaf"]);
+});

@@ -69,7 +69,7 @@ export interface AiGenerateRequest {
     availableMinutes?: number | null;
     /** Opt-in personal MVP; absent on legacy clients and saved drafts. */
     personal?: {
-      scope: "project" | "todos";
+      scope: "project" | "new_project" | "todos";
       readAt: string;
       candidateTaskIds?: string[];
     };
@@ -81,6 +81,7 @@ export interface AiDraftTask {
   criteria: string;
   estimatedMinutes: number | null;
   dependsOn: string[];
+  parentKey?: string | null;
   notes?: string;
   deadline?: string | null;
 }
@@ -111,6 +112,11 @@ export interface AiRun {
   sourceDigest: string;
   model: string | null;
 }
+export interface AiScheduleToday {
+  taskId: string;
+  date: string;
+  timeZone: string;
+}
 export interface AiApplyCommand {
   operationId: string;
   runId: string;
@@ -121,6 +127,7 @@ export interface AiApplyCommand {
   basisTasks: { id: string; version: number }[];
   tasks: (AiDraftTask & { id: string })[];
   reward: AiReward | null;
+  scheduleToday?: AiScheduleToday | null;
   basisRecovery?: {
     version: number | null;
     records: { id: string; version: number }[];
@@ -137,7 +144,7 @@ export interface AiApplyReceipt {
 }
 export const AI_MAX_REQUEST_BYTES = 120_000;
 export const AI_MAX_INPUT = 8000;
-export const AI_MAX_TASKS = 8;
+export const AI_MAX_TASKS = 20;
 export const uuidPattern =
   "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$";
 const text = (maxLength: number, minLength = 0) => ({
@@ -248,7 +255,7 @@ export const aiRequestSchema = object({
       truncated: { type: "boolean" },
       personal: object(
         {
-          scope: { type: "string", enum: ["project", "todos"] },
+          scope: { type: "string", enum: ["project", "new_project", "todos"] },
           readAt: text(100, 1),
           candidateTaskIds: array(id, 3),
         },
@@ -298,7 +305,7 @@ const { references: _references, ...legacyProposalFields } =
   aiProposalSchema.properties;
 /** Older clients reject extra proposal fields, so preserve their original wire format. */
 export const aiLegacyProposalSchema = object(legacyProposalFields);
-/** Only personal clients request these additional optional-date fields. */
+/** Only personal clients request these additional hierarchy and optional-date fields. */
 export const aiPersonalProposalSchema = object({
   ...aiProposalSchema.properties,
   tasks: array(
@@ -311,6 +318,7 @@ export const aiPersonalProposalSchema = object({
         { type: "string", pattern: "^s[1-9][0-9]?$" },
         AI_MAX_TASKS,
       ),
+      parentKey: nullable({ type: "string", pattern: "^s[1-9][0-9]?$" }),
       notes: text(4000),
       deadline: nullable(day),
     }),
@@ -378,6 +386,7 @@ export function validateAiProposal(
         "criteria",
         "estimatedMinutes",
         "dependsOn",
+        ...(Object.hasOwn(task, "parentKey") ? ["parentKey"] : []),
         ...(Object.hasOwn(task, "notes") ? ["notes"] : []),
         ...(Object.hasOwn(task, "deadline") ? ["deadline"] : []),
       ]) ||
@@ -392,6 +401,10 @@ export function validateAiProposal(
       !Array.isArray(task.dependsOn) ||
       task.dependsOn.length > AI_MAX_TASKS ||
       !task.dependsOn.every((k) => typeof k === "string") ||
+      (Object.hasOwn(task, "parentKey") &&
+        task.parentKey !== null &&
+        (typeof task.parentKey !== "string" ||
+          !/^s[1-9][0-9]?$/.test(task.parentKey))) ||
       (Object.hasOwn(task, "notes") && !validText(task.notes, 4000, true)) ||
       (Object.hasOwn(task, "deadline") &&
         task.deadline !== null &&
@@ -406,6 +419,21 @@ export function validateAiProposal(
   const typed = tasks as unknown as AiDraftTask[];
   const byKey = new Map(typed.map((t) => [t.key, t]));
   if (byKey.size !== typed.length) throw new Error("AI_DUPLICATE_STEP");
+  const parents = new Set<string>();
+  for (const task of typed) {
+    if (task.parentKey == null) continue;
+    if (task.parentKey === task.key) throw new Error("AI_INVALID_HIERARCHY");
+    const parent = byKey.get(task.parentKey);
+    if (!parent || parent.parentKey != null)
+      throw new Error("AI_INVALID_HIERARCHY");
+    parents.add(parent.key);
+  }
+  for (const task of typed) {
+    if (parents.has(task.key) && task.dependsOn.length > 0)
+      throw new Error("AI_INVALID_DEPENDENCIES");
+    if (task.dependsOn.some((dep) => parents.has(dep)))
+      throw new Error("AI_INVALID_DEPENDENCIES");
+  }
   const visiting = new Set<string>(),
     done = new Set<string>();
   function visit(key: string) {

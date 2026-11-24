@@ -1,4 +1,7 @@
+import { useEffect, useMemo, useState } from "react";
+import { personalProjectList, type WorkSnapshot } from "@praxis/application";
 import { feedbackMessage } from "./feedback-message";
+import { personalTasks } from "./personal-task-storage";
 import { ProjectIcon } from "./ProjectIcon";
 import { useProjectList } from "./useProjectList";
 
@@ -20,6 +23,41 @@ export function ProjectNavigation({
   onList: () => void;
 }) {
   const { items, error, loading, reload } = useProjectList(revision);
+  const [work, setWork] = useState<WorkSnapshot | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    const read = () => {
+      void personalTasks
+        .read()
+        .then((next) => {
+          if (active) setWork(next.work);
+        })
+        .catch(() => {});
+    };
+    read();
+    window.addEventListener("focus", read);
+    return () => {
+      active = false;
+      window.removeEventListener("focus", read);
+    };
+  }, [revision]);
+
+  const progressMap = useMemo(() => {
+    const map = new Map<string, { done: number; total: number; percentage: number }>();
+    if (!work) return map;
+    for (const row of personalProjectList(work, new Date())) {
+      if (row.progress) {
+        map.set(row.project.id, {
+          done: row.progress.done,
+          total: row.progress.total,
+          percentage: row.progress.percentage ?? 0,
+        });
+      }
+    }
+    return map;
+  }, [work]);
+
   const visible = items.filter(
     (project) => project.status !== "archived" && !project.archivedAt,
   );
@@ -61,28 +99,49 @@ export function ProjectNavigation({
         </p>
       ) : null}
       <nav className="sidebar-project-list" aria-label="项目列表">
-        {visible.map((project) => (
-          <button
-            key={project.id}
-            title={project.name}
-            aria-current={selectedId === project.id ? "page" : undefined}
-            disabled={disabled}
-            className={
-              selectedId === project.id
-                ? "project-card selected"
-                : "project-card"
-            }
-            onClick={() => onSelect(project.id)}
-          >
-            <span className="sidebar-project-icon" aria-hidden="true">
-              {projectMark(project.name)}
-            </span>
-            <strong>{project.name}</strong>
-            {selectedId === project.id && (
-              <span className="project-selection-dot" aria-hidden="true" />
-            )}
-          </button>
-        ))}
+        {visible.map((project) => {
+          const goalText =
+            project.outcome.trim() ||
+            (project.targetDate ? `目标日期 ${project.targetDate}` : "未设置目标");
+          const progress = progressMap.get(project.id);
+          const done = progress?.done ?? 0;
+          const total = progress?.total ?? 0;
+          const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+          const tooltip = [project.name, project.outcome.trim()]
+            .filter(Boolean)
+            .join(" — ");
+          return (
+            <button
+              key={project.id}
+              title={tooltip}
+              aria-current={selectedId === project.id ? "page" : undefined}
+              disabled={disabled}
+              className={
+                selectedId === project.id
+                  ? "project-card selected"
+                  : "project-card"
+              }
+              onClick={() => onSelect(project.id)}
+            >
+              <div className="sidebar-project-head">
+                <span className="sidebar-project-icon" aria-hidden="true">
+                  {projectMark(project.name)}
+                </span>
+                <strong>{project.name}</strong>
+                <span className="sidebar-project-pct">
+                  {total > 0 ? `${done}/${total}` : "0"}
+                </span>
+              </div>
+              <span className="sidebar-project-outcome">{goalText}</span>
+              <span
+                className="sidebar-project-bar"
+                aria-label={`完成进度 ${pct}%`}
+              >
+                <i style={{ width: `${pct}%` }} />
+              </span>
+            </button>
+          );
+        })}
       </nav>
     </section>
   );

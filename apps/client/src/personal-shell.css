@@ -69,7 +69,7 @@
   font-size: 13px;
 }
 @media (max-width: 700px) {
-  .pm-dialog:not(.pm-task-entry) {
+  .pm-dialog:not(.pm-task-entry):not(.pm-action-sheet) {
     width: 100%;
     max-width: 100%;
     height: 100dvh;

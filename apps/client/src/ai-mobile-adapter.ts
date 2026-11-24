@@ -88,7 +88,7 @@ function checkCommand(command: AiApplyCommand) {
     !command.input.trim() ||
     command.input.length > 8000 ||
     !command.tasks.length ||
-    command.tasks.length > 8 ||
+    command.tasks.length > 20 ||
     command.basisTasks.length > 100 ||
     (!!command.project && !!command.newProject) ||
     new Set(command.tasks.map((t) => t.id)).size !== command.tasks.length ||
@@ -167,6 +167,41 @@ function checkCommand(command: AiApplyCommand) {
     command.tasks.some((t) => t.dependsOn.length)
   )
     fail("AI_INVALID_DEPENDENCIES");
+  if (command.scheduleToday != null) {
+    const plan = command.scheduleToday;
+    const validDay =
+      typeof plan.date === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(plan.date) &&
+      Number.isFinite(Date.parse(plan.date + "T12:00:00Z")) &&
+      new Date(plan.date + "T12:00:00Z").toISOString().slice(0, 10) ===
+        plan.date;
+    let validZone =
+      typeof plan.timeZone === "string" &&
+      plan.timeZone.trim().length > 0 &&
+      plan.timeZone.length <= 80;
+    if (validZone) {
+      try {
+        new Intl.DateTimeFormat("en-US", { timeZone: plan.timeZone }).format();
+      } catch {
+        validZone = false;
+      }
+    }
+    const parents = new Set(
+      command.tasks
+        .map((t) => t.parentKey)
+        .filter((k): k is string => typeof k === "string"),
+    );
+    const target = command.tasks.find((t) => t.id === plan.taskId);
+    if (
+      !validId(plan.taskId) ||
+      !validDay ||
+      !validZone ||
+      !target ||
+      parents.has(target.key) ||
+      target.dependsOn.length > 0
+    )
+      fail("AI_INVALID_COMMAND");
+  }
 }
 /** Builds one atomic workspace command; all generated IDs and time are frozen before committing. */
 export function buildMobileAiApply(
@@ -285,7 +320,18 @@ export function buildMobileAiApply(
       },
     });
   const taskByKey = new Map(command.tasks.map((t) => [t.key, t.id]));
-  for (const task of command.tasks)
+  const childRank = new Map<string, number>();
+  let rootRank = 0;
+  for (const task of command.tasks) {
+    const parentId = task.parentKey ? taskByKey.get(task.parentKey)! : null;
+    const rank = parentId
+      ? (childRank.set(parentId, (childRank.get(parentId) ?? 0) + 1),
+        childRank.get(parentId)!)
+      : ++rootRank;
+    const scheduledToday =
+      command.scheduleToday?.taskId === task.id
+        ? command.scheduleToday.date
+        : undefined;
     changes.push({
       id: task.id,
       kind: "task",
@@ -295,6 +341,7 @@ export function buildMobileAiApply(
         completionCriteria: task.criteria.trim(),
         estimatedMinutes: task.estimatedMinutes,
         notes: task.notes ?? "由规划草稿采用，原始意图保留在关联收集项。",
+        ...(scheduledToday ? { executionDate: scheduledToday } : {}),
         ...(task.deadline !== undefined
           ? {
               dueDate: task.deadline,
@@ -307,13 +354,15 @@ export function buildMobileAiApply(
           : {}),
         status: "todo",
         projectId,
-        parentId: null,
+        parentId,
+        rank,
         priority: 0,
         tags: [],
         sourceCaptureId: captureId,
         dependencies: task.dependsOn.map((key) => taskByKey.get(key)!),
       },
     });
+  }
   const dependencyRows: FrozenOutput[] = [];
   for (const task of command.tasks)
     for (const key of task.dependsOn) {
@@ -482,13 +531,18 @@ export function buildMobileAiUndo(
   const byId = new Map(snapshot.entities.map((e) => [e.id, e]));
   for (const output of application.outputVersions) {
     const entity = byId.get(output.id);
+    const allowedExecutionDate =
+      application.command.scheduleToday?.taskId === output.id
+        ? application.command.scheduleToday.date
+        : undefined;
     if (
       !entity ||
       entity.deleted ||
       entity.version !== output.version ||
       (entity.kind === "task" &&
         (entity.data.status !== "todo" ||
-          entity.data.executionDate ||
+          (entity.data.executionDate &&
+            entity.data.executionDate !== allowedExecutionDate) ||
           entity.data.startDate ||
           entity.data.dueDate ||
           entity.data.followUpDate))

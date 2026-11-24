@@ -2,6 +2,7 @@ export type MobileIconName =
   | "todos"
   | "projects"
   | "tasks"
+  | "sun"
   | "calendar"
   | "focus"
   | "stats"
@@ -9,7 +10,14 @@ export type MobileIconName =
   | "theme"
   | "history"
   | "zone"
-  | "play";
+  | "play"
+  | "pause"
+  | "more"
+  | "sparkle"
+  | "back"
+  | "update"
+  | "trash";
+
 export function MobileNavIcon({ name }: { name: MobileIconName }) {
   return (
     <svg
@@ -21,7 +29,12 @@ export function MobileNavIcon({ name }: { name: MobileIconName }) {
       strokeLinejoin="round"
       aria-hidden="true"
     >
-      {name === "tasks" ? (
+      {name === "sun" ? (
+        <>
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5" />
+        </>
+      ) : name === "tasks" ? (
         <path d="M4 6h2m4 0h10M4 12h2m4 0h10M4 18h2m4 0h10" />
       ) : name === "todos" ? (
         <>
@@ -65,6 +78,30 @@ export function MobileNavIcon({ name }: { name: MobileIconName }) {
         <>
           <path d="M3 11a9 9 0 1 1 2 7M3 4v7h7" />
           <path d="M12 7v5l3 2" />
+        </>
+      ) : name === "more" ? (
+        <>
+          <circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none" />
+          <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+          <circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none" />
+        </>
+      ) : name === "sparkle" ? (
+        <path d="m12 3 1.9 5.6L19.5 10.5l-5.6 1.9L12 18l-1.9-5.6-5.6-1.9 5.6-1.9Z" />
+      ) : name === "back" ? (
+        <path d="m15 18-6-6 6-6" />
+      ) : name === "pause" ? (
+        <>
+          <rect x="6" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none" />
+          <rect x="14" y="5" width="4" height="14" rx="1" fill="currentColor" stroke="none" />
+        </>
+      ) : name === "update" ? (
+        <>
+          <path d="M12 3v11m0 0-4-4m4 4 4-4" />
+          <path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+        </>
+      ) : name === "trash" ? (
+        <>
+          <path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" />
         </>
       ) : (
         <path d="m9 5 11 7-11 7Z" />

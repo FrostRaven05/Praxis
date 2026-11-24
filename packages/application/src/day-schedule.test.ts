@@ -1,10 +1,14 @@
 import { expect, it } from "vitest";
 import type { DailyTask } from "./capture-today";
 import {
+  autoArrangeDayItems,
+  defaultPeriodForDate,
+  inferPeriodFromText,
   moveDayTaskChanges,
   orderedDayTasks,
   moveDayItems,
   orderedDayItems,
+  periodForTime,
   type DayArrangementItem,
 } from "./day-schedule";
 
@@ -120,4 +124,82 @@ it("ignores stale drop anchors and makes an unchanged order a no-op", () => {
   const items = [task("a", { dayRank: 1 }), task("b", { dayRank: 2 })];
   expect(moveDayTaskChanges(items, "a", "morning", "missing")).toEqual([]);
   expect(moveDayTaskChanges(items, "a", "morning", "b", "before")).toEqual([]);
+});
+
+it("infers day period from clock times and keywords", () => {
+  expect(inferPeriodFromText("9:30 开晨会")).toBe("morning");
+  expect(inferPeriodFromText("下午3点 评审方案")).toBe("afternoon");
+  expect(inferPeriodFromText("14点 取快递")).toBe("afternoon");
+  expect(inferPeriodFromText("晚上8点 跑步")).toBe("evening");
+  expect(inferPeriodFromText("睡前阅读 20 分钟")).toBe("evening");
+  expect(inferPeriodFromText("整理需求文档")).toBeNull();
+});
+
+it("picks current time period for today and morning for future days", () => {
+  const evening = new Date("2026-10-11T13:00:00Z"); // 21:00 Asia/Shanghai
+  expect(periodForTime(evening, "Asia/Shanghai")).toBe("evening");
+  expect(
+    defaultPeriodForDate("2026-10-11", "2026-10-11", evening, "Asia/Shanghai"),
+  ).toBe("evening");
+  expect(
+    defaultPeriodForDate("2026-10-12", "2026-10-11", evening, "Asia/Shanghai"),
+  ).toBe("morning");
+  expect(
+    defaultPeriodForDate(
+      "2026-10-12",
+      "2026-10-11",
+      evening,
+      "Asia/Shanghai",
+      "下午复盘",
+    ),
+  ).toBe("afternoon");
+});
+
+it("auto-arranges tasks by explicit time, keywords, and remaining periods of today", () => {
+  const afternoonNow = new Date("2026-10-11T06:00:00Z"); // 14:00 Asia/Shanghai
+  const changes = autoArrangeDayItems(
+    [
+      {
+        key: "p1",
+        title: "重点需求开发",
+        dayPeriod: "morning",
+        dayRank: 1,
+        createdAt: "2026-10-11T01:00:00Z",
+        isFocus: true,
+      },
+      {
+        key: "p2",
+        title: "整理会议纪要",
+        dayPeriod: "morning",
+        dayRank: 2,
+        createdAt: "2026-10-11T02:00:00Z",
+      },
+      {
+        key: "p3",
+        title: "晚上复盘总结",
+        dayPeriod: "morning",
+        dayRank: 3,
+        createdAt: "2026-10-11T03:00:00Z",
+      },
+      {
+        key: "p4",
+        title: "定时沟通",
+        dayPeriod: "morning",
+        dayRank: 4,
+        createdAt: "2026-10-11T04:00:00Z",
+        plannedHour: 15,
+      },
+    ],
+    {
+      date: "2026-10-11",
+      today: "2026-10-11",
+      now: afternoonNow,
+      timeZone: "Asia/Shanghai",
+    },
+  );
+  const byKey = new Map(changes.map((c) => [c.key, c]));
+  expect(byKey.get("p4")?.dayPeriod).toBe("afternoon");
+  expect(byKey.get("p3")?.dayPeriod).toBe("evening");
+  expect(byKey.get("p1")?.dayPeriod).toBe("afternoon");
+  expect(byKey.get("p2")?.dayPeriod).toBe("evening");
 });

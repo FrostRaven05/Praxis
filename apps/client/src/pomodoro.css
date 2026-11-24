@@ -456,3 +456,327 @@
   color: var(--text-primary);
   text-align: left;
 }
+
+/* Minimalist Zen Full-Screen Focus Overlay */
+.pomodoro-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: radial-gradient(
+      circle at 50% 38%,
+      color-mix(in srgb, var(--primary) 16%, transparent),
+      transparent 65%
+    ),
+    var(--surface);
+  color: var(--text-primary);
+  font-family: var(--font-ui);
+}
+
+.pomodoro-overlay-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(12px + env(safe-area-inset-top)) 16px 8px;
+}
+
+.pomodoro-overlay button.pomodoro-overlay-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pomodoro-overlay button.pomodoro-overlay-icon:active,
+.pomodoro-overlay button.pomodoro-overlay-icon.is-active {
+  background: var(--selected);
+  color: var(--primary-text);
+}
+
+.pomodoro-overlay button.pomodoro-overlay-icon:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pomodoro-overlay button.pomodoro-overlay-icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pomodoro-overlay-drawer {
+  margin: 0 20px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface-card, var(--surface));
+  box-shadow: var(--shadow-card);
+  display: grid;
+  gap: 12px;
+}
+
+.pomodoro-overlay-drawer .pomodoro-modes {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.pomodoro-overlay-drawer .pomodoro-modes button {
+  min-height: 34px;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pomodoro-overlay-drawer .pomodoro-modes button.is-selected {
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 650;
+}
+
+.pomodoro-overlay-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+
+.pomodoro-overlay-stepper-ctrl {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.pomodoro-overlay-stepper-ctrl b {
+  min-width: 58px;
+  text-align: center;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.pomodoro-overlay-stepper-ctrl button {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: 17px;
+  cursor: pointer;
+}
+
+.pomodoro-overlay-center {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 28px;
+  padding: 16px 24px;
+}
+
+.pomodoro-overlay-task {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  max-width: min(100%, 340px);
+  text-align: center;
+}
+
+.pomodoro-overlay-status {
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: var(--selected);
+  color: var(--primary-text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.pomodoro-overlay-task h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 650;
+  line-height: 1.4;
+  color: var(--text-primary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.pomodoro-ring {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 248px;
+  height: 248px;
+}
+
+.pomodoro-ring svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.pomodoro-ring-track {
+  fill: none;
+  stroke: var(--selected);
+  stroke-width: 7;
+}
+
+.pomodoro-ring-progress {
+  fill: none;
+  stroke: var(--primary-text);
+  stroke-width: 7;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 320ms linear;
+}
+
+.pomodoro-overlay-clock {
+  margin: 0;
+  font-size: 56px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.pomodoro-overlay-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: min(100%, 280px);
+}
+
+.pomodoro-overlay button.pomodoro-overlay-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 28px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary-text);
+  color: #fff;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 650;
+  cursor: pointer;
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--primary-text) 26%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  .pomodoro-overlay button.pomodoro-overlay-primary {
+    background: var(--primary);
+    color: var(--on-primary);
+  }
+}
+
+.pomodoro-overlay button.pomodoro-overlay-primary svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.pomodoro-overlay-secondary-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.pomodoro-overlay button.pomodoro-overlay-ghost,
+.pomodoro-overlay button.pomodoro-overlay-complete {
+  min-height: 36px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.pomodoro-overlay button.pomodoro-overlay-ghost {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.pomodoro-overlay button.pomodoro-overlay-complete {
+  border: 0;
+  background: var(--selected);
+  color: var(--primary-text);
+  font-weight: 600;
+}
+
+.pomodoro-overlay-footer {
+  display: flex;
+  justify-content: center;
+  padding: 8px 16px calc(24px + env(safe-area-inset-bottom));
+}
+
+.pomodoro-overlay button.pomodoro-overlay-noise {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-card, var(--surface));
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.pomodoro-overlay button.pomodoro-overlay-noise[aria-pressed="true"] {
+  border-color: transparent;
+  background: var(--selected);
+  color: var(--primary-text);
+  font-weight: 600;
+}
+
+.pomodoro-overlay button.pomodoro-overlay-noise svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+}
+
+.pomodoro-overlay .pomodoro-sounds {
+  z-index: 4;
+}

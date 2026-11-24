@@ -1,6 +1,7 @@
 import { feedbackMessage } from "../feedback-message";
 import { scheduleId, workspaceSettingsId } from "./sync-identity";
 import { AccountPanel } from "../AccountPanel";
+import { AppUpdate } from "../AppUpdate";
 import { editRecordLinks, firstRecordLink } from "./record-links";
 import { habitCheckCommand } from "./habit-check-command";
 import {
@@ -25,7 +26,7 @@ import { FocusView } from "./FocusView";
 import { StatisticsView } from "./StatisticsView";
 import { MobileNavIcon } from "./MobileNavIcon";
 import { ThemeSettings } from "../ThemeSettings";
-import { ProjectChecks, CommandHistory } from "./ReviewHistory";
+import { ProjectChecks } from "./ReviewHistory";
 import {
   ruleAt,
   matchesRule,
@@ -145,9 +146,6 @@ export function Extras({
     [minimumVersion, setMinimumVersion] = useState("");
   const [projectId, setProjectId] = useState(""),
     [taskId, setTaskId] = useState("");
-  const [spaces, setSpaces] = useState<
-    { id: string; title: string; active: boolean }[]
-  >([]);
   const [pending, setPending] = useState<WorkspaceCommand | null>(null);
   const pendingDone = useRef<(() => void) | undefined>(undefined);
   const [name, setName] = useState(""),
@@ -159,18 +157,7 @@ export function Extras({
     [frequency, setFrequency] = useState("daily"),
     [target, setTarget] = useState(3),
     [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
-  const [zone, setZone] = useState("Asia/Hong_Kong"),
-    [tick, setTick] = useState(Date.now());
-  useEffect(() => {
-    setZone(timeZone);
-  }, [timeZone]);
-  useEffect(() => {
-    if (section === "settings")
-      void mobileStorage
-        .workspaceList()
-        .then(setSpaces)
-        .catch((e) => setError(String(e)));
-  }, [section, snapshot]);
+  const [tick, setTick] = useState(Date.now());
   useEffect(() => {
     setSelected(null);
     setReviewDraft(null);
@@ -189,11 +176,9 @@ export function Extras({
     setMessage("");
   }, [section]);
   const dirty =
-    (["records", "templates", "review", "habits", "repeat", "focus"].includes(
+    ["records", "templates", "review", "habits", "repeat", "focus"].includes(
       section,
-    ) &&
-      !!(name || body || selected)) ||
-    (section === "settings" && zone !== timeZone);
+    ) && !!(name || body || selected);
   useEffect(() => {
     onBusyChange?.(busy || !!pending || dirty);
   }, [busy, pending, dirty, onBusyChange]);
@@ -984,43 +969,12 @@ export function Extras({
         </details>
         <details className="pm-settings-group">
           <summary>
-            <MobileNavIcon name="zone" />
-            时间与日期
+            <MobileNavIcon name="update" />
+            软件更新
           </summary>
-          <form
-            className="mx-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void run([
-                settings
-                  ? change(settings, { ...settings.data, timeZone: zone })
-                  : fresh("settings", { timeZone: zone }),
-              ]);
-            }}
-          >
-            <label>
-              工作空间时区
-              <input
-                value={zone}
-                onChange={(e) => setZone(e.target.value)}
-                placeholder="Asia/Hong_Kong"
-              />
-            </label>
-            <p className="mx-muted">
-              既有任务日期、重复模板与打卡历史保持原值。
-            </p>
-            <button disabled={busy}>保存时区</button>
-          </form>
-        </details>
-        <details className="pm-settings-group">
-          <summary>
-            <MobileNavIcon name="history" />
-            本机操作历史
-          </summary>
-          <CommandHistory
-            key={spaces.find((w) => w.active)?.id}
-            timeZone={timeZone}
-          />
+          <div className="pm-settings-pane">
+            <AppUpdate />
+          </div>
         </details>
       </>
     );

@@ -296,6 +296,41 @@
   gap: 20px;
   align-items: start;
 }
+.workspace.modern-workspace .day-periods-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 28px 10px;
+}
+.workspace.modern-workspace .day-periods-now {
+  font-size: 12.5px;
+  color: var(--text-tertiary);
+}
+.workspace.modern-workspace button.day-auto-arrange {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+.workspace.modern-workspace button.day-auto-arrange:hover:not(:disabled) {
+  background: var(--selected);
+  border-color: color-mix(in srgb, var(--primary) 60%, var(--line));
+  color: var(--primary-text);
+}
+.workspace.modern-workspace button.day-auto-arrange:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
 .workspace.modern-workspace .day-periods {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
@@ -938,134 +973,6 @@
 .workspace .task-panel-actions .task-panel-delete {
   color: var(--danger, #d4534a);
 }
-.task-ai-backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: color-mix(in srgb, var(--text-primary) 28%, transparent);
-}
-.task-ai-sheet {
-  display: flex;
-  flex-direction: column;
-  width: min(640px, 100%);
-  max-height: min(760px, calc(100dvh - 48px));
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--surface-card);
-  box-shadow: var(--shadow-pop, 0 18px 50px rgb(0 0 0 / 16%));
-  color: var(--text-primary);
-}
-.task-ai-header,
-.task-ai-card header,
-.task-ai-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.task-ai-header {
-  padding: 16px 18px 12px;
-}
-.task-ai-header h2 {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  font-size: 18px;
-}
-.task-ai-header-actions {
-  display: flex;
-  gap: 4px;
-}
-.task-ai-sheet button {
-  display: grid;
-  place-items: center;
-  min-height: 32px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--text-secondary);
-}
-.task-ai-header-actions button,
-.task-ai-footer button {
-  width: 32px;
-  height: 32px;
-}
-.task-ai-sheet svg {
-  width: 20px;
-  height: 20px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.7;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.task-ai-bulb {
-  display: grid;
-  place-items: center;
-  color: var(--primary-text);
-}
-.task-ai-body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-height: 0;
-  overflow: auto;
-  padding: 0 18px 12px;
-}
-.task-ai-body p {
-  margin: 0;
-}
-.task-ai-card {
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface);
-}
-.task-ai-card header {
-  padding: 12px 14px;
-  border-bottom: 1px solid var(--hairline);
-}
-.task-ai-card h3 {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0;
-  font-size: 15px;
-}
-.task-ai-card header button {
-  min-width: 64px;
-  padding: 4px 14px;
-  border-radius: 8px;
-  background: var(--primary, #1f8a70);
-  color: var(--on-primary, #fff);
-  font-size: 14px;
-}
-.task-ai-card header button:disabled {
-  opacity: 0.6;
-}
-.task-ai-card > p {
-  padding: 14px;
-  color: var(--text-secondary);
-  font-size: 14px;
-  line-height: 1.7;
-}
-.task-ai-footer {
-  padding: 8px 18px 14px;
-}
-.task-ai-footer span {
-  padding: 4px 8px;
-  border-radius: 8px;
-  background: var(--surface-secondary);
-  color: var(--text-tertiary);
-  font-size: 12px;
-}
-.task-ai-body [role="alert"] {
-  color: var(--danger, #b42318);
-}
 .workspace .task-panel-actions svg {
   width: 22px;
   height: 22px;
@@ -1401,14 +1308,16 @@
 .workspace.modern-workspace .timeline-attention > summary span {
   margin-left: 8px;
 }
-.workspace.modern-workspace .today-recommendations > h2 {
+.workspace.modern-workspace .today-recommendations > h2,
+.workspace.modern-workspace .today-recommendations .today-recommendations-head h2 {
   margin: 0;
   padding: 0 0 2px;
   font-size: 12px;
   font-weight: 500;
   color: var(--text-secondary);
 }
-.workspace.modern-workspace .today-recommendations > h2 span {
+.workspace.modern-workspace .today-recommendations > h2 span,
+.workspace.modern-workspace .today-recommendations .today-recommendations-head h2 span {
   margin-left: 8px;
 }
 .workspace.modern-workspace .timeline-attention.today-recommendations {
@@ -1549,6 +1458,7 @@
   }
 }
 @media (max-width: 700px) {
+  .workspace.modern-workspace .day-periods-bar,
   .workspace.modern-workspace .day-periods {
     padding-inline: 16px;
   }

@@ -1,4 +1,4 @@
-import { Capacitor } from "@capacitor/core";
+import { isMobileSurface } from "./mobile-surface";
 import { createPersonalProjectSave, type Project } from "@praxis/application";
 import {
   WorkspaceRejectedError,
@@ -15,7 +15,7 @@ import { mobileProjectCommand } from "./personal-project-adapters";
 async function scope() {
   const account = await accountStorage.status();
   const identity = [account.baseUrl, account.user?.id ?? "local"];
-  if (Capacitor.isNativePlatform()) {
+  if (isMobileSurface()) {
     identity.push(await mobileDatabaseName());
     identity.push(
       (await mobileStorage.workspaceList()).find((w) => w.active)?.id ??

@@ -3,7 +3,7 @@ import { isTauri } from "@tauri-apps/api/core";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
-import { Capacitor } from "@capacitor/core";
+import { isMobileSurface } from "./mobile-surface";
 import { lazy, Suspense } from "react";
 import "./theme.css";
 import "./styles.css";
@@ -40,7 +40,7 @@ void initializeTheme().then(() =>
           <TitleBar />
           <App />
         </div>
-      ) : Capacitor.isNativePlatform() ? (
+      ) : isMobileSurface() ? (
         <Suspense fallback={<p role="status">正在打开本机工作空间…</p>}>
           <MobileApp />
         </Suspense>

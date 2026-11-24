@@ -1,5 +1,5 @@
 import { invoke, isTauri } from "./native-recovery";
-import { Capacitor } from "@capacitor/core";
+import { isMobileSurface } from "./mobile-surface";
 import { type WorkSnapshot } from "@praxis/application";
 import {
   mobileStorage,
@@ -15,7 +15,7 @@ const scope = async () => {
   const account = await accountStorage.status();
   return JSON.stringify([account.baseUrl, account.user?.id ?? "local"]);
 };
-export const personalTasks = Capacitor.isNativePlatform()
+export const personalTasks = isMobileSurface()
   ? createMobilePersonalTasks({
       workspaceSnapshot: () => mobileStorage.workspaceSnapshot(),
       workspaceList: () => mobileStorage.workspaceList(),

@@ -3,6 +3,176 @@ import { planChange, type PlanChange } from "./planning";
 
 export const dayPeriods = ["morning", "afternoon", "evening"] as const;
 export type DayPeriod = (typeof dayPeriods)[number];
+
+export function periodForHour(hour: number): DayPeriod {
+  if (hour < 12) return "morning";
+  if (hour < 18) return "afternoon";
+  return "evening";
+}
+
+export function localHour(now: Date, timeZone: string): number {
+  const raw = new Intl.DateTimeFormat("en-GB", {
+    timeZone,
+    hour: "2-digit",
+    hourCycle: "h23",
+  }).format(now);
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed % 24 : now.getHours();
+}
+
+export function periodForTime(now: Date, timeZone: string): DayPeriod {
+  return periodForHour(localHour(now, timeZone));
+}
+
+export function inferPeriodFromText(text: string): DayPeriod | null {
+  const content = text.trim();
+  if (!content) return null;
+
+  const clockMatch = content.match(
+    /(早上|早晨|上午|清晨|中午|午后|下午|傍晚|晚上|晚间|夜间|夜里|睡前)?\s*(\d{1,2})\s*(?:[:：](\d{2})|点(?:半|(\d{1,2})分?)?)/,
+  );
+  if (clockMatch) {
+    const prefix = clockMatch[1] ?? "";
+    const rawHour = Number(clockMatch[2]);
+    if (Number.isInteger(rawHour) && rawHour >= 0 && rawHour <= 24) {
+      let hour = rawHour === 24 ? 0 : rawHour;
+      if (["下午", "午后"].includes(prefix) && hour >= 1 && hour <= 11) {
+        hour += 12;
+      } else if (
+        ["傍晚", "晚上", "晚间", "夜间", "夜里", "睡前"].includes(prefix) &&
+        hour >= 1 &&
+        hour <= 11
+      ) {
+        hour += 12;
+        if (hour < 18) return "evening";
+      } else if (prefix === "中午" && hour >= 1 && hour <= 5) {
+        hour += 12;
+      }
+      return periodForHour(hour);
+    }
+  }
+
+  if (/(早上|早晨|上午|清晨|早起|早餐|早饭|晨跑|晨读)/.test(content)) {
+    return "morning";
+  }
+  if (/(中午|午休|午饭|午餐|下午|午后)/.test(content)) {
+    return "afternoon";
+  }
+  if (/(晚上|晚间|傍晚|晚饭|晚餐|睡前|夜晚|夜间|夜里)/.test(content)) {
+    return "evening";
+  }
+  return null;
+}
+
+export interface AutoArrangeItem extends DayArrangementItem {
+  title: string;
+  plannedHour?: number | null;
+  priority?: number;
+  isFocus?: boolean;
+  inProgress?: boolean;
+}
+
+export function defaultPeriodForDate(
+  date: string,
+  today: string,
+  now: Date,
+  timeZone: string,
+  title = "",
+): DayPeriod {
+  const inferred = inferPeriodFromText(title);
+  if (inferred) return inferred;
+  if (date === today) return periodForTime(now, timeZone);
+  return "morning";
+}
+
+export function autoArrangeDayItems(
+  items: AutoArrangeItem[],
+  options: {
+    date: string;
+    today: string;
+    now: Date;
+    timeZone: string;
+  },
+): { key: string; dayPeriod: DayPeriod; dayRank: number }[] {
+  if (!items.length) return [];
+
+  const buckets: Record<DayPeriod, AutoArrangeItem[]> = {
+    morning: [],
+    afternoon: [],
+    evening: [],
+  };
+  const flexible: AutoArrangeItem[] = [];
+
+  for (const item of items) {
+    if (
+      typeof item.plannedHour === "number" &&
+      Number.isFinite(item.plannedHour)
+    ) {
+      buckets[periodForHour(item.plannedHour)].push(item);
+      continue;
+    }
+    const inferred = inferPeriodFromText(item.title);
+    if (inferred) {
+      buckets[inferred].push(item);
+      continue;
+    }
+    flexible.push(item);
+  }
+
+  const available: DayPeriod[] =
+    options.date === options.today
+      ? [...dayPeriods.slice(dayPeriods.indexOf(periodForTime(options.now, options.timeZone)))]
+      : [...dayPeriods];
+
+  const urgencyWeight = (item: AutoArrangeItem) =>
+    (item.isFocus ? 100 : 0) +
+    (item.inProgress ? 50 : 0) +
+    (item.priority && item.priority > 0 && item.priority < 4
+      ? (4 - item.priority) * 10
+      : 0);
+
+  flexible.sort(
+    (a, b) =>
+      urgencyWeight(b) - urgencyWeight(a) ||
+      a.createdAt.localeCompare(b.createdAt) ||
+      a.key.localeCompare(b.key),
+  );
+
+  const totalInAvailable =
+    flexible.length +
+    available.reduce((sum, period) => sum + buckets[period].length, 0);
+  const targetPerPeriod = Math.max(
+    1,
+    Math.ceil(totalInAvailable / available.length),
+  );
+
+  for (const item of flexible) {
+    const target =
+      available.find((period) => buckets[period].length < targetPerPeriod) ??
+      available.reduce((lightest, period) =>
+        buckets[period].length < buckets[lightest].length ? period : lightest,
+      );
+    buckets[target].push(item);
+  }
+
+  const changes: { key: string; dayPeriod: DayPeriod; dayRank: number }[] = [];
+  for (const period of dayPeriods) {
+    const ordered = buckets[period].sort(
+      (a, b) =>
+        (a.plannedHour ?? 99) - (b.plannedHour ?? 99) ||
+        urgencyWeight(b) - urgencyWeight(a) ||
+        a.createdAt.localeCompare(b.createdAt) ||
+        a.key.localeCompare(b.key),
+    );
+    ordered.forEach((item, index) => {
+      const rank = index + 1;
+      if (item.dayPeriod !== period || item.dayRank !== rank) {
+        changes.push({ key: item.key, dayPeriod: period, dayRank: rank });
+      }
+    });
+  }
+  return changes;
+}
 export interface DayArrangementItem {
   key: string;
   dayPeriod: DayPeriod;

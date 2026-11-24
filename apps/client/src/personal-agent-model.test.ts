@@ -6,6 +6,9 @@ import {
   type WorkTask,
 } from "@praxis/application";
 import {
+  addPersonalAgentTask,
+  draftAvailableDependencies,
+  draftReadyLeafTasks,
   newPersonalAgentDraft,
   personalAgentApply,
   personalAgentBasis,
@@ -14,6 +17,7 @@ import {
   receivePersonalAgentRun,
   restorePersonalAgentDraft,
   resolvePersonalAgentApply,
+  togglePersonalAgentTask,
 } from "./personal-agent-model";
 import type { AiContextTask, AiRun } from "../../api/src/ai-contract";
 const id = () => crypto.randomUUID(),
@@ -416,4 +420,127 @@ it("rechecks scope after receipt lookup and after commit, retaining the original
       },
     }),
   ).rejects.toThrow("回执与原预览不匹配");
+});
+it("supports new-project two-level breakdown, dependency editing, subtask toggling, and scheduling the first step to today", () => {
+  const f = fixture();
+  const snapshot = personalAgentSnapshot(f.base, [], undefined, now, {
+    newProject: true,
+  });
+  expect(snapshot.canDecompose).toBe(true);
+  expect(snapshot.context.personal?.scope).toBe("new_project");
+  expect(personalAgentKey(snapshot, "decompose")).toContain(":new_project:decompose");
+  let draft = newPersonalAgentDraft(snapshot, "decompose", "上线作品集网站");
+  expect(draft.newProjectId).toBeTruthy();
+  expect(draft.addFirstStepToToday).toBe(true);
+  draft.request = {
+    id: id(),
+    mode: "decompose",
+    input: draft.input,
+    constraints: "",
+    context: snapshot.context,
+  };
+  draft = receivePersonalAgentRun(draft, {
+    id: draft.request.id,
+    mode: "decompose",
+    status: "ready",
+    model: "fixture",
+    sourceDigest: "synthetic",
+    createdAt: now.toISOString(),
+    updatedAt: now.toISOString(),
+    error: null,
+    proposal: {
+      summary: "分两阶段推进",
+      projectName: "个人作品集网站",
+      outcome: "上线十个精选案例",
+      assumptions: [],
+      question: null,
+      nextAction: "挑选十个代表项目",
+      tasks: [
+        {
+          key: "s1",
+          title: "阶段一：准备案例",
+          criteria: "素材就绪",
+          estimatedMinutes: null,
+          dependsOn: [],
+          parentKey: null,
+          notes: "第一阶段",
+          deadline: null,
+        },
+        {
+          key: "s2",
+          title: "挑选十个代表项目",
+          criteria: "十个项目清单",
+          estimatedMinutes: null,
+          dependsOn: [],
+          parentKey: "s1",
+          notes: "先选最好的",
+          deadline: null,
+        },
+        {
+          key: "s3",
+          title: "撰写项目说明",
+          criteria: "完成文案",
+          estimatedMinutes: null,
+          dependsOn: ["s2"],
+          parentKey: "s1",
+          notes: "",
+          deadline: null,
+        },
+        {
+          key: "s4",
+          title: "阶段二：发布上线",
+          criteria: "公开可访问",
+          estimatedMinutes: null,
+          dependsOn: ["s3"],
+          parentKey: null,
+          notes: "",
+          deadline: "2026-12-20",
+        },
+      ],
+      reward: null,
+      suggestedTaskId: null,
+    },
+  });
+  expect(draft.projectName).toBe("个人作品集网站");
+  expect(draft.projectOutcome).toBe("上线十个精选案例");
+  const ready = draftReadyLeafTasks(draft.tasks);
+  expect(ready.map((t) => t.key)).toEqual(["s2"]);
+  expect(draft.firstStepTaskId).toBe(ready[0]!.id);
+  // Parent s1 cannot be a dependency target, and s2 cannot depend on s3 or s4 (would create a cycle)
+  const s2 = draft.tasks.find((t) => t.key === "s2")!;
+  expect(draftAvailableDependencies(draft.tasks, s2.id)).toEqual([]);
+  // Adding a subtask to s4 automatically clears s4's leaf dependency so invariant holds
+  const withSubtask = addPersonalAgentTask(draft.tasks, "s4");
+  const s4After = withSubtask.find((t) => t.key === "s4")!;
+  expect(s4After.dependsOn).toEqual([]);
+  expect(withSubtask.filter((t) => t.parentKey === "s4")).toHaveLength(1);
+  // Unchecking phase s1 unchecks its children s2, s3 and strips dangling deps on s4
+  const afterToggle = togglePersonalAgentTask(draft.tasks, draft.tasks[0]!.id, false);
+  expect(afterToggle.filter((t) => t.selected).map((t) => t.key)).toEqual(["s4"]);
+  expect(afterToggle.find((t) => t.key === "s4")!.dependsOn).toEqual([]);
+  // Applying emits newProject, two-level parentKey, dependsOn, null estimate, and scheduleToday
+  const command = personalAgentApply(draft);
+  expect(command.project).toBeNull();
+  expect(command.newProject).toEqual({
+    id: draft.newProjectId,
+    name: "个人作品集网站",
+    outcome: "上线十个精选案例",
+  });
+  expect(command.tasks.map((t) => [t.key, t.parentKey, t.dependsOn])).toEqual([
+    ["s1", null, []],
+    ["s2", "s1", []],
+    ["s3", "s1", ["s2"]],
+    ["s4", null, ["s3"]],
+  ]);
+  expect(command.tasks.every((t) => t.estimatedMinutes === null)).toBe(true);
+  expect(command.scheduleToday).toEqual({
+    taskId: s2.id,
+    date: snapshot.context.date,
+    timeZone: snapshot.context.timeZone,
+  });
+  draft.pending = command;
+  expect(
+    restorePersonalAgentDraft(JSON.stringify(draft), snapshot, "decompose")
+      ?.pending?.scheduleToday?.taskId,
+  ).toBe(s2.id);
 });

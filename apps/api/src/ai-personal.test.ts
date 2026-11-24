@@ -201,3 +201,141 @@ it("accepts optional personal task notes/date while old proposal shapes still wo
     }),
   ).toThrow("AI_INVALID_TASK");
 });
+it("supports personal new_project two-level breakdown with leaf dependencies and rejects invalid hierarchy or estimates", async () => {
+  const twoLevel: AiProposal = {
+    ...proposal(),
+    projectName: "个人作品集网站",
+    outcome: "上线包含十个案例的作品集",
+    suggestedTaskId: null,
+    nextAction: "筛选十个代表项目",
+    tasks: [
+      {
+        key: "s1",
+        title: "第一阶段：准备内容",
+        criteria: "十个案例素材整理完毕",
+        estimatedMinutes: null,
+        dependsOn: [],
+        parentKey: null,
+        notes: "先整理核心案例",
+        deadline: null,
+      },
+      {
+        key: "s2",
+        title: "筛选十个代表项目",
+        criteria: "列出十个项目标题和截图",
+        estimatedMinutes: null,
+        dependsOn: [],
+        parentKey: "s1",
+        notes: "",
+        deadline: null,
+      },
+      {
+        key: "s3",
+        title: "撰写每个项目的简介",
+        criteria: "十篇简介保存为文档",
+        estimatedMinutes: null,
+        dependsOn: ["s2"],
+        parentKey: "s1",
+        notes: "",
+        deadline: null,
+      },
+      {
+        key: "s4",
+        title: "第二阶段：上线部署",
+        criteria: "公开链接可访问",
+        estimatedMinutes: null,
+        dependsOn: ["s3"],
+        parentKey: null,
+        notes: "",
+        deadline: "2026-12-20",
+      },
+    ],
+  };
+  const s = setup(twoLevel);
+  const input: AiGenerateRequest = {
+    id: randomUUID(),
+    mode: "decompose",
+    input: "年底前上线个人作品集网站",
+    constraints: "新建个人项目并拆成两级任务与依赖",
+    context: {
+      date: "2026-11-12",
+      timeZone: "Asia/Hong_Kong",
+      project: null,
+      source: null,
+      tasks: [],
+      personal: { scope: "new_project", readAt: "2026-11-12T04:00:00Z" },
+    },
+  };
+  expect(
+    (
+      await s.server.inject({
+        method: "POST",
+        url: "/v1/ai/runs",
+        headers: s.headers,
+        payload: input,
+      })
+    ).statusCode,
+  ).toBe(202);
+  const run = await terminal(s, input.id);
+  expect(run.status).toBe("ready");
+  expect(run.proposal.projectName).toBe("个人作品集网站");
+  expect(run.proposal.tasks).toHaveLength(4);
+  expect(run.proposal.tasks[1]).toMatchObject({ parentKey: "s1", dependsOn: [] });
+  expect(run.proposal.tasks[3]).toMatchObject({ parentKey: null, dependsOn: ["s3"] });
+
+  // Rejects new_project with resume mode
+  expect(
+    (
+      await s.server.inject({
+        method: "POST",
+        url: "/v1/ai/runs",
+        headers: s.headers,
+        payload: { ...input, id: randomUUID(), mode: "resume" },
+      })
+    ).statusCode,
+  ).toBe(400);
+
+  // Rejects 3-level nesting
+  expect(() =>
+    validateAiProposal({
+      ...twoLevel,
+      tasks: [
+        ...twoLevel.tasks,
+        {
+          key: "s5",
+          title: "三级子任务",
+          criteria: "结果",
+          estimatedMinutes: null,
+          dependsOn: [],
+          parentKey: "s2",
+        },
+      ],
+    }),
+  ).toThrow("AI_INVALID_HIERARCHY");
+
+  // Rejects dependency targeting a parent phase with subtasks
+  expect(() =>
+    validateAiProposal({
+      ...twoLevel,
+      tasks: twoLevel.tasks.map((t) =>
+        t.key === "s4" ? { ...t, dependsOn: ["s1"] } : t,
+      ),
+    }),
+  ).toThrow("AI_INVALID_DEPENDENCIES");
+
+  // Rejects non-null estimatedMinutes in personal mode
+  const withEstimate = setup({
+    ...twoLevel,
+    tasks: twoLevel.tasks.map((t, idx) =>
+      idx === 1 ? { ...t, estimatedMinutes: 30 } : t,
+    ),
+  });
+  const req2 = { ...input, id: randomUUID() };
+  await withEstimate.server.inject({
+    method: "POST",
+    url: "/v1/ai/runs",
+    headers: withEstimate.headers,
+    payload: req2,
+  });
+  expect((await terminal(withEstimate, req2.id)).status).toBe("failed");
+});

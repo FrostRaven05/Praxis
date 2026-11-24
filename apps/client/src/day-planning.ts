@@ -1,4 +1,5 @@
 import {
+  autoArrangeDayItems,
   moveDayItems,
   isPlanConflict,
   planChange,
@@ -19,6 +20,13 @@ export type DayPlanIntent =
       period: DayPeriod;
       anchorId?: string;
       position: "before" | "after";
+    }
+  | {
+      type: "auto";
+      today: string;
+      nowIso: string;
+      timeZone: string;
+      plannedHours?: Record<string, number>;
     };
 
 export interface DayPlanSnapshot {
@@ -59,6 +67,39 @@ export function createDayPlanRequest(
           : [{ ...planChange(task), isFocus: intent.isFocus }],
       habitChanges: [],
     };
+  }
+  if (intent.type === "auto") {
+    if (!tasks.length) return null;
+    const movements = autoArrangeDayItems(
+      tasks.map((task) => ({
+        key: task.planId,
+        title: task.title,
+        dayPeriod: taskPeriod(task),
+        dayRank: task.dayRank ?? 0,
+        createdAt: task.createdAt,
+        plannedHour: intent.plannedHours?.[task.taskId] ?? null,
+        isFocus: Boolean(task.isFocus),
+        inProgress: task.status === "in_progress",
+      })),
+      {
+        date,
+        today: intent.today,
+        now: new Date(intent.nowIso),
+        timeZone: intent.timeZone,
+      },
+    );
+    const byPlan = new Map(tasks.map((task) => [task.planId, task]));
+    const changes: PlanChange[] = [];
+    for (const movement of movements) {
+      const task = byPlan.get(movement.key);
+      if (!task) continue;
+      changes.push({
+        ...planChange(task),
+        dayPeriod: movement.dayPeriod,
+        dayRank: movement.dayRank,
+      });
+    }
+    return { date, intent, changes, habitChanges: [] };
   }
   const habits = snapshot.habits.filter(
     (row) =>
